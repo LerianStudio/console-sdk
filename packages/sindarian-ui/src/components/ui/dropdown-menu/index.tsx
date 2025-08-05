@@ -11,6 +11,7 @@ function DropdownMenu({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
 }
+
 function DropdownMenuPortal({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
@@ -78,7 +79,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        'focus:bg-accent focus:bg-shadcn-100 focus:text-accent-foreground outline-hidden data-disabled:pointer-events-none data-disabled:opacity-50 relative flex cursor-pointer select-none items-center gap-3 px-3 py-2 text-sm font-medium text-[#52525b] transition-colors',
+        'focus:bg-shadcn-100 focus:text-accent-foreground outline-hidden data-disabled:pointer-events-none data-disabled:opacity-50 relative flex cursor-pointer select-none items-center gap-3 px-3 py-2 text-sm font-medium text-[#52525b] transition-colors',
         className
       )}
       {...props}
@@ -235,7 +236,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        'focus:bg-accent focus:bg-shadcn-100 data-[state=open]:bg-accent outline-hidden flex cursor-default select-none items-center gap-3 px-3 py-2 text-sm font-medium text-[#52525b]',
+        'focus:bg-shadcn-100 data-[state=open]:bg-accent outline-hidden flex cursor-default select-none items-center gap-3 px-3 py-2 text-sm font-medium text-[#52525b]',
         className
       )}
       {...props}
