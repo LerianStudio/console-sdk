@@ -57,15 +57,16 @@ const useAutocomplete = () => {
   return context
 }
 
-export type AutocompleteTriggerProps = React.PropsWithChildren &
-  React.HtmlHTMLAttributes<HTMLDivElement> & {
-    onClear?: () => void
-  }
+export type AutocompleteTriggerProps = React.ComponentProps<'div'> & {
+  onClear?: () => void
+}
 
-export const AutocompleteTrigger = React.forwardRef<
-  HTMLDivElement,
-  AutocompleteTriggerProps
->(({ className, onClear, children }, ref) => {
+export function AutocompleteTrigger({
+  ref,
+  className,
+  onClear,
+  children
+}: AutocompleteTriggerProps) {
   const _ref = React.useRef<HTMLDivElement>(null)
   const { open, readOnly, setOpen, disabled, value, inputRef, handleClear } =
     useAutocomplete()
@@ -129,13 +130,16 @@ export const AutocompleteTrigger = React.forwardRef<
       </div>
     </div>
   )
-})
-AutocompleteTrigger.displayName = 'AutocompleteTrigger'
+}
 
-export const AutocompleteValue = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Input>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({ className, value: valueProp, onValueChange, onBlur, ...props }, ref) => {
+export function AutocompleteValue({
+  ref,
+  className,
+  value: valueProp,
+  onValueChange,
+  onBlur,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.Input>) {
   const [search, setSearch] = React.useState(valueProp as string)
   const { value, showValue, options, readOnly, disabled, inputRef } =
     useAutocomplete()
@@ -199,13 +203,13 @@ export const AutocompleteValue = React.forwardRef<
       onBlur={handleBlur}
     />
   )
-})
-AutocompleteValue.displayName = 'AutocompleteValue'
+}
 
-export const AutocompleteMultipleValue = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Input>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({ className, ...props }, ref) => {
+export function AutocompleteMultipleValue({
+  ref,
+  className,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.Input>) {
   const { value, disabled, handleChange, options, showValue, inputRef } =
     useAutocomplete()
 
@@ -251,50 +255,51 @@ export const AutocompleteMultipleValue = React.forwardRef<
       />
     </>
   )
-})
-AutocompleteMultipleValue.displayName = 'AutocompleteValue'
+}
 
-export const AutocompleteEmpty = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<typeof CommandPrimitive.Empty>
->(({ className, ...props }, forwardedRef) => {
+export function AutocompleteEmpty({
+  className,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.Empty>) {
   const render = useCommandState((state) => state.filtered.count === 0)
 
   if (!render) return null
 
   return (
     <div
-      ref={forwardedRef}
+      data-slot="autocomplete-empty"
       className={cn('py-6 text-center text-sm', className)}
       cmdk-empty=""
       role="presentation"
       {...props}
     />
   )
-})
-AutocompleteEmpty.displayName = 'AutocompleteEmpty'
+}
 
-export const AutocompleteLoading = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Loading>,
-  React.ComponentProps<typeof CommandPrimitive.Loading>
->(({ className, children, ...props }, ref) => (
-  <CommandPrimitive.Loading
-    ref={ref}
-    className={cn(
-      'flex items-center justify-center py-6 text-center text-sm',
-      className
-    )}
-    {...props}
-  >
-    <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-  </CommandPrimitive.Loading>
-))
-AutocompleteLoading.displayName = 'AutocompleteLoading'
+export function AutocompleteLoading({
+  className,
+  ref,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.Loading>) {
+  return (
+    <CommandPrimitive.Loading
+      ref={ref}
+      data-slot="autocomplete-loading"
+      className={cn(
+        'flex items-center justify-center py-6 text-center text-sm',
+        className
+      )}
+      {...props}
+    >
+      <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+    </CommandPrimitive.Loading>
+  )
+}
 
-const SIDE_OPTIONS = ['top', 'right', 'bottom', 'left']
+export const SIDE_OPTIONS = ['top', 'right', 'bottom', 'left']
 type Side = (typeof SIDE_OPTIONS)[number]
 
-export type AutocompleteContentProps = React.ComponentPropsWithoutRef<
+export type AutocompleteContentProps = React.ComponentProps<
   typeof CommandPrimitive.List
 > & {
   position?: 'popper' | 'static'
@@ -302,145 +307,140 @@ export type AutocompleteContentProps = React.ComponentPropsWithoutRef<
   onPointerDownOutside?: (event: MouseEvent | TouchEvent) => void
 }
 
-export const AutocompleteContent = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.List>,
-  AutocompleteContentProps
->(
-  (
-    {
-      className,
-      position = 'popper',
-      side = 'bottom',
-      children,
-      onMouseEnter,
-      onMouseLeave,
-      onPointerDownOutside,
-      ...props
-    },
-    ref
-  ) => {
-    const _ref = React.useRef<HTMLDivElement>(null)
+export function AutocompleteContent({
+  className,
+  position = 'popper',
+  side = 'bottom',
+  ref,
+  children,
+  onMouseEnter,
+  onMouseLeave,
+  onPointerDownOutside,
+  ...props
+}: AutocompleteContentProps) {
+  const _ref = React.useRef<HTMLDivElement>(null)
 
-    const { open, addOption, setOpen, onScrollbar, setOnScrollbar, inputRef } =
-      useAutocomplete()
+  const { open, addOption, setOpen, onScrollbar, setOnScrollbar, inputRef } =
+    useAutocomplete()
 
-    React.useImperativeHandle(
-      ref,
-      () => _ref.current as React.ElementRef<typeof CommandPrimitive.List>
-    )
+  React.useImperativeHandle(
+    ref,
+    () => _ref.current as React.ElementRef<typeof CommandPrimitive.List>
+  )
 
-    useClickAway(_ref, (event) => {
-      // Should not close when clicking on the scrollbar
-      if (onScrollbar) {
+  useClickAway(_ref, (event) => {
+    // Should not close when clicking on the scrollbar
+    if (onScrollbar) {
+      return
+    }
+
+    setOpen(false)
+    inputRef.current?.blur()
+    onPointerDownOutside?.(event)
+  })
+
+  /**
+   * Iterates recursively into react children to find valid items options
+   * Adds the valid ones into the options object
+   * @param children
+   */
+  const _searchChildren = (children: React.ReactNode) => {
+    React.Children.forEach(React.Children.toArray(children), (child) => {
+      // If child is already invalid, like pure string, dismiss
+      if (
+        !React.isValidElement<{ value: string; children: React.ReactNode }>(
+          child
+        )
+      ) {
         return
       }
 
-      setOpen(false)
-      inputRef.current?.blur()
-      onPointerDownOutside?.(event)
+      // If child is recognized as an AutocompleteItem
+      if (
+        child.type &&
+        (child.type as any).displayName === 'AutocompleteItem'
+      ) {
+        // Check if the item was proper filled with a value prop
+        if (child.props.value) {
+          addOption({
+            [child.props.value]: child.props.children as string
+          })
+        }
+        return
+      }
+
+      // If not, search recursively into the childrens
+      if (child.props.children) {
+        _searchChildren(child.props.children)
+      }
     })
-
-    /**
-     * Iterates recursively into react children to find valid items options
-     * Adds the valid ones into the options object
-     * @param children
-     */
-    const _searchChildren = (children: React.ReactNode) => {
-      React.Children.forEach(React.Children.toArray(children), (child) => {
-        // If child is already invalid, like pure string, dismiss
-        if (
-          !React.isValidElement<{ value: string; children: React.ReactNode }>(
-            child
-          )
-        ) {
-          return
-        }
-
-        // If child is recognized as an AutocompleteItem
-        if (
-          child.type &&
-          (child.type as any).displayName === 'AutocompleteItem'
-        ) {
-          // Check if the item was proper filled with a value prop
-          if (child.props.value) {
-            addOption({
-              [child.props.value]: child.props.children as string
-            })
-          }
-          return
-        }
-
-        // If not, search recursively into the childrens
-        if (child.props.children) {
-          _searchChildren(child.props.children)
-        }
-      })
-    }
-
-    // Since this component is not going to be rendered in the DOM until open is true,
-    // we need to register the options when the component mounts
-    // and when the children changes.
-    React.useEffect(() => {
-      _searchChildren(children)
-    }, [children])
-
-    if (!open) {
-      return null
-    }
-
-    return (
-      <div className="relative">
-        <CommandPrimitive.List
-          ref={_ref}
-          className={cn(
-            'bg-popover text-popover-foreground animate-in absolute top-1 z-50 max-h-96 w-full min-w-32 overflow-x-hidden overflow-y-auto rounded-md border shadow-md outline-hidden',
-            position === 'popper' &&
-              'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
-            className
-          )}
-          data-side={side}
-          {...props}
-          onMouseEnter={(e) => {
-            onMouseEnter?.(e)
-            setOnScrollbar(true)
-          }}
-          onMouseLeave={(e) => {
-            onMouseLeave?.(e)
-            setOnScrollbar(false)
-          }}
-        >
-          {children}
-        </CommandPrimitive.List>
-      </div>
-    )
   }
-)
-AutocompleteContent.displayName = 'AutocompleteContent'
 
-export const AutocompleteGroup = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Group>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Group
-    ref={ref}
-    className={cn(
-      'overflow-hidden p-1 text-slate-950 dark:text-slate-50 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-slate-500 dark:[&_[cmdk-group-heading]]:text-slate-400',
-      className
-    )}
-    {...props}
-  />
-))
-AutocompleteGroup.displayName = 'AutocompleteGroup'
+  // Since this component is not going to be rendered in the DOM until open is true,
+  // we need to register the options when the component mounts
+  // and when the children changes.
+  React.useEffect(() => {
+    _searchChildren(children)
+  }, [children])
 
-export const AutocompleteItem = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, value, onClick, onSelect, ...props }, ref) => {
+  if (!open) {
+    return null
+  }
+
+  return (
+    <div className="relative">
+      <CommandPrimitive.List
+        ref={_ref}
+        className={cn(
+          'bg-popover text-popover-foreground animate-in absolute top-1 z-50 max-h-96 w-full min-w-32 overflow-x-hidden overflow-y-auto rounded-md border shadow-md outline-hidden',
+          position === 'popper' &&
+            'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
+          className
+        )}
+        data-side={side}
+        {...props}
+        onMouseEnter={(e) => {
+          onMouseEnter?.(e)
+          setOnScrollbar(true)
+        }}
+        onMouseLeave={(e) => {
+          onMouseLeave?.(e)
+          setOnScrollbar(false)
+        }}
+      >
+        {children}
+      </CommandPrimitive.List>
+    </div>
+  )
+}
+
+export function AutocompleteGroup({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>) {
+  return (
+    <CommandPrimitive.Group
+      data-slot="autocomplete-group"
+      className={cn(
+        'overflow-hidden p-1 text-slate-950 dark:text-slate-50 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-slate-500 dark:[&_[cmdk-group-heading]]:text-slate-400',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export function AutocompleteItem({
+  className,
+  value,
+  onSelect,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>) {
   const { handleChange } = useAutocomplete()
 
   return (
     <CommandPrimitive.Item
-      ref={ref}
+      data-slot="autocomplete-item"
       value={value}
       className={cn(
         "data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground dark:data-[selected='true']:bg-accent relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 dark:data-[selected=true]:text-slate-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -457,10 +457,9 @@ export const AutocompleteItem = React.forwardRef<
       }}
     />
   )
-})
-AutocompleteItem.displayName = 'AutocompleteItem'
+}
 
-export type AutocompleteProps = React.ComponentPropsWithoutRef<
+export type AutocompleteProps = React.ComponentProps<
   typeof CommandPrimitive
 > & {
   value?: string | string[] | []
@@ -477,159 +476,151 @@ export type AutocompleteProps = React.ComponentPropsWithoutRef<
   multiple?: boolean
 }
 
-export const Autocomplete = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive>,
-  AutocompleteProps
->(
-  (
-    {
-      value,
-      defaultValue,
-      onValueChange,
-      onClear,
-      className,
-      open: openProp,
-      onOpenChange,
-      showValue,
-      readOnly,
-      disabled,
-      multiple,
-      onKeyDown,
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    const _ref = React.useRef<HTMLDivElement>(null)
-    const [open, _setOpen] = React.useState(openProp)
-    const inputRef = React.useRef<HTMLInputElement>(null)
-    const [onScrollbar, setOnScrollbar] = React.useState(false)
-    const [selected, setSelected] = React.useState<string | string[]>(
-      defaultValue ?? value ?? (multiple ? [] : '')
-    )
-    const [options, addOption] = React.useReducer(
-      (prev: Record<string, string>, state: Record<string, string>) => ({
-        ...prev,
-        ...state
-      }),
-      {}
-    )
+export function Autocomplete({
+  ref,
+  value,
+  defaultValue,
+  onValueChange,
+  onClear,
+  className,
+  open: openProp,
+  onOpenChange,
+  showValue,
+  readOnly,
+  disabled,
+  multiple,
+  onKeyDown,
+  children,
+  ...props
+}: AutocompleteProps) {
+  const _ref = React.useRef<HTMLDivElement>(null)
+  const [open, _setOpen] = React.useState(openProp)
+  const inputRef = React.useRef<HTMLInputElement>(null)
+  const [onScrollbar, setOnScrollbar] = React.useState(false)
+  const [selected, setSelected] = React.useState<string | string[]>(
+    defaultValue ?? value ?? (multiple ? [] : '')
+  )
+  const [options, addOption] = React.useReducer(
+    (prev: Record<string, string>, state: Record<string, string>) => ({
+      ...prev,
+      ...state
+    }),
+    {}
+  )
 
-    React.useImperativeHandle(ref, () => _ref.current as HTMLDivElement)
+  React.useImperativeHandle(ref, () => _ref.current as HTMLDivElement)
 
-    const setOpen = (open: boolean) => {
-      _setOpen(open)
-      onOpenChange?.(open)
+  const setOpen = (open: boolean) => {
+    _setOpen(open)
+    onOpenChange?.(open)
+  }
+
+  const handleClear = () => {
+    onClear?.()
+
+    if (!multiple) {
+      setSelected('')
+      onValueChange?.('')
+      return
     }
+    setSelected([])
+    onValueChange?.([])
+  }
 
-    const handleClear = () => {
-      onClear?.()
-
-      if (!multiple) {
-        setSelected('')
-        onValueChange?.('')
+  const handleChange = React.useCallback(
+    (value?: string) => {
+      if (!value) {
         return
       }
-      setSelected([])
-      onValueChange?.([])
-    }
 
-    const handleChange = React.useCallback(
-      (value?: string) => {
-        if (!value) {
-          return
-        }
+      if (!multiple) {
+        setSelected(value)
+        onValueChange?.(value)
+        setOpen(false)
+        return
+      }
 
-        if (!multiple) {
-          setSelected(value)
-          onValueChange?.(value)
-          setOpen(false)
-          return
-        }
+      const newSelected = selected.includes(value)
+        ? (selected as string[]).filter((item) => item !== value)
+        : [...(selected as string[]), value]
+      setSelected(newSelected)
+      onValueChange?.(newSelected)
+    },
+    [selected, onValueChange]
+  )
 
-        const newSelected = selected.includes(value)
-          ? (selected as string[]).filter((item) => item !== value)
-          : [...(selected as string[]), value]
-        setSelected(newSelected)
-        onValueChange?.(newSelected)
-      },
-      [selected, onValueChange]
-    )
-
-    const handleKeyDown = React.useCallback(
-      (e: React.KeyboardEvent<HTMLDivElement>) => {
-        const input = inputRef.current
-        if (input) {
-          if (e.key === 'Delete' || e.key === 'Backspace') {
-            if (multiple) {
-              if (input.value === '' && selected.length > 0) {
-                handleChange(selected[selected.length - 1])
-              }
+  const handleKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const input = inputRef.current
+      if (input) {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          if (multiple) {
+            if (input.value === '' && selected.length > 0) {
+              handleChange(selected[selected.length - 1])
             }
           }
-          // This is not a default behavior of the <input /> field
-          if (e.key === 'Escape') {
-            e.stopPropagation()
-            input.blur()
-          }
         }
-      },
-      [selected, handleChange]
-    )
-
-    // Keeps the selected value in sync with the value prop
-    React.useEffect(() => {
-      if (!isNil(value)) {
-        setSelected(value!)
+        // This is not a default behavior of the <input /> field
+        if (e.key === 'Escape') {
+          e.stopPropagation()
+          input.blur()
+        }
       }
-    }, [value])
+    },
+    [selected, handleChange]
+  )
 
-    // Keeps the open state in sync with the open prop
-    React.useEffect(() => {
-      if (openProp !== undefined) {
-        setOpen(openProp)
-      }
-    }, [openProp])
+  // Keeps the selected value in sync with the value prop
+  React.useEffect(() => {
+    if (!isNil(value)) {
+      setSelected(value!)
+    }
+  }, [value])
 
-    return (
-      <AutocompleteContext.Provider
-        value={{
-          value: selected,
-          onValueChange: setSelected,
-          showValue,
-          readOnly,
-          disabled,
-          handleChange,
-          handleClear,
-          onScrollbar,
-          setOnScrollbar,
-          open,
-          setOpen,
-          options,
-          addOption,
-          inputRef
+  // Keeps the open state in sync with the open prop
+  React.useEffect(() => {
+    if (openProp !== undefined) {
+      setOpen(openProp)
+    }
+  }, [openProp])
+
+  return (
+    <AutocompleteContext.Provider
+      value={{
+        value: selected,
+        onValueChange: setSelected,
+        showValue,
+        readOnly,
+        disabled,
+        handleChange,
+        handleClear,
+        onScrollbar,
+        setOnScrollbar,
+        open,
+        setOpen,
+        options,
+        addOption,
+        inputRef
+      }}
+    >
+      <CommandPrimitive
+        ref={_ref}
+        className={cn(
+          'flex h-auto w-full flex-col overflow-visible rounded-md bg-transparent text-slate-950 dark:text-slate-50',
+          className
+        )}
+        data-disabled={disabled}
+        aria-disabled={disabled}
+        data-read-only={readOnly}
+        aria-readonly={readOnly}
+        {...props}
+        onKeyDown={(e) => {
+          handleKeyDown(e)
+          onKeyDown?.(e)
         }}
       >
-        <CommandPrimitive
-          ref={_ref}
-          className={cn(
-            'flex h-auto w-full flex-col overflow-visible rounded-md bg-transparent text-slate-950 dark:text-slate-50',
-            className
-          )}
-          data-disabled={disabled}
-          aria-disabled={disabled}
-          data-read-only={readOnly}
-          aria-readonly={readOnly}
-          {...props}
-          onKeyDown={(e) => {
-            handleKeyDown(e)
-            onKeyDown?.(e)
-          }}
-        >
-          {children}
-        </CommandPrimitive>
-      </AutocompleteContext.Provider>
-    )
-  }
-)
-Autocomplete.displayName = 'Autocomplete'
+        {children}
+      </CommandPrimitive>
+    </AutocompleteContext.Provider>
+  )
+}

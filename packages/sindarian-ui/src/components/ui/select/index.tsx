@@ -42,7 +42,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        'bg-background ring-offset-background placeholder:text-shadcn-400 focus:ring-ring focus:outline-hidden focus-visible:outline-hidden flex h-10 w-full items-center justify-between gap-3 rounded-md border border-[#C7C7C7] px-3 py-2 text-sm focus:ring-2 focus:ring-offset-0 [&>span]:line-clamp-1',
+        'bg-background ring-offset-background placeholder:text-shadcn-400 focus:ring-ring flex h-10 w-full items-center justify-between gap-3 rounded-md border border-[#C7C7C7] px-3 py-2 text-sm focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden [&>span]:line-clamp-1',
         props.readOnly && [
           'data-read-only:cursor-default',
           'data-read-only:select-text',
@@ -142,7 +142,7 @@ function SelectContent({
           className={cn(
             'p-1',
             position === 'popper' &&
-              'h-(--radix-select-trigger-height) min-w-(--radix-select-trigger-width) w-full'
+              'h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width)'
           )}
         >
           {children}
@@ -176,7 +176,7 @@ function SelectLabel({
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
-      className={cn('py-1.5 pl-2 pr-8 text-sm font-semibold', className)}
+      className={cn('py-1.5 pr-8 pl-2 text-sm font-semibold', className)}
       {...props}
     />
   )
@@ -191,7 +191,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        'focus:bg-accent focus:text-accent-foreground outline-hidden data-disabled:pointer-events-none data-disabled:opacity-50 relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm',
+        'focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50',
         className
       )}
       {...props}

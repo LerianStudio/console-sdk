@@ -27,7 +27,7 @@ type Story = StoryObj<TabsProps>
 
 export const Primary: Story = {
   render: (args) => (
-    <Tabs {...args}>
+    <Tabs defaultValue="account" {...args}>
       <TabsList>
         <TabsTrigger value="account">Account</TabsTrigger>
         <TabsTrigger value="password">Password</TabsTrigger>

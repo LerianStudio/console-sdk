@@ -1,3 +1,5 @@
+// Primitives
+
 export * from './components/ui/alert'
 export * from './components/ui/autocomplete'
 export * from './components/ui/autosize-textarea'
@@ -33,3 +35,6 @@ export * from './components/ui/toast'
 export * from './hooks/use-toast'
 export * from './components/ui/tooltip'
 export * from './components/ui/form'
+
+// Components
+export * from './components/page'

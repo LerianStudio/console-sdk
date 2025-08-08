@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@source '../../node_modules/@lerianstudio/console-layout';
 
 @custom-variant dark (&:is(.dark *));
 
