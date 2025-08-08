@@ -11,6 +11,12 @@
     "dev": {
       "persistent": true,
       "cache": false
+    },
+    "test": {
+      "dependsOn": ["^test"]
+    },
+    "test:cov": {
+      "dependsOn": ["^test:cov"]
     }
   }
 }

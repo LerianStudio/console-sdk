@@ -5,6 +5,6 @@
     "allowJs": true
   },
   "extends": "./tsconfig.json",
-  "include": ["**/*.ts", "**/*.spec.ts", "**/*.test.ts"],
+  "include": ["**/*.ts", "**/*.spec.ts", "**/*.test.ts", "packages/**/*"],
   "exclude": ["node_modules", "dist"]
 }

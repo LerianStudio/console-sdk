@@ -1,0 +1,21 @@
+import {
+  Meta,
+  Controls,
+  Primary,
+  Canvas,
+  Stories
+} from '@storybook/addon-docs/blocks'
+import * as Story from './page.stories'
+
+<Meta of={Story} />
+
+# Page
+
+A set of components to layout the basic foundation of the application.
+
+### Basic
+
+<Canvas of={Story.Primary} />
+
+<Primary />
+<Controls />
