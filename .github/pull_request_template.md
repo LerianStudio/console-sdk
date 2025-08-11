@@ -4,12 +4,8 @@
 
 [//]: # 'Check the appropriate box for the type of pull request.'
 
-- [ ] Feature
-- [ ] Fix
-- [ ] Refactor
-- [ ] Pipeline
-- [ ] Tests
-- [ ] Documentation
+- [ ] Sindarian Server
+- [ ] Sindarian UI
 
 ## Checklist
 

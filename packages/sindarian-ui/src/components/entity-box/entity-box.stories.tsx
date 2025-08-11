@@ -1,6 +1,14 @@
 import React from 'react'
 import { Meta, StoryObj } from '@storybook/nextjs'
-import { EntityBox } from '.'
+import {
+  EntityBox,
+  EntityBoxActions,
+  EntityBoxBanner,
+  EntityBoxCollapsible,
+  EntityBoxCollapsibleContent,
+  EntityBoxCollapsibleTrigger,
+  EntityBoxHeaderTitle
+} from '.'
 import { Button } from '../ui/button'
 import { useForm } from 'react-hook-form'
 import { InputField, PaginationLimitField } from '../form'
@@ -8,7 +16,7 @@ import { Form } from '../ui/form'
 
 const meta: Meta = {
   title: 'Components/EntityBox',
-  component: EntityBox.Root,
+  component: EntityBox,
   parameters: {
     backgrounds: {
       default: 'Light'
@@ -21,16 +29,16 @@ export default meta
 
 export const Primary: StoryObj = {
   render: (args) => (
-    <EntityBox.Root {...args}>
-      <EntityBox.Header
+    <EntityBox {...args}>
+      <EntityBoxHeaderTitle
         title="Ledgers"
         subtitle="Manage the ledgers of this organization."
         tooltip="Clustering or allocation of customers at different levels."
       />
-      <EntityBox.Actions>
+      <EntityBoxActions>
         <Button>New Ledger</Button>
-      </EntityBox.Actions>
-    </EntityBox.Root>
+      </EntityBoxActions>
+    </EntityBox>
   )
 }
 
@@ -40,9 +48,9 @@ export const Collapsible: StoryObj = {
 
     return (
       <Form {...form}>
-        <EntityBox.Collapsible {...args}>
-          <EntityBox.Banner>
-            <EntityBox.Header
+        <EntityBoxCollapsible {...args}>
+          <EntityBoxBanner>
+            <EntityBoxHeaderTitle
               title="Ledgers"
               subtitle="Manage the ledgers of this organization."
               tooltip="Clustering or allocation of customers at different levels."
@@ -54,17 +62,17 @@ export const Collapsible: StoryObj = {
                 control={form.control}
               />
             </div>
-            <EntityBox.Actions>
+            <EntityBoxActions>
               <Button>New Ledger</Button>
-              <EntityBox.CollapsibleTrigger />
-            </EntityBox.Actions>
-          </EntityBox.Banner>
-          <EntityBox.CollapsibleContent>
+              <EntityBoxCollapsibleTrigger />
+            </EntityBoxActions>
+          </EntityBoxBanner>
+          <EntityBoxCollapsibleContent>
             <div className="col-start-3 flex justify-end">
               <PaginationLimitField control={form.control} />
             </div>
-          </EntityBox.CollapsibleContent>
-        </EntityBox.Collapsible>
+          </EntityBoxCollapsibleContent>
+        </EntityBoxCollapsible>
       </Form>
     )
   }

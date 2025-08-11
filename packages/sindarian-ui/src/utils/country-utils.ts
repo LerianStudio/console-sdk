@@ -1,4 +1,4 @@
-import countriesJson from '../../public/countries.json'
+import countriesJson from '../public/countries.json'
 
 export type CountryType = {
   code: string

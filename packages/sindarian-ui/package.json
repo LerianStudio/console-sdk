@@ -1,5 +1,5 @@
 {
-  "name": "sindarian-ui",
+  "name": "@lerianstudio/sindarian-ui",
   "version": "0.1.0",
   "description": "",
   "license": "ISC",
@@ -8,14 +8,17 @@
     "email": "contato@lerian.studio",
     "url": "https://lerian.studio"
   },
-  "type": "commonjs",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "check-types": "tsc --noEmit",
     "dev": "ts-node --esm src/index.ts",
-    "build": "tsc && npm run build:paths",
+    "build": "tsc && npm run copy:assets && npm run build:paths",
     "build:paths": "tsc-alias -p tsconfig.json",
-    "copy:assets": "copyfiles -f src/public/**/*.svg dist/public/svg && copyfiles -f src/public/**/*.jpg dist/public/images && copyfiles -f src/styles/**/* dist/styles",
+    "copy:assets": "copyfiles -f src/public/**/* dist/public",
     "lint": "eslint . --fix",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",

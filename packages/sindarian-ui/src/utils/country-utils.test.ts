@@ -1,6 +1,6 @@
 import * as countryUtils from './country-utils'
 
-jest.mock('../../public/countries.json', () => [
+jest.mock('../public/countries.json', () => [
   {
     code2: 'US',
     name: 'United States',
