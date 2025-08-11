@@ -1,0 +1,25 @@
+{
+  "name": "@lerianstudio/sindarian-server",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --config jest.config.ts"
+  },
+  "dependencies": {
+    "reflect-metadata": ">=0.2.2",
+    "@lerianstudio/lib-logs": ">=1.1.0"
+  },
+  "peerDependencies": {
+    "inversify": ">=7.7.0",
+    "zod": ">=4.0.0"
+  }
+}
