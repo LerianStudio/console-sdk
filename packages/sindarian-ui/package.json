@@ -1,7 +1,7 @@
 {
   "name": "@lerianstudio/sindarian-ui",
   "version": "0.1.0",
-  "description": "",
+  "description": "Sindarian UI - A UI library for Midaz Console",
   "license": "ISC",
   "author": {
     "name": "Lerian Studio",
@@ -15,15 +15,14 @@
   ],
   "scripts": {
     "check-types": "tsc --noEmit",
-    "dev": "ts-node --esm src/index.ts",
     "build": "tsc && npm run copy:assets && npm run build:paths",
     "build:paths": "tsc-alias -p tsconfig.json",
     "copy:assets": "copyfiles -f src/public/**/* dist/public",
     "lint": "eslint . --fix",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
-    "test": "jest --config jest.config.ts",
-    "test:cov": "jest --config jest.config.ts --coverage"
+    "test": "jest",
+    "test:cov": "jest --coverage"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
