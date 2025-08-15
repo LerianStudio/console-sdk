@@ -20,15 +20,15 @@ A modern, accessible React component library built on top of [Radix UI](https://
 Install the package using your preferred package manager:
 
 ```bash
-npm install sindarian-ui
+npm install @lerianstudio/sindarian-ui
 ```
 
 ```bash
-yarn add sindarian-ui
+yarn add @lerianstudio/sindarian-ui
 ```
 
 ```bash
-pnpm add sindarian-ui
+pnpm add @lerianstudio/sindarian-ui
 ```
 
 ### Peer Dependencies
