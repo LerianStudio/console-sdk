@@ -1,0 +1,25 @@
+{
+  "folders": [
+    {
+      "name": "root",
+      "path": "../"
+    },
+    {
+      "name": "packages/sindarian-server",
+      "path": "../packages/sindarian-server"
+    },
+    {
+      "name": "packages/sindarian-ui",
+      "path": "../packages/sindarian-ui"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "packages/": true
+    },
+    "jest.disabledWorkspaceFolders": ["root"]
+  },
+  "extensions": {
+    "recommendations": ["esbenp.prettier-vscode", "dbaeumer.vscode-eslint"]
+  }
+}

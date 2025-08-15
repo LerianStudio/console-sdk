@@ -137,3 +137,6 @@ dist
 
 # Turbo
 .turbo
+
+# Claude
+.claude
