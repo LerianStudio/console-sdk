@@ -37,7 +37,7 @@ jobs:
     name: 🔍 Detect Package Changes
     runs-on: ubuntu-latest
     outputs:
-      packages: ${{ steps.changes.outputs.packages }}
+      packages: ${{ steps.changes.outputs.changes }}
       sindarian-server: ${{ steps.changes.outputs.sindarian-server }}
       sindarian-ui: ${{ steps.changes.outputs.sindarian-ui }}
     steps:
@@ -60,9 +60,6 @@ jobs:
     name: Run npm audit and fix vulnerabilities
     needs: detect-changes
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./
     strategy:
       fail-fast: false
     steps:
@@ -116,7 +113,7 @@ jobs:
         run: npm ci
 
       - name: Run tests for ${{ matrix.package }}
-        run: npm test --workspace=packages/${{ matrix.package }}
+        run: turbo test --filter=@lerianstudio/${{ matrix.package }}
 
   # Release packages independently
   release:
