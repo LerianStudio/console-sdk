@@ -177,13 +177,9 @@ jobs:
       - name: Build ${{ matrix.package }}
         run: npm run build -- --filter=@lerianstudio/${{ matrix.package }}
 
-        # Install semantic-release plugins
-      - name: Install missing semantic-release plugins
-        run: npm install --save-dev @semantic-release/exec @semantic-release/git @semantic-release/changelog @semantic-release/github
-
       - name: Create package-specific semantic-release config
         run: |
-          cat > .releaserc-${{ matrix.package }}.yml << EOF
+          cat > .releaserc.yml << EOF
           plugins:
             - path: "@semantic-release/commit-analyzer"
               preset: conventionalcommits
@@ -250,8 +246,22 @@ jobs:
           repositoryUrl: https://github.com/LerianStudio/lib-js-boilerplate.git
           EOF
 
+      - name: Install missing plugin @semantic-release/exec
+        run: npm install --save-dev @semantic-release/exec
+
       - name: Run Semantic Release for ${{ matrix.package }}
-        run: npx semantic-release --config ./.releaserc-${{ matrix.package }}.yml
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          ci: false
+          semantic_version: 23.0.8
+          extra_plugins: |
+            conventional-changelog-conventionalcommits@v7.0.2
+            @saithodev/semantic-release-backmerge
+            @semantic-release/git
+            @semantic-release/npm
+            @semantic-release/changelog
+            @semantic-release/github
+            @semantic-release/exec
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
