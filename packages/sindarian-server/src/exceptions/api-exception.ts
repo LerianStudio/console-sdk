@@ -1,5 +1,5 @@
-import { HttpException } from '@/exceptions'
 import { HttpStatus } from '@/constants/http-status'
+import { HttpException } from './http-exception'
 
 export class ApiException extends HttpException {
   constructor(

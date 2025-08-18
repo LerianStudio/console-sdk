@@ -28,7 +28,7 @@ describe('paramDecoratorHandler', () => {
     methods.forEach((method) => {
       try {
         Reflect.deleteMetadata(PARAM_KEY, TestClass.prototype, method)
-      } catch (error) {
+      } catch (error: any) {
         // Ignore errors if metadata doesn't exist
       }
     })

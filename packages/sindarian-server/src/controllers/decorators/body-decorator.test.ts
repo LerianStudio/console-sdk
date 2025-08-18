@@ -1,3 +1,4 @@
+import 'reflect-metadata'
 import { z } from 'zod'
 import { BODY_KEY } from '../../constants/keys'
 import { bodyDecoratorHandler, Body, BodyMetadata } from './body-decorator'
@@ -79,7 +80,7 @@ describe('bodyDecoratorHandler', () => {
     // Set metadata with schema
     const metadata: BodyMetadata = {
       propertyIndex: 1,
-      schema
+      schema: () => schema
     }
     Reflect.defineMetadata(
       BODY_KEY,
@@ -112,7 +113,7 @@ describe('bodyDecoratorHandler', () => {
     // Set metadata with schema
     const metadata: BodyMetadata = {
       propertyIndex: 0,
-      schema
+      schema: () => schema
     }
     Reflect.defineMetadata(
       BODY_KEY,
@@ -139,7 +140,7 @@ describe('bodyDecoratorHandler', () => {
     // Set metadata with schema
     const metadata: BodyMetadata = {
       propertyIndex: 0,
-      schema
+      schema: () => schema
     }
     Reflect.defineMetadata(
       BODY_KEY,
@@ -180,7 +181,7 @@ describe('bodyDecoratorHandler', () => {
 
     await expect(
       bodyDecoratorHandler(TestClass.prototype, 'testMethod', [mockRequest])
-    ).rejects.toThrow('Failed to parse JSON')
+    ).rejects.toThrow('Missing or invalid request body')
 
     expect(mockRequest.json).toHaveBeenCalledTimes(1)
   })
@@ -211,7 +212,7 @@ describe('bodyDecoratorHandler', () => {
     // Set metadata with complex schema
     const metadata: BodyMetadata = {
       propertyIndex: 2,
-      schema
+      schema: () => schema
     }
     Reflect.defineMetadata(
       BODY_KEY,
@@ -337,10 +338,9 @@ describe('Body decorator', () => {
       'testMethodWithSchema'
     )
 
-    expect(metadata).toEqual({
-      propertyIndex: 1,
-      schema
-    })
+    expect(metadata.propertyIndex).toBe(1)
+    expect(typeof metadata.schema).toBe('function')
+    expect(metadata.schema()).toEqual(schema)
   })
 
   it('should set different metadata for different methods', () => {
@@ -365,14 +365,13 @@ describe('Body decorator', () => {
       'testMethodWithSchema'
     )
 
-    expect(metadata1).toEqual({
-      propertyIndex: 0,
-      schema: schema1
-    })
-    expect(metadata2).toEqual({
-      propertyIndex: 1,
-      schema: schema2
-    })
+    expect(metadata1.propertyIndex).toBe(0)
+    expect(typeof metadata1.schema).toBe('function')
+    expect(metadata1.schema()).toEqual(schema1)
+
+    expect(metadata2.propertyIndex).toBe(1)
+    expect(typeof metadata2.schema).toBe('function')
+    expect(metadata2.schema()).toEqual(schema2)
   })
 
   it('should handle multiple parameters with different indices', () => {
@@ -392,10 +391,9 @@ describe('Body decorator', () => {
       'testMethod'
     )
 
-    expect(metadata).toEqual({
-      propertyIndex: 2,
-      schema
-    })
+    expect(metadata.propertyIndex).toBe(2)
+    expect(typeof metadata.schema).toBe('function')
+    expect(metadata.schema()).toEqual(schema)
   })
 
   it('should work with complex Zod schemas', () => {
@@ -425,9 +423,8 @@ describe('Body decorator', () => {
       'testMethod'
     )
 
-    expect(metadata).toEqual({
-      propertyIndex: 0,
-      schema: complexSchema
-    })
+    expect(metadata.propertyIndex).toBe(0)
+    expect(typeof metadata.schema).toBe('function')
+    expect(metadata.schema()).toEqual(complexSchema)
   })
 })

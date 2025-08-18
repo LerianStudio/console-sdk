@@ -152,7 +152,7 @@ describe('queryDecoratorHandler', () => {
       const metadata: QueryMetadata = {
         propertyKey: 'testMethod',
         parameterIndex: 1,
-        schema: querySchema
+        schema: () => querySchema
       }
       Reflect.defineMetadata(
         QUERY_KEY,
@@ -313,7 +313,7 @@ describe('queryDecoratorHandler', () => {
       const metadata: QueryMetadata = {
         propertyKey: 'testMethod',
         parameterIndex: 0,
-        schema: complexSchema
+        schema: () => complexSchema
       }
       Reflect.defineMetadata(
         QUERY_KEY,
@@ -437,11 +437,10 @@ describe('Query decorator', () => {
         'withSchema'
       ) as QueryMetadata
 
-      expect(metadata).toEqual({
-        propertyKey: 'withSchema',
-        parameterIndex: 1,
-        schema: schema
-      })
+      expect(metadata.propertyKey).toBe('withSchema')
+      expect(metadata.parameterIndex).toBe(1)
+      expect(typeof metadata.schema).toBe('function')
+      expect(metadata.schema()).toEqual(schema)
     })
   })
 
@@ -469,10 +468,12 @@ describe('Query decorator', () => {
       ) as QueryMetadata
 
       expect(metadataA.parameterIndex).toBe(0)
-      expect(metadataA.schema).toBe(schemaA)
+      expect(typeof metadataA.schema).toBe('function')
+      expect(metadataA.schema()).toEqual(schemaA)
 
       expect(metadataB.parameterIndex).toBe(2)
-      expect(metadataB.schema).toBe(schemaB)
+      expect(typeof metadataB.schema).toBe('function')
+      expect(metadataB.schema()).toEqual(schemaB)
     })
   })
 
@@ -490,11 +491,10 @@ describe('Query decorator', () => {
         symbolKey
       ) as QueryMetadata
 
-      expect(metadata).toEqual({
-        propertyKey: symbolKey,
-        parameterIndex: 0,
-        schema: schema
-      })
+      expect(metadata.propertyKey).toBe(symbolKey)
+      expect(metadata.parameterIndex).toBe(0)
+      expect(typeof metadata.schema).toBe('function')
+      expect(metadata.schema()).toEqual(schema)
     })
   })
 })

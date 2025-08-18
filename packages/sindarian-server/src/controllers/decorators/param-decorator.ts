@@ -1,5 +1,5 @@
 import { PARAM_KEY } from '@/constants/keys'
-import { ValidationApiException } from '@/exceptions'
+import { ValidationApiException } from '@/exceptions/api-exception'
 import { getNextParamArgument } from '@/utils/nextjs/get-next-arguments'
 
 export type ParamMetadata = {

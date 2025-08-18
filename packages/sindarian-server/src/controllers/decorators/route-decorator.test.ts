@@ -1,12 +1,7 @@
 import 'reflect-metadata'
 import { Route, Get, Post, Put, Patch, Delete } from './route-decorator'
-import {
-  GET_KEY,
-  POST_KEY,
-  PUT_KEY,
-  PATCH_KEY,
-  DELETE_KEY
-} from '../../constants/keys'
+import { GET_KEY, ROUTE_KEY } from '../../constants/keys'
+import { HttpMethods } from '../../constants/http-methods'
 import { bodyDecoratorHandler } from './body-decorator'
 import { paramDecoratorHandler } from './param-decorator'
 import { queryDecoratorHandler } from './query-decorator'
@@ -78,40 +73,40 @@ describe('Route Decorator', () => {
   describe('Route decorator', () => {
     it('should set correct metadata for route with path', () => {
       const testPath = '/test-path'
-      const decorator = Route(GET_KEY, testPath)
+      const decorator = Route(HttpMethods.GET, testPath)
 
       decorator(TestController.prototype, 'testMethod', {
         value: TestController.prototype.testMethod
       } as PropertyDescriptor)
 
       const metadata = Reflect.getMetadata(
-        GET_KEY,
+        ROUTE_KEY,
         TestController.prototype,
         'testMethod'
       )
 
       expect(metadata).toEqual({
-        method: GET_KEY,
+        method: HttpMethods.GET,
         path: testPath
       })
     })
 
     it('should set correct metadata for route without path', () => {
-      const decorator = Route(POST_KEY)
+      const decorator = Route(HttpMethods.POST, '')
 
       decorator(TestController.prototype, 'testMethod', {
         value: TestController.prototype.testMethod
       } as PropertyDescriptor)
 
       const metadata = Reflect.getMetadata(
-        POST_KEY,
+        ROUTE_KEY,
         TestController.prototype,
         'testMethod'
       )
 
       expect(metadata).toEqual({
-        method: POST_KEY,
-        path: undefined
+        method: HttpMethods.POST,
+        path: ''
       })
     })
 
@@ -298,6 +293,7 @@ describe('Route Decorator', () => {
       let capturedThis: any = null
 
       const originalMethod = function (this: any) {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         capturedThis = this
         return { success: true }
       }
@@ -330,12 +326,12 @@ describe('Route Decorator', () => {
       decorator(TestController.prototype, 'testMethod', descriptor)
 
       const metadata = Reflect.getMetadata(
-        GET_KEY,
+        ROUTE_KEY,
         TestController.prototype,
         'testMethod'
       )
       expect(metadata).toEqual({
-        method: GET_KEY,
+        method: HttpMethods.GET,
         path: testPath
       })
     })
@@ -350,13 +346,13 @@ describe('Route Decorator', () => {
       decorator(TestController.prototype, 'testMethod', descriptor)
 
       const metadata = Reflect.getMetadata(
-        GET_KEY,
+        ROUTE_KEY,
         TestController.prototype,
         'testMethod'
       )
       expect(metadata).toEqual({
-        method: GET_KEY,
-        path: undefined
+        method: HttpMethods.GET,
+        path: ''
       })
     })
 
@@ -371,12 +367,12 @@ describe('Route Decorator', () => {
       decorator(TestController.prototype, 'testMethod', descriptor)
 
       const metadata = Reflect.getMetadata(
-        POST_KEY,
+        ROUTE_KEY,
         TestController.prototype,
         'testMethod'
       )
       expect(metadata).toEqual({
-        method: POST_KEY,
+        method: HttpMethods.POST,
         path: testPath
       })
     })
@@ -392,12 +388,12 @@ describe('Route Decorator', () => {
       decorator(TestController.prototype, 'testMethod', descriptor)
 
       const metadata = Reflect.getMetadata(
-        PUT_KEY,
+        ROUTE_KEY,
         TestController.prototype,
         'testMethod'
       )
       expect(metadata).toEqual({
-        method: PUT_KEY,
+        method: HttpMethods.PUT,
         path: testPath
       })
     })
@@ -413,12 +409,12 @@ describe('Route Decorator', () => {
       decorator(TestController.prototype, 'testMethod', descriptor)
 
       const metadata = Reflect.getMetadata(
-        PATCH_KEY,
+        ROUTE_KEY,
         TestController.prototype,
         'testMethod'
       )
       expect(metadata).toEqual({
-        method: PATCH_KEY,
+        method: HttpMethods.PATCH,
         path: testPath
       })
     })
@@ -434,12 +430,12 @@ describe('Route Decorator', () => {
       decorator(TestController.prototype, 'testMethod', descriptor)
 
       const metadata = Reflect.getMetadata(
-        DELETE_KEY,
+        ROUTE_KEY,
         TestController.prototype,
         'testMethod'
       )
       expect(metadata).toEqual({
-        method: DELETE_KEY,
+        method: HttpMethods.DELETE,
         path: testPath
       })
     })

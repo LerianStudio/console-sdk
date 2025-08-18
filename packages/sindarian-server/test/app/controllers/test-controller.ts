@@ -1,0 +1,48 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Query,
+  Body,
+  BaseController
+} from '@lerianstudio/sindarian-server'
+import { inject } from 'inversify'
+import { TestService } from './test-service'
+
+@Controller('/test')
+export class TestController extends BaseController {
+  constructor(
+    @inject(TestService)
+    private readonly testService: TestService
+  ) {
+    super()
+  }
+
+  @Get()
+  public fetchAll(@Query() query: any) {
+    return this.testService.fetchAll()
+  }
+
+  @Get(':id')
+  public fetchById(@Param('id') id: string) {
+    return { id, name: 'test' }
+  }
+
+  @Post()
+  public create(@Body() body: any) {
+    return { id: 1, ...body }
+  }
+
+  @Patch(':id')
+  public update(@Param('id') id: string, @Body() body: any) {
+    return { id, ...body }
+  }
+
+  @Delete(':id')
+  public delete(@Param('id') id: string) {
+    return { id, name: 'test' }
+  }
+}

@@ -1,12 +1,12 @@
 import z from 'zod'
 import { QUERY_KEY } from '@/constants/keys'
-import { ValidationApiException } from '@/exceptions'
+import { ValidationApiException } from '@/exceptions/api-exception'
 import { getNextRequestArgument } from '@/utils/nextjs/get-next-arguments'
 
 export type QueryMetadata = {
   propertyKey: string | symbol
   parameterIndex: number
-  schema?: z.ZodSchema
+  schema?: () => z.ZodSchema
 }
 
 /**
@@ -43,10 +43,11 @@ export function queryDecoratorHandler(
       }
     }
 
-    const parsedQuery = metadata.schema?.safeParse(query)
+    const resolvedSchema = metadata.schema?.()
+    const parsedQuery = resolvedSchema?.safeParse(query)
 
     // If the query is not valid, throw a validation error.
-    if (!parsedQuery?.success) {
+    if (parsedQuery && !parsedQuery.success) {
       throw new ValidationApiException(
         `Invalid query parameters: ${JSON.stringify(
           parsedQuery.error.flatten().fieldErrors
@@ -55,7 +56,7 @@ export function queryDecoratorHandler(
     }
 
     return {
-      parameter: parsedQuery.data,
+      parameter: parsedQuery?.data || query,
       parameterIndex: metadata.parameterIndex
     }
   }
@@ -69,18 +70,23 @@ export function queryDecoratorHandler(
  * @param schema - The Zod schema to validate the query against.
  * @returns A decorator function that can be used to decorate a controller method.
  */
-export function Query(schema?: z.ZodSchema) {
+export function Query(schema?: z.ZodSchema | (() => z.ZodSchema)) {
   return function (
     target: object,
     propertyKey: string | symbol,
     parameterIndex: number
   ) {
+    // Wrap the schema in a function to prevent TypeScript from analyzing it during compilation
+    const lazySchema = schema
+      ? () => (typeof schema === 'function' ? schema() : schema)
+      : undefined
+
     Reflect.defineMetadata(
       QUERY_KEY,
       {
         propertyKey,
         parameterIndex,
-        schema
+        schema: lazySchema
       },
       target,
       propertyKey

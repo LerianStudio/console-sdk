@@ -6,14 +6,15 @@ export function getNextRequestArgument(args: any[]) {
   return args[0]
 }
 
-export function getNextParamArgument(args: any[]) {
+export async function getNextParamArgument(args: any[]) {
   if (!args) {
     return undefined
   }
 
-  if (!args[1]?.params) {
+  if (!args[1] || !('params' in args[1])) {
     return undefined
   }
 
-  return args[1].params
+  // args[1].params is a Promise in Next.js App Router
+  return await args[1].params
 }

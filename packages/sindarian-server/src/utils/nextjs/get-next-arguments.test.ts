@@ -24,24 +24,26 @@ describe('getNextRequestArgument', () => {
 })
 
 describe('getNextParamArgument', () => {
-  it('returns params property of second argument', () => {
+  it('returns params property of second argument', async () => {
     const params = { id: 123 }
-    expect(getNextParamArgument([{}, { params }])).toBe(params)
+    expect(await getNextParamArgument([{}, { params }])).toBe(params)
   })
 
-  it('throws if second argument is missing', () => {
-    expect(getNextParamArgument([{}])).toBeUndefined()
+  it('returns undefined if second argument is missing', async () => {
+    expect(await getNextParamArgument([{}])).toBeUndefined()
   })
 
-  it('throws if second argument has no params property', () => {
-    expect(getNextParamArgument([{}, {}])).toBeUndefined()
+  it('returns undefined if second argument has no params property', async () => {
+    expect(await getNextParamArgument([{}, {}])).toBeUndefined()
   })
 
-  it('returns undefined if params is undefined', () => {
-    expect(getNextParamArgument([{}, { params: undefined }])).toBeUndefined()
+  it('returns undefined if params is undefined', async () => {
+    expect(
+      await getNextParamArgument([{}, { params: undefined }])
+    ).toBeUndefined()
   })
 
-  it('returns null if params is null', () => {
-    expect(getNextParamArgument([{}, { params: null }])).toBeUndefined()
+  it('returns null if params is null', async () => {
+    expect(await getNextParamArgument([{}, { params: null }])).toBeNull()
   })
 })
