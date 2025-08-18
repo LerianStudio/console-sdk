@@ -251,7 +251,7 @@ jobs:
           EOF
 
       - name: Run Semantic Release for ${{ matrix.package }}
-        run: npx semantic-release --extends ./.releaserc-${{ matrix.package }}.yml
+        run: npx semantic-release --config ./.releaserc-${{ matrix.package }}.yml
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
