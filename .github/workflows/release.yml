@@ -178,8 +178,8 @@ jobs:
         run: npm run build -- --filter=@lerianstudio/${{ matrix.package }}
 
         # Install semantic-release plugins
-      - name: Install missing plugin @semantic-release/exec
-        run: npm install --save-dev @semantic-release/exec
+      - name: Install missing semantic-release plugins
+        run: npm install --save-dev @semantic-release/exec @semantic-release/git @semantic-release/changelog @semantic-release/github
 
       - name: Create package-specific semantic-release config
         run: |
