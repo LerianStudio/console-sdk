@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LerianStudio/lib-js-boilerplate.git"
+    "url": "git+https://github.com/LerianStudio/console-sdk.git"
   },
   "author": {
     "name": "Lerian Studio",

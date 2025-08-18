@@ -243,7 +243,7 @@ jobs:
               channel: false
 
           tagFormat: ${{ matrix.package }}-v\${version}
-          repositoryUrl: https://github.com/LerianStudio/lib-js-boilerplate.git
+          repositoryUrl: https://github.com/LerianStudio/console-sdk.git
           EOF
 
       - name: Install missing plugin @semantic-release/exec
