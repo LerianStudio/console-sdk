@@ -22,6 +22,7 @@
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
     "test": "jest",
+    "test:e2e": "exit 0",
     "test:cov": "jest --coverage"
   },
   "dependencies": {

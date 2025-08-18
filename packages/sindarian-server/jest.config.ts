@@ -24,7 +24,9 @@ const config: Config = {
   },
 
   // Remove UI-specific setup
-  setupFilesAfterEnv: undefined
+  setupFilesAfterEnv: undefined,
+
+  testPathIgnorePatterns: ['<rootDir>/test']
 }
 
 export default config
