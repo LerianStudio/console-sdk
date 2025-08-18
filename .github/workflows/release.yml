@@ -113,13 +113,13 @@ jobs:
         run: npm ci
 
       - name: Run tests for ${{ matrix.package }}
-        run: turbo test --filter=@lerianstudio/${{ matrix.package }}
+        run: npm run test -- --filter=@lerianstudio/${{ matrix.package }}
 
   # Release packages independently
   release:
     name: 🚀 Release ${{ matrix.package }}
     runs-on: ubuntu-latest
-    needs: [detect-changes, test]
+    needs: [detect-changes, npm-audit, test]
     if: needs.detect-changes.outputs.packages != '[]'
     strategy:
       matrix:
@@ -151,7 +151,11 @@ jobs:
         run: npm ci
 
       - name: Build ${{ matrix.package }}
-        run: npm run build --workspace=packages/${{ matrix.package }}
+        run: npm run build -- --filter=@lerianstudio/${{ matrix.package }}
+
+        # Install semantic-release plugins
+      - name: Install missing plugin @semantic-release/exec
+        run: npm install --save-dev @semantic-release/exec
 
       - name: Create package-specific semantic-release config
         run: |
