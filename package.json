@@ -13,6 +13,7 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",
+    "test:e2e": "turbo test:e2e",
     "test:cov": "turbo test:cov"
   },
   "publishConfig": {
