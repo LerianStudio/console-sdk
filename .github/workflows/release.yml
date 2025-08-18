@@ -259,9 +259,6 @@ jobs:
             @saithodev/semantic-release-backmerge
             @semantic-release/git
             @semantic-release/npm
-            @semantic-release/changelog
-            @semantic-release/github
-            @semantic-release/exec
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
