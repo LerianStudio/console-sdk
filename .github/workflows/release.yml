@@ -46,43 +46,52 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Detect changes
+      - name: Detect packages
         id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            sindarian-server:
+              - 'packages/sindarian-server/**'
+            sindarian-ui:
+              - 'packages/sindarian-ui/**'
+
+  npm-audit:
+    name: Run npm audit and fix vulnerabilities
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run npm audit (non-blocking)
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            if [ "${{ github.event.inputs.package }}" == "all" ]; then
-              echo "packages=[\"sindarian-server\", \"sindarian-ui\"]" >> $GITHUB_OUTPUT
-              echo "sindarian-server=true" >> $GITHUB_OUTPUT
-              echo "sindarian-ui=true" >> $GITHUB_OUTPUT
-            else
-              echo "packages=[\"${{ github.event.inputs.package }}\"]" >> $GITHUB_OUTPUT
-              echo "sindarian-server=${{ github.event.inputs.package == 'sindarian-server' }}" >> $GITHUB_OUTPUT
-              echo "sindarian-ui=${{ github.event.inputs.package == 'sindarian-ui' }}" >> $GITHUB_OUTPUT
-            fi
-          else
-            # Auto-detect changes on push
-            packages=()
-            
-            if git diff --name-only HEAD~1 HEAD | grep -q "^packages/sindarian-server/"; then
-              packages+=("sindarian-server")
-              echo "sindarian-server=true" >> $GITHUB_OUTPUT
-            else
-              echo "sindarian-server=false" >> $GITHUB_OUTPUT
-            fi
-            
-            if git diff --name-only HEAD~1 HEAD | grep -q "^packages/sindarian-ui/"; then
-              packages+=("sindarian-ui")
-              echo "sindarian-ui=true" >> $GITHUB_OUTPUT
-            else
-              echo "sindarian-ui=false" >> $GITHUB_OUTPUT
-            fi
-            
-            # Convert array to JSON
-            printf -v packages_json '%s,' "${packages[@]}"
-            packages_json="[\"${packages_json%,}\"]"
-            packages_json=$(echo "$packages_json" | sed 's/\[""]/[]/')
-            echo "packages=$packages_json" >> $GITHUB_OUTPUT
-          fi
+          echo "🔍 Running npm audit with moderate threshold..."
+          npm audit --omit=dev --audit-level=moderate || echo "🟡 Vulnerabilities found, but audit did not block pipeline"
+
+      - name: Attempt to fix vulnerabilities
+        run: npm audit fix || echo "ℹ️ No fixable vulnerabilities or none needed"
 
   # Run tests for changed packages
   test:
