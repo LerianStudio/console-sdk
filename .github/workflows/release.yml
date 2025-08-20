@@ -177,74 +177,74 @@ jobs:
       - name: Build ${{ matrix.package }}
         run: npm run build -- --filter=@lerianstudio/${{ matrix.package }}
 
-      - name: Create package-specific semantic-release config
-        run: |
-          cat > .releaserc.yml << EOF
-          plugins:
-            - path: "@semantic-release/commit-analyzer"
-              preset: conventionalcommits
-              parserOpts:
-                noteKeywords:
-                  - "BREAKING CHANGE"
-                  - "BREAKING CHANGES"
-              releaseRules:
-                - type: feat
-                  release: minor
-                - type: perf
-                  release: minor
-                - type: build
-                  release: minor
-                - type: chore
-                  release: patch
-                - type: ci
-                  release: patch
-                - type: test
-                  release: patch
-                - type: fix
-                  release: patch
-                - type: refactor
-                  release: minor
-                - type: docs
-                  release: patch
-                - breaking: true
-                  release: major
+      # - name: Create package-specific semantic-release config
+      #   run: |
+      #     cat > .releaserc.yml << EOF
+      #     plugins:
+      #       - path: "@semantic-release/commit-analyzer"
+      #         preset: conventionalcommits
+      #         parserOpts:
+      #           noteKeywords:
+      #             - "BREAKING CHANGE"
+      #             - "BREAKING CHANGES"
+      #         releaseRules:
+      #           - type: feat
+      #             release: minor
+      #           - type: perf
+      #             release: minor
+      #           - type: build
+      #             release: minor
+      #           - type: chore
+      #             release: patch
+      #           - type: ci
+      #             release: patch
+      #           - type: test
+      #             release: patch
+      #           - type: fix
+      #             release: patch
+      #           - type: refactor
+      #             release: minor
+      #           - type: docs
+      #             release: patch
+      #           - breaking: true
+      #             release: major
 
-            - path: "@semantic-release/release-notes-generator"
-              preset: conventionalcommits
+      #       - path: "@semantic-release/release-notes-generator"
+      #         preset: conventionalcommits
 
-            - path: "@semantic-release/changelog"
-              changelogFile: packages/${{ matrix.package }}/CHANGELOG.md
+      #       - path: "@semantic-release/changelog"
+      #         changelogFile: packages/${{ matrix.package }}/CHANGELOG.md
 
-            - path: "@semantic-release/npm"
-              pkgRoot: packages/${{ matrix.package }}
+      #       - path: "@semantic-release/npm"
+      #         pkgRoot: packages/${{ matrix.package }}
 
-            - path: "@semantic-release/git"
-              assets:
-                - packages/${{ matrix.package }}/package.json
-                - packages/${{ matrix.package }}/CHANGELOG.md
-              message: "chore(${{ matrix.package }}): release v\${nextRelease.version} [skip ci]\n\n\${nextRelease.notes}"
+      #       - path: "@semantic-release/git"
+      #         assets:
+      #           - packages/${{ matrix.package }}/package.json
+      #           - packages/${{ matrix.package }}/CHANGELOG.md
+      #         message: "chore(${{ matrix.package }}): release v\${nextRelease.version} [skip ci]\n\n\${nextRelease.notes}"
 
-            - path: "@semantic-release/github"
-              assets:
-                - path: packages/${{ matrix.package }}/CHANGELOG.md
-                  label: "Changelog"
-              successComment: false
-              failComment: false
-              labels: []
+      #       - path: "@semantic-release/github"
+      #         assets:
+      #           - path: packages/${{ matrix.package }}/CHANGELOG.md
+      #             label: "Changelog"
+      #         successComment: false
+      #         failComment: false
+      #         labels: []
 
-            - path: "@semantic-release/exec"
+      #       - path: "@semantic-release/exec"
 
-          branches:
-            - name: main
-            - name: develop
-              prerelease: beta
-            - name: hotfix/*
-              prerelease: false
-              channel: false
+      #     branches:
+      #       - name: main
+      #       - name: develop
+      #         prerelease: beta
+      #       - name: hotfix/*
+      #         prerelease: false
+      #         channel: false
 
-          tagFormat: ${{ matrix.package }}-v\${version}
-          repositoryUrl: https://github.com/LerianStudio/console-sdk.git
-          EOF
+      #     tagFormat: ${{ matrix.package }}-v\${version}
+      #     repositoryUrl: https://github.com/LerianStudio/console-sdk.git
+      #     EOF
 
       - name: Install missing plugin @semantic-release/exec
         run: npm install --save-dev @semantic-release/exec
