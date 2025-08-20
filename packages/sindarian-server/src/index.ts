@@ -1,3 +1,6 @@
+// Central export file (barrel) for all plugin components.
+// Ensure 'reflect-metadata' is loaded before any decorators are used.
+
 import 'reflect-metadata'
 
 export * from './utils/apply-decorators'
