@@ -28,7 +28,5 @@
     "next": ">=15.4.0",
     "zod": ">=4.0.0"
   },
-  "devDependencies": {
-    "tsc-alias": "^1.8.16"
-  }
+  "devDependencies": {}
 }
