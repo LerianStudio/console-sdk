@@ -1,13 +1,18 @@
-import { Module } from '@lerianstudio/sindarian-server'
+import { APP_INTERCEPTOR, Module } from '@lerianstudio/sindarian-server'
 import { ResolutionContext } from 'inversify'
 import {
   LoggerAggregator,
   LoggerRepository,
   PinoLoggerRepository
 } from '@lerianstudio/lib-logs'
+import { LoggerInterceptor } from './logger-interceptor'
 
 @Module({
   providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggerInterceptor
+    },
     {
       provide: LoggerRepository,
       useValue: new PinoLoggerRepository({

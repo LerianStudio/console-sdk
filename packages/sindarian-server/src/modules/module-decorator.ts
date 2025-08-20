@@ -12,6 +12,8 @@ import {
   ControllerMetadata
 } from '@/controllers/decorators/controller-decorator'
 import { ResolutionContext } from 'inversify'
+import { interceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
+import { Logger } from '@/logger/logger'
 
 // Type for injection tokens - can be symbols, strings, or abstract classes
 export type InjectionToken<T = any> = symbol | string | Constructor<T>
@@ -35,7 +37,10 @@ export type ModuleMetadata = ControllerMetadata & {
   controller: Class
 }
 
-export function moduleHandler(target: Function, visited: Set<Function> = new Set()): ModuleMetadata[] {
+export function moduleHandler(
+  target: Function,
+  visited: Set<Function> = new Set()
+): ModuleMetadata[] {
   // Prevent infinite recursion by tracking visited modules
   if (visited.has(target)) {
     return []
@@ -45,7 +50,7 @@ export function moduleHandler(target: Function, visited: Set<Function> = new Set
   const routes = []
   const imports = target.prototype[IMPORTS_PROPERTY]
   const controllers = target.prototype[CONTROLLERS_PROPERTY]
-  
+
   if (imports) {
     for (const importEntity of imports) {
       routes.push(...moduleHandler(importEntity, visited))
@@ -58,6 +63,10 @@ export function moduleHandler(target: Function, visited: Set<Function> = new Set
         ...route,
         controller
       }))
+
+      Logger.log(
+        `Registered ${controllerRoutes.length} routes for controller ${controller.name}`
+      )
 
       routes.push(...controllerRoutes)
     }
@@ -102,7 +111,20 @@ export function Module(options?: ModuleOptions): ClassDecorator {
 
     if (controllers) {
       controllers.forEach((controller) => {
+        // Bind the controller
         container.bind(controller).to(controller)
+
+        // Check for interceptors and register class types
+        const interceptors = interceptorHandler(controller)
+        interceptors.forEach((interceptor) => {
+          // If it's a class constructor (function), register it in the container
+          if (typeof interceptor === 'function') {
+            container.bind(interceptor).toSelf()
+          } else {
+            // If it's an instance, bind it to its constructor class as a constant value
+            container.bind(interceptor.constructor).toConstantValue(interceptor)
+          }
+        })
       })
     }
   })
