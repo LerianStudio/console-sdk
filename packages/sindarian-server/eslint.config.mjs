@@ -4,6 +4,11 @@ export default [
   // Apply recommended configs
   ...baseConfig,
 
+  // Ignore patterns
+  {
+    ignores: ['dist/**', '**/dist/**']
+  },
+
   // Global configuration to disable certain rules
   {
     rules: {

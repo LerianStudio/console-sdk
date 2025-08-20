@@ -30,10 +30,11 @@ export async function bodyDecoratorHandler(
   // If the metadata is not found, return null.
   if (metadata) {
     const request = getNextRequestArgument(args)
-    
+
     let body
     try {
       body = await request.json()
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       // Handle missing or invalid body
       throw new ValidationApiException('Missing or invalid request body')

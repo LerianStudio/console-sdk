@@ -33,9 +33,9 @@ import { BaseController } from '@/controllers/base-controller'
 import { BaseExceptionFilter } from '@/exceptions/base-exception-filter'
 import { catchHandler } from '@/exceptions/decorators/catch-decorator'
 import { filterHandler } from '@/exceptions/decorators/use-filters-decorator'
-import { 
-  interceptorExecute, 
-  interceptorHandler 
+import {
+  interceptorExecute,
+  interceptorHandler
 } from '@/interceptor/decorators/use-interceptor-decorator'
 import { moduleHandler } from '@/modules/module-decorator'
 import { bindRequest } from '@/services/request'
@@ -44,15 +44,33 @@ import { Logger } from '@/logger/logger'
 import { isNil } from 'lodash'
 
 const mockContainer = Container as jest.MockedClass<typeof Container>
-const mockArgumentsHost = ArgumentsHost as jest.MockedClass<typeof ArgumentsHost>
-const mockExecutionContext = ExecutionContext as jest.MockedClass<typeof ExecutionContext>
-const mockBaseController = BaseController as jest.MockedClass<typeof BaseController>
-const mockBaseExceptionFilter = BaseExceptionFilter as jest.MockedClass<typeof BaseExceptionFilter>
-const mockCatchHandler = catchHandler as jest.MockedFunction<typeof catchHandler>
-const mockFilterHandler = filterHandler as jest.MockedFunction<typeof filterHandler>
-const mockInterceptorExecute = interceptorExecute as jest.MockedFunction<typeof interceptorExecute>
-const mockInterceptorHandler = interceptorHandler as jest.MockedFunction<typeof interceptorHandler>
-const mockModuleHandler = moduleHandler as jest.MockedFunction<typeof moduleHandler>
+const mockArgumentsHost = ArgumentsHost as jest.MockedClass<
+  typeof ArgumentsHost
+>
+const mockExecutionContext = ExecutionContext as jest.MockedClass<
+  typeof ExecutionContext
+>
+const mockBaseController = BaseController as jest.MockedClass<
+  typeof BaseController
+>
+const mockBaseExceptionFilter = BaseExceptionFilter as jest.MockedClass<
+  typeof BaseExceptionFilter
+>
+const mockCatchHandler = catchHandler as jest.MockedFunction<
+  typeof catchHandler
+>
+const mockFilterHandler = filterHandler as jest.MockedFunction<
+  typeof filterHandler
+>
+const mockInterceptorExecute = interceptorExecute as jest.MockedFunction<
+  typeof interceptorExecute
+>
+const mockInterceptorHandler = interceptorHandler as jest.MockedFunction<
+  typeof interceptorHandler
+>
+const mockModuleHandler = moduleHandler as jest.MockedFunction<
+  typeof moduleHandler
+>
 const mockBindRequest = bindRequest as jest.MockedFunction<typeof bindRequest>
 const mockUrlMatch = urlMatch as jest.MockedFunction<typeof urlMatch>
 const mockLogger = Logger as jest.Mocked<typeof Logger>
@@ -108,14 +126,22 @@ describe('ServerFactory', () => {
 
   describe('constructor', () => {
     it('should create ServerFactory instance', () => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
 
       expect(serverFactory).toBeInstanceOf(ServerFactory)
       expect(mockLogger.log).toHaveBeenCalledWith('Application Started.')
     })
 
     it('should store module, container, and routes', () => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
 
       expect(serverFactory['module']).toBe(mockModule)
       expect(serverFactory['container']).toBe(mockContainerInstance)
@@ -123,11 +149,17 @@ describe('ServerFactory', () => {
     })
 
     it('should initialize with default values', () => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
 
       expect(serverFactory['globalPrefix']).toBe('')
       expect(serverFactory['globalFilters']).toHaveLength(1)
-      expect(serverFactory['globalFilters'][0]).toBeInstanceOf(BaseExceptionFilter)
+      expect(serverFactory['globalFilters'][0]).toBeInstanceOf(
+        BaseExceptionFilter
+      )
       expect(serverFactory['globalInterceptors']).toEqual([])
     })
   })
@@ -141,7 +173,9 @@ describe('ServerFactory', () => {
       const result = ServerFactory.create(mockModule)
 
       expect(mockContainer).toHaveBeenCalled()
-      expect(mockContainerInstance.load).toHaveBeenCalledWith(mockModule.prototype.__module__)
+      expect(mockContainerInstance.load).toHaveBeenCalledWith(
+        mockModule.prototype.__module__
+      )
       expect(mockModuleHandler).toHaveBeenCalledWith(mockModule)
       expect(result).toBeInstanceOf(ServerFactory)
     })
@@ -175,7 +209,11 @@ describe('ServerFactory', () => {
 
   describe('setGlobalPrefix', () => {
     beforeEach(() => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
     })
 
     it('should set global prefix', () => {
@@ -193,7 +231,11 @@ describe('ServerFactory', () => {
 
   describe('useGlobalFilters', () => {
     beforeEach(() => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
     })
 
     it('should add global filters', () => {
@@ -210,7 +252,11 @@ describe('ServerFactory', () => {
 
   describe('useGlobalInterceptors', () => {
     beforeEach(() => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
     })
 
     it('should add global interceptors', () => {
@@ -231,7 +277,11 @@ describe('ServerFactory', () => {
     let mockParams: Promise<any>
 
     beforeEach(() => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
 
       mockRequest = {
         url: 'http://localhost:3000/test',
@@ -245,18 +295,27 @@ describe('ServerFactory', () => {
       mockParams = Promise.resolve({ id: '123' })
 
       // Setup mocks
-      mockArgumentsHost.mockImplementation(() => ({ getRequest: () => mockRequest } as any))
+      mockArgumentsHost.mockImplementation(
+        () => ({ getRequest: () => mockRequest }) as any
+      )
       mockContainerInstance.getAsync.mockResolvedValue(mockController)
       mockUrlMatch.mockReturnValue({ params: { id: '123' } })
       mockInterceptorHandler.mockReturnValue([])
-      mockInterceptorExecute.mockImplementation(async (ctx, interceptors, action) => action())
-      mockExecutionContext.mockImplementation(() => ({} as any))
+      mockInterceptorExecute.mockImplementation(
+        async (ctx, interceptors, action) => action()
+      )
+      mockExecutionContext.mockImplementation(() => ({}) as any)
     })
 
     it('should handle successful request', async () => {
-      const response = await serverFactory.handler(mockRequest, { params: mockParams })
+      const response = await serverFactory.handler(mockRequest, {
+        params: mockParams
+      })
 
-      expect(mockBindRequest).toHaveBeenCalledWith(mockContainerInstance, mockRequest)
+      expect(mockBindRequest).toHaveBeenCalledWith(
+        mockContainerInstance,
+        mockRequest
+      )
       expect(mockUrlMatch).toHaveBeenCalledWith('/test', '/test')
       expect(mockContainerInstance.getAsync).toHaveBeenCalledWith(mockModule)
       expect(mockController.testMethod).toHaveBeenCalled()
@@ -280,17 +339,24 @@ describe('ServerFactory', () => {
       mockRoutes.length = 0
 
       // Mock the exception filter response
-      const mockExceptionResponse = NextResponse.json({ error: 'Not Found' }, { status: 404 })
-      const mockFilter = { 
+      const mockExceptionResponse = NextResponse.json(
+        { error: 'Not Found' },
+        { status: 404 }
+      )
+      const mockFilter = {
         catch: jest.fn().mockResolvedValue(mockExceptionResponse),
         constructor: jest.fn()
       }
       serverFactory['globalFilters'] = [mockFilter as any]
       mockCatchHandler.mockReturnValue({ type: null })
 
-      const response = await serverFactory.handler(mockRequest, { params: mockParams })
+      const response = await serverFactory.handler(mockRequest, {
+        params: mockParams
+      })
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Route not found for GET /test')
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Route not found for GET /test'
+      )
       expect(mockFilter.catch).toHaveBeenCalled()
       expect(response).toBe(mockExceptionResponse)
     })
@@ -300,15 +366,22 @@ describe('ServerFactory', () => {
       mockController.testMethod.mockRejectedValue(testError)
 
       const mockFilter = {
-        catch: jest.fn().mockResolvedValue(NextResponse.json({ error: 'handled' }))
+        catch: jest
+          .fn()
+          .mockResolvedValue(NextResponse.json({ error: 'handled' }))
       }
 
       mockCatchHandler.mockReturnValue({ type: Error })
       serverFactory['globalFilters'] = [mockFilter as any]
 
-      const response = await serverFactory.handler(mockRequest, { params: mockParams })
+      const response = await serverFactory.handler(mockRequest, {
+        params: mockParams
+      })
 
-      expect(mockFilter.catch).toHaveBeenCalledWith(testError, expect.any(Object))
+      expect(mockFilter.catch).toHaveBeenCalledWith(
+        testError,
+        expect.any(Object)
+      )
       expect(response).toBeDefined()
     })
 
@@ -322,7 +395,9 @@ describe('ServerFactory', () => {
       }
       serverFactory['globalFilters'] = [mockFilter as any]
 
-      const response = await serverFactory.handler(mockRequest, { params: mockParams })
+      const response = await serverFactory.handler(mockRequest, {
+        params: mockParams
+      })
 
       expect(response).toBeDefined()
     })
@@ -346,7 +421,11 @@ describe('ServerFactory', () => {
 
   describe('_parseRequest', () => {
     beforeEach(() => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
     })
 
     it('should parse request without global prefix', () => {
@@ -392,7 +471,11 @@ describe('ServerFactory', () => {
 
   describe('_fetchRoute', () => {
     beforeEach(() => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
     })
 
     it('should find matching route', () => {
@@ -407,10 +490,13 @@ describe('ServerFactory', () => {
     it('should throw NotFoundApiException when route not found', () => {
       mockUrlMatch.mockReturnValue(null)
 
-      expect(() => serverFactory['_fetchRoute']('/nonexistent', 'GET'))
-        .toThrow('Route /nonexistent not found')
+      expect(() => serverFactory['_fetchRoute']('/nonexistent', 'GET')).toThrow(
+        'Route /nonexistent not found'
+      )
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Route not found for GET /nonexistent')
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Route not found for GET /nonexistent'
+      )
     })
 
     it('should match by method and path', () => {
@@ -433,7 +519,11 @@ describe('ServerFactory', () => {
     let mockController: BaseController
 
     beforeEach(() => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
       mockController = { constructor: mockModule } as BaseController
     })
 
@@ -457,7 +547,9 @@ describe('ServerFactory', () => {
 
       const result = await serverFactory['_fetchInterceptors'](mockController)
 
-      expect(mockContainerInstance.isBound).toHaveBeenCalledWith(expect.any(Symbol))
+      expect(mockContainerInstance.isBound).toHaveBeenCalledWith(
+        expect.any(Symbol)
+      )
       expect(result).toContain(appInterceptor)
     })
 
@@ -479,7 +571,11 @@ describe('ServerFactory', () => {
     let mockController: BaseController
 
     beforeEach(() => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
       mockController = { constructor: mockModule } as BaseController
     })
 
@@ -487,7 +583,8 @@ describe('ServerFactory', () => {
       mockContainerInstance.isBound.mockReturnValue(false)
       mockFilterHandler.mockReturnValue([])
 
-      const result = await serverFactory['_fetchExceptionFilters'](mockController)
+      const result =
+        await serverFactory['_fetchExceptionFilters'](mockController)
 
       expect(result).toContain(serverFactory['globalFilters'][0])
     })
@@ -498,9 +595,12 @@ describe('ServerFactory', () => {
       mockContainerInstance.getAsync.mockResolvedValue(appFilter)
       mockFilterHandler.mockReturnValue([])
 
-      const result = await serverFactory['_fetchExceptionFilters'](mockController)
+      const result =
+        await serverFactory['_fetchExceptionFilters'](mockController)
 
-      expect(mockContainerInstance.isBound).toHaveBeenCalledWith(expect.any(Symbol))
+      expect(mockContainerInstance.isBound).toHaveBeenCalledWith(
+        expect.any(Symbol)
+      )
       expect(result).toEqual(expect.arrayContaining([expect.any(Object)]))
     })
 
@@ -509,7 +609,8 @@ describe('ServerFactory', () => {
       mockContainerInstance.isBound.mockReturnValue(false)
       mockFilterHandler.mockReturnValue([controllerFilter])
 
-      const result = await serverFactory['_fetchExceptionFilters'](mockController)
+      const result =
+        await serverFactory['_fetchExceptionFilters'](mockController)
 
       expect(result).toEqual(expect.arrayContaining([expect.any(Object)]))
     })
@@ -519,7 +620,11 @@ describe('ServerFactory', () => {
     let mockController: BaseController
 
     beforeEach(() => {
-      serverFactory = new ServerFactory(mockModule, mockContainerInstance, mockRoutes)
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
       mockController = {
         testMethod: jest.fn().mockReturnValue('test result'),
         anotherMethod: jest.fn().mockReturnValue('another result')
@@ -527,47 +632,65 @@ describe('ServerFactory', () => {
     })
 
     it('should return a named function wrapper', () => {
-      const handler = serverFactory['_fetchHandler'](mockController, 'testMethod')
-      
+      const handler = serverFactory['_fetchHandler'](
+        mockController,
+        'testMethod'
+      )
+
       expect(typeof handler).toBe('function')
       expect(handler.name).toBe('testMethod')
     })
 
     it('should preserve method name for different methods', () => {
-      const testHandler = serverFactory['_fetchHandler'](mockController, 'testMethod')
-      const anotherHandler = serverFactory['_fetchHandler'](mockController, 'anotherMethod')
-      
+      const testHandler = serverFactory['_fetchHandler'](
+        mockController,
+        'testMethod'
+      )
+      const anotherHandler = serverFactory['_fetchHandler'](
+        mockController,
+        'anotherMethod'
+      )
+
       expect(testHandler.name).toBe('testMethod')
       expect(anotherHandler.name).toBe('anotherMethod')
     })
 
     it('should call original method with correct context and arguments', () => {
-      const handler = serverFactory['_fetchHandler'](mockController, 'testMethod')
+      const handler = serverFactory['_fetchHandler'](
+        mockController,
+        'testMethod'
+      )
       const args = ['arg1', 'arg2']
-      
+
       const result = handler(...args)
-      
+
       expect(mockController.testMethod).toHaveBeenCalledWith(...args)
       expect(result).toBe('test result')
     })
 
     it('should maintain this context when calling original method', () => {
-      const mockMethod = jest.fn(function(this: any) {
+      const mockMethod = jest.fn(function (this: any) {
         return this
       })
       mockController.contextMethod = mockMethod
-      
-      const handler = serverFactory['_fetchHandler'](mockController, 'contextMethod')
+
+      const handler = serverFactory['_fetchHandler'](
+        mockController,
+        'contextMethod'
+      )
       const result = handler()
-      
+
       expect(result).toBe(mockController)
     })
 
     it('should handle methods with no arguments', () => {
-      const handler = serverFactory['_fetchHandler'](mockController, 'testMethod')
-      
+      const handler = serverFactory['_fetchHandler'](
+        mockController,
+        'testMethod'
+      )
+
       const result = handler()
-      
+
       expect(mockController.testMethod).toHaveBeenCalledWith()
       expect(result).toBe('test result')
     })
@@ -575,10 +698,13 @@ describe('ServerFactory', () => {
     it('should handle methods that return promises', async () => {
       const asyncMethod = jest.fn().mockResolvedValue('async result')
       mockController.asyncMethod = asyncMethod
-      
-      const handler = serverFactory['_fetchHandler'](mockController, 'asyncMethod')
+
+      const handler = serverFactory['_fetchHandler'](
+        mockController,
+        'asyncMethod'
+      )
       const result = await handler('test-arg')
-      
+
       expect(asyncMethod).toHaveBeenCalledWith('test-arg')
       expect(result).toBe('async result')
     })
@@ -588,9 +714,12 @@ describe('ServerFactory', () => {
         throw new Error('Test error')
       })
       mockController.errorMethod = errorMethod
-      
-      const handler = serverFactory['_fetchHandler'](mockController, 'errorMethod')
-      
+
+      const handler = serverFactory['_fetchHandler'](
+        mockController,
+        'errorMethod'
+      )
+
       expect(() => handler()).toThrow('Test error')
       expect(errorMethod).toHaveBeenCalled()
     })

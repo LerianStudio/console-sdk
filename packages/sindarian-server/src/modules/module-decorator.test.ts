@@ -17,9 +17,11 @@ import {
 
 // Mock the controller decorator handler
 jest.mock('@/controllers/decorators/controller-decorator', () => ({
-  controllerHandler: jest.fn().mockReturnValue([
-    { path: '/test', method: 'GET', methodName: 'testMethod' }
-  ])
+  controllerHandler: jest
+    .fn()
+    .mockReturnValue([
+      { path: '/test', method: 'GET', methodName: 'testMethod' }
+    ])
 }))
 
 // Mock the interceptor decorator handler
@@ -51,7 +53,12 @@ describe('moduleHandler', () => {
     mockInterceptorHandler.mockReturnValue([])
 
     // Clear metadata before each test
-    const classes = [TestModule, ImportedModule, TestController, AnotherController]
+    const classes = [
+      TestModule,
+      ImportedModule,
+      TestController,
+      AnotherController
+    ]
     classes.forEach((cls) => {
       try {
         Reflect.deleteMetadata(MODULE_KEY, cls)
@@ -74,23 +81,26 @@ describe('moduleHandler', () => {
 
   it('should handle controllers and return routes', () => {
     TestModule.prototype[CONTROLLERS_PROPERTY] = [TestController]
-    
+
     const result = moduleHandler(TestModule)
-    
+
     expect(mockControllerHandler).toHaveBeenCalledWith(TestController)
     expect(result).toEqual([
-      { 
-        path: '/test', 
-        method: 'GET', 
-        methodName: 'testMethod', 
-        controller: TestController 
+      {
+        path: '/test',
+        method: 'GET',
+        methodName: 'testMethod',
+        controller: TestController
       }
     ])
   })
 
   it('should handle multiple controllers', () => {
-    TestModule.prototype[CONTROLLERS_PROPERTY] = [TestController, AnotherController]
-    
+    TestModule.prototype[CONTROLLERS_PROPERTY] = [
+      TestController,
+      AnotherController
+    ]
+
     mockControllerHandler
       .mockReturnValueOnce([
         { path: '/test', method: 'GET', methodName: 'testMethod' }
@@ -98,23 +108,23 @@ describe('moduleHandler', () => {
       .mockReturnValueOnce([
         { path: '/another', method: 'POST', methodName: 'anotherMethod' }
       ])
-    
+
     const result = moduleHandler(TestModule)
-    
+
     expect(mockControllerHandler).toHaveBeenCalledWith(TestController)
     expect(mockControllerHandler).toHaveBeenCalledWith(AnotherController)
     expect(result).toEqual([
-      { 
-        path: '/test', 
-        method: 'GET', 
-        methodName: 'testMethod', 
-        controller: TestController 
+      {
+        path: '/test',
+        method: 'GET',
+        methodName: 'testMethod',
+        controller: TestController
       },
-      { 
-        path: '/another', 
-        method: 'POST', 
-        methodName: 'anotherMethod', 
-        controller: AnotherController 
+      {
+        path: '/another',
+        method: 'POST',
+        methodName: 'anotherMethod',
+        controller: AnotherController
       }
     ])
   })
@@ -122,19 +132,19 @@ describe('moduleHandler', () => {
   it('should handle imports and recursively process modules', () => {
     // Set up imported module
     ImportedModule.prototype[CONTROLLERS_PROPERTY] = [TestController]
-    
+
     // Set up main module with imports
     TestModule.prototype[IMPORTS_PROPERTY] = [ImportedModule]
-    
+
     const result = moduleHandler(TestModule)
-    
+
     expect(mockControllerHandler).toHaveBeenCalledWith(TestController)
     expect(result).toEqual([
-      { 
-        path: '/test', 
-        method: 'GET', 
-        methodName: 'testMethod', 
-        controller: TestController 
+      {
+        path: '/test',
+        method: 'GET',
+        methodName: 'testMethod',
+        controller: TestController
       }
     ])
   })
@@ -142,11 +152,11 @@ describe('moduleHandler', () => {
   it('should handle both imports and controllers', () => {
     // Set up imported module
     ImportedModule.prototype[CONTROLLERS_PROPERTY] = [TestController]
-    
+
     // Set up main module with imports and controllers
     TestModule.prototype[IMPORTS_PROPERTY] = [ImportedModule]
     TestModule.prototype[CONTROLLERS_PROPERTY] = [AnotherController]
-    
+
     mockControllerHandler
       .mockReturnValueOnce([
         { path: '/test', method: 'GET', methodName: 'testMethod' }
@@ -154,22 +164,22 @@ describe('moduleHandler', () => {
       .mockReturnValueOnce([
         { path: '/another', method: 'POST', methodName: 'anotherMethod' }
       ])
-    
+
     const result = moduleHandler(TestModule)
-    
+
     expect(result).toHaveLength(2)
     expect(result).toEqual([
-      { 
-        path: '/test', 
-        method: 'GET', 
-        methodName: 'testMethod', 
-        controller: TestController 
+      {
+        path: '/test',
+        method: 'GET',
+        methodName: 'testMethod',
+        controller: TestController
       },
-      { 
-        path: '/another', 
-        method: 'POST', 
-        methodName: 'anotherMethod', 
-        controller: AnotherController 
+      {
+        path: '/another',
+        method: 'POST',
+        methodName: 'anotherMethod',
+        controller: AnotherController
       }
     ])
   })
@@ -179,17 +189,17 @@ describe('moduleHandler', () => {
     TestModule.prototype[IMPORTS_PROPERTY] = [ImportedModule]
     ImportedModule.prototype[IMPORTS_PROPERTY] = [TestModule]
     ImportedModule.prototype[CONTROLLERS_PROPERTY] = [TestController]
-    
+
     const result = moduleHandler(TestModule)
-    
+
     // Should only call controllerHandler once, not enter infinite loop
     expect(mockControllerHandler).toHaveBeenCalledTimes(1)
     expect(result).toEqual([
-      { 
-        path: '/test', 
-        method: 'GET', 
-        methodName: 'testMethod', 
-        controller: TestController 
+      {
+        path: '/test',
+        method: 'GET',
+        methodName: 'testMethod',
+        controller: TestController
       }
     ])
   })
@@ -197,21 +207,21 @@ describe('moduleHandler', () => {
   it('should handle deep module hierarchy', () => {
     class Level1Module {}
     class Level2Module {}
-    
+
     // Set up deep hierarchy
     TestModule.prototype[IMPORTS_PROPERTY] = [Level1Module]
     Level1Module.prototype[IMPORTS_PROPERTY] = [Level2Module]
     Level2Module.prototype[CONTROLLERS_PROPERTY] = [TestController]
-    
+
     const result = moduleHandler(TestModule)
-    
+
     expect(mockControllerHandler).toHaveBeenCalledWith(TestController)
     expect(result).toEqual([
-      { 
-        path: '/test', 
-        method: 'GET', 
-        methodName: 'testMethod', 
-        controller: TestController 
+      {
+        path: '/test',
+        method: 'GET',
+        methodName: 'testMethod',
+        controller: TestController
       }
     ])
   })
@@ -219,7 +229,7 @@ describe('moduleHandler', () => {
   it('should handle empty arrays gracefully', () => {
     TestModule.prototype[IMPORTS_PROPERTY] = []
     TestModule.prototype[CONTROLLERS_PROPERTY] = []
-    
+
     const result = moduleHandler(TestModule)
     expect(result).toEqual([])
     expect(mockControllerHandler).not.toHaveBeenCalled()
@@ -264,7 +274,9 @@ describe('Module decorator', () => {
     expect(TestModule.prototype[IMPORTS_PROPERTY]).toBeUndefined()
     expect(TestModule.prototype[CONTROLLERS_PROPERTY]).toBeUndefined()
     expect(TestModule.prototype[PROVIDERS_PROPERTY]).toBeUndefined()
-    expect(TestModule.prototype[MODULE_PROPERTY]).toBeInstanceOf(ContainerModule)
+    expect(TestModule.prototype[MODULE_PROPERTY]).toBeInstanceOf(
+      ContainerModule
+    )
   })
 
   it('should set metadata and properties with full options', () => {
@@ -283,7 +295,9 @@ describe('Module decorator', () => {
     expect(TestModule.prototype[IMPORTS_PROPERTY]).toEqual([ImportedModule])
     expect(TestModule.prototype[CONTROLLERS_PROPERTY]).toEqual([TestController])
     expect(TestModule.prototype[PROVIDERS_PROPERTY]).toEqual([TestProvider])
-    expect(TestModule.prototype[MODULE_PROPERTY]).toBeInstanceOf(ContainerModule)
+    expect(TestModule.prototype[MODULE_PROPERTY]).toBeInstanceOf(
+      ContainerModule
+    )
   })
 
   it('should handle providers as class constructors', () => {
@@ -350,7 +364,7 @@ describe('Module decorator', () => {
   it('should handle mixed provider types', () => {
     const testValue = { test: 'value' }
     const testFactory = () => ({ test: 'factory' })
-    
+
     const options: ModuleOptions = {
       providers: [
         TestProvider,
@@ -395,7 +409,7 @@ describe('Module decorator', () => {
 
   it('should handle controllers with interceptors in container registry', () => {
     class TestInterceptor {}
-    
+
     mockInterceptorHandler.mockReturnValue([TestInterceptor])
 
     const options: ModuleOptions = {
@@ -407,7 +421,7 @@ describe('Module decorator', () => {
 
     const containerModule = TestModule.prototype[MODULE_PROPERTY]
     expect(containerModule).toBeInstanceOf(ContainerModule)
-    
+
     // The interceptorHandler is called when the container module registry function is executed
     // We can't easily test this without creating a mock container, so we just verify the structure is correct
     expect(TestModule.prototype[CONTROLLERS_PROPERTY]).toEqual([TestController])
@@ -490,13 +504,13 @@ describe('Integration tests', () => {
     decorator(TestModule)
 
     const result = moduleHandler(TestModule)
-    
+
     expect(result).toEqual([
-      { 
-        path: '/test', 
-        method: 'GET', 
-        methodName: 'testMethod', 
-        controller: TestController 
+      {
+        path: '/test',
+        method: 'GET',
+        methodName: 'testMethod',
+        controller: TestController
       }
     ])
   })
@@ -504,11 +518,11 @@ describe('Integration tests', () => {
   it('should handle complex module hierarchies', () => {
     class ImportedController {}
     class ImportedModule {}
-    
+
     // Set up imported module
     const importedDecorator = Module({ controllers: [ImportedController] })
     importedDecorator(ImportedModule)
-    
+
     // Set up main module
     const mainDecorator = Module({
       imports: [ImportedModule],
@@ -525,20 +539,20 @@ describe('Integration tests', () => {
       ])
 
     const result = moduleHandler(TestModule)
-    
+
     expect(result).toHaveLength(2)
     expect(result).toEqual([
-      { 
-        path: '/imported', 
-        method: 'GET', 
-        methodName: 'importedMethod', 
-        controller: ImportedController 
+      {
+        path: '/imported',
+        method: 'GET',
+        methodName: 'importedMethod',
+        controller: ImportedController
       },
-      { 
-        path: '/test', 
-        method: 'POST', 
-        methodName: 'testMethod', 
-        controller: TestController 
+      {
+        path: '/test',
+        method: 'POST',
+        methodName: 'testMethod',
+        controller: TestController
       }
     ])
   })

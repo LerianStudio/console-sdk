@@ -25,6 +25,7 @@ export class TestController extends BaseController {
   }
 
   @Get()
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public fetchAll(@Query() query: any) {
     return this.testService.fetchAll()
   }
