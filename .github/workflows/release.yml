@@ -62,7 +62,7 @@ jobs:
           manual='${{ github.event.inputs.package }}'
           if [[ -n "$manual" && "$manual" != "all" ]]; then
             packages=$(jq -c -n --arg p "$manual" '[$p]')
-          elif [[ "$manual" == "all" ]]; then
+          elif [[ "$manual" == "all" ]] ; then
             packages='["sindarian-server","sindarian-ui"]'
           else
             packages="$changed"
@@ -166,12 +166,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PKG="${{ matrix.package }}"
-          PKG_DIR="packages/${PKG}"
+          export PKG="${{ matrix.package }}"
+          export PKG_DIR="packages/${{ matrix.package }}"
 
-          # 1) write a template WITHOUT expansion (keeps ${nextRelease.*} intact)
-          cat > .releaserc.yml.tmpl <<'EOF'
-extends: ./.releaserc.base.cjs
+          node -e '
+            const fs = require("fs");
+            const { PKG, PKG_DIR } = process.env;
+
+            const cfg = `extends: ./.releaserc.base.cjs
 plugins:
   - path: "@semantic-release/commit-analyzer"
     preset: conventionalcommits
@@ -193,13 +195,13 @@ plugins:
     preset: conventionalcommits
 
   - path: "@semantic-release/npm"
-    pkgRoot: __PKG_DIR__
+    pkgRoot: ${PKG_DIR}
     npmPublish: true
 
   - path: "@semantic-release/git"
     assets:
-      - __PKG_DIR__/package.json
-    message: "chore(__PKG__): release v${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      - ${PKG_DIR}/package.json
+    message: "chore(${PKG}): release v\\${nextRelease.version} [skip ci]\\n\\n\\${nextRelease.notes}"
 
   - path: "@semantic-release/github"
     assets: []
@@ -207,16 +209,13 @@ plugins:
   - path: "@saithodev/semantic-release-backmerge"
   - path: "@semantic-release/exec"
 
-tagFormat: "__PKG__-v${version}"
+tagFormat: "${PKG}-v\\${version}"
 repositoryUrl: https://github.com/LerianStudio/console-sdk.git
-EOF
+`;
 
-          # 2) substitute placeholders with actual values
-          sed -e "s#__PKG_DIR__#${PKG_DIR}#g" -e "s#__PKG__#${PKG}#g" .releaserc.yml.tmpl > .releaserc.yml
-
-          # 3) quick check
-          echo "----- .releaserc.yml -----"
-          cat .releaserc.yml
+            fs.writeFileSync(".releaserc.yml", cfg);
+            console.log("----- .releaserc.yml -----\\n" + cfg);
+          '
 
       - name: Ensure @semantic-release/exec present
         run: npm i -D @semantic-release/exec
