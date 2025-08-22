@@ -168,27 +168,44 @@ jobs:
           cat > .releaserc.yml <<EOF
           extends: ./.releaserc.base.cjs
           plugins:
+            # keep analyzer here because 'plugins' overrides the base config
+            - path: "@semantic-release/commit-analyzer"
+              preset: conventionalcommits
+              parserOpts:
+                noteKeywords: ["BREAKING CHANGE","BREAKING CHANGES"]
+              releaseRules:
+                - { type: feat, release: minor }
+                - { type: perf, release: minor }
+                - { type: build, release: minor }
+                - { type: chore, release: patch }
+                - { type: ci, release: patch }
+                - { type: test, release: patch }
+                - { type: fix, release: patch }
+                - { type: refactor, release: minor }
+                - { type: docs, release: patch }
+                - { breaking: true, release: major }
+
+            - path: "@semantic-release/release-notes-generator"
+              preset: conventionalcommits
+
             - path: "@semantic-release/npm"
               pkgRoot: ${PKG_DIR}
               npmPublish: true
+
             - path: "@semantic-release/git"
               assets:
                 - ${PKG_DIR}/package.json
-              message: "chore(${PKG}): release v\${nextRelease.version} [skip ci]\n\n\${nextRelease.notes}"
+              message: "chore(${PKG}): release v\\${nextRelease.version} [skip ci]\\n\\n\\${nextRelease.notes}"
+
             - path: "@semantic-release/github"
               assets: []
+
             - path: "@saithodev/semantic-release-backmerge"
             - path: "@semantic-release/exec"
 
-          tagFormat: "${PKG}-v\${version}"
+          tagFormat: "${PKG}-v\\${version}"
           repositoryUrl: https://github.com/LerianStudio/console-sdk.git
           EOF
-
-      - name: Sanity check config (optional)
-        run: |
-          ls -la .releaserc.base.cjs
-          echo "----- .releaserc.yml -----"
-          cat .releaserc.yml
 
       - name: Ensure @semantic-release/exec present
         run: npm i -D @semantic-release/exec
