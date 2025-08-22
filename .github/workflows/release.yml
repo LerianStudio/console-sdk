@@ -62,7 +62,7 @@ jobs:
           manual='${{ github.event.inputs.package }}'
           if [[ -n "$manual" && "$manual" != "all" ]]; then
             packages=$(jq -c -n --arg p "$manual" '[$p]')
-          elif [[ "$manual" == "all" ]] ; then
+          elif [[ "$manual" == "all" ]]; then
             packages='["sindarian-server","sindarian-ui"]'
           else
             packages="$changed"
@@ -162,7 +162,7 @@ jobs:
       - name: Build ${{ matrix.package }}
         run: npm run build -- --filter=@lerianstudio/${{ matrix.package }}
 
-      - name: Write package-specific .releaserc.yml
+      - name: Write package-specific .releaserc.json
         shell: bash
         run: |
           set -euo pipefail
@@ -173,48 +173,41 @@ jobs:
             const fs = require("fs");
             const { PKG, PKG_DIR } = process.env;
 
-            const cfg = `extends: ./.releaserc.base.cjs
-plugins:
-  - path: "@semantic-release/commit-analyzer"
-    preset: conventionalcommits
-    parserOpts:
-      noteKeywords: ["BREAKING CHANGE","BREAKING CHANGES"]
-    releaseRules:
-      - { type: feat, release: minor }
-      - { type: perf, release: minor }
-      - { type: build, release: minor }
-      - { type: chore, release: patch }
-      - { type: ci, release: patch }
-      - { type: test, release: patch }
-      - { type: fix, release: patch }
-      - { type: refactor, release: minor }
-      - { type: docs, release: patch }
-      - { breaking: true, release: major }
+            const cfg = {
+              extends: "./.releaserc.base.cjs",
+              plugins: [
+                ["@semantic-release/commit-analyzer", {
+                  preset: "conventionalcommits",
+                  parserOpts: { noteKeywords: ["BREAKING CHANGE","BREAKING CHANGES"] },
+                  releaseRules: [
+                    { type: "feat", release: "minor" },
+                    { type: "perf", release: "minor" },
+                    { type: "build", release: "minor" },
+                    { type: "chore", release: "patch" },
+                    { type: "ci", release: "patch" },
+                    { type: "test", release: "patch" },
+                    { type: "fix", release: "patch" },
+                    { type: "refactor", release: "minor" },
+                    { type: "docs", release: "patch" },
+                    { breaking: true, release: "major" }
+                  ]
+                }],
+                ["@semantic-release/release-notes-generator", { preset: "conventionalcommits" }],
+                ["@semantic-release/npm", { pkgRoot: PKG_DIR, npmPublish: true }],
+                ["@semantic-release/git", {
+                  assets: [`${PKG_DIR}/package.json`],
+                  message: "chore(" + PKG + "): release v${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}"
+                }],
+                ["@semantic-release/github", { assets: [] }],
+                "@saithodev/semantic-release-backmerge",
+                "@semantic-release/exec"
+              ],
+              tagFormat: PKG + "-v${version}",
+              repositoryUrl: "https://github.com/LerianStudio/console-sdk.git"
+            };
 
-  - path: "@semantic-release/release-notes-generator"
-    preset: conventionalcommits
-
-  - path: "@semantic-release/npm"
-    pkgRoot: ${PKG_DIR}
-    npmPublish: true
-
-  - path: "@semantic-release/git"
-    assets:
-      - ${PKG_DIR}/package.json
-    message: "chore(${PKG}): release v\\${nextRelease.version} [skip ci]\\n\\n\\${nextRelease.notes}"
-
-  - path: "@semantic-release/github"
-    assets: []
-
-  - path: "@saithodev/semantic-release-backmerge"
-  - path: "@semantic-release/exec"
-
-tagFormat: "${PKG}-v\\${version}"
-repositoryUrl: https://github.com/LerianStudio/console-sdk.git
-`;
-
-            fs.writeFileSync(".releaserc.yml", cfg);
-            console.log("----- .releaserc.yml -----\\n" + cfg);
+            fs.writeFileSync(".releaserc.json", JSON.stringify(cfg, null, 2));
+            console.log("----- .releaserc.json -----\\n" + JSON.stringify(cfg, null, 2));
           '
 
       - name: Ensure @semantic-release/exec present
