@@ -54,6 +54,7 @@ jobs:
       - id: select
         shell: bash
         run: |
+          set -euo pipefail
           changed='[]'
           [[ "${{ steps.changes.outputs.sindarian-server }}" == "true" ]] && changed=$(jq -c '. + ["sindarian-server"]' <<<"$changed")
           [[ "${{ steps.changes.outputs.sindarian-ui }}" == "true" ]] && changed=$(jq -c '. + ["sindarian-ui"]' <<<"$changed")
