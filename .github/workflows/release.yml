@@ -210,8 +210,8 @@ jobs:
             console.log("----- .releaserc.json -----\\n" + JSON.stringify(cfg, null, 2));
           '
 
-      - name: Ensure @semantic-release/exec present
-        run: npm i -D @semantic-release/exec
+      - name: Ensure required plugins present
+        run: npm i -D @semantic-release/exec conventional-changelog-conventionalcommits@7.0.2
 
       - name: Run Semantic Release (${{ matrix.package }})
         uses: cycjimmy/semantic-release-action@v4
@@ -219,10 +219,12 @@ jobs:
           ci: false
           semantic_version: 23.0.8
           extra_plugins: |
-            conventional-changelog-conventionalcommits@v7.0.2
+            conventional-changelog-conventionalcommits@7.0.2
             @saithodev/semantic-release-backmerge
             @semantic-release/git
             @semantic-release/npm
+            @semantic-release/commit-analyzer
+            @semantic-release/release-notes-generator
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
