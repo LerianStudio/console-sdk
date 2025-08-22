@@ -39,7 +39,8 @@ jobs:
       sindarian-ui: ${{ steps.changes.outputs.sindarian-ui }}
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
 
       - id: changes
         uses: dorny/paths-filter@v3
@@ -165,7 +166,7 @@ jobs:
           PKG="${{ matrix.package }}"
           PKG_DIR="packages/${PKG}"
           cat > .releaserc.yml <<EOF
-          extends: ./.releaserc.base.yml
+          extends: ./.releaserc.base.cjs
           plugins:
             - path: "@semantic-release/npm"
               pkgRoot: ${PKG_DIR}
@@ -182,6 +183,12 @@ jobs:
           tagFormat: "${PKG}-v\${version}"
           repositoryUrl: https://github.com/LerianStudio/console-sdk.git
           EOF
+
+      - name: Sanity check config (optional)
+        run: |
+          ls -la .releaserc.base.cjs
+          echo "----- .releaserc.yml -----"
+          cat .releaserc.yml
 
       - name: Ensure @semantic-release/exec present
         run: npm i -D @semantic-release/exec
