@@ -1,3 +1,5 @@
+export const INJECTABLE_KEY = Symbol('injectable')
+
 export const MODULE_KEY = Symbol('module')
 export const CONTROLLER_KEY = Symbol('controller')
 export const CATCH_KEY = Symbol('catch')

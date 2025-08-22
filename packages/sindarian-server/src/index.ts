@@ -1,5 +1,6 @@
 import 'reflect-metadata'
 
+export * from './constants'
 export * from './utils/apply-decorators'
 export * from './context'
 export * from './exceptions'
@@ -14,3 +15,4 @@ export * from './server'
 export { REQUEST } from './services/request'
 export { APP_INTERCEPTOR } from './services/interceptor'
 export { APP_FILTER } from './services/filters'
+export { FetchModuleOptions, HttpService } from './services/http-service'

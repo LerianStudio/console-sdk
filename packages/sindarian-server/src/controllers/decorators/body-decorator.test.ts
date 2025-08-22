@@ -12,11 +12,28 @@ const mockGetNextRequestArgument =
 
 describe('bodyDecoratorHandler', () => {
   const mockRequest = {
-    json: jest.fn()
+    json: jest.fn(),
+    text: jest.fn(),
+    formData: jest.fn(),
+    headers: {
+      get: jest.fn()
+    }
   }
 
   beforeEach(() => {
     jest.clearAllMocks()
+
+    // Create a fresh mock request for each test to avoid cache issues
+    const freshMockRequest = {
+      json: jest.fn(),
+      text: jest.fn(),
+      formData: jest.fn(),
+      headers: {
+        get: jest.fn().mockReturnValue('application/json')
+      }
+    }
+
+    Object.assign(mockRequest, freshMockRequest)
     mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
   })
 
@@ -75,7 +92,17 @@ describe('bodyDecoratorHandler', () => {
       name: z.string(),
       age: z.number()
     })
-    mockRequest.json.mockResolvedValue(mockBody)
+
+    // Create a new mock request for this test
+    const schemaMockRequest = {
+      json: jest.fn().mockResolvedValue(mockBody),
+      text: jest.fn(),
+      formData: jest.fn(),
+      headers: {
+        get: jest.fn().mockReturnValue('application/json')
+      }
+    }
+    mockGetNextRequestArgument.mockReturnValue(schemaMockRequest as any)
 
     // Set metadata with schema
     const metadata: BodyMetadata = {
@@ -92,14 +119,14 @@ describe('bodyDecoratorHandler', () => {
     const result = await bodyDecoratorHandler(
       TestClass.prototype,
       'testMethod',
-      [mockRequest]
+      [schemaMockRequest]
     )
 
     expect(result).toEqual({
       parameter: mockBody,
       parameterIndex: 1
     })
-    expect(mockRequest.json).toHaveBeenCalledTimes(1)
+    expect(schemaMockRequest.json).toHaveBeenCalledTimes(1)
   })
 
   it('should throw ValidationApiException when schema validation fails', async () => {
@@ -108,7 +135,17 @@ describe('bodyDecoratorHandler', () => {
       name: z.string(),
       age: z.number()
     })
-    mockRequest.json.mockResolvedValue(mockBody)
+
+    // Create a new mock request for this test
+    const validationMockRequest = {
+      json: jest.fn().mockResolvedValue(mockBody),
+      text: jest.fn(),
+      formData: jest.fn(),
+      headers: {
+        get: jest.fn().mockReturnValue('application/json')
+      }
+    }
+    mockGetNextRequestArgument.mockReturnValue(validationMockRequest as any)
 
     // Set metadata with schema
     const metadata: BodyMetadata = {
@@ -123,10 +160,12 @@ describe('bodyDecoratorHandler', () => {
     )
 
     await expect(
-      bodyDecoratorHandler(TestClass.prototype, 'testMethod', [mockRequest])
+      bodyDecoratorHandler(TestClass.prototype, 'testMethod', [
+        validationMockRequest
+      ])
     ).rejects.toThrow(ValidationApiException)
 
-    expect(mockRequest.json).toHaveBeenCalledTimes(1)
+    expect(validationMockRequest.json).toHaveBeenCalledTimes(1)
   })
 
   it('should include validation error details in exception message', async () => {
@@ -135,7 +174,17 @@ describe('bodyDecoratorHandler', () => {
       name: z.string(),
       age: z.number()
     })
-    mockRequest.json.mockResolvedValue(mockBody)
+
+    // Create a new mock request for this test
+    const errorDetailsMockRequest = {
+      json: jest.fn().mockResolvedValue(mockBody),
+      text: jest.fn(),
+      formData: jest.fn(),
+      headers: {
+        get: jest.fn().mockReturnValue('application/json')
+      }
+    }
+    mockGetNextRequestArgument.mockReturnValue(errorDetailsMockRequest as any)
 
     // Set metadata with schema
     const metadata: BodyMetadata = {
@@ -151,7 +200,7 @@ describe('bodyDecoratorHandler', () => {
 
     try {
       await bodyDecoratorHandler(TestClass.prototype, 'testMethod', [
-        mockRequest
+        errorDetailsMockRequest
       ])
     } catch (error) {
       expect(error).toBeInstanceOf(ValidationApiException)
@@ -161,12 +210,21 @@ describe('bodyDecoratorHandler', () => {
       expect(validationError.message).toContain('age')
     }
 
-    expect(mockRequest.json).toHaveBeenCalledTimes(1)
+    expect(errorDetailsMockRequest.json).toHaveBeenCalledTimes(1)
   })
 
   it('should handle request.json() rejection', async () => {
     const jsonError = new Error('Failed to parse JSON')
-    mockRequest.json.mockRejectedValue(jsonError)
+    // Create a new mock request to avoid cache
+    const errorMockRequest = {
+      json: jest.fn().mockRejectedValue(jsonError),
+      text: jest.fn(),
+      formData: jest.fn(),
+      headers: {
+        get: jest.fn().mockReturnValue('application/json')
+      }
+    }
+    mockGetNextRequestArgument.mockReturnValue(errorMockRequest as any)
 
     // Set metadata without schema
     const metadata: BodyMetadata = {
@@ -180,10 +238,12 @@ describe('bodyDecoratorHandler', () => {
     )
 
     await expect(
-      bodyDecoratorHandler(TestClass.prototype, 'testMethod', [mockRequest])
+      bodyDecoratorHandler(TestClass.prototype, 'testMethod', [
+        errorMockRequest
+      ])
     ).rejects.toThrow('Missing or invalid request body')
 
-    expect(mockRequest.json).toHaveBeenCalledTimes(1)
+    expect(errorMockRequest.json).toHaveBeenCalledTimes(1)
   })
 
   it('should work with complex nested schema validation', async () => {
@@ -207,7 +267,17 @@ describe('bodyDecoratorHandler', () => {
       }),
       tags: z.array(z.string())
     })
-    mockRequest.json.mockResolvedValue(mockBody)
+
+    // Create a new mock request for this test
+    const complexMockRequest = {
+      json: jest.fn().mockResolvedValue(mockBody),
+      text: jest.fn(),
+      formData: jest.fn(),
+      headers: {
+        get: jest.fn().mockReturnValue('application/json')
+      }
+    }
+    mockGetNextRequestArgument.mockReturnValue(complexMockRequest as any)
 
     // Set metadata with complex schema
     const metadata: BodyMetadata = {
@@ -224,19 +294,29 @@ describe('bodyDecoratorHandler', () => {
     const result = await bodyDecoratorHandler(
       TestClass.prototype,
       'testMethod',
-      [mockRequest]
+      [complexMockRequest]
     )
 
     expect(result).toEqual({
       parameter: mockBody,
       parameterIndex: 2
     })
-    expect(mockRequest.json).toHaveBeenCalledTimes(1)
+    expect(complexMockRequest.json).toHaveBeenCalledTimes(1)
   })
 
   it('should handle empty body object', async () => {
     const mockBody = {}
-    mockRequest.json.mockResolvedValue(mockBody)
+
+    // Create a new mock request for this test
+    const emptyMockRequest = {
+      json: jest.fn().mockResolvedValue(mockBody),
+      text: jest.fn(),
+      formData: jest.fn(),
+      headers: {
+        get: jest.fn().mockReturnValue('application/json')
+      }
+    }
+    mockGetNextRequestArgument.mockReturnValue(emptyMockRequest as any)
 
     // Set metadata without schema
     const metadata: BodyMetadata = {
@@ -252,19 +332,29 @@ describe('bodyDecoratorHandler', () => {
     const result = await bodyDecoratorHandler(
       TestClass.prototype,
       'testMethod',
-      [mockRequest]
+      [emptyMockRequest]
     )
 
     expect(result).toEqual({
       parameter: mockBody,
       parameterIndex: 0
     })
-    expect(mockRequest.json).toHaveBeenCalledTimes(1)
+    expect(emptyMockRequest.json).toHaveBeenCalledTimes(1)
   })
 
   it('should handle null body', async () => {
     const mockBody = null
-    mockRequest.json.mockResolvedValue(mockBody)
+
+    // Create a new mock request for this test
+    const nullMockRequest = {
+      json: jest.fn().mockResolvedValue(mockBody),
+      text: jest.fn(),
+      formData: jest.fn(),
+      headers: {
+        get: jest.fn().mockReturnValue('application/json')
+      }
+    }
+    mockGetNextRequestArgument.mockReturnValue(nullMockRequest as any)
 
     // Set metadata without schema
     const metadata: BodyMetadata = {
@@ -280,14 +370,14 @@ describe('bodyDecoratorHandler', () => {
     const result = await bodyDecoratorHandler(
       TestClass.prototype,
       'testMethod',
-      [mockRequest]
+      [nullMockRequest]
     )
 
     expect(result).toEqual({
       parameter: mockBody,
       parameterIndex: 0
     })
-    expect(mockRequest.json).toHaveBeenCalledTimes(1)
+    expect(nullMockRequest.json).toHaveBeenCalledTimes(1)
   })
 })
 

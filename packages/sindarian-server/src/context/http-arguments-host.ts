@@ -8,11 +8,11 @@ export class HttpArgumentsHost {
     this.response = response
   }
 
-  getRequest<T>(): T {
+  getRequest<T = Request>(): T {
     return this.request as T
   }
 
-  getResponse<T>(): T {
+  getResponse<T = Response>(): T {
     return this.response as T
   }
 }

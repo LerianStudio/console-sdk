@@ -115,9 +115,7 @@ export class ServerFactory {
         })
       )
     } catch (error: any) {
-      const filters = controller
-        ? await this._fetchExceptionFilters(controller)
-        : await this._fetchGlobalFilters()
+      const filters = await this._fetchExceptionFilters(controller)
 
       for (const filter of filters) {
         // Fetch filter metadata
@@ -215,7 +213,7 @@ export class ServerFactory {
       interceptors.push(...resolvedInterceptors)
     }
 
-    return interceptors
+    return interceptors.reverse()
   }
 
   private _fetchHandler(controller: BaseController, methodName: string) {
@@ -235,7 +233,7 @@ export class ServerFactory {
     return handler
   }
 
-  private async _fetchGlobalFilters() {
+  private async _fetchExceptionFilters(controller?: BaseController) {
     const filters = [...this.globalFilters]
 
     // Fetch any registered global filter
@@ -244,18 +242,14 @@ export class ServerFactory {
       filters.push(await this.container.getAsync<ExceptionFilter>(APP_FILTER))
     }
 
-    return filters
-  }
-
-  private async _fetchExceptionFilters(controller: BaseController) {
-    const filters = await this._fetchGlobalFilters()
-
-    // Fetch controller filters
-    const controllerFilters = filterHandler(controller.constructor)
-    if (controllerFilters.length > 0) {
-      filters.push(...controllerFilters)
+    if (controller) {
+      // Fetch controller filters
+      const controllerFilters = filterHandler(controller.constructor)
+      if (controllerFilters.length > 0) {
+        filters.push(...controllerFilters)
+      }
     }
 
-    return filters
+    return filters.reverse()
   }
 }

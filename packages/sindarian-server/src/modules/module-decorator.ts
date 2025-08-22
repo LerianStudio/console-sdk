@@ -1,5 +1,6 @@
+import { BindInFluentSyntax, ResolutionContext } from 'inversify'
 import { Class, Constructor } from '@/types/class'
-import { ContainerModule } from '@/dependency-injection/container'
+import { Container, ContainerModule } from '@/dependency-injection/container'
 import {
   MODULE_KEY,
   MODULE_PROPERTY,
@@ -7,11 +8,11 @@ import {
   CONTROLLERS_PROPERTY,
   IMPORTS_PROPERTY
 } from '@/constants/keys'
+import { Scope } from '@/constants/scopes'
 import {
   controllerHandler,
   ControllerMetadata
 } from '@/controllers/decorators/controller-decorator'
-import { ResolutionContext } from 'inversify'
 import { interceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
 import { Logger } from '@/logger/logger'
 
@@ -24,6 +25,7 @@ type Provider =
       useClass?: Class
       useValue?: any
       useFactory?: (context: ResolutionContext) => any | Promise<any>
+      scope?: Scope
     }
   | Class
 
@@ -88,38 +90,20 @@ export function Module(options?: ModuleOptions): ClassDecorator {
     }
 
     if (providers) {
-      providers.forEach((providerEntity) => {
-        if (typeof providerEntity === 'object') {
-          if (providerEntity.useClass) {
-            container.bind(providerEntity.provide).to(providerEntity.useClass)
-          } else if (providerEntity.useFactory) {
-            container
-              .bind(providerEntity.provide)
-              .toDynamicValue(async (context) => {
-                return await providerEntity.useFactory!(context)
-              })
-          } else if (providerEntity.useValue) {
-            container
-              .bind(providerEntity.provide)
-              .toConstantValue(providerEntity.useValue)
-          }
-        } else {
-          container.bind(providerEntity).to(providerEntity)
-        }
-      })
+      providers.forEach((provider) => registerProvider(container, provider))
     }
 
     if (controllers) {
       controllers.forEach((controller) => {
         // Bind the controller
-        container.bind(controller).to(controller)
+        container.bind(controller).to(controller).inSingletonScope()
 
         // Check for interceptors and register class types
         const interceptors = interceptorHandler(controller)
         interceptors.forEach((interceptor) => {
           // If it's a class constructor (function), register it in the container
           if (typeof interceptor === 'function') {
-            container.bind(interceptor).toSelf()
+            container.bind(interceptor).toSelf().inSingletonScope()
           } else {
             // If it's an instance, bind it to its constructor class as a constant value
             container.bind(interceptor.constructor).toConstantValue(interceptor)
@@ -146,5 +130,80 @@ export function Module(options?: ModuleOptions): ClassDecorator {
     prototype[MODULE_PROPERTY] = moduleContainer
     prototype[PROVIDERS_PROPERTY] = providers
     prototype[CONTROLLERS_PROPERTY] = controllers
+  }
+}
+
+/**
+ * Register a provider in the container
+ * @param container
+ * @param provider
+ */
+function registerProvider(container: Container, provider: Provider) {
+  // Checks if provider is a object with options
+  if (typeof provider === 'object') {
+    registerProviderObject(container, provider)
+  } else {
+    // If not, it's a simple class type
+    container.bind(provider).to(provider)
+  }
+}
+
+/**
+ * Registers a provider object in the container
+ * @param container
+ * @param provider
+ * @returns
+ */
+function registerProviderObject(container: Container, provider: Provider) {
+  // Protect the method by avoid non objects
+  if (typeof provider !== 'object') {
+    return
+  }
+
+  const { provide, useClass, useValue, useFactory, scope } = provider
+
+  const bind = container.bind(provide)
+
+  if (useClass) {
+    registerScope(bind.to(useClass), scope)
+    return
+  }
+
+  if (useFactory) {
+    registerScope(
+      bind.toDynamicValue(async (context) => {
+        return await useFactory!(context)
+      }),
+      scope
+    )
+    return
+  }
+
+  if (useValue) {
+    bind.toConstantValue(useValue)
+    return
+  }
+
+  const message = `Module: Invalid provider ${provider.provide.toString()} configuration`
+  Logger.error(message)
+  throw new Error(message)
+}
+
+/**
+ * Registers a scope for a binding
+ * @param bind
+ * @param scope
+ * @returns
+ */
+function registerScope<T>(bind: BindInFluentSyntax<T>, scope?: Scope) {
+  switch (scope) {
+    case Scope.DEFAULT:
+      return bind.inSingletonScope()
+    case Scope.REQUEST:
+      return bind.inRequestScope()
+    case Scope.TRANSIENT:
+      return bind.inTransientScope()
+    default:
+      return bind.inSingletonScope()
   }
 }

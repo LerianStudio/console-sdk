@@ -1,12 +1,16 @@
-import { z } from 'zod'
 import { BODY_KEY } from '@/constants/keys'
 import { getNextRequestArgument } from '@/utils/nextjs/get-next-arguments'
 import { ValidationApiException } from '@/exceptions/api-exception'
+import { NextRequest } from 'next/server'
+import { getFormData } from '@/utils/form-data/get-form-data'
 
 export type BodyMetadata = {
   propertyIndex: number
-  schema?: () => z.ZodSchema
+  schema?: () => any
 }
+
+// Cache to store parsed body to avoid reading it multiple times
+const bodyCache = new WeakMap<NextRequest, any>()
 
 /**
  * Handler to validate the body of the request.
@@ -29,15 +33,29 @@ export async function bodyDecoratorHandler(
 
   // If the metadata is not found, return null.
   if (metadata) {
-    const request = getNextRequestArgument(args)
+    const request: NextRequest = getNextRequestArgument(args)
 
-    let body
-    try {
-      body = await request.json()
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      // Handle missing or invalid body
-      throw new ValidationApiException('Missing or invalid request body')
+    // Check if body is already cached
+    let body = bodyCache.get(request)
+
+    if (!body) {
+      const contentType = request.headers.get('Content-Type')
+      try {
+        if (contentType?.includes('multipart/form-data')) {
+          body = getFormData(await request.formData())
+        } else if (contentType?.includes('application/json')) {
+          body = await request.json()
+        } else {
+          body = await request.text()
+        }
+
+        // Cache the parsed body
+        bodyCache.set(request, body)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error: any) {
+        // Handle missing or invalid body
+        throw new ValidationApiException('Missing or invalid request body')
+      }
     }
 
     // If the schema is not provided, return the body.
@@ -60,7 +78,7 @@ export async function bodyDecoratorHandler(
     }
 
     return {
-      parameter: parsedBody?.data || body,
+      parameter: body,
       parameterIndex: metadata.propertyIndex
     }
   }
@@ -74,22 +92,16 @@ export async function bodyDecoratorHandler(
  * @param schema - The Zod schema to validate the body against.
  * @returns A decorator function that can be used to decorate a controller method.
  */
-export function Body(schema?: z.ZodSchema | (() => z.ZodSchema)) {
+export function Body(schema?: any) {
   return function (
     target: object,
     propertyKey: string | symbol,
     propertyIndex: number
   ) {
-    // Wrap the schema in a function to prevent TypeScript from analyzing it during compilation
-    const lazySchema = schema
-      ? () => (typeof schema === 'function' ? schema() : schema)
-      : undefined
-
-    Reflect.defineMetadata(
-      BODY_KEY,
-      { propertyIndex, schema: lazySchema },
-      target,
-      propertyKey
-    )
+    const metadata: BodyMetadata = {
+      propertyIndex,
+      schema: schema ? () => schema : undefined
+    }
+    Reflect.defineMetadata(BODY_KEY, metadata, target, propertyKey)
   }
 }
