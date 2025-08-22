@@ -68,7 +68,7 @@ jobs:
           fi
 
           [[ -z "$packages" ]] && packages='[]'
-          echo "packages=$packages" | tee -a $GITHUB_OUTPUT
+          echo "packages=$packages" | tee -a "$GITHUB_OUTPUT"
           echo "🔎 Selected packages: $packages"
 
   npm-audit:
@@ -163,49 +163,51 @@ jobs:
       - name: Write package-specific .releaserc.yml
         shell: bash
         run: |
+          set -euo pipefail
           PKG="${{ matrix.package }}"
           PKG_DIR="packages/${PKG}"
+
           cat > .releaserc.yml <<EOF
-          extends: ./.releaserc.base.cjs
-          plugins:
-            # keep analyzer here because 'plugins' overrides the base config
-            - path: "@semantic-release/commit-analyzer"
-              preset: conventionalcommits
-              parserOpts:
-                noteKeywords: ["BREAKING CHANGE","BREAKING CHANGES"]
-              releaseRules:
-                - { type: feat, release: minor }
-                - { type: perf, release: minor }
-                - { type: build, release: minor }
-                - { type: chore, release: patch }
-                - { type: ci, release: patch }
-                - { type: test, release: patch }
-                - { type: fix, release: patch }
-                - { type: refactor, release: minor }
-                - { type: docs, release: patch }
-                - { breaking: true, release: major }
+extends: ./.releaserc.base.cjs
+plugins:
+  # keep analyzer here because 'plugins' overrides the base config
+  - path: "@semantic-release/commit-analyzer"
+    preset: conventionalcommits
+    parserOpts:
+      noteKeywords: ["BREAKING CHANGE","BREAKING CHANGES"]
+    releaseRules:
+      - { type: feat, release: minor }
+      - { type: perf, release: minor }
+      - { type: build, release: minor }
+      - { type: chore, release: patch }
+      - { type: ci, release: patch }
+      - { type: test, release: patch }
+      - { type: fix, release: patch }
+      - { type: refactor, release: minor }
+      - { type: docs, release: patch }
+      - { breaking: true, release: major }
 
-            - path: "@semantic-release/release-notes-generator"
-              preset: conventionalcommits
+  - path: "@semantic-release/release-notes-generator"
+    preset: conventionalcommits
 
-            - path: "@semantic-release/npm"
-              pkgRoot: ${PKG_DIR}
-              npmPublish: true
+  - path: "@semantic-release/npm"
+    pkgRoot: ${PKG_DIR}
+    npmPublish: true
 
-            - path: "@semantic-release/git"
-              assets:
-                - ${PKG_DIR}/package.json
-              message: "chore(${PKG}): release v\\${nextRelease.version} [skip ci]\\n\\n\\${nextRelease.notes}"
+  - path: "@semantic-release/git"
+    assets:
+      - ${PKG_DIR}/package.json
+    message: "chore(${PKG}): release v\\${nextRelease.version} [skip ci]\\n\\n\\${nextRelease.notes}"
 
-            - path: "@semantic-release/github"
-              assets: []
+  - path: "@semantic-release/github"
+    assets: []
 
-            - path: "@saithodev/semantic-release-backmerge"
-            - path: "@semantic-release/exec"
+  - path: "@saithodev/semantic-release-backmerge"
+  - path: "@semantic-release/exec"
 
-          tagFormat: "${PKG}-v\\${version}"
-          repositoryUrl: https://github.com/LerianStudio/console-sdk.git
-          EOF
+tagFormat: "${PKG}-v\\${version}"
+repositoryUrl: https://github.com/LerianStudio/console-sdk.git
+EOF
 
       - name: Ensure @semantic-release/exec present
         run: npm i -D @semantic-release/exec
