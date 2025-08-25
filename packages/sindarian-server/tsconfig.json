@@ -21,6 +21,5 @@
     }
   },
   "include": ["src/**/*"],
-  "files": ["src/types/global.d.ts"],
   "exclude": ["node_modules", "dist", "test", "**/*.spec.ts", "**/*.test.ts"]
 }

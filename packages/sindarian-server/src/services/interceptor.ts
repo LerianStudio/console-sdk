@@ -1,0 +1,1 @@
+export const APP_INTERCEPTOR = Symbol('APP_INTERCEPTOR')

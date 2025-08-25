@@ -7,12 +7,15 @@ import {
   Param,
   Query,
   Body,
-  BaseController
+  BaseController,
+  UseInterceptors
 } from '@lerianstudio/sindarian-server'
 import { inject } from 'inversify'
 import { TestService } from './test-service'
+import { TestInterceptor } from './test-interceptor'
 
 @Controller('/test')
+@UseInterceptors(TestInterceptor)
 export class TestController extends BaseController {
   constructor(
     @inject(TestService)
@@ -22,6 +25,7 @@ export class TestController extends BaseController {
   }
 
   @Get()
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public fetchAll(@Query() query: any) {
     return this.testService.fetchAll()
   }

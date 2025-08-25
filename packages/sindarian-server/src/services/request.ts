@@ -12,7 +12,7 @@ export function bindRequest(container: Container, request: NextRequest) {
 
   // Check if REQUEST is already bound and rebind it
   if (container.isBound(REQUEST)) {
-    container.unbind(REQUEST)   
+    container.unbind(REQUEST)
   }
 
   // Bind the current request as a constant value
