@@ -1,12 +1,17 @@
 {
   "name": "@lerianstudio/sindarian-ui",
-  "version": "0.1.0",
+  "version": "0.0.0-development",
   "description": "Sindarian UI - A UI library for Midaz Console",
   "license": "ISC",
   "author": {
     "name": "Lerian Studio",
     "email": "contato@lerian.studio",
     "url": "https://lerian.studio"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LerianStudio/console-sdk.git",
+    "directory": "packages/sindarian-ui"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -64,5 +69,8 @@
     "@types/react": "^19.1.9",
     "storybook": "^9.1.1",
     "tailwindcss": "^4.1.11"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
