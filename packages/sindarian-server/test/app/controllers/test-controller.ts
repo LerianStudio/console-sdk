@@ -7,22 +7,20 @@ import {
   Param,
   Query,
   Body,
-  BaseController,
   UseInterceptors
 } from '@lerianstudio/sindarian-server'
 import { inject } from 'inversify'
 import { TestService } from './test-service'
 import { TestInterceptor } from './test-interceptor'
+import { CreateTestDto, UpdateTestDto } from './test-dto'
 
 @Controller('/test')
 @UseInterceptors(TestInterceptor)
-export class TestController extends BaseController {
+export class TestController {
   constructor(
     @inject(TestService)
     private readonly testService: TestService
-  ) {
-    super()
-  }
+  ) {}
 
   @Get()
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -36,12 +34,12 @@ export class TestController extends BaseController {
   }
 
   @Post()
-  public create(@Body() body: any) {
+  public create(@Body() body: CreateTestDto) {
     return { id: 1, ...body }
   }
 
   @Patch(':id')
-  public update(@Param('id') id: string, @Body() body: any) {
+  public update(@Param('id') id: string, @Body() body: UpdateTestDto) {
     return { id, ...body }
   }
 

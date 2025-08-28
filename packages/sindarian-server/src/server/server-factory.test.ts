@@ -11,8 +11,28 @@ jest.mock('@/context/execution-context')
 jest.mock('@/controllers/base-controller')
 jest.mock('@/exceptions/base-exception-filter')
 jest.mock('@/exceptions/decorators/catch-decorator')
-jest.mock('@/exceptions/decorators/use-filters-decorator')
-jest.mock('@/interceptor/decorators/use-interceptor-decorator')
+jest.mock('@/exceptions/decorators/use-filters-decorator', () => ({
+  FilterHandler: {
+    fetch: jest.fn()
+  }
+}))
+jest.mock('@/interceptor/decorators/use-interceptor-decorator', () => ({
+  InterceptorHandler: {
+    fetch: jest.fn(),
+    execute: jest.fn()
+  }
+}))
+jest.mock('@/pipes/decorators/use-pipes', () => ({
+  PipeHandler: {
+    fetch: jest.fn(),
+    execute: jest.fn()
+  }
+}))
+jest.mock('@/controllers/decorators/route-decorator', () => ({
+  RouteHandler: {
+    getArgs: jest.fn()
+  }
+}))
 jest.mock('@/modules/module-decorator')
 jest.mock('@/services/request')
 jest.mock('@/utils/url/url-match')
@@ -32,11 +52,10 @@ import { ExecutionContext } from '@/context/execution-context'
 import { BaseController } from '@/controllers/base-controller'
 import { BaseExceptionFilter } from '@/exceptions/base-exception-filter'
 import { catchHandler } from '@/exceptions/decorators/catch-decorator'
-import { filterHandler } from '@/exceptions/decorators/use-filters-decorator'
-import {
-  interceptorExecute,
-  interceptorHandler
-} from '@/interceptor/decorators/use-interceptor-decorator'
+import { FilterHandler } from '@/exceptions/decorators/use-filters-decorator'
+import { InterceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
+import { PipeHandler } from '@/pipes/decorators/use-pipes'
+import { RouteHandler } from '@/controllers/decorators/route-decorator'
 import { moduleHandler } from '@/modules/module-decorator'
 import { bindRequest } from '@/services/request'
 import { urlMatch } from '@/utils/url/url-match'
@@ -59,14 +78,23 @@ const mockBaseExceptionFilter = BaseExceptionFilter as jest.MockedClass<
 const mockCatchHandler = catchHandler as jest.MockedFunction<
   typeof catchHandler
 >
-const mockFilterHandler = filterHandler as jest.MockedFunction<
-  typeof filterHandler
+const mockFilterHandler = FilterHandler.fetch as jest.MockedFunction<
+  typeof FilterHandler.fetch
 >
-const mockInterceptorExecute = interceptorExecute as jest.MockedFunction<
-  typeof interceptorExecute
+const mockInterceptorExecute = InterceptorHandler.execute as jest.MockedFunction<
+  typeof InterceptorHandler.execute
 >
-const mockInterceptorHandler = interceptorHandler as jest.MockedFunction<
-  typeof interceptorHandler
+const mockInterceptorHandler = InterceptorHandler.fetch as jest.MockedFunction<
+  typeof InterceptorHandler.fetch
+>
+const mockPipeHandler = PipeHandler.fetch as jest.MockedFunction<
+  typeof PipeHandler.fetch
+>
+const mockPipeExecute = PipeHandler.execute as jest.MockedFunction<
+  typeof PipeHandler.execute
+>
+const mockRouteHandler = RouteHandler.getArgs as jest.MockedFunction<
+  typeof RouteHandler.getArgs
 >
 const mockModuleHandler = moduleHandler as jest.MockedFunction<
   typeof moduleHandler
@@ -119,8 +147,12 @@ describe('ServerFactory', () => {
     mockLogger.error = jest.fn()
     mockLogger.overrideLogger = jest.fn()
     mockIsNil.mockReturnValue(false)
-    mockFilterHandler.mockReturnValue([])
-    mockInterceptorHandler.mockReturnValue([])
+    mockFilterHandler.mockResolvedValue([])
+    mockInterceptorHandler.mockResolvedValue([])
+    mockPipeHandler.mockResolvedValue([])
+    mockInterceptorExecute.mockImplementation(async (context, interceptors, action) => await action())
+    mockPipeExecute.mockImplementation(async (controller, methodName, pipes, args) => args)
+    mockRouteHandler.mockReturnValue([])
     mockCatchHandler.mockReturnValue({ type: null })
   })
 
@@ -300,7 +332,7 @@ describe('ServerFactory', () => {
       )
       mockContainerInstance.getAsync.mockResolvedValue(mockController)
       mockUrlMatch.mockReturnValue({ params: { id: '123' } })
-      mockInterceptorHandler.mockReturnValue([])
+      mockInterceptorHandler.mockResolvedValue([])
       mockInterceptorExecute.mockImplementation(
         async (ctx, interceptors, action) => action()
       )
@@ -404,7 +436,7 @@ describe('ServerFactory', () => {
 
     it('should execute interceptors', async () => {
       const mockInterceptor = { intercept: jest.fn() }
-      mockInterceptorHandler.mockReturnValue([mockInterceptor] as any)
+      mockInterceptorHandler.mockResolvedValue([mockInterceptor] as any)
 
       // Reset the mock before our specific test
       mockInterceptorExecute.mockClear()
@@ -532,7 +564,7 @@ describe('ServerFactory', () => {
       serverFactory['globalInterceptors'] = [globalInterceptor as any]
 
       mockContainerInstance.isBound.mockReturnValue(false)
-      mockInterceptorHandler.mockReturnValue([])
+      mockInterceptorHandler.mockResolvedValue([])
 
       const result = await serverFactory['_fetchInterceptors'](mockController)
 
@@ -543,7 +575,7 @@ describe('ServerFactory', () => {
       const appInterceptor = { intercept: jest.fn() }
       mockContainerInstance.isBound.mockReturnValue(true)
       mockContainerInstance.getAsync.mockResolvedValue(appInterceptor)
-      mockInterceptorHandler.mockReturnValue([])
+      mockInterceptorHandler.mockResolvedValue([])
 
       const result = await serverFactory['_fetchInterceptors'](mockController)
 
@@ -558,7 +590,7 @@ describe('ServerFactory', () => {
       const interceptorInstance = { intercept: jest.fn() }
 
       mockContainerInstance.isBound.mockReturnValue(false)
-      mockInterceptorHandler.mockReturnValue([interceptorClass])
+      mockInterceptorHandler.mockResolvedValue([interceptorInstance])
       mockContainerInstance.getAsync.mockResolvedValue(interceptorInstance)
 
       const result = await serverFactory['_fetchInterceptors'](mockController)

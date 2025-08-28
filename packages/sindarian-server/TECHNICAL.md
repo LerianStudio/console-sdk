@@ -21,6 +21,8 @@ Sindarian Server is a lightweight, NestJS-inspired framework designed specifical
 4. **Decorator System**: Metadata-driven routing, validation, and middleware
 5. **Exception System**: Centralized error handling with filters
 6. **Interceptor System**: Request/response middleware pipeline
+7. **Pipe System**: Data transformation and validation pipeline
+8. **Zod Integration**: Schema-based validation with automatic DTO generation
 
 ## Core System Components
 
@@ -53,8 +55,10 @@ async handler(request: NextRequest, { params })
 4. **Handler Resolution**: Gets method handler from controller
 5. **Execution Context**: Creates context with controller class, method, and arguments
 6. **Interceptor Chain**: Executes interceptors in configured order
-7. **Method Execution**: Calls actual controller method
-8. **Exception Handling**: Catches and processes errors through filter chain
+7. **Parameter Extraction**: Extracts parameters using route handler decorators
+8. **Pipe Processing**: Validates and transforms parameters through registered pipes
+9. **Method Execution**: Calls actual controller method with processed parameters
+10. **Exception Handling**: Catches and processes errors through filter chain
 
 #### Global Configuration
 - `setGlobalPrefix(prefix)`: Sets URL prefix for all routes
@@ -151,19 +155,24 @@ The `moduleHandler` function recursively processes modules:
 
 **@Body()** (`body-decorator.ts`)
 - Extracts and parses request body
-- Supports JSON parsing with error handling
+- Supports JSON, form-data, and text parsing
+- Integrates with pipe system for validation
+- Preserves parameter type metadata for Zod validation
 
 **@Request()** (`request-decorator.ts`)
 - Injects raw Next.js request object
 - Provides access to headers, URL, etc.
 
 #### Parameter Resolution Process
-Route decorators wrap methods to:
-1. Process all parameter decorators in order
-2. Extract parameters from request/context
-3. Sort by parameter index
-4. Call original method with resolved parameters
-5. Auto-wrap response in NextResponse.json if needed
+The framework processes parameters through a multi-stage pipeline:
+
+1. **Route Decoration**: Route decorators store parameter type metadata using `design:paramtypes`
+2. **Parameter Extraction**: Parameter decorators extract raw values from request
+3. **Pipe Processing**: Registered pipes validate and transform parameter values
+4. **Method Invocation**: Processed parameters are passed to controller method
+5. **Response Wrapping**: Return value is auto-wrapped in NextResponse.json if needed
+
+**Note**: Route decorators no longer handle parameter processing directly. This is now handled by the ServerFactory during request processing for better separation of concerns.
 
 ### 5. Exception Handling System (`src/exceptions/`)
 
@@ -233,7 +242,182 @@ The `interceptorExecute` function creates a middleware chain:
 2. **Controller**: `@UseInterceptors(interceptor)` class decorator
 3. **Service**: Bind to `APP_INTERCEPTOR` token
 
-### 7. Request Lifecycle Management (`src/services/request.ts`)
+### 7. Pipe System (`src/pipes/`)
+
+The Pipe System provides data transformation and validation capabilities that process parameters before they reach controller methods.
+
+#### Pipe Interface
+```typescript
+export interface PipeTransform {
+  transform(value: any, metadata: ArgumentMetadata): any
+}
+
+export interface ArgumentMetadata {
+  readonly type: 'body' | 'param' | 'query' | 'custom'
+  readonly metatype?: Function | undefined
+  readonly data?: any
+}
+```
+
+#### Built-in Pipes
+
+**ZodValidationPipe** (`src/zod/zod-validation-pipe.ts`)
+- Validates parameters using Zod schemas
+- Works with DTOs created via `createZodDto()`
+- Throws `ValidationApiException` on validation failures
+- Automatically detects ZodDto classes via `isZodDto` property
+
+#### Pipe Execution Process (`src/pipes/decorators/use-pipes.ts`)
+
+The `PipeHandler.execute` function processes all parameters through registered pipes:
+
+1. **Metadata Collection**: Gathers route parameter metadata from `design:paramtypes`
+2. **Parameter Processing**: Processes each parameter through the pipe chain
+3. **Type Information**: Uses `paramType` or `paramTypes[parameterIndex]` for validation
+4. **Sequential Execution**: Pipes are applied in registration order
+5. **Error Handling**: Validation errors are propagated as exceptions
+
+```typescript
+static async execute(
+  target: object,
+  propertyKey: string | symbol,
+  pipes: PipeTransform[],
+  args: RouteContext[]
+): Promise<any[]>
+```
+
+#### Pipe Registration
+
+1. **Global Pipes**: 
+   ```typescript
+   @Module({
+     providers: [
+       { provide: APP_PIPE, useClass: ZodValidationPipe }
+     ]
+   })
+   ```
+
+2. **Controller Pipes**: `@UsePipes(ValidationPipe)` class decorator
+
+3. **Method Pipes**: `@UsePipes(ValidationPipe)` method decorator
+
+#### Parameter Type Detection
+
+The pipe system uses TypeScript's `emitDecoratorMetadata` to detect parameter types:
+
+- **Route Metadata**: Parameter types captured during route decoration
+- **Design Types**: Fallback to `design:paramtypes` reflection metadata
+- **Body Parameters**: Special handling for request body with DTO type detection
+
+### 8. Zod Integration (`src/zod/`)
+
+The framework provides seamless integration with Zod for schema validation and DTO generation.
+
+#### createZodDto Function (`src/zod/create-zod-dto.ts`)
+
+Converts Zod schemas into DTO classes compatible with the validation pipeline:
+
+```typescript
+export function createZodDto<TSchema extends UnknownSchema>(
+  schema: TSchema
+): ZodDto<TSchema> {
+  class AugmentedZodDto {
+    public static readonly isZodDto = true
+    public static readonly schema = schema
+    
+    public static create(input: unknown) {
+      return this.schema.parse(input)
+    }
+  }
+  
+  return AugmentedZodDto as unknown as ZodDto<TSchema>
+}
+```
+
+#### ZodDto Interface
+```typescript
+export interface ZodDto<TSchema extends UnknownSchema> {
+  new (): ReturnType<TSchema['parse']>
+  isZodDto: true
+  schema: TSchema
+  create(input: unknown): ReturnType<TSchema['parse']>
+}
+```
+
+#### Usage Pattern
+```typescript
+// Define Zod schema
+const CreateUserSchema = z.object({
+  name: z.string().min(2).max(100),
+  email: z.string().email(),
+  age: z.number().min(18).optional()
+})
+
+// Create DTO class
+export class CreateUserDto extends createZodDto(CreateUserSchema) {}
+
+// Use in controller
+@Controller('/users')
+export class UsersController {
+  @Post()
+  async createUser(@Body() userData: CreateUserDto) {
+    // userData is automatically validated and typed
+    return this.usersService.create(userData)
+  }
+}
+```
+
+#### Validation Pipeline Integration
+
+1. **Parameter Extraction**: `@Body()` decorator extracts request body
+2. **Type Detection**: Pipe system detects `CreateUserDto` as parameter type
+3. **Validation**: `ZodValidationPipe` validates using the embedded Zod schema
+4. **Error Handling**: Invalid data throws `ValidationApiException`
+5. **Type Safety**: Valid data is strongly typed according to schema
+
+#### Error Response Format
+```json
+{
+  "message": "Validation failed",
+  "statusCode": 400,
+  "error": "Bad Request"
+}
+```
+
+#### Advanced Zod Features
+
+**Nested Objects**:
+```typescript
+const AddressSchema = z.object({
+  street: z.string(),
+  city: z.string(),
+  zipCode: z.string().regex(/^\d{5}$/)
+})
+
+const UserSchema = z.object({
+  name: z.string(),
+  address: AddressSchema
+})
+```
+
+**Array Validation**:
+```typescript
+const CreateUsersSchema = z.object({
+  users: z.array(UserSchema).min(1).max(10)
+})
+```
+
+**Custom Validation**:
+```typescript
+const UserSchema = z.object({
+  email: z.string().email().refine(
+    (email) => email.endsWith('@company.com'),
+    { message: 'Must be company email' }
+  )
+})
+```
+
+### 9. Request Lifecycle Management (`src/services/request.ts`)
 
 #### Request Binding Strategy
 Since Next.js functions are stateless, the framework uses:
@@ -292,9 +476,11 @@ Safely combines controller and method paths:
 5. **Method Resolution**: Extract method handler
 6. **Context Creation**: Build ExecutionContext
 7. **Interceptor Chain**: Execute pre-processing interceptors
-8. **Method Execution**: Call controller method with injected parameters
-9. **Response Processing**: Auto-wrap response if needed
-10. **Error Handling**: Process any exceptions through filter chain
+8. **Parameter Extraction**: Extract parameters from request using decorators
+9. **Pipe Processing**: Validate and transform parameters through registered pipes
+10. **Method Execution**: Call controller method with processed parameters
+11. **Response Processing**: Auto-wrap response if needed
+12. **Error Handling**: Process any exceptions through filter chain
 
 ### Dependency Resolution
 1. **Constructor Injection**: Inversify resolves constructor dependencies
@@ -324,6 +510,22 @@ export async function POST(request: NextRequest, context: any) {
 - **Cold Start Optimization**: Minimal initialization overhead
 - **Memory Efficiency**: Lightweight container and metadata
 - **Request Isolation**: Each request gets isolated context
+
+### TypeScript Configuration Requirements
+
+For the pipe system and Zod validation to work correctly, ensure your TypeScript configuration includes:
+
+```json
+{
+  "compilerOptions": {
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "types": ["reflect-metadata"]
+  }
+}
+```
+
+**Critical**: The `emitDecoratorMetadata: true` setting is essential for parameter type detection in the pipe system. Without this, Zod validation will not receive proper type information.
 
 ## Key Design Patterns
 
@@ -420,6 +622,55 @@ export class LoggingInterceptor implements Interceptor {
 }
 ```
 
+### Custom Pipes
+Create data transformation and validation logic:
+```typescript
+@injectable()
+export class ParseIntPipe implements PipeTransform {
+  transform(value: string, metadata: ArgumentMetadata): number {
+    const parsed = parseInt(value, 10)
+    if (isNaN(parsed)) {
+      throw new ValidationApiException(`Invalid integer: ${value}`)
+    }
+    return parsed
+  }
+}
+
+// Usage
+@Get(':id')
+async findOne(@Param('id') @UsePipes(ParseIntPipe) id: number) {
+  return this.service.findOne(id)
+}
+```
+
+### Custom Zod DTOs
+Create reusable validation schemas:
+```typescript
+// Base schemas
+const TimestampSchema = z.object({
+  createdAt: z.date(),
+  updatedAt: z.date()
+})
+
+// Composed schemas
+const UserSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(100),
+  email: z.string().email()
+}).merge(TimestampSchema)
+
+// Generated DTO
+export class UserDto extends createZodDto(UserSchema) {}
+
+// Partial updates
+const UpdateUserSchema = UserSchema.partial().omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+})
+export class UpdateUserDto extends createZodDto(UpdateUserSchema) {}
+```
+
 ## Best Practices
 
 ### Module Organization
@@ -442,9 +693,36 @@ export class LoggingInterceptor implements Interceptor {
 - Use filters for cross-cutting error concerns
 - Provide meaningful error messages
 
+### Validation and Pipes
+- Use Zod schemas for all input validation
+- Create reusable DTO classes with `createZodDto()`
+- Register `ZodValidationPipe` globally for consistent validation
+- Use custom pipes for data transformation (e.g., parsing, normalization)
+- Keep validation logic in schemas, not in controllers
+
+### Schema Design
+- Define schemas at module level for better type inference
+- Use schema composition with `.merge()` for reusability
+- Leverage Zod's built-in validation methods (`.email()`, `.uuid()`, etc.)
+- Create separate schemas for create/update operations using `.partial()` and `.omit()`
+- Use `.refine()` for custom business logic validation
+
 ### Performance
 - Minimize global interceptors
 - Use factory providers only when necessary
 - Keep route patterns simple for faster matching
 
 This framework provides a solid foundation for building scalable Next.js APIs while maintaining the familiar NestJS development experience with necessary adaptations for the serverless environment.
+
+## Recent Updates
+
+### Pipe System and Zod Integration (v1.0.0-beta.1+)
+The framework now includes a comprehensive pipe system with built-in Zod validation support:
+
+- **Automatic Validation**: DTOs created with `createZodDto()` are automatically validated
+- **Type Safety**: Full TypeScript integration with schema-based type inference  
+- **NestJS-Compatible**: Follows NestJS patterns for pipes and validation
+- **Extensible**: Support for custom pipes and transformation logic
+- **Performance Optimized**: Efficient parameter processing pipeline
+
+This brings the framework closer to feature parity with NestJS while maintaining its lightweight, serverless-optimized design.

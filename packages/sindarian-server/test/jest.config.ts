@@ -16,7 +16,7 @@ const config: Config = {
           strict: true,
           esModuleInterop: true,
           skipLibCheck: true,
-          emitDecoratorMetadata: false, // Keep disabled due to Zod schema circular dependency issue
+          emitDecoratorMetadata: true, // Keep disabled due to Zod schema circular dependency issue
           experimentalDecorators: true,
           resolveJsonModule: true,
           allowSyntheticDefaultImports: true,

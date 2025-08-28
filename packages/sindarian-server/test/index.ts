@@ -4,13 +4,17 @@ import { app } from './app/app'
 ;(async () => {
   try {
     const request = new NextRequest('http://localhost:3000/api/v1/test', {
-      method: 'GET'
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: 'Test' })
     })
 
     const params = {
       params: new Promise((resolve) => {
         resolve({
-          id: '1'
+          // id: '1'
         })
       })
     }

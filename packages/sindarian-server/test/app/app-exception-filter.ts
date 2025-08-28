@@ -12,10 +12,11 @@ export class AppExceptionFilter extends ExceptionFilter {
   async catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
     const request = ctx.getRequest<NextRequest>()
-    const status = exception.getStatus()
 
     // Handle ApiException with more detailed response
     if (exception instanceof ApiException) {
+      const status = exception.getStatus()
+
       return NextResponse.json(
         {
           timestamp: new Date().toISOString(),
@@ -25,15 +26,5 @@ export class AppExceptionFilter extends ExceptionFilter {
         { status }
       )
     }
-
-    // Handle generic HttpException
-    return NextResponse.json(
-      {
-        timestamp: new Date().toISOString(),
-        path: request.url,
-        message: exception.message
-      },
-      { status }
-    )
   }
 }

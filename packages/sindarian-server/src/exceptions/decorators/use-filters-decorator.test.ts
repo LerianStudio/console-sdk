@@ -1,9 +1,9 @@
 import 'reflect-metadata'
 import { FILTER_KEY } from '../../constants/keys'
 import { Class } from '../../types/class'
-import { filterHandler, UseFilters } from './use-filters-decorator'
+import { FilterHandler, UseFilters } from './use-filters-decorator'
 
-describe('filterHandler', () => {
+describe('FilterHandler.getMetadata', () => {
   class TestFilter {}
   class AnotherFilter {}
 
@@ -19,16 +19,16 @@ describe('filterHandler', () => {
   })
 
   it('should return empty array when no metadata is found', () => {
-    const result = filterHandler(TestClass)
-    expect(result).toEqual([])
+    const result = FilterHandler.getMetadata(TestClass)
+    expect(result).toEqual({ filters: [] })
   })
 
   it('should return existing filters when metadata exists', () => {
     const filters = [TestFilter, AnotherFilter]
     Reflect.defineMetadata(FILTER_KEY, filters, TestClass)
 
-    const result = filterHandler(TestClass)
-    expect(result).toEqual(filters)
+    const result = FilterHandler.getMetadata(TestClass)
+    expect(result).toEqual({ filters })
   })
 
   it('should return empty array for different target objects', () => {
@@ -38,16 +38,16 @@ describe('filterHandler', () => {
     Reflect.defineMetadata(FILTER_KEY, [TestFilter], TestClass)
 
     // Query metadata on AnotherTestClass
-    const result = filterHandler(AnotherTestClass)
-    expect(result).toEqual([])
+    const result = FilterHandler.getMetadata(AnotherTestClass)
+    expect(result).toEqual({ filters: [] })
   })
 
   it('should handle complex filter arrays', () => {
     const complexFilters = [TestFilter, AnotherFilter, TestFilter] // with duplicates
     Reflect.defineMetadata(FILTER_KEY, complexFilters, TestClass)
 
-    const result = filterHandler(TestClass)
-    expect(result).toEqual(complexFilters)
+    const result = FilterHandler.getMetadata(TestClass)
+    expect(result).toEqual({ filters: complexFilters })
   })
 })
 
@@ -220,13 +220,13 @@ describe('Integration tests', () => {
     }
   })
 
-  it('should work with filterHandler after UseFilters decoration', () => {
+  it('should work with FilterHandler.getMetadata after UseFilters decoration', () => {
     const filters = [TestFilter, AnotherFilter]
     const decorator = UseFilters(filters)
     decorator(TestClass)
 
-    const result = filterHandler(TestClass)
-    expect(result).toEqual(filters)
+    const result = FilterHandler.getMetadata(TestClass)
+    expect(result).toEqual({ filters })
   })
 
   it('should accumulate filters through multiple decorations and be readable by handler', () => {
@@ -236,12 +236,12 @@ describe('Integration tests', () => {
     decorator1(TestClass)
     decorator2(TestClass)
 
-    const result = filterHandler(TestClass)
-    expect(result).toEqual([TestFilter, AnotherFilter])
+    const result = FilterHandler.getMetadata(TestClass)
+    expect(result).toEqual({ filters: [TestFilter, AnotherFilter] })
   })
 
   it('should return empty array from handler when no decorations applied', () => {
-    const result = filterHandler(TestClass)
-    expect(result).toEqual([])
+    const result = FilterHandler.getMetadata(TestClass)
+    expect(result).toEqual({ filters: [] })
   })
 })

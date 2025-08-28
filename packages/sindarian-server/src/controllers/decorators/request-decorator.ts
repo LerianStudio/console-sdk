@@ -6,31 +6,41 @@ export type RequestMetadata = {
   parameterIndex: number
 }
 
-/**
- * Handler to fetch the request object.
- *
- * @param target - The target object.
- * @param propertyKey - The property key.
- * @param args - The arguments.
- * @returns The parameter and parameter index.
- */
-export function requestDecoratorHandler(
-  target: object,
-  propertyKey: string | symbol,
-  args: any[]
-) {
-  const metadata: RequestMetadata = Reflect.getOwnMetadata(
-    REQUEST_KEY,
-    target,
-    propertyKey
-  )
-  if (metadata) {
-    return {
-      parameter: getNextRequestArgument(args),
-      parameterIndex: metadata.parameterIndex
+export class RequestHandler {
+  static getMetadata(
+    target: object,
+    propertyKey: string | symbol
+  ): RequestMetadata | undefined {
+    let metadata: RequestMetadata = Reflect.getOwnMetadata(
+      REQUEST_KEY,
+      target,
+      propertyKey
+    )
+
+    // If not found on instance, try constructor prototype
+    if (!metadata && target.constructor) {
+      metadata = Reflect.getOwnMetadata(
+        REQUEST_KEY,
+        target.constructor.prototype,
+        propertyKey
+      )
     }
+
+    return metadata
   }
-  return null
+
+  static handle(target: object, propertyKey: string | symbol, args: any[]) {
+    const metadata = this.getMetadata(target, propertyKey)
+
+    if (metadata) {
+      return {
+        type: 'custom',
+        parameter: getNextRequestArgument(args),
+        parameterIndex: metadata.parameterIndex
+      }
+    }
+    return null
+  }
 }
 
 /**

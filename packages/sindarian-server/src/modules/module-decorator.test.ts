@@ -17,26 +17,44 @@ import {
 
 // Mock the controller decorator handler
 jest.mock('@/controllers/decorators/controller-decorator', () => ({
-  controllerHandler: jest
-    .fn()
-    .mockReturnValue([
-      { path: '/test', method: 'GET', methodName: 'testMethod' }
-    ])
+  ControllerHandler: {
+    getRoutes: jest
+      .fn()
+      .mockReturnValue([
+        { path: '/test', method: 'GET', methodName: 'testMethod' }
+      ])
+  }
 }))
 
 // Mock the interceptor decorator handler
 jest.mock('@/interceptor/decorators/use-interceptor-decorator', () => ({
-  interceptorHandler: jest.fn().mockReturnValue([])
+  InterceptorHandler: {
+    register: jest.fn()
+  }
 }))
 
-import { controllerHandler } from '@/controllers/decorators/controller-decorator'
-import { interceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
+// Mock the pipe decorator handler
+jest.mock('@/pipes/decorators/use-pipes', () => ({
+  PipeHandler: {
+    register: jest.fn()
+  }
+}))
 
-const mockControllerHandler = controllerHandler as jest.MockedFunction<
-  typeof controllerHandler
+// Mock the filter decorator handler
+jest.mock('@/exceptions/decorators/use-filters-decorator', () => ({
+  FilterHandler: {
+    register: jest.fn()
+  }
+}))
+
+import { ControllerHandler } from '@/controllers/decorators/controller-decorator'
+import { InterceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
+
+const mockControllerHandler = ControllerHandler.getRoutes as jest.MockedFunction<
+  typeof ControllerHandler.getRoutes
 >
-const mockInterceptorHandler = interceptorHandler as jest.MockedFunction<
-  typeof interceptorHandler
+const mockInterceptorHandler = InterceptorHandler.register as jest.MockedFunction<
+  typeof InterceptorHandler.register
 >
 
 describe('moduleHandler', () => {
