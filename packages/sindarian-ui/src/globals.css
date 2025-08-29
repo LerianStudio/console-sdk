@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 
 @import './components/ui/button/styles.css';
+@import './components/ui/icon-button/styles.css';
 
 @custom-variant dark (&:is(.dark *));
 

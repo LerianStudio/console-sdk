@@ -44,14 +44,6 @@ export const Secondary: StoryObj<ButtonProps> = {
   )
 }
 
-export const SecondaryDisabled: StoryObj<ButtonProps> = {
-  args: {
-    children: 'Button',
-    variant: 'secondary',
-    disabled: true
-  }
-}
-
 export const Tertiary: StoryObj<ButtonProps> = {
   args: {
     children: 'Button',

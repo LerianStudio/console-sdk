@@ -21,8 +21,8 @@ const buttonVariants = cva('button-base button-disabled button-read-only', {
       false: 'w-content'
     },
     size: {
-      default: 'button-size',
-      small: 'button-size-small'
+      default: '',
+      small: 'button-small'
     }
   },
   defaultVariants: {
@@ -39,8 +39,8 @@ const iconVariants = cva('', {
       'far-end': 'absolute right-2'
     },
     size: {
-      default: 'h-6',
-      small: 'h-4'
+      default: 'size-6',
+      small: 'size-4'
     }
   },
   defaultVariants: {

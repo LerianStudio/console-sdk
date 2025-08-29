@@ -23,7 +23,7 @@
 
 @layer components {
   .button-base {
-    @apply relative inline-flex items-center justify-center rounded-lg shadow-sm text-sm font-medium transition-colors cursor-pointer whitespace-nowrap;
+    @apply relative inline-flex items-center justify-center rounded-lg shadow-sm text-sm font-medium transition-colors cursor-pointer whitespace-nowrap h-button-h px-button-px py-button-py;
   }
 
   .button-primary {
@@ -50,11 +50,7 @@
     @apply data-[read-only=true]:cursor-default data-[read-only=true]:opacity-50 data-[read-only=true]:focus:ring-0 data-[read-only=true]:focus:outline-hidden data-[read-only=true]:border-transparent data-[read-only=true]:shadow-none;
   }
 
-  .button-size {
-    @apply h-button-h px-button-px py-button-py;
-  }
-
-  .button-size-small {
+  .button-small {
     @apply h-button-h-small px-button-px-small py-button-py-small;
   }
 }
