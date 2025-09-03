@@ -190,7 +190,7 @@ export function PageHeaderCollapsibleInfo({
           </div>
 
           <CollapsibleTrigger asChild>
-            <Button variant="plain" className="cursor-pointer self-start">
+            <Button variant="link" className="cursor-pointer self-start">
               <ChevronUp size={24} className="text-shadcn-500" />
             </Button>
           </CollapsibleTrigger>

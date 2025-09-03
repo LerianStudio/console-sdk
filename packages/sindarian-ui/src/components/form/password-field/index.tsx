@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React from 'react'
 import { Control, FieldPath, FieldValues } from 'react-hook-form'
 import {
   FormControl,
@@ -8,16 +8,18 @@ import {
   FormMessage,
   FormTooltip
 } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { EyeIcon, EyeOffIcon } from 'lucide-react'
+import { Input, InputAdornment } from '@/components/ui/input'
+import { Eye, EyeOff } from 'lucide-react'
+import { IconButton } from '@/components/ui/icon-button'
 
-interface PasswordFieldProps<
+export type PasswordFieldProps<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
-> {
+> = {
   name: TName
   label: string
   tooltip?: string
+  placeholder?: string
   control: Control<TFieldValues>
   required?: boolean
   disabled?: boolean
@@ -30,11 +32,12 @@ export function PasswordField<
   name,
   label,
   tooltip,
+  placeholder,
   control,
   required = false,
   disabled = false
 }: PasswordFieldProps<TFieldValues, TName>) {
-  const [showPassword, setShowPassword] = useState(false)
+  const [show, setShow] = React.useState(false)
 
   return (
     <FormField
@@ -47,27 +50,27 @@ export function PasswordField<
           >
             {label}
           </FormLabel>
-          <div className="relative">
-            <FormControl>
-              <Input
-                {...field}
-                type={showPassword ? 'text' : 'password'}
-                disabled={disabled}
-                className="pr-10"
-              />
-            </FormControl>
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-500 focus:outline-hidden"
-              tabIndex={-1}
-              onMouseDown={(e) => {
-                e.preventDefault()
-                setShowPassword(!showPassword)
-              }}
-            >
-              {showPassword ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
-            </button>
-          </div>
+          <FormControl>
+            <Input
+              {...field}
+              type={show ? 'text' : 'password'}
+              placeholder={placeholder}
+              endAdornment={
+                <InputAdornment position="end">
+                  <IconButton
+                    variant="outline"
+                    rounded
+                    onClick={() => setShow(!show)}
+                  >
+                    {show ? <EyeOff /> : <Eye />}
+                  </IconButton>
+                </InputAdornment>
+              }
+              disabled={disabled}
+              className="pr-10"
+            />
+          </FormControl>
+
           <FormMessage />
         </FormItem>
       )}

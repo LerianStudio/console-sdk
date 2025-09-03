@@ -21,6 +21,8 @@ export type InputFieldProps = {
   labelExtra?: ReactNode
   placeholder?: string
   description?: ReactNode
+  startAdornment?: ReactNode
+  endAdornment?: ReactNode
   control: Control<any>
   disabled?: boolean
   readOnly?: boolean
@@ -41,6 +43,8 @@ export const InputField = ({
   labelExtra,
   placeholder,
   description,
+  startAdornment,
+  endAdornment,
   required,
   readOnly,
   minHeight,
@@ -85,6 +89,8 @@ export const InputField = ({
                 type={type}
                 placeholder={placeholder}
                 readOnly={readOnly}
+                startAdornment={startAdornment}
+                endAdornment={endAdornment}
                 {...field}
               />
             )}
