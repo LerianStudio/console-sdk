@@ -26,6 +26,10 @@
     @apply relative inline-flex items-center justify-center rounded-lg shadow-sm text-sm font-medium transition-colors cursor-pointer whitespace-nowrap h-button-h px-button-px py-button-py;
   }
 
+  .button-plain {
+    @apply bg-transparent text-inherit shadow-none hover:bg-black/5;
+  }
+
   .button-primary {
     @apply bg-button-primary text-button-primary-foreground hover:bg-button-primary/80 disabled:bg-button-primary-disabled disabled:text-button-primary-foreground-disabled;
   }
@@ -40,6 +44,10 @@
 
   .button-outline {
     @apply text-button-outline-foreground shadow-none border border-transparent hover:border-button-border;
+  }
+
+  .button-link {
+    @apply !p-0 !px-0 !py-0 !h-4 !text-[13px] underline shadow-none;
   }
 
   .button-disabled {

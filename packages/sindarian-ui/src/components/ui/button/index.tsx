@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 const buttonVariants = cva('button-base button-disabled button-read-only', {
   variants: {
     variant: {
+      plain: 'button-plain',
       hoverLink:
         'hover:bg-accent text-black hover:text-accent-foreground font-normal',
       default: 'button-primary',
@@ -14,7 +15,7 @@ const buttonVariants = cva('button-base button-disabled button-read-only', {
       secondary: 'button-secondary',
       tertiary: 'button-tertiary',
       outline: 'button-outline',
-      link: 'text-shadcn-600 underline-offset-4 underline text-sm font-normal justify-start'
+      link: 'button-link'
     },
     fullWidth: {
       true: 'w-full',
@@ -39,8 +40,8 @@ const iconVariants = cva('', {
       'far-end': 'absolute right-2'
     },
     size: {
-      default: 'size-6',
-      small: 'size-4'
+      default: '[&>*]:size-6',
+      small: '[&>*]:size-4'
     }
   },
   defaultVariants: {
@@ -83,7 +84,7 @@ function Button({
 
   return (
     <Comp
-      className={cn(buttonVariants({ variant, size, fullWidth, className }))}
+      className={cn(buttonVariants({ variant, size, fullWidth }), className)}
       data-read-only={readOnly}
       data-slot="button"
       {...props}

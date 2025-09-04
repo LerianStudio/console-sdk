@@ -30,6 +30,7 @@ export type IconButtonProps = React.ComponentProps<'button'> &
   }
 
 export function IconButton({
+  className,
   variant,
   rounded,
   size,
@@ -52,7 +53,8 @@ export function IconButton({
     <Comp
       className={cn(
         buttonVariants({ variant, size }),
-        iconButtonVariants({ rounded, size })
+        iconButtonVariants({ rounded, size }),
+        className
       )}
       data-read-only={readOnly}
       data-slot="button"

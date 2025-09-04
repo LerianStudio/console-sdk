@@ -1,9 +1,11 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
 
 @import './components/ui/button/styles.css';
 @import './components/ui/icon-button/styles.css';
 @import './components/ui/input/styles.css';
 @import './components/ui/breadcrumb/styles.css';
+@import './components/ui/alert/styles.css';
 
 @custom-variant dark (&:is(.dark *));
 

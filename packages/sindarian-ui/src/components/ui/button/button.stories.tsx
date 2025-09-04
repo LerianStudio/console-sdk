@@ -1,6 +1,6 @@
 import { Meta, StoryObj } from '@storybook/nextjs'
 import { ButtonProps, Button } from '.'
-import { Users } from 'lucide-react'
+import { ArrowRight, Users } from 'lucide-react'
 
 const meta: Meta<ButtonProps> = {
   title: 'Primitives/Button',
@@ -178,11 +178,34 @@ export const Small: StoryObj<ButtonProps> = {
     size: 'small'
   },
   render: (args) => (
-    <div className="flex gap-2">
-      <Button {...args} />
-      <Button variant="secondary" {...args} />
-      <Button variant="tertiary" {...args} />
-      <Button variant="outline" {...args} />
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        <Button {...args} />
+        <Button variant="secondary" {...args} />
+        <Button variant="tertiary" {...args} />
+        <Button variant="outline" {...args} />
+      </div>
+      <div className="flex gap-2">
+        <Button icon={<ArrowRight />} iconPlacement="end" {...args} />
+        <Button
+          variant="secondary"
+          icon={<ArrowRight />}
+          iconPlacement="end"
+          {...args}
+        />
+        <Button
+          variant="tertiary"
+          icon={<ArrowRight />}
+          iconPlacement="end"
+          {...args}
+        />
+        <Button
+          variant="outline"
+          icon={<ArrowRight />}
+          iconPlacement="end"
+          {...args}
+        />
+      </div>
     </div>
   )
 }
