@@ -3,6 +3,7 @@
 @import './components/ui/button/styles.css';
 @import './components/ui/icon-button/styles.css';
 @import './components/ui/input/styles.css';
+@import './components/ui/breadcrumb/styles.css';
 
 @custom-variant dark (&:is(.dark *));
 

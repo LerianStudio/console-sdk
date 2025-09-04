@@ -1,0 +1,27 @@
+@theme {
+    --color-breadcrumb-link-foreground: var(--color-zinc-700);
+    --color-breadcrumb-link-foreground-hover: var(--color-zinc-900);
+    --color-breadcrumb-muted-foreground: var(--color-shadcn-400);
+}
+
+@layer components {
+    .breadcrumb-list {
+        @apply flex flex-wrap items-center gap-2 text-xs font-medium break-words sm:gap-2.5;
+    }
+
+    .breadcrumb-item {
+        @apply inline-flex items-center gap-1.5;
+    }
+
+    .breadcrumb-link {
+        @apply text-breadcrumb-link-foreground underline cursor-pointer hover:text-breadcrumb-link-foreground-hover transition-colors;
+    }
+
+    .breadcrumb-page {
+        @apply text-breadcrumb-muted-foreground;
+    }
+
+    .breadcrumb-separator {
+        @apply text-breadcrumb-muted-foreground [&>svg]:size-2.5;
+    }
+}
