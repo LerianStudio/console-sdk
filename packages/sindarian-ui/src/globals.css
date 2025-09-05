@@ -6,6 +6,7 @@
 @import './components/ui/input/styles.css';
 @import './components/ui/breadcrumb/styles.css';
 @import './components/ui/alert/styles.css';
+@import './components/ui/stepper/styles.css';
 
 @custom-variant dark (&:is(.dark *));
 
