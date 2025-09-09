@@ -4,6 +4,6 @@ module.exports = [
   // Apply recommended configs
   ...baseConfig,
 
-  // Add custom configs below
+  
   {}
 ]

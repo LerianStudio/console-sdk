@@ -22,6 +22,11 @@ on:
         required: false
         default: all
 
+# Prevent parallel runs on the same branch that could race for pushes
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
 permissions:
   # Required permissions for GitHub Actions jobs
   id-token: write
@@ -209,7 +214,7 @@ jobs:
                   message: "chore(" + PKG + "): release v${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}"
                 }],
                 ["@semantic-release/github", { assets: [] }],
-                // 🔧 Only backmerge from main -> develop (avoids error when releasing on develop)
+                // Only backmerge from main -> develop (avoids error when releasing on develop)
                 ["@saithodev/semantic-release-backmerge", {
                   backmergeBranches: [
                     { from: "main", to: "develop" }
@@ -229,6 +234,19 @@ jobs:
 
       - name: Ensure required plugins present
         run: npm i -D @semantic-release/exec conventional-changelog-conventionalcommits@7.0.2
+
+      # Keep local branch in sync to avoid non-fast-forward push rejections
+      - name: Sync branch with remote (rebase)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*" "+refs/tags/*:refs/tags/*"
+          git checkout "${GITHUB_REF_NAME}"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || {
+            echo "Rebase failed due to conflicts. Please resolve conflicts manually and re-run.";
+            exit 1;
+          }
+          git status
 
       - name: Run Semantic Release (${{ matrix.package }})
         uses: cycjimmy/semantic-release-action@v4
