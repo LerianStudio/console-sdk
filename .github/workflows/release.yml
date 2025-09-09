@@ -129,7 +129,7 @@ jobs:
 
   release:
     name: "🚀 Release - ${{ matrix.package }}"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-lest
     needs: [detect-changes, npm-audit, test, test-e2e]
     if: needs.detect-changes.outputs.packages != '[]'
     strategy:
@@ -199,7 +199,14 @@ jobs:
                   message: "chore(" + PKG + "): release v${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}"
                 }],
                 ["@semantic-release/github", { assets: [] }],
-                "@saithodev/semantic-release-backmerge",
+                /* 🔧 backmerge configurado APENAS quando a release vier da main (evita develop→develop) */
+                ["@saithodev/semantic-release-backmerge", {
+                  backmergeBranches: [
+                    { from: "main", to: "develop" }
+                    // Se você usar branch RC, habilite também:
+                    // { from: "release-candidate", to: "develop" }
+                  ]
+                }],
                 "@semantic-release/exec"
               ],
               tagFormat: PKG + "-v${version}",
