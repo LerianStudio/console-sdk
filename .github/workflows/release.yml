@@ -161,6 +161,16 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
+      # Keep local branch in sync right after checkout (clean tree) to avoid non-fast-forward push rejections
+      - name: Sync branch with remote (rebase, autostash)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*" "+refs/tags/*:refs/tags/*"
+          git checkout "${GITHUB_REF_NAME}"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git status
+
       # Setup Node.js with NPM authentication
       - uses: actions/setup-node@v4
         with:
@@ -232,21 +242,13 @@ jobs:
             console.log("----- .releaserc.json -----\\n" + JSON.stringify(cfg, null, 2));
           '
 
-      - name: Ensure required plugins present
-        run: npm i -D @semantic-release/exec conventional-changelog-conventionalcommits@7.0.2
-
-      # Keep local branch in sync to avoid non-fast-forward push rejections
-      - name: Sync branch with remote (rebase)
+      # Optional final quick sync; should be no-op but keeps branch fresh
+      - name: Final quick sync (rebase, autostash)
         shell: bash
         run: |
           set -euo pipefail
-          git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*" "+refs/tags/*:refs/tags/*"
-          git checkout "${GITHUB_REF_NAME}"
-          git pull --rebase origin "${GITHUB_REF_NAME}" || {
-            echo "Rebase failed due to conflicts. Please resolve conflicts manually and re-run.";
-            exit 1;
-          }
-          git status
+          git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
 
       - name: Run Semantic Release (${{ matrix.package }})
         uses: cycjimmy/semantic-release-action@v4
