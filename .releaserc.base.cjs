@@ -20,8 +20,9 @@ module.exports = {
     ["@semantic-release/release-notes-generator", { preset: "conventionalcommits" }]
   ],
   branches: [
-    { name: "main" },
-    { name: "develop", prerelease: "beta" },
-    { name: "hotfix/*", prerelease: false, channel: false }
+    { name: "main" },                    // stable releases (npm tag: latest)
+    { name: "develop", prerelease: "beta" }, // pre-releases like 1.0.0-beta.X (npm tag: develop)
+    { name: "hotfix/*", prerelease: false, channel: false } // disabled
+    // { name: "release-candidate", prerelease: "rc" }, // optional
   ]
 };
