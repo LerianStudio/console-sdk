@@ -256,6 +256,7 @@ jobs:
           ci: false
           semantic_version: 23.0.8
           extra_plugins: |
+            @semantic-release/exec
             conventional-changelog-conventionalcommits@7.0.2
             @saithodev/semantic-release-backmerge
             @semantic-release/git
