@@ -4,6 +4,7 @@ on:
   push:
     branches: [main, develop]
     paths-ignore:
+      # Ignore non-code changes (to avoid triggering releases unnecessarily)
       - ".gitignore"
       - "**/*.env"
       - "*.env"
@@ -11,7 +12,7 @@ on:
       - "*.md"
       - "**/*.txt"
       - "*.txt"
-    tags-ignore: ["**"]
+    tags-ignore: ["**"] # Do not trigger on tag pushes, only on branch pushes
   workflow_dispatch:
     inputs:
       package:
@@ -22,6 +23,7 @@ on:
         default: all
 
 permissions:
+  # Required permissions for GitHub Actions jobs
   id-token: write
   contents: write
   pull-requests: write
@@ -40,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Ensure full git history for semantic-release
 
       - id: changes
         uses: dorny/paths-filter@v3
@@ -54,6 +56,7 @@ jobs:
       - id: select
         shell: bash
         run: |
+          # Determine which packages have changes or were manually selected
           set -euo pipefail
           changed='[]'
           [[ "${{ steps.changes.outputs.sindarian-server }}" == "true" ]] && changed=$(jq -c '. + ["sindarian-server"]' <<<"$changed")
@@ -78,6 +81,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.packages != '[]'
     steps:
+      # Run dependency security scan (non-blocking, informative only)
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -102,6 +106,7 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
+      # Run unit tests per changed package
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -119,6 +124,7 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
+      # Run end-to-end tests per changed package
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -136,6 +142,7 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
+      # Generate GitHub App token for pushing commits/tags
       - name: Generate GitHub App Token
         id: app-token
         uses: tibdex/github-app-token@v2
@@ -143,11 +150,13 @@ jobs:
           app_id: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
           private_key: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
 
+      # Checkout repository with proper permissions
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
+      # Setup Node.js with NPM authentication
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -165,6 +174,7 @@ jobs:
       - name: Write package-specific .releaserc.json
         shell: bash
         run: |
+          # Dynamically generate release config for each package
           set -euo pipefail
           export PKG="${{ matrix.package }}"
           export PKG_DIR="packages/${{ matrix.package }}"
@@ -199,7 +209,14 @@ jobs:
                   message: "chore(" + PKG + "): release v${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}"
                 }],
                 ["@semantic-release/github", { assets: [] }],
-                "@saithodev/semantic-release-backmerge",
+                # 🔧 Only backmerge from main -> develop (avoids error when releasing on develop)
+                ["@saithodev/semantic-release-backmerge", {
+                  backmergeBranches: [
+                    { from: "main", to: "develop" }
+                    # Optionally enable RC backmerge:
+                    # { from: "release-candidate", to: "develop" }
+                  ]
+                }],
                 "@semantic-release/exec"
               ],
               tagFormat: PKG + "-v${version}",
@@ -243,6 +260,7 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
+      # Generate changelog commit using custom GPT-powered action
       - uses: actions/create-github-app-token@v1
         id: app-token
         with:
