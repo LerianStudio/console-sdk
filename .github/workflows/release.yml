@@ -209,12 +209,12 @@ jobs:
                   message: "chore(" + PKG + "): release v${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}"
                 }],
                 ["@semantic-release/github", { assets: [] }],
-                # 🔧 Only backmerge from main -> develop (avoids error when releasing on develop)
+                // 🔧 Only backmerge from main -> develop (avoids error when releasing on develop)
                 ["@saithodev/semantic-release-backmerge", {
                   backmergeBranches: [
                     { from: "main", to: "develop" }
-                    # Optionally enable RC backmerge:
-                    # { from: "release-candidate", to: "develop" }
+                    // Optionally enable RC backmerge:
+                    // { from: "release-candidate", to: "develop" }
                   ]
                 }],
                 "@semantic-release/exec"
