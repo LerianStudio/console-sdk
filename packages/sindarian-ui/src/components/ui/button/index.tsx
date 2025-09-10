@@ -19,7 +19,7 @@ const buttonVariants = cva('button-base button-disabled button-read-only', {
     },
     fullWidth: {
       true: 'w-full',
-      false: 'w-content'
+      false: 'w-fit'
     },
     size: {
       default: '',

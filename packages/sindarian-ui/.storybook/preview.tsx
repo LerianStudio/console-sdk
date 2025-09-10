@@ -1,7 +1,11 @@
 import type { Preview } from '@storybook/nextjs'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
 
 import '../src/globals.css'
 import './storybook.css'
+
+dayjs.extend(relativeTime)
 
 const preview: Preview = {
   parameters: {
