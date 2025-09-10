@@ -9,7 +9,7 @@ import baseConfig from '../utils/jest.config'
 const config: Config = {
   ...baseConfig,
   displayName: 'sindarian-ui'
-
+  // Package-specific configuration can be added here if needed
 }
 
 export default config
