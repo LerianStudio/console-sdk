@@ -23,7 +23,7 @@ export const Primary: StoryObj<DialogProps> = {
   render: (args) => (
     <Dialog {...args}>
       <DialogTrigger asChild>
-        <Button variant="outline">Open Dialog</Button>
+        <Button>Open Dialog</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
