@@ -1,0 +1,15 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './basic-card.stories'
+
+<Meta of={Story} />
+
+# Basic Card
+
+More than just a component that renders a block of content, cards are a modular format that can serve multiple purposes. Their most basic version follows the ShadCN standard, with a header, content, and footer.
+
+The only clickable element of the card it's the button.
+
+<Canvas className="light" of={Story.Primary} />
+
+<Primary />
+<Controls />
