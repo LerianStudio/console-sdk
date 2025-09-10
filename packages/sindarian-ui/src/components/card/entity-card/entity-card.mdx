@@ -1,0 +1,31 @@
+import {
+  Meta,
+  Controls,
+  Primary,
+  Canvas,
+  Stories
+} from '@storybook/addon-docs/blocks'
+import * as Story from './entity-card.stories'
+
+<Meta of={Story} />
+
+# EntityCard
+
+This is the most modular and robust variation of the Card, designed for use in entity listings.
+
+Consider that it functions as a three-dimensional representation of a datatable row. Therefore, the same information that is usually arranged in columns would be organized here within its content.
+
+This way, this card can be modified and customized to better accommodate each type of entity to be listed, in addition to supporting additional actions, as is typical in a datatable row.
+
+This version of the card also has hover behavior, meaning that interaction with the card should be noticeable to the user through the addition of a raised effect (shadow).
+
+### Complete Example
+
+<Canvas className="light" of={Story.Primary} />
+
+### Without Progress
+
+<Canvas className="light" of={Story.Simple} />
+
+<Primary />
+<Controls />
