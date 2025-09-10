@@ -242,6 +242,10 @@ jobs:
             console.log("----- .releaserc.json -----\\n" + JSON.stringify(cfg, null, 2));
           '
 
+      # Install @semantic-release/exec without touching package.json/package-lock.json
+      - name: Install @semantic-release/exec (no-save)
+        run: npm install --save-dev @semantic-release/exec
+
       # Optional final quick sync; should be no-op but keeps branch fresh
       - name: Final quick sync (rebase, autostash)
         shell: bash
