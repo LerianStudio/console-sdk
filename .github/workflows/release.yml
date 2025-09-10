@@ -28,6 +28,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  # Required permissions for GitHub Actions jobs
   id-token: write
   contents: write
   pull-requests: write
@@ -85,6 +86,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.packages != '[]'
     steps:
+      # Run dependency security scan (non-blocking, informative only)
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -109,6 +111,7 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
+      # Run unit tests per changed package
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -126,6 +129,7 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
+      # Run end-to-end tests per changed package
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -143,6 +147,7 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
+      # Generate GitHub App token for pushing commits/tags
       - name: Generate GitHub App Token
         id: app-token
         uses: tibdex/github-app-token@v2
@@ -150,12 +155,13 @@ jobs:
           app_id: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
           private_key: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
 
+      # Checkout repository with proper permissions
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
-      # Keep local branch in sync right after checkout (clean tree)
+      # Keep local branch in sync right after checkout (clean tree) to avoid non-fast-forward push rejections
       - name: Sync branch with remote (rebase, autostash)
         shell: bash
         run: |
@@ -165,6 +171,7 @@ jobs:
           git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
           git status
 
+      # Setup Node.js with NPM authentication
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -182,12 +189,15 @@ jobs:
       - name: Write package-specific .releaserc.json
         shell: bash
         run: |
+          # Dynamically generate release config for each package
           set -euo pipefail
           export PKG="${{ matrix.package }}"
           export PKG_DIR="packages/${{ matrix.package }}"
+
           node -e '
             const fs = require("fs");
             const { PKG, PKG_DIR } = process.env;
+
             const cfg = {
               extends: "./.releaserc.base.cjs",
               plugins: [
@@ -224,6 +234,7 @@ jobs:
               tagFormat: PKG + "-v${version}",
               repositoryUrl: "https://github.com/LerianStudio/console-sdk.git"
             };
+
             fs.writeFileSync(".releaserc.json", JSON.stringify(cfg, null, 2));
             console.log("----- .releaserc.json -----\\n" + JSON.stringify(cfg, null, 2));
           '
@@ -238,10 +249,17 @@ jobs:
             @semantic-release/npm \
             @semantic-release/git \
             @semantic-release/github \
-            @saithodev/semantic-release-backmerge \
-            conventional-changelog-conventionalcommits@7.0.2
+            @saithodev/semantic-release-backmerge
 
-      # Optional final quick sync; should be no-op
+      # Ensure the conventional commits preset exists right before SR runs
+      - name: Ensure conventional-changelog preset (JIT)
+        shell: bash
+        run: |
+          set -e
+          npm ls conventional-changelog-conventionalcommits || \
+          npm install --no-save --no-audit --prefer-offline conventional-changelog-conventionalcommits@7.0.2
+
+      # Optional final quick sync; should be no-op but keeps branch fresh
       - name: Final quick sync (rebase, autostash)
         shell: bash
         run: |
@@ -254,7 +272,7 @@ jobs:
         with:
           ci: false
           semantic_version: 23.0.8
-          # no extra_plugins needed; plugins are installed above
+          # No extra_plugins needed; plugins are installed above
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -273,6 +291,7 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
+      # Generate changelog commit using custom GPT-powered action
       - uses: actions/create-github-app-token@v1
         id: app-token
         with:
