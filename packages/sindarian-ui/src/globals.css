@@ -8,6 +8,7 @@
 @import './components/ui/alert/styles.css';
 @import './components/ui/stepper/styles.css';
 @import './components/ui/tabs/styles.css';
+@import './components/ui/dialog/styles.css';
 
 @custom-variant dark (&:is(.dark *));
 
