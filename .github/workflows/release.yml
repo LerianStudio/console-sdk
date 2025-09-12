@@ -4,7 +4,6 @@ on:
   push:
     branches: [main, develop]
     paths-ignore:
-      # Ignore non-code changes (to avoid triggering releases unnecessarily)
       - ".gitignore"
       - "**/*.env"
       - "*.env"
@@ -12,7 +11,7 @@ on:
       - "*.md"
       - "**/*.txt"
       - "*.txt"
-    tags-ignore: ["**"] # Do not trigger on tag pushes, only on branch pushes
+    tags-ignore: ["**"]
   workflow_dispatch:
     inputs:
       package:
@@ -22,7 +21,6 @@ on:
         required: false
         default: all
 
-# Prevent parallel runs on the same branch that could race for pushes
 concurrency:
   group: release-${{ github.ref_name }}
   cancel-in-progress: false
@@ -46,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Ensure full git history for semantic-release
+          fetch-depth: 0
 
       - id: changes
         uses: dorny/paths-filter@v3
@@ -60,7 +58,6 @@ jobs:
       - id: select
         shell: bash
         run: |
-          # Determine which packages have changes or were manually selected
           set -euo pipefail
           changed='[]'
           [[ "${{ steps.changes.outputs.sindarian-server }}" == "true" ]] && changed=$(jq -c '. + ["sindarian-server"]' <<<"$changed")
@@ -85,7 +82,6 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.packages != '[]'
     steps:
-      # Run dependency security scan (non-blocking, informative only)
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -94,7 +90,6 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: ~/.npm
-        # separate caches by lockfile hash
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
@@ -111,7 +106,6 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
-      # Run unit tests per changed package
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -129,7 +123,6 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
-      # Run end-to-end tests per changed package
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -159,7 +152,7 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
-      # Keep local branch in sync right after checkout (clean tree) to avoid non-fast-forward push rejections
+      # Sync branch early (before building and installing plugins)
       - name: Sync branch with remote (rebase, autostash)
         shell: bash
         run: |
@@ -169,7 +162,6 @@ jobs:
           git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
           git status
 
-      # Setup Node.js with NPM authentication
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -184,18 +176,15 @@ jobs:
       - name: Build ${{ matrix.package }}
         run: npm run build -- --filter=@lerianstudio/${{ matrix.package }}
 
-      - name: Write package-specific .releaserc.json
+      - name: Write package-specific .releaserc.json (with exec)
         shell: bash
         run: |
-          # Dynamically generate release config for each package (no backmerge)
           set -euo pipefail
           export PKG="${{ matrix.package }}"
           export PKG_DIR="packages/${{ matrix.package }}"
-
           node -e '
             const fs = require("fs");
             const { PKG, PKG_DIR } = process.env;
-
             const cfg = {
               extends: "./.releaserc.base.cjs",
               plugins: [
@@ -227,23 +216,22 @@ jobs:
               tagFormat: PKG + "-v${version}",
               repositoryUrl: "https://github.com/LerianStudio/console-sdk.git"
             };
-
             fs.writeFileSync(".releaserc.json", JSON.stringify(cfg, null, 2));
             console.log("----- .releaserc.json -----\\n" + JSON.stringify(cfg, null, 2));
           '
 
-      # Install semantic-release plugins locally (without touching package.json/package-lock.json)
+      # Install required semantic-release plugins (no package.json changes)
       - name: Install semantic-release plugins (no-save)
         run: |
           npm install --no-save --no-audit --prefer-offline \
-            @semantic-release/exec \
             @semantic-release/commit-analyzer \
             @semantic-release/release-notes-generator \
             @semantic-release/npm \
             @semantic-release/git \
-            @semantic-release/github
+            @semantic-release/github \
+            @semantic-release/exec
 
-      # Ensure the conventional commits preset exists right before SR runs
+      # Ensure conventional-commits preset exists right before SR
       - name: Ensure conventional-changelog preset (JIT)
         shell: bash
         run: |
@@ -251,21 +239,26 @@ jobs:
           npm ls conventional-changelog-conventionalcommits || \
           npm install --no-save --no-audit --prefer-offline conventional-changelog-conventionalcommits@7.0.2
 
-      # Optional final quick sync; should be no-op but keeps branch fresh
-      - name: Final quick sync (rebase, autostash)
+      # Double-check plugins are resolvable from this workspace
+      - name: Verify plugins are resolvable
         shell: bash
         run: |
-          set -euo pipefail
-          git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*"
-          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          node -e "console.log('cwd=', process.cwd()); \
+            console.log('exec=', require.resolve('@semantic-release/exec')); \
+            console.log('analyzer=', require.resolve('@semantic-release/commit-analyzer')); \
+            console.log('notes=', require.resolve('@semantic-release/release-notes-generator')); \
+            console.log('npm=', require.resolve('@semantic-release/npm')); \
+            console.log('git=', require.resolve('@semantic-release/git')); \
+            console.log('github=', require.resolve('@semantic-release/github'));"
 
+      # Important: do NOT git pull after installing node_modules
       - name: Run Semantic Release (${{ matrix.package }})
         uses: cycjimmy/semantic-release-action@v4
         with:
           ci: false
           semantic_version: 23.0.8
-          # No extra_plugins needed; plugins are installed above
         env:
+          NODE_PATH: ${{ github.workspace }}/node_modules
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -283,7 +276,6 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
-      # Generate changelog commit using custom GPT-powered action
       - uses: actions/create-github-app-token@v1
         id: app-token
         with:
@@ -301,4 +293,3 @@ jobs:
           LERIAN_CI_CD_USER_EMAIL: ${{ secrets.LERIAN_CI_CD_USER_EMAIL }}
           LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
           LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
-          PACKAGE_NAME: ${{ matrix.package }}
