@@ -28,7 +28,6 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  # Required permissions for GitHub Actions jobs
   id-token: write
   contents: write
   pull-requests: write
@@ -95,6 +94,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: ~/.npm
+        # separate caches by lockfile hash
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
@@ -147,7 +147,6 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
-      # Generate GitHub App token for pushing commits/tags
       - name: Generate GitHub App Token
         id: app-token
         uses: tibdex/github-app-token@v2
@@ -155,7 +154,6 @@ jobs:
           app_id: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
           private_key: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
 
-      # Checkout repository with proper permissions
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -189,7 +187,7 @@ jobs:
       - name: Write package-specific .releaserc.json
         shell: bash
         run: |
-          # Dynamically generate release config for each package
+          # Dynamically generate release config for each package (no backmerge)
           set -euo pipefail
           export PKG="${{ matrix.package }}"
           export PKG_DIR="packages/${{ matrix.package }}"
@@ -224,11 +222,6 @@ jobs:
                   message: "chore(" + PKG + "): release v${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}"
                 }],
                 ["@semantic-release/github", { assets: [] }],
-                ["@saithodev/semantic-release-backmerge", {
-                  backmergeBranches: [
-                    { from: "main", to: "develop" }
-                  ]
-                }],
                 "@semantic-release/exec"
               ],
               tagFormat: PKG + "-v${version}",
@@ -239,7 +232,7 @@ jobs:
             console.log("----- .releaserc.json -----\\n" + JSON.stringify(cfg, null, 2));
           '
 
-      # Install all semantic-release plugins locally (without touching package.json/package-lock.json)
+      # Install semantic-release plugins locally (without touching package.json/package-lock.json)
       - name: Install semantic-release plugins (no-save)
         run: |
           npm install --no-save --no-audit --prefer-offline \
@@ -248,8 +241,7 @@ jobs:
             @semantic-release/release-notes-generator \
             @semantic-release/npm \
             @semantic-release/git \
-            @semantic-release/github \
-            @saithodev/semantic-release-backmerge
+            @semantic-release/github
 
       # Ensure the conventional commits preset exists right before SR runs
       - name: Ensure conventional-changelog preset (JIT)
