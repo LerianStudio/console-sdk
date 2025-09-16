@@ -220,21 +220,22 @@ jobs:
             console.log("----- .releaserc.json -----\\n" + JSON.stringify(cfg, null, 2));
           '
 
-      - name: Install missing plugin @semantic-release/exec
-        run: npm install --save-dev @semantic-release/exec
-
       # Install required semantic-release plugins (no package.json changes)
       - name: Install semantic-release plugins (no-save)
         run: |
           echo "Installing semantic-release plugins..."
-          npm install --no-save --no-audit --prefer-offline \
+          npm install --save-dev --no-audit --prefer-offline \
             @semantic-release/commit-analyzer \
             @semantic-release/release-notes-generator \
             @semantic-release/npm \
             @semantic-release/git \
-            @semantic-release/github
-          echo "Installation completed. Checking if @semantic-release/exec was installed..."
+            @semantic-release/github \
+            @semantic-release/exec \
+            conventional-changelog-conventionalcommits
+          echo "Installation completed. Verifying plugins..."
           npm list @semantic-release/exec || echo "WARNING: @semantic-release/exec not found in npm list"
+          npm list conventional-changelog-conventionalcommits || echo "WARNING: conventional-changelog-conventionalcommits not found in npm list"
+
 
       # Ensure conventional-commits preset exists right before SR
       - name: Ensure conventional-changelog preset (JIT)
