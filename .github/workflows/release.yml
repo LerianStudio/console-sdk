@@ -223,6 +223,7 @@ jobs:
       # Install required semantic-release plugins (no package.json changes)
       - name: Install semantic-release plugins (no-save)
         run: |
+          echo "Installing semantic-release plugins..."
           npm install --no-save --no-audit --prefer-offline \
             @semantic-release/commit-analyzer \
             @semantic-release/release-notes-generator \
@@ -230,6 +231,8 @@ jobs:
             @semantic-release/git \
             @semantic-release/github \
             @semantic-release/exec
+          echo "Installation completed. Checking if @semantic-release/exec was installed..."
+          npm list @semantic-release/exec || echo "WARNING: @semantic-release/exec not found in npm list"
 
       # Ensure conventional-commits preset exists right before SR
       - name: Ensure conventional-changelog preset (JIT)
@@ -243,13 +246,20 @@ jobs:
       - name: Verify plugins are resolvable
         shell: bash
         run: |
-          node -e "console.log('cwd=', process.cwd()); \
-            console.log('exec=', require.resolve('@semantic-release/exec')); \
-            console.log('analyzer=', require.resolve('@semantic-release/commit-analyzer')); \
-            console.log('notes=', require.resolve('@semantic-release/release-notes-generator')); \
-            console.log('npm=', require.resolve('@semantic-release/npm')); \
-            console.log('git=', require.resolve('@semantic-release/git')); \
-            console.log('github=', require.resolve('@semantic-release/github'));"
+          echo "Checking installed packages..."
+          npm list --depth=0 | grep semantic-release || echo "No semantic-release packages found in npm list"
+          echo "Checking node_modules directly..."
+          ls -la node_modules/@semantic-release/ || echo "No @semantic-release directory found"
+          echo "Trying to resolve plugins..."
+          node -e "
+            console.log('cwd=', process.cwd());
+            try { console.log('exec=', require.resolve('@semantic-release/exec')); } catch(e) { console.log('exec ERROR:', e.message); }
+            try { console.log('analyzer=', require.resolve('@semantic-release/commit-analyzer')); } catch(e) { console.log('analyzer ERROR:', e.message); }
+            try { console.log('notes=', require.resolve('@semantic-release/release-notes-generator')); } catch(e) { console.log('notes ERROR:', e.message); }
+            try { console.log('npm=', require.resolve('@semantic-release/npm')); } catch(e) { console.log('npm ERROR:', e.message); }
+            try { console.log('git=', require.resolve('@semantic-release/git')); } catch(e) { console.log('git ERROR:', e.message); }
+            try { console.log('github=', require.resolve('@semantic-release/github')); } catch(e) { console.log('github ERROR:', e.message); }
+          "
 
       # Important: do NOT git pull after installing node_modules
       - name: Run Semantic Release (${{ matrix.package }})
