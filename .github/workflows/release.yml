@@ -220,6 +220,9 @@ jobs:
             console.log("----- .releaserc.json -----\\n" + JSON.stringify(cfg, null, 2));
           '
 
+      - name: Install missing plugin @semantic-release/exec
+        run: npm install --save-dev @semantic-release/exec
+
       # Install required semantic-release plugins (no package.json changes)
       - name: Install semantic-release plugins (no-save)
         run: |
@@ -229,8 +232,7 @@ jobs:
             @semantic-release/release-notes-generator \
             @semantic-release/npm \
             @semantic-release/git \
-            @semantic-release/github \
-            @semantic-release/exec
+            @semantic-release/github
           echo "Installation completed. Checking if @semantic-release/exec was installed..."
           npm list @semantic-release/exec || echo "WARNING: @semantic-release/exec not found in npm list"
 
