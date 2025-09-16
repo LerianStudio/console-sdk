@@ -45,5 +45,3 @@ export * from './components/page'
 export * from './components/page-header'
 export * from './components/pagination'
 export * from './components/table'
-
-//Testing
