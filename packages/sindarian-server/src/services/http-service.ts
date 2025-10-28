@@ -92,7 +92,7 @@ export abstract class HttpService {
     }
   }
 
-  private async createRequest(
+  protected async createRequest(
     url: URL | string,
     options: FetchModuleOptions
   ): Promise<Request> {
@@ -113,7 +113,7 @@ export abstract class HttpService {
     )
   }
 
-  private async createRequestFormData(
+  protected async createRequestFormData(
     url: URL | string,
     options: FetchModuleOptions
   ) {
