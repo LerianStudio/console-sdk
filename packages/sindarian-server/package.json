@@ -1,6 +1,6 @@
 {
   "name": "@lerianstudio/sindarian-server",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.9",
   "description": "Sindarian Server",
   "license": "ISC",
   "author": {
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@lerianstudio/lib-logs": ">=1.1.0",
-    "path-to-regexp": "^8.2.0"
+    "path-to-regexp": "^8.3.0"
   },
   "peerDependencies": {
     "inversify": ">=7.7.0",

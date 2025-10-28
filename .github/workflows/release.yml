@@ -21,6 +21,10 @@ on:
         required: false
         default: all
 
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
 permissions:
   id-token: write
   contents: write
@@ -148,6 +152,16 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
+      # Sync branch early (before building and installing plugins)
+      - name: Sync branch with remote (rebase, autostash)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*" "+refs/tags/*:refs/tags/*"
+          git checkout "${GITHUB_REF_NAME}"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git status
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -162,17 +176,15 @@ jobs:
       - name: Build ${{ matrix.package }}
         run: npm run build -- --filter=@lerianstudio/${{ matrix.package }}
 
-      - name: Write package-specific .releaserc.json
+      - name: Write package-specific .releaserc.json (with exec)
         shell: bash
         run: |
           set -euo pipefail
           export PKG="${{ matrix.package }}"
           export PKG_DIR="packages/${{ matrix.package }}"
-
           node -e '
             const fs = require("fs");
             const { PKG, PKG_DIR } = process.env;
-
             const cfg = {
               extends: "./.releaserc.base.cjs",
               plugins: [
@@ -199,33 +211,67 @@ jobs:
                   message: "chore(" + PKG + "): release v${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}"
                 }],
                 ["@semantic-release/github", { assets: [] }],
-                "@saithodev/semantic-release-backmerge",
                 "@semantic-release/exec"
               ],
               tagFormat: PKG + "-v${version}",
               repositoryUrl: "https://github.com/LerianStudio/console-sdk.git"
             };
-
             fs.writeFileSync(".releaserc.json", JSON.stringify(cfg, null, 2));
             console.log("----- .releaserc.json -----\\n" + JSON.stringify(cfg, null, 2));
           '
 
-      - name: Ensure required plugins present
-        run: npm i -D @semantic-release/exec conventional-changelog-conventionalcommits@7.0.2
+      # Install required semantic-release plugins (no package.json changes)
+      - name: Install semantic-release plugins (no-save)
+        run: |
+          echo "Installing semantic-release plugins..."
+          npm install --save-dev --no-audit --prefer-offline \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/npm \
+            @semantic-release/git \
+            @semantic-release/github \
+            @semantic-release/exec \
+            conventional-changelog-conventionalcommits
+          echo "Installation completed. Verifying plugins..."
+          npm list @semantic-release/exec || echo "WARNING: @semantic-release/exec not found in npm list"
+          npm list conventional-changelog-conventionalcommits || echo "WARNING: conventional-changelog-conventionalcommits not found in npm list"
 
+
+      # Ensure conventional-commits preset exists right before SR
+      - name: Ensure conventional-changelog preset (JIT)
+        shell: bash
+        run: |
+          set -e
+          npm ls conventional-changelog-conventionalcommits || \
+          npm install --no-save --no-audit --prefer-offline conventional-changelog-conventionalcommits@7.0.2
+
+      # Double-check plugins are resolvable from this workspace
+      - name: Verify plugins are resolvable
+        shell: bash
+        run: |
+          echo "Checking installed packages..."
+          npm list --depth=0 | grep semantic-release || echo "No semantic-release packages found in npm list"
+          echo "Checking node_modules directly..."
+          ls -la node_modules/@semantic-release/ || echo "No @semantic-release directory found"
+          echo "Trying to resolve plugins..."
+          node -e "
+            console.log('cwd=', process.cwd());
+            try { console.log('exec=', require.resolve('@semantic-release/exec')); } catch(e) { console.log('exec ERROR:', e.message); }
+            try { console.log('analyzer=', require.resolve('@semantic-release/commit-analyzer')); } catch(e) { console.log('analyzer ERROR:', e.message); }
+            try { console.log('notes=', require.resolve('@semantic-release/release-notes-generator')); } catch(e) { console.log('notes ERROR:', e.message); }
+            try { console.log('npm=', require.resolve('@semantic-release/npm')); } catch(e) { console.log('npm ERROR:', e.message); }
+            try { console.log('git=', require.resolve('@semantic-release/git')); } catch(e) { console.log('git ERROR:', e.message); }
+            try { console.log('github=', require.resolve('@semantic-release/github')); } catch(e) { console.log('github ERROR:', e.message); }
+          "
+
+      # Important: do NOT git pull after installing node_modules
       - name: Run Semantic Release (${{ matrix.package }})
         uses: cycjimmy/semantic-release-action@v4
         with:
           ci: false
           semantic_version: 23.0.8
-          extra_plugins: |
-            conventional-changelog-conventionalcommits@7.0.2
-            @saithodev/semantic-release-backmerge
-            @semantic-release/git
-            @semantic-release/npm
-            @semantic-release/commit-analyzer
-            @semantic-release/release-notes-generator
         env:
+          NODE_PATH: ${{ github.workspace }}/node_modules
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -249,8 +295,9 @@ jobs:
           app-id: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
           private-key: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
 
-      - uses: LerianStudio/github-actions-gptchangelog@develop
+      - uses: LerianStudio/github-actions-gptchangelog/helm-repo@chart
         with:
+          WORK_DIR: ${{ matrix.chart.working_dir }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -260,4 +307,3 @@ jobs:
           LERIAN_CI_CD_USER_EMAIL: ${{ secrets.LERIAN_CI_CD_USER_EMAIL }}
           LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
           LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
-          PACKAGE_NAME: ${{ matrix.package }}

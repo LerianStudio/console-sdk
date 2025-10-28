@@ -4,6 +4,6 @@ module.exports = [
   // Apply recommended configs
   ...baseConfig,
 
-  // Configuration for React/TypeScript source files
+
   {}
 ]
