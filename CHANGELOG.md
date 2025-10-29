@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2025-10-28
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
+Contributors: Caio Alexandre Troti Caetano, Gabriel Ferreira, LF Barrile, lerian-studio
+
+### ✨ Features
+- **Sindarian Server**: Unlock new server-side features with the Sindarian Server, which enhances backend functionality and supports robust operations. This addition is fully tested and configured for seamless integration.
+- **Improved Navigation**: Experience a more intuitive user interface with the new page header component, making navigation smoother and enhancing the overall user experience.
+
+### 🐛 Bug Fixes
+- **Account Settings Access**: Resolved an issue preventing access to account settings, ensuring users can now easily manage their accounts without interruption.
+- **Backend Security**: Fixed method access level issues, enhancing the security and encapsulation of backend operations.
+
+### ⚡ Performance
+- **Optimized CI/CD Pipeline**: Enjoy faster and more reliable deployments with our updated CI/CD pipeline, which improves build efficiency and reduces deployment times.
+- **Streamlined Dependencies**: Reduced application bloat by optimizing package dependencies, leading to improved performance and quicker load times.
+
+### 🔄 Changes
+- **Configuration Management**: Enhanced configuration processes with split libraries and backmerge flow, streamlining development across multiple components for a more efficient build process.
+
+### 📚 Documentation
+- **Updated Changelog**: The CHANGELOG.md has been updated to reflect all recent changes, providing clear historical records for developers and users.
+
+### 🔧 Maintenance
+- **Beta Releases**: Conducted multiple beta releases for the Sindarian UI and Server, allowing for iterative improvements based on user feedback.
+- **Build System Enhancements**: Improved build setup for both UI and server components, reducing build times and enhancing the development workflow.
+
+
 ## [1.0.0] - 2025-09-16
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
