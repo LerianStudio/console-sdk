@@ -2,20 +2,25 @@ import { HttpStatus } from '@/constants/http-status'
 import { HttpException } from './http-exception'
 
 export class ApiException extends HttpException {
+  private readonly metadata: any
+
   constructor(
     public readonly code: string,
     public readonly title: string,
     public readonly message: string,
-    status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR
+    status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR,
+    metadata: any = {}
   ) {
     super(message, status)
+    this.metadata = metadata
   }
 
   getResponse() {
     return {
       code: this.code,
       title: this.title,
-      message: this.message
+      message: this.message,
+      ...this.metadata
     }
   }
 }
@@ -27,8 +32,10 @@ export class BadRequestApiException extends ApiException {
 }
 
 export class ValidationApiException extends ApiException {
-  constructor(message: string) {
-    super('0007', 'Validation Error', message, HttpStatus.BAD_REQUEST)
+  constructor(message: string, errors?: any) {
+    super('0007', 'Validation Error', message, HttpStatus.BAD_REQUEST, {
+      errors
+    })
   }
 }
 

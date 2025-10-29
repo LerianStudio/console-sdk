@@ -9,6 +9,7 @@ import {
   SelectItem
 } from '.'
 import { SelectProps } from '@radix-ui/react-select'
+import { User } from 'lucide-react'
 
 const meta: Meta<SelectProps> = {
   title: 'Primitives/Select',
@@ -34,6 +35,34 @@ export const Default: StoryObj<SelectProps> = {
           <SelectItem value="pineapple">Pineapple</SelectItem>
         </SelectGroup>
       </SelectContent>
+    </Select>
+  )
+}
+
+export const ReadOnly: StoryObj<SelectProps> = {
+  args: {
+    value: 'apple'
+  },
+  render: (args) => (
+    <Select {...args}>
+      <SelectTrigger readOnly>
+        <SelectValue placeholder="Select a fruit" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          <SelectItem value="apple">Apple</SelectItem>
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  )
+}
+
+export const Disabled: StoryObj<SelectProps> = {
+  render: (args) => (
+    <Select {...args}>
+      <SelectTrigger disabled>
+        <SelectValue placeholder="Select a fruit" />
+      </SelectTrigger>
     </Select>
   )
 }

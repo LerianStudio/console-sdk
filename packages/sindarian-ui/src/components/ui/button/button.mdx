@@ -5,23 +5,19 @@ import * as Story from './button.stories'
 
 # Button
 
-This is a button component.
+Displays a button or a component that looks like a button.
 
 ### Primary
 
 <Canvas of={Story.Primary} />
 
-### Disabled
+### Secondary
 
-<Canvas of={Story.Disabled} />
+<Canvas of={Story.Secondary} />
 
-### Secundary
+### Tertiary
 
-<Canvas of={Story.Secundary} />
-
-### Secundary Disabled
-
-<Canvas of={Story.SecundaryDisabled} />
+<Canvas of={Story.Tertiary} />
 
 ### Outline
 
@@ -29,11 +25,28 @@ This is a button component.
 
 ### Full Width
 
+Stretchs the component to the width of the parent container.
+
 <Canvas of={Story.FullWidth} />
 
 ### With Icons
 
+Supports icons on the start, end and far-end of the button. The far-end setting should be only usable with full width.
+
 <Canvas of={Story.WithIcon} />
+
+### Small Variant
+
+A small variant is also available.
+
+<Canvas of={Story.Small} />
+
+### Read only
+
+Disables the button's user interactions while keeping the DOM events enabled. Useful when using together with Tooltip or other components
+that relies on JavaScript events.
+
+<Canvas of={Story.ReadOnly} />
 
 <Primary />
 <Controls />

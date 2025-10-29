@@ -1,0 +1,17 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './dashboard-card.stories'
+
+<Meta of={Story} />
+
+# Dashboard Card
+
+As the name suggests, this component renders cards that are commonly used on the dashboard, and has two variations: Big Numbers and Container.
+
+While the Big Number variant is used strictly for displaying valuable indicators or numbers to the user, the Container is more flexible, allowing its content to encapsulate running text, lists or tables, and even charts.
+
+With this last use case in mind, there's a property that positions the chart's caption in the component's header.
+
+<Canvas className="light" of={Story.Primary} />
+
+<Primary />
+<Controls />

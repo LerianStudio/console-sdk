@@ -5,12 +5,9 @@ import { BaseController } from '@/controllers/base-controller'
 import { Container } from '@/dependency-injection/container'
 import { BaseExceptionFilter } from '@/exceptions/base-exception-filter'
 import { catchHandler } from '@/exceptions/decorators/catch-decorator'
-import { filterHandler } from '@/exceptions/decorators/use-filters-decorator'
+import { FilterHandler } from '@/exceptions/decorators/use-filters-decorator'
 import { ExceptionFilter } from '@/exceptions/exception-filter'
-import {
-  interceptorExecute,
-  interceptorHandler
-} from '@/interceptor/decorators/use-interceptor-decorator'
+import { InterceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
 import { Interceptor } from '@/interceptor/interceptor'
 import { moduleHandler, ModuleMetadata } from '@/modules/module-decorator'
 import { APP_FILTER } from '@/services/filters'
@@ -23,6 +20,10 @@ import { LoggerService } from '@/logger/logger-service'
 import { Logger } from '@/logger/logger'
 import { NotFoundApiException } from '@/exceptions/api-exception'
 import { isNil } from 'lodash'
+import { PipeTransform } from '@/pipes/pipe-transform'
+import { APP_PIPE } from '@/services/pipes'
+import { PipeHandler } from '@/pipes/decorators/use-pipes'
+import { RouteHandler } from '@/controllers/decorators/route-decorator'
 
 export type ServerFactoryOptions = {
   logger?: LoggerService | boolean
@@ -32,6 +33,7 @@ export class ServerFactory {
   private globalPrefix: string = ''
   private globalFilters: ExceptionFilter[] = [new BaseExceptionFilter()]
   private globalInterceptors: Interceptor[] = []
+  private globalPipes: PipeTransform[] = []
 
   private readonly module: Class
   private readonly container: Container
@@ -73,6 +75,10 @@ export class ServerFactory {
     this.globalInterceptors.push(...interceptors)
   }
 
+  public useGlobalPipes(...pipes: PipeTransform[]) {
+    this.globalPipes.push(...pipes)
+  }
+
   /**
    * Handle a request
    * @param request - The request to handle
@@ -92,13 +98,13 @@ export class ServerFactory {
 
       const { pathname, method } = this._parseRequest(request)
 
-      const routeMatch = this._fetchRoute(pathname, method)
+      const match = this._fetchRoute(pathname, method)
 
       controller = await this.container.getAsync(
-        routeMatch?.controller as Class<BaseController>
+        match?.controller as Class<BaseController>
       )
 
-      const handler = this._fetchHandler(controller!, routeMatch?.methodName)
+      const handler = this._fetchHandler(controller!, match?.methodName)
 
       const executionContext = new ExecutionContext(
         controller!.constructor as Class,
@@ -109,10 +115,31 @@ export class ServerFactory {
       // Check if there's any interceptors to execute
       const interceptors = await this._fetchInterceptors(controller!)
 
-      return await interceptorExecute(executionContext, interceptors, () =>
-        handler.call(controller!, request, {
-          params
-        })
+      // Check if there's any pipes to execute
+      const pipes = await this._fetchPipes(controller!, match?.methodName)
+
+      return await InterceptorHandler.execute(
+        executionContext,
+        interceptors,
+        async () => {
+          // Parse args
+          const args = await RouteHandler.getArgs(
+            controller!,
+            match?.methodName,
+            [request, { params }]
+          )
+
+          // Run registered pipes
+          const pipedArgs = await PipeHandler.execute(
+            controller!,
+            match?.methodName,
+            pipes,
+            args
+          )
+
+          // Execute controller
+          return await handler.call(controller!, ...pipedArgs)
+        }
       )
     } catch (error: any) {
       const filters = await this._fetchExceptionFilters(controller)
@@ -195,22 +222,11 @@ export class ServerFactory {
       )
     }
 
-    // Fetch controller interceptors
-    const metadata = interceptorHandler(controller.constructor)
-    if (metadata.length > 0) {
-      const resolvedInterceptors = await Promise.all(
-        metadata.map((interceptor) => {
-          // If it's a class constructor (function), resolve from container
-          if (typeof interceptor === 'function') {
-            return this.container.getAsync<Interceptor>(interceptor)
-          }
-          // If it's an instance, resolve from container using its constructor
-          return this.container.getAsync<Interceptor>(
-            interceptor.constructor as any
-          )
-        })
+    if (controller) {
+      // Fetch controller interceptors
+      interceptors.push(
+        ...(await InterceptorHandler.fetch(this.container, controller))
       )
-      interceptors.push(...resolvedInterceptors)
     }
 
     return interceptors.reverse()
@@ -243,13 +259,37 @@ export class ServerFactory {
     }
 
     if (controller) {
-      // Fetch controller filters
-      const controllerFilters = filterHandler(controller.constructor)
-      if (controllerFilters.length > 0) {
-        filters.push(...controllerFilters)
-      }
+      filters.push(...(await FilterHandler.fetch(this.container, controller)))
     }
 
     return filters.reverse()
+  }
+
+  /**
+   * Fetch the pipes for a controller method
+   * @param controller
+   * @param methodName
+   * @returns
+   */
+  private async _fetchPipes(
+    controller: BaseController,
+    methodName: string | symbol
+  ) {
+    const pipes = [...this.globalPipes]
+
+    // Fetch any registered global pipes
+    const appPipe = this.container.isBound(APP_PIPE)
+    if (appPipe) {
+      pipes.push(await this.container.getAsync<PipeTransform>(APP_PIPE))
+    }
+
+    // Fetch controller pipes
+    if (controller) {
+      pipes.push(
+        ...(await PipeHandler.fetch(this.container, controller, methodName))
+      )
+    }
+
+    return pipes.reverse()
   }
 }

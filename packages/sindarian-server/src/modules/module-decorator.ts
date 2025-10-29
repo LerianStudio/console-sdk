@@ -9,12 +9,12 @@ import {
   IMPORTS_PROPERTY
 } from '@/constants/keys'
 import { Scope } from '@/constants/scopes'
-import {
-  controllerHandler,
-  ControllerMetadata
-} from '@/controllers/decorators/controller-decorator'
-import { interceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
+import { ControllerHandler } from '@/controllers/decorators/controller-decorator'
+import { InterceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
 import { Logger } from '@/logger/logger'
+import { PipeHandler } from '@/pipes/decorators/use-pipes'
+import { RouteMetadata } from '@/controllers/decorators/route-decorator'
+import { FilterHandler } from '@/exceptions/decorators/use-filters-decorator'
 
 // Type for injection tokens - can be symbols, strings, or abstract classes
 export type InjectionToken<T = any> = symbol | string | Constructor<T>
@@ -35,7 +35,7 @@ export type ModuleOptions = {
   providers?: Provider[]
 }
 
-export type ModuleMetadata = ControllerMetadata & {
+export type ModuleMetadata = RouteMetadata & {
   controller: Class
 }
 
@@ -61,10 +61,12 @@ export function moduleHandler(
 
   if (controllers) {
     for (const controller of controllers) {
-      const controllerRoutes = controllerHandler(controller).map((route) => ({
-        ...route,
-        controller
-      }))
+      const controllerRoutes = ControllerHandler.getRoutes(controller).map(
+        (route) => ({
+          ...route,
+          controller
+        })
+      )
 
       Logger.log(
         `Registered ${controllerRoutes.length} routes for controller ${controller.name}`
@@ -98,17 +100,10 @@ export function Module(options?: ModuleOptions): ClassDecorator {
         // Bind the controller
         container.bind(controller).to(controller).inSingletonScope()
 
-        // Check for interceptors and register class types
-        const interceptors = interceptorHandler(controller)
-        interceptors.forEach((interceptor) => {
-          // If it's a class constructor (function), register it in the container
-          if (typeof interceptor === 'function') {
-            container.bind(interceptor).toSelf().inSingletonScope()
-          } else {
-            // If it's an instance, bind it to its constructor class as a constant value
-            container.bind(interceptor.constructor).toConstantValue(interceptor)
-          }
-        })
+        // Bind other related decorators
+        InterceptorHandler.register(container, controller)
+        PipeHandler.register(container, controller)
+        FilterHandler.register(container, controller)
       })
     }
   })

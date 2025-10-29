@@ -1,0 +1,40 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './icon-button.stories'
+
+<Meta of={Story} />
+
+# IconButton
+
+Displays a button or a component that looks like a button composed of a single Icon.
+
+### Primary
+
+<Canvas of={Story.Primary} />
+
+### Secondary
+
+<Canvas of={Story.Secondary} />
+
+### Tertiary
+
+<Canvas of={Story.Tertiary} />
+
+### Outline
+
+<Canvas of={Story.Outline} />
+
+### Small Variant
+
+A small variant is also available.
+
+<Canvas of={Story.Small} />
+
+### Read only
+
+Disables the button's user interactions while keeping the DOM events enabled. Useful when using together with Tooltip or other components
+that relies on JavaScript events.
+
+<Canvas of={Story.ReadOnly} />
+
+<Primary />
+<Controls />

@@ -4,11 +4,7 @@ import { Skeleton } from '../skeleton'
 
 export function Stepper({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <div
-      data-slot="stepper"
-      className={cn('flex flex-col gap-4', className)}
-      {...props}
-    />
+    <div data-slot="stepper" className={cn('stepper', className)} {...props} />
   )
 }
 
@@ -28,10 +24,7 @@ export function StepperItem({
       data-slot="stepper-item"
       data-active={active}
       data-complete={complete}
-      className={cn(
-        'group flex flex-row gap-3 data-[complete=true]:cursor-pointer',
-        className
-      )}
+      className={cn('group stepper-item', className)}
       {...props}
     />
   )
@@ -44,12 +37,7 @@ export function StepperItemNumber({
   return (
     <div
       data-slot="stepper-item-number"
-      className={cn(
-        'border-shadcn-400 text-shadcn-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-medium',
-        'group-data-[active=true]:border-none group-data-[active=true]:bg-zinc-700 group-data-[active=true]:text-white',
-        'group-data-[complete=true]:border-none group-data-[complete=true]:bg-white group-data-[complete=true]:text-zinc-700',
-        className
-      )}
+      className={cn('stepper-item-number', className)}
       {...props}
     />
   )
@@ -69,27 +57,14 @@ export function StepperItemText({
   return (
     <div
       data-slot="stepper-item-text"
-      className={cn(
-        'text-shadcn-400 flex flex-col text-sm font-medium',
-        'group-data-[active=true]:text-zinc-700',
-        'group-data-[complete=true]:text-zinc-700 group-data-[complete=true]:underline',
-        className
-      )}
+      className={cn('stepper-item-text', className)}
       {...props}
     >
-      <div className="flex h-8 items-center gap-3">
+      <div className="stepper-item-title">
         <p>{title}</p>
-        <CircleCheck
-          className="text-green-600 group-data-[complete=false]:hidden"
-          width={16}
-          height={16}
-        />
+        <CircleCheck className="stepper-item-icon" width={16} height={16} />
       </div>
-      {description && (
-        <p className="text-xs text-zinc-500 group-data-[active=false]:hidden">
-          {description}
-        </p>
-      )}
+      {description && <p className="stepper-item-description">{description}</p>}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { PARAM_KEY } from '../../constants/keys'
-import { paramDecoratorHandler, Param, ParamMetadata } from './param-decorator'
+import { ParamHandler, Param, ParamMetadata } from './param-decorator'
 import { getNextParamArgument } from '../../utils/nextjs/get-next-arguments'
 import { ValidationApiException } from '../../exceptions'
 
@@ -10,7 +10,7 @@ const mockGetNextParamArgument = getNextParamArgument as jest.MockedFunction<
   typeof getNextParamArgument
 >
 
-describe('paramDecoratorHandler', () => {
+describe('ParamHandler.handle', () => {
   const mockParams = {
     id: '123',
     slug: 'test-slug',
@@ -41,7 +41,7 @@ describe('paramDecoratorHandler', () => {
   }
 
   it('should return null when no metadata is found', async () => {
-    const result = await paramDecoratorHandler(
+    const result = await ParamHandler.handle(
       TestClass.prototype,
       'testMethod',
       [null, { params: mockParams }]
@@ -65,7 +65,7 @@ describe('paramDecoratorHandler', () => {
       'testMethod'
     )
 
-    const result = await paramDecoratorHandler(
+    const result = await ParamHandler.handle(
       TestClass.prototype,
       'testMethod',
       [null, { params: mockParams }]
@@ -73,6 +73,7 @@ describe('paramDecoratorHandler', () => {
 
     expect(result).toEqual([
       {
+        type: 'param',
         parameter: '123',
         parameterIndex: 0
       }
@@ -103,7 +104,7 @@ describe('paramDecoratorHandler', () => {
       'multiParamMethod'
     )
 
-    const result = await paramDecoratorHandler(
+    const result = await ParamHandler.handle(
       TestClass.prototype,
       'multiParamMethod',
       [null, { params: mockParams }]
@@ -111,10 +112,12 @@ describe('paramDecoratorHandler', () => {
 
     expect(result).toEqual([
       {
+        type: 'param',
         parameter: '123',
         parameterIndex: 0
       },
       {
+        type: 'param',
         parameter: 'test-slug',
         parameterIndex: 2
       }
@@ -141,14 +144,14 @@ describe('paramDecoratorHandler', () => {
     )
 
     await expect(
-      paramDecoratorHandler(TestClass.prototype, 'testMethod', [
+      ParamHandler.handle(TestClass.prototype, 'testMethod', [
         null,
         { params: incompleteParams }
       ])
     ).rejects.toThrow(ValidationApiException)
 
     await expect(
-      paramDecoratorHandler(TestClass.prototype, 'testMethod', [
+      ParamHandler.handle(TestClass.prototype, 'testMethod', [
         null,
         { params: incompleteParams }
       ])
@@ -173,7 +176,7 @@ describe('paramDecoratorHandler', () => {
     )
 
     try {
-      await paramDecoratorHandler(TestClass.prototype, 'testMethod', [
+      await ParamHandler.handle(TestClass.prototype, 'testMethod', [
         null,
         { params: emptyParams }
       ])
@@ -208,7 +211,7 @@ describe('paramDecoratorHandler', () => {
     )
 
     await expect(
-      paramDecoratorHandler(TestClass.prototype, 'testMethod', [
+      ParamHandler.handle(TestClass.prototype, 'testMethod', [
         null,
         { params: partialParams }
       ])
@@ -225,7 +228,7 @@ describe('paramDecoratorHandler', () => {
       'testMethod'
     )
 
-    const result = await paramDecoratorHandler(
+    const result = await ParamHandler.handle(
       TestClass.prototype,
       'testMethod',
       [null, { params: mockParams }]
@@ -259,7 +262,7 @@ describe('paramDecoratorHandler', () => {
       'testMethod'
     )
 
-    const result = await paramDecoratorHandler(
+    const result = await ParamHandler.handle(
       TestClass.prototype,
       'testMethod',
       [null, { params: paramsWithFalsyValues }]
@@ -267,10 +270,12 @@ describe('paramDecoratorHandler', () => {
 
     expect(result).toEqual([
       {
+        type: 'param',
         parameter: '0',
         parameterIndex: 0
       },
       {
+        type: 'param',
         parameter: 'false',
         parameterIndex: 1
       }
@@ -299,7 +304,7 @@ describe('paramDecoratorHandler', () => {
     )
 
     await expect(
-      paramDecoratorHandler(TestClass.prototype, 'testMethod', [
+      ParamHandler.handle(TestClass.prototype, 'testMethod', [
         null,
         { params: paramsWithTrulyFalsyValues }
       ])
@@ -317,13 +322,14 @@ describe('paramDecoratorHandler', () => {
     ]
     Reflect.defineMetadata(PARAM_KEY, metadata, TestClass.prototype, symbolKey)
 
-    const result = await paramDecoratorHandler(TestClass.prototype, symbolKey, [
+    const result = await ParamHandler.handle(TestClass.prototype, symbolKey, [
       null,
       { params: mockParams }
     ])
 
     expect(result).toEqual([
       {
+        type: 'param',
         parameter: '123',
         parameterIndex: 0
       }
@@ -347,7 +353,7 @@ describe('paramDecoratorHandler', () => {
     )
 
     await expect(
-      paramDecoratorHandler(TestClass.prototype, 'testMethod', [])
+      ParamHandler.handle(TestClass.prototype, 'testMethod', [])
     ).rejects.toThrow('Invalid param: id is required')
   })
 
@@ -373,7 +379,7 @@ describe('paramDecoratorHandler', () => {
       'testMethod'
     )
 
-    const result = await paramDecoratorHandler(
+    const result = await ParamHandler.handle(
       TestClass.prototype,
       'testMethod',
       [null, { params: mockParams }]
@@ -381,14 +387,17 @@ describe('paramDecoratorHandler', () => {
 
     expect(result).toEqual([
       {
+        type: 'param',
         parameter: 'electronics',
         parameterIndex: 5
       },
       {
+        type: 'param',
         parameter: '123',
         parameterIndex: 1
       },
       {
+        type: 'param',
         parameter: 'test-slug',
         parameterIndex: 10
       }

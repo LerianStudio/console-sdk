@@ -19,6 +19,10 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./zod": "./dist/zod/index.js"
+  },
   "scripts": {
     "build": "tsc && npm run build:paths",
     "build:paths": "tsc-alias -p tsconfig.json",

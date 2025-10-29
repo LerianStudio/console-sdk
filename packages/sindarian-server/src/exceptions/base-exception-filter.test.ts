@@ -1,5 +1,7 @@
 import { BaseExceptionFilter } from './base-exception-filter'
+import { ApiException } from './api-exception'
 import { NextResponse } from 'next/server'
+import { HttpStatus } from '@/constants'
 
 // Mock NextResponse
 jest.mock('next/server', () => ({
@@ -24,15 +26,16 @@ describe('BaseExceptionFilter', () => {
     } as any)
   })
 
-  it('should handle exception with getStatus method', async () => {
-    const exception = {
-      message: 'Test error message',
-      getStatus: jest.fn().mockReturnValue(400)
-    }
+  it('should handle ApiException with getStatus method', async () => {
+    const exception = new ApiException(
+      'TEST_ERROR',
+      'Test Error',
+      'Test error message',
+      HttpStatus.BAD_REQUEST
+    )
 
     await filter.catch(exception)
 
-    expect(exception.getStatus).toHaveBeenCalled()
     expect(mockNextResponse.json).toHaveBeenCalledWith(
       { message: 'Test error message' },
       { status: 400 }
@@ -52,10 +55,13 @@ describe('BaseExceptionFilter', () => {
     )
   })
 
-  it('should handle exception without message (default message)', async () => {
-    const exception = {
-      getStatus: jest.fn().mockReturnValue(404)
-    }
+  it('should handle ApiException without message (default message)', async () => {
+    const exception = new ApiException(
+      'TEST_ERROR',
+      'Test Error',
+      '', // empty message
+      HttpStatus.NOT_FOUND
+    )
 
     await filter.catch(exception)
 
@@ -65,63 +71,59 @@ describe('BaseExceptionFilter', () => {
     )
   })
 
-  it('should handle exception with null message', async () => {
+  it('should handle non-ApiException', async () => {
     const exception = {
-      message: null,
-      getStatus: jest.fn().mockReturnValue(422)
+      message: 'Non-API error'
     }
 
     await filter.catch(exception)
 
     expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: 'Internal server error' },
-      { status: 422 }
+      { message: 'Non-API error' },
+      { status: 500 }
     )
   })
 
-  it('should handle exception with undefined message', async () => {
+  it('should handle non-ApiException with undefined message', async () => {
     const exception = {
-      message: undefined,
-      getStatus: jest.fn().mockReturnValue(401)
+      message: undefined
     }
 
     await filter.catch(exception)
 
     expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: 'Internal server error' },
-      { status: 401 }
+      { message: undefined },
+      { status: 500 }
     )
   })
 
-  it('should handle exception with empty string message', async () => {
+  it('should handle non-ApiException with empty string message', async () => {
     const exception = {
-      message: '',
-      getStatus: jest.fn().mockReturnValue(403)
+      message: ''
     }
 
     await filter.catch(exception)
 
     expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: 'Internal server error' },
-      { status: 403 }
+      { message: '' },
+      { status: 500 }
     )
   })
 
-  it('should handle exception with complex object message', async () => {
+  it('should handle non-ApiException with complex object message', async () => {
     const complexMessage = {
       error: 'Complex error',
       details: ['detail1', 'detail2']
     }
     const exception = {
-      message: complexMessage,
-      getStatus: jest.fn().mockReturnValue(400)
+      message: complexMessage
     }
 
     await filter.catch(exception)
 
     expect(mockNextResponse.json).toHaveBeenCalledWith(
       { message: complexMessage },
-      { status: 400 }
+      { status: 500 }
     )
   })
 
@@ -131,7 +133,7 @@ describe('BaseExceptionFilter', () => {
     await filter.catch(exception)
 
     expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: 'Internal server error' },
+      { message: undefined }, // strings don't have message property
       { status: 500 }
     )
   })
@@ -163,22 +165,24 @@ describe('BaseExceptionFilter', () => {
     expect(result).toBe(mockResponse)
   })
 
-  it('should handle exception with custom status codes', async () => {
+  it('should handle ApiException with custom status codes', async () => {
     const testCases = [
-      { status: 200, message: 'OK' },
-      { status: 201, message: 'Created' },
-      { status: 404, message: 'Not Found' },
-      { status: 422, message: 'Unprocessable Entity' },
-      { status: 500, message: 'Internal Server Error' }
+      { status: HttpStatus.OK, message: 'OK' },
+      { status: HttpStatus.CREATED, message: 'Created' },
+      { status: HttpStatus.NOT_FOUND, message: 'Not Found' },
+      { status: HttpStatus.UNPROCESSABLE_ENTITY, message: 'Unprocessable Entity' },
+      { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Internal Server Error' }
     ]
 
     for (const testCase of testCases) {
       jest.clearAllMocks()
 
-      const exception = {
-        message: testCase.message,
-        getStatus: jest.fn().mockReturnValue(testCase.status)
-      }
+      const exception = new ApiException(
+        'TEST_ERROR',
+        'Test Error',
+        testCase.message,
+        testCase.status
+      )
 
       await filter.catch(exception)
 

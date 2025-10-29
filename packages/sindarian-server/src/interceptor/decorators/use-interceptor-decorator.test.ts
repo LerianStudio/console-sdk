@@ -1,7 +1,6 @@
 import 'reflect-metadata'
 import {
-  interceptorExecute,
-  interceptorHandler,
+  InterceptorHandler,
   UseInterceptors,
   InterceptorMetadata
 } from './use-interceptor-decorator'
@@ -34,7 +33,7 @@ class MockInterceptorClass extends Interceptor {
   }
 }
 
-describe('interceptorExecute', () => {
+describe('InterceptorHandler.execute', () => {
   let mockContext: ExecutionContext
 
   beforeEach(() => {
@@ -43,7 +42,7 @@ describe('interceptorExecute', () => {
 
   it('should execute action directly when no middlewares', async () => {
     const action = jest.fn().mockResolvedValue('result')
-    const result = await interceptorExecute(mockContext, [], action)
+    const result = await InterceptorHandler.execute(mockContext, [], action)
 
     expect(result).toBe('result')
     expect(action).toHaveBeenCalledTimes(1)
@@ -53,7 +52,7 @@ describe('interceptorExecute', () => {
     const interceptor = new MockInterceptor('test')
     const action = jest.fn().mockResolvedValue('result')
 
-    const result = await interceptorExecute(mockContext, [interceptor], action)
+    const result = await InterceptorHandler.execute(mockContext, [interceptor], action)
 
     expect(result).toBe('test(result)')
     expect(action).toHaveBeenCalledTimes(1)
@@ -64,7 +63,7 @@ describe('interceptorExecute', () => {
     const interceptor2 = new MockInterceptor('second')
     const action = jest.fn().mockResolvedValue('result')
 
-    const result = await interceptorExecute(
+    const result = await InterceptorHandler.execute(
       mockContext,
       [interceptor1, interceptor2],
       action
@@ -79,7 +78,7 @@ describe('interceptorExecute', () => {
     const interceptor2 = new MockInterceptor('second')
     const action = jest.fn().mockResolvedValue('result')
 
-    const result = await interceptorExecute(
+    const result = await InterceptorHandler.execute(
       mockContext,
       [interceptor1, interceptor2],
       action
@@ -94,7 +93,7 @@ describe('interceptorExecute', () => {
     const interceptor2 = new MockInterceptor('second', true)
     const action = jest.fn().mockResolvedValue('result')
 
-    const result = await interceptorExecute(
+    const result = await InterceptorHandler.execute(
       mockContext,
       [interceptor1, interceptor2],
       action
@@ -115,20 +114,20 @@ describe('interceptorExecute', () => {
           )
       )
 
-    const result = await interceptorExecute(mockContext, [interceptor], action)
+    const result = await InterceptorHandler.execute(mockContext, [interceptor], action)
 
     expect(result).toBe('test(async-result)')
     expect(action).toHaveBeenCalledTimes(1)
   })
 })
 
-describe('interceptorHandler', () => {
+describe('InterceptorHandler.getMetadata', () => {
   it('should return empty array when no interceptors defined', () => {
     class TestClass {}
 
-    const interceptors = interceptorHandler(TestClass)
+    const interceptors = InterceptorHandler.getMetadata(TestClass)
 
-    expect(interceptors).toEqual([])
+    expect(interceptors).toEqual({ interceptors: [] })
   })
 
   it('should return interceptors when defined', () => {
@@ -136,9 +135,9 @@ describe('interceptorHandler', () => {
     const mockInterceptor = new MockInterceptor('test')
     Reflect.defineMetadata(INTERCEPTOR_KEY, [mockInterceptor], TestClass)
 
-    const interceptors = interceptorHandler(TestClass)
+    const interceptors = InterceptorHandler.getMetadata(TestClass)
 
-    expect(interceptors).toEqual([mockInterceptor])
+    expect(interceptors).toEqual({ interceptors: [mockInterceptor] })
   })
 
   it('should return interceptors from prototype', () => {
@@ -150,9 +149,9 @@ describe('interceptorHandler', () => {
       TestClass.prototype
     )
 
-    const interceptors = interceptorHandler(TestClass.prototype)
+    const interceptors = InterceptorHandler.getMetadata(TestClass.prototype)
 
-    expect(interceptors).toEqual([mockInterceptor])
+    expect(interceptors).toEqual({ interceptors: [mockInterceptor] })
   })
 })
 

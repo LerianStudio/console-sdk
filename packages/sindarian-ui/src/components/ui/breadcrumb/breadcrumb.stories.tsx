@@ -35,6 +35,7 @@ export const Primary: StoryObj<typeof Breadcrumb> = {
         <BreadcrumbItem>
           <BreadcrumbPage>Breadcrumb</BreadcrumbPage>
         </BreadcrumbItem>
+        <BreadcrumbSeparator />
       </BreadcrumbList>
     </Breadcrumb>
   )

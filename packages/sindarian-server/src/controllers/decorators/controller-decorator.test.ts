@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 import {
   Controller,
-  controllerHandler,
+  ControllerHandler,
   ControllerMetadata
 } from './controller-decorator'
 import { CONTROLLER_KEY } from '../../constants/keys'
@@ -35,19 +35,21 @@ jest.mock('../../utils/url/url-join', () => ({
 }))
 
 jest.mock('./route-decorator', () => ({
-  routeHandler: jest.fn()
+  RouteHandler: {
+    getMetadata: jest.fn()
+  }
 }))
 
 import { getClassMethods } from '../../utils/class/get-class-methods'
 import { urlJoin } from '../../utils/url/url-join'
-import { routeHandler } from './route-decorator'
+import { RouteHandler } from './route-decorator'
 
 const mockGetClassMethods = getClassMethods as jest.MockedFunction<
   typeof getClassMethods
 >
 const mockUrlJoin = urlJoin as jest.MockedFunction<typeof urlJoin>
-const mockRouteHandler = routeHandler as jest.MockedFunction<
-  typeof routeHandler
+const mockRouteHandler = RouteHandler.getMetadata as jest.MockedFunction<
+  typeof RouteHandler.getMetadata
 >
 
 describe('controller-decorator', () => {
@@ -144,7 +146,7 @@ describe('controller-decorator', () => {
     it('should return empty array when no controller metadata', () => {
       class TestController {}
 
-      const routes = controllerHandler(TestController)
+      const routes = ControllerHandler.getRoutes(TestController)
 
       expect(routes).toEqual([])
       expect(originalConsoleWarn).toHaveBeenCalledWith(
@@ -163,7 +165,7 @@ describe('controller-decorator', () => {
         .mockReturnValueOnce({ method: HttpMethods.GET, path: '/list' })
         .mockReturnValueOnce({ method: HttpMethods.POST, path: '/create' })
 
-      const routes = controllerHandler(TestController)
+      const routes = ControllerHandler.getRoutes(TestController)
 
       expect(mockGetClassMethods).toHaveBeenCalledWith(TestController)
       expect(mockRouteHandler).toHaveBeenCalledWith(
@@ -204,7 +206,7 @@ describe('controller-decorator', () => {
         .mockReturnValueOnce({ method: HttpMethods.GET, path: '/list' })
         .mockReturnValueOnce(undefined)
 
-      const routes = controllerHandler(TestController)
+      const routes = ControllerHandler.getRoutes(TestController)
 
       expect(routes).toEqual([
         {
@@ -221,7 +223,7 @@ describe('controller-decorator', () => {
 
       mockGetClassMethods.mockReturnValue([])
 
-      const routes = controllerHandler(EmptyController)
+      const routes = ControllerHandler.getRoutes(EmptyController)
 
       expect(routes).toEqual([])
     })
@@ -251,7 +253,7 @@ describe('controller-decorator', () => {
         .mockReturnValueOnce({ method: HttpMethods.PATCH, path: '/:id' })
         .mockReturnValueOnce({ method: HttpMethods.DELETE, path: '/:id' })
 
-      const routes = controllerHandler(ResourceController)
+      const routes = ControllerHandler.getRoutes(ResourceController)
 
       expect(routes).toHaveLength(5)
       expect(routes.map((r) => r.method)).toEqual([
@@ -278,7 +280,7 @@ describe('controller-decorator', () => {
         .mockReturnValueOnce('/api/v1/users/:id')
         .mockReturnValueOnce('/api/v1/users')
 
-      const routes = controllerHandler(TestController)
+      const routes = ControllerHandler.getRoutes(TestController)
 
       expect(mockUrlJoin).toHaveBeenCalledWith('/api/v1', '/users/:id')
       expect(mockUrlJoin).toHaveBeenCalledWith('/api/v1', '/users')
@@ -310,7 +312,7 @@ describe('controller-decorator', () => {
 
       mockUrlJoin.mockReturnValueOnce('/list')
 
-      const routes = controllerHandler(TestController)
+      const routes = ControllerHandler.getRoutes(TestController)
 
       expect(mockUrlJoin).toHaveBeenCalledWith('', '/list')
       expect(routes).toEqual([
@@ -335,7 +337,7 @@ describe('controller-decorator', () => {
 
       mockUrlJoin.mockReturnValueOnce('/list')
 
-      const routes = controllerHandler(TestController)
+      const routes = ControllerHandler.getRoutes(TestController)
 
       expect(mockUrlJoin).toHaveBeenCalledWith('/', '/list')
       expect(routes).toEqual([
@@ -360,7 +362,7 @@ describe('controller-decorator', () => {
         .mockReturnValueOnce({ method: HttpMethods.GET, path: '/special' })
         .mockReturnValueOnce({ method: HttpMethods.POST, path: '/another' })
 
-      const routes = controllerHandler(TestController)
+      const routes = ControllerHandler.getRoutes(TestController)
 
       expect(routes).toEqual([
         {
