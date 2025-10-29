@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2025-10-29
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
+Contributors: Caio Alexandre Troti Caetano, Gabriel Ferreira, LF Barrile, lerian-studio
+
+### ✨ Features
+- **Sindarian Server Functionality**: The new server-side capabilities provide a robust foundation for backend operations, improving system reliability and performance for users who rely on server interactions.
+- **Comprehensive Dialog System**: The introduction of a new dialog system enhances user interaction with more consistent and intuitive interfaces, making navigation and communication within the application smoother.
+- **Zod Validation Support**: With the addition of Zod for validation, users benefit from improved data integrity and more reliable error handling, reducing the likelihood of data-related issues.
+
+### 🐛 Bug Fixes
+- **Navigation Issues**: Resolved problems that previously prevented users from accessing certain settings, ensuring a smoother and more predictable navigation experience.
+- **Backend Security**: Fixed method access level discrepancies, enhancing the security and consistency of backend operations, which protects user data and application stability.
+
+### ⚡ Performance
+- **Optimized Dependencies**: Streamlined package dependencies and linted code result in faster load times and improved application performance, providing a more efficient user experience.
+
+### 🔄 Changes
+- **UI Component Enhancements**: Updates to UI components like Tabs, Stepper, Alert, Breadcrumb, and Input offer a more intuitive and responsive user interface, making interactions more seamless.
+
+### 📚 Documentation
+- **Updated Guides**: The README and CHANGELOG have been updated to reflect recent changes, providing clearer guidance and documentation for both users and developers.
+
+### 🔧 Maintenance
+- **Regular Package Updates**: Continuous updates to dependencies ensure compatibility with the latest features and security patches, maintaining the overall health and security of the application.
+- **Improved Build Setup**: Enhancements to the build setup and release flow streamline deployment processes, reducing errors and improving efficiency.
+
+
 ## [1.1.0] - 2025-10-28
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
