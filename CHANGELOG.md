@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2025-11-06
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
+Contributors: Caio Alexandre Troti Caetano, Gabriel Ferreira, LF Barrile, lerian-studio
+
+### ✨ Features
+- **Enhanced Server Capabilities**: The sindarian-server now supports more complex operations with comprehensive testing and configuration options, laying a robust foundation for future expansions.
+- **Streamlined Deployment**: New release and build configurations with separate packages enhance modularity and simplify the deployment process for developers.
+
+### 🐛 Bug Fixes
+- **Notification Display**: Resolved issues with the Toaster import path, improving the reliability of notification displays and enhancing user feedback mechanisms.
+
+### ⚡ Performance
+- **Build Efficiency**: Improved build setup and CICD pipeline, resulting in faster and more reliable deployments, enhancing overall system performance.
+
+### 🔄 Changes
+- **UI Enhancements**: Upgraded UI components such as dialogs, tabs, and alerts for a more consistent and engaging user experience.
+- **Data Validation**: Implemented Zod support for backend validation, improving data integrity and reducing processing errors.
+
+### 📚 Documentation
+- **Updated Changelog**: Regular updates ensure users have access to clear and current information about changes and updates.
+
+### 🔧 Maintenance
+- **Dependency Management**: Regular updates to packages and dependencies keep the system secure and up-to-date.
+- **Testing Improvements**: Enhanced testing coverage, particularly for the sindarian-server, ensuring high reliability and performance standards.
+
+
 ## [1.1.0] - 2025-10-29
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
