@@ -1,0 +1,31 @@
+@theme {
+    --color-tabs-trigger-text: var(--color-shadcn-400);
+    --color-tabs-trigger-hover: var(--color-white);
+    --color-tabs-trigger-text-hover: var(--color-shadcn-500);
+    --color-tabs-trigger-active: var(--color-accent);
+    --color-tabs-trigger-text-active: var(--color-zinc-700);
+}
+
+@layer components {
+    .tabs {
+        @apply mt-6 w-full;
+    }
+
+    .tabs-list {
+        @apply flex h-10 items-center justify-start gap-4 rounded-md p-1;
+    }
+
+    .tabs-trigger {
+        @apply text-tabs-trigger-text hover:text-tabs-trigger-text-hover cursor-pointer inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium whitespace-nowrap ring-offset-white transition-all hover:bg-tabs-trigger-hover;
+        @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2;
+        @apply data-[state=active]:bg-tabs-trigger-active data-[state=active]:text-tabs-trigger-text-active;
+    }
+
+    .tabs-trigger-disabled {
+        @apply disabled:pointer-events-none disabled:opacity-50;
+    }
+
+    .tabs-content {
+        @apply mt-4 ring-offset-white focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 focus-visible:outline-hidden;
+    }
+}

@@ -1,81 +1,112 @@
-## [v1.3.0] - 2025-07-04
+# Changelog
 
-This release enhances the developer experience with improved data handling and streamlines the library's release process for more reliable updates.
+All notable changes to this project will be documented in this file.
+
+## [1.1.0] - 2025-11-06
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
+Contributors: Caio Alexandre Troti Caetano, Gabriel Ferreira, LF Barrile, lerian-studio
 
 ### ✨ Features
-- **Standardized Library Models for Node.js**: Enjoy consistent and reliable data handling across your applications, reducing errors and improving the overall developer experience.
-- **Streamlined NPM Publishing Workflow**: The new structure simplifies the release process, ensuring timely and dependable updates for users.
+- **Enhanced Server Capabilities**: The sindarian-server now supports more complex operations with comprehensive testing and configuration options, laying a robust foundation for future expansions.
+- **Streamlined Deployment**: New release and build configurations with separate packages enhance modularity and simplify the deployment process for developers.
 
-### 🔧 Maintenance
-- **Updated Changelog**: The changelog is now up-to-date, ensuring all users and developers are informed about the latest features and improvements, fostering better project understanding and communication.
+### 🐛 Bug Fixes
+- **Notification Display**: Resolved issues with the Toaster import path, improving the reliability of notification displays and enhancing user feedback mechanisms.
 
-### Notes
-- No breaking changes in this release, ensuring a smooth upgrade experience.
-- The initial project setup has been established, laying the groundwork for future enhancements.
-
-This changelog highlights the key features and maintenance updates in a user-friendly manner, focusing on the benefits and impacts of the changes. It ensures users understand the improvements without delving into technical details, maintaining a professional and accessible tone.
-
-## [v1.3.0-beta.1] - 2025-07-04
-
-This release introduces a standardized model for Node.js, enhancing consistency across the application, and streamlines the publishing process for smoother updates.
-
-### ✨ Features  
-- **Standardized Library Models**: We have introduced a standardized model structure for Node.js in the frontend. This enhancement ensures consistency and reliability, reducing errors and improving maintainability for developers working across the application.
+### ⚡ Performance
+- **Build Efficiency**: Improved build setup and CICD pipeline, resulting in faster and more reliable deployments, enhancing overall system performance.
 
 ### 🔄 Changes
-- **Seamless NPM Publishing**: The library has been restructured to streamline the publishing process on NPM. This change simplifies the release workflow, making it easier for developers to deploy updates and manage dependencies efficiently.
+- **UI Enhancements**: Upgraded UI components such as dialogs, tabs, and alerts for a more consistent and engaging user experience.
+- **Data Validation**: Implemented Zod support for backend validation, improving data integrity and reducing processing errors.
+
+### 📚 Documentation
+- **Updated Changelog**: Regular updates ensure users have access to clear and current information about changes and updates.
 
 ### 🔧 Maintenance
-- **Initial Project Setup**: We've established the foundational structure and configuration for the project. This groundwork is crucial for ensuring a stable and scalable codebase as the project evolves, providing a solid base for future development.
+- **Dependency Management**: Regular updates to packages and dependencies keep the system secure and up-to-date.
+- **Testing Improvements**: Enhanced testing coverage, particularly for the sindarian-server, ensuring high reliability and performance standards.
 
 
-This changelog highlights the key improvements and features introduced in version 1.3.0 of the lib-js-boilerplate project. It focuses on the user benefits of the changes, such as improved consistency and ease of deployment, while maintaining a clear and professional presentation.
+## [1.1.0] - 2025-10-29
 
-# [1.2.0](https://github.com/LerianStudio/lib-js-boilerplate/compare/v1.1.2...v1.2.0) (2025-06-09)
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
+Contributors: Caio Alexandre Troti Caetano, Gabriel Ferreira, LF Barrile, lerian-studio
 
+### ✨ Features
+- **Sindarian Server Functionality**: The new server-side capabilities provide a robust foundation for backend operations, improving system reliability and performance for users who rely on server interactions.
+- **Comprehensive Dialog System**: The introduction of a new dialog system enhances user interaction with more consistent and intuitive interfaces, making navigation and communication within the application smoother.
+- **Zod Validation Support**: With the addition of Zod for validation, users benefit from improved data integrity and more reliable error handling, reducing the likelihood of data-related issues.
 
-### Features
+### 🐛 Bug Fixes
+- **Navigation Issues**: Resolved problems that previously prevented users from accessing certain settings, ensuring a smoother and more predictable navigation experience.
+- **Backend Security**: Fixed method access level discrepancies, enhancing the security and consistency of backend operations, which protects user data and application stability.
 
-* configure name of package ([eb29d58](https://github.com/LerianStudio/lib-js-boilerplate/commit/eb29d5810714679144dc12ee5a4729976410c020))
-* configure name of package ([7a96ea7](https://github.com/LerianStudio/lib-js-boilerplate/commit/7a96ea7c42041f2f43b85ba5ba31ba581628cb18))
-* update the template to publish nodejs lib ([11a26cf](https://github.com/LerianStudio/lib-js-boilerplate/commit/11a26cf7bfad79b980a350bc29f802d99a9440d3))
+### ⚡ Performance
+- **Optimized Dependencies**: Streamlined package dependencies and linted code result in faster load times and improved application performance, providing a more efficient user experience.
 
-# [1.2.0-alpha.1](https://github.com/LerianStudio/lib-js-boilerplate/compare/v1.1.2...v1.2.0-alpha.1) (2025-06-09)
+### 🔄 Changes
+- **UI Component Enhancements**: Updates to UI components like Tabs, Stepper, Alert, Breadcrumb, and Input offer a more intuitive and responsive user interface, making interactions more seamless.
 
+### 📚 Documentation
+- **Updated Guides**: The README and CHANGELOG have been updated to reflect recent changes, providing clearer guidance and documentation for both users and developers.
 
-### Features
-
-* configure name of package ([eb29d58](https://github.com/LerianStudio/lib-js-boilerplate/commit/eb29d5810714679144dc12ee5a4729976410c020))
-* configure name of package ([7a96ea7](https://github.com/LerianStudio/lib-js-boilerplate/commit/7a96ea7c42041f2f43b85ba5ba31ba581628cb18))
-* update the template to publish nodejs lib ([11a26cf](https://github.com/LerianStudio/lib-js-boilerplate/commit/11a26cf7bfad79b980a350bc29f802d99a9440d3))
-
-## [1.1.2](https://github.com/LerianStudio/lib-js-boilerplate/compare/v1.1.1...v1.1.2) (2025-06-05)
-
-
-### Bug Fixes
-
-* Updated node version on actions ([55c5778](https://github.com/LerianStudio/lib-js-boilerplate/commit/55c577815cc2c6d0530cbf31391e6cb0f0078eef))
-
-## [1.1.1](https://github.com/LerianStudio/lib-js-boilerplate/compare/v1.1.0...v1.1.1) (2025-06-05)
+### 🔧 Maintenance
+- **Regular Package Updates**: Continuous updates to dependencies ensure compatibility with the latest features and security patches, maintaining the overall health and security of the application.
+- **Improved Build Setup**: Enhancements to the build setup and release flow streamline deployment processes, reducing errors and improving efficiency.
 
 
-### Bug Fixes
+## [1.1.0] - 2025-10-28
 
-* Upgraded dependencies ([d3e2600](https://github.com/LerianStudio/lib-js-boilerplate/commit/d3e2600d89f0bebbd704325d880f4a5b9e03755a))
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
+Contributors: Caio Alexandre Troti Caetano, Gabriel Ferreira, LF Barrile, lerian-studio
 
-# [1.1.0](https://github.com/LerianStudio/lib-js-boilerplate/compare/v1.0.0...v1.1.0) (2025-05-22)
+### ✨ Features
+- **Sindarian Server**: Unlock new server-side features with the Sindarian Server, which enhances backend functionality and supports robust operations. This addition is fully tested and configured for seamless integration.
+- **Improved Navigation**: Experience a more intuitive user interface with the new page header component, making navigation smoother and enhancing the overall user experience.
+
+### 🐛 Bug Fixes
+- **Account Settings Access**: Resolved an issue preventing access to account settings, ensuring users can now easily manage their accounts without interruption.
+- **Backend Security**: Fixed method access level issues, enhancing the security and encapsulation of backend operations.
+
+### ⚡ Performance
+- **Optimized CI/CD Pipeline**: Enjoy faster and more reliable deployments with our updated CI/CD pipeline, which improves build efficiency and reduces deployment times.
+- **Streamlined Dependencies**: Reduced application bloat by optimizing package dependencies, leading to improved performance and quicker load times.
+
+### 🔄 Changes
+- **Configuration Management**: Enhanced configuration processes with split libraries and backmerge flow, streamlining development across multiple components for a more efficient build process.
+
+### 📚 Documentation
+- **Updated Changelog**: The CHANGELOG.md has been updated to reflect all recent changes, providing clear historical records for developers and users.
+
+### 🔧 Maintenance
+- **Beta Releases**: Conducted multiple beta releases for the Sindarian UI and Server, allowing for iterative improvements based on user feedback.
+- **Build System Enhancements**: Improved build setup for both UI and server components, reducing build times and enhancing the development workflow.
 
 
-### Features
+## [1.0.0] - 2025-09-16
 
-* configure boilerplate with gptchangelog ([47b7de3](https://github.com/LerianStudio/lib-js-boilerplate/commit/47b7de3140cc1eed2444360582f0b9b968a2299a))
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
+Contributors: Caio Alexandre Troti Caetano, Gabriel Ferreira, LF Barrile, lerian-studio
 
-# 1.0.0 (2025-04-08)
+### ✨ Features
+- **Sindarian Server**: Experience enhanced backend capabilities with the new Sindarian Server. This addition boosts server-side processing efficiency and reliability, making it easier to handle complex operations seamlessly.
+- **Release and Build Configuration**: Enjoy a streamlined build process with our new modular release flow. This change simplifies maintenance and updates, ensuring a smoother development experience.
+- **Exception Filtering System**: Benefit from improved error handling with the new exceptions filter system, enhancing overall system resilience and stability.
 
+### 🐛 Bug Fixes
+- **UI Navigation**: We've resolved a navigation issue that previously restricted access to certain account settings. This fix enhances accessibility and improves user satisfaction.
 
-### Features
+### ⚡ Performance
+- **Dependency Management**: Optimized dependencies across components, reducing application bloat and improving performance. Users will notice faster load times and smoother interactions.
 
-* Added package.json to template ([21d91e6](https://github.com/LerianStudio/lib-js-boilerplate/commit/21d91e601929a7b998f772d2a5c10b052d113acc))
-* Added prettier config file ([a672eca](https://github.com/LerianStudio/lib-js-boilerplate/commit/a672eca73b6b10125c26cc3cf084c7249f758930))
-* Added unit test example ([7c0bfb5](https://github.com/LerianStudio/lib-js-boilerplate/commit/7c0bfb524b929e6af58da9d4fa03ed08ceb201c8))
-* create lib-js boilerplate ([3601ea1](https://github.com/LerianStudio/lib-js-boilerplate/commit/3601ea1944a8a3542c29c31e8f3aaa32094b6173))
+### 🔄 Changes
+- **Frontend Enhancements**: Discover a refreshed user interface with new components and improved navigation. These updates elevate the user experience, making interactions more intuitive and engaging.
+
+### 📚 Documentation
+- **Changelog Management**: Updated our documentation practices by refining the `CHANGELOG.md` file, ensuring clarity and ease of use for all users.
+
+### 🔧 Maintenance
+- **Pipeline Updates**: Our CI/CD pipeline has been enhanced for better deployment efficiency, ensuring faster and more reliable software releases.
+- **Testing Enhancements**: Expanded testing coverage with additional unit tests, leading to higher code quality and reliability.

@@ -66,18 +66,37 @@ describe('urlMatch', () => {
 
   describe('advanced parameter patterns', () => {
     it('should match routes with multiple parameters', () => {
-      expect(urlMatch('/users/123/posts/456', '/users/:userId/posts/:postId')).toBe(true)
-      expect(urlMatch('/api/v1/users/john/profile', '/api/:version/users/:name/profile')).toBe(true)
+      expect(
+        urlMatch('/users/123/posts/456', '/users/:userId/posts/:postId')
+      ).toBe(true)
+      expect(
+        urlMatch(
+          '/api/v1/users/john/profile',
+          '/api/:version/users/:name/profile'
+        )
+      ).toBe(true)
     })
 
     it('should not match routes with incorrect parameter count', () => {
       expect(urlMatch('/users/123', '/users/:userId/posts/:postId')).toBe(false)
-      expect(urlMatch('/users/123/posts', '/users/:userId/posts/:postId')).toBe(false)
+      expect(urlMatch('/users/123/posts', '/users/:userId/posts/:postId')).toBe(
+        false
+      )
     })
 
     it('should handle complex parameter patterns', () => {
-      expect(urlMatch('/api/v1/users/123/posts/456/comments/789', '/api/:version/users/:userId/posts/:postId/comments/:commentId')).toBe(true)
-      expect(urlMatch('/files/documents/reports/2023', '/files/:category/:type/:year')).toBe(true)
+      expect(
+        urlMatch(
+          '/api/v1/users/123/posts/456/comments/789',
+          '/api/:version/users/:userId/posts/:postId/comments/:commentId'
+        )
+      ).toBe(true)
+      expect(
+        urlMatch(
+          '/files/documents/reports/2023',
+          '/files/:category/:type/:year'
+        )
+      ).toBe(true)
     })
   })
 
@@ -102,13 +121,24 @@ describe('urlMatch', () => {
 
   describe('complex patterns', () => {
     it('should match routes with multiple consecutive parameters', () => {
-      expect(urlMatch('/users/123/posts/456', '/users/:userId/posts/:postId')).toBe(true)
-      expect(urlMatch('/api/v1/users/john', '/api/:version/users/:name')).toBe(true)
+      expect(
+        urlMatch('/users/123/posts/456', '/users/:userId/posts/:postId')
+      ).toBe(true)
+      expect(urlMatch('/api/v1/users/john', '/api/:version/users/:name')).toBe(
+        true
+      )
     })
 
     it('should handle various parameter naming patterns', () => {
-      expect(urlMatch('/categories/tech/articles/ai', '/categories/:category/articles/:topic')).toBe(true)
-      expect(urlMatch('/files/documents/report.pdf', '/files/:type/:filename')).toBe(true)
+      expect(
+        urlMatch(
+          '/categories/tech/articles/ai',
+          '/categories/:category/articles/:topic'
+        )
+      ).toBe(true)
+      expect(
+        urlMatch('/files/documents/report.pdf', '/files/:type/:filename')
+      ).toBe(true)
     })
 
     it('should match complex nested patterns', () => {
@@ -127,11 +157,14 @@ describe('urlMatch', () => {
     })
 
     it('should handle long parameter chains', () => {
+      expect(urlMatch('/a/b/c/d/e/f', '/a/:param1/c/:param2/e/:param3')).toBe(
+        true
+      )
       expect(
-        urlMatch('/a/b/c/d/e/f', '/a/:param1/c/:param2/e/:param3')
-      ).toBe(true)
-      expect(
-        urlMatch('/api/v1/org/123/team/456/user/789', '/api/:version/org/:orgId/team/:teamId/user/:userId')
+        urlMatch(
+          '/api/v1/org/123/team/456/user/789',
+          '/api/:version/org/:orgId/team/:teamId/user/:userId'
+        )
       ).toBe(true)
     })
   })
@@ -164,8 +197,10 @@ describe('urlMatch', () => {
     })
 
     it('should handle reasonably long paths', () => {
-      const longPath = '/api/v1/organizations/123/teams/456/users/789/profile/settings'
-      const longPattern = '/api/:version/organizations/:orgId/teams/:teamId/users/:userId/profile/:section'
+      const longPath =
+        '/api/v1/organizations/123/teams/456/users/789/profile/settings'
+      const longPattern =
+        '/api/:version/organizations/:orgId/teams/:teamId/users/:userId/profile/:section'
       expect(urlMatch(longPath, longPattern)).toBe(true)
     })
   })
@@ -186,8 +221,15 @@ describe('urlMatch', () => {
     })
 
     it('should handle nested parameter routes', () => {
-      expect(urlMatch('/categories/tech/articles/123', '/categories/:category/articles/:id')).toBe(true)
-      expect(urlMatch('/users/john/posts/456', '/users/:username/posts/:postId')).toBe(true)
+      expect(
+        urlMatch(
+          '/categories/tech/articles/123',
+          '/categories/:category/articles/:id'
+        )
+      ).toBe(true)
+      expect(
+        urlMatch('/users/john/posts/456', '/users/:username/posts/:postId')
+      ).toBe(true)
     })
   })
 

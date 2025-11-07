@@ -1,0 +1,68 @@
+@theme {
+    --spacing-input-wrapper-h: --spacing(10);
+    --spacing-input-wrapper-p: --spacing(2);
+    --spacing-input-px: --spacing(4);
+    --color-input-foreground: var(--color-zinc-700);
+    --color-input-placeholder: var(--color-shadcn-400);
+    --color-input-border: var(--color-shadcn-300);
+
+    --color-input-adornment: var(--color-shadcn-400);
+    --spacing-input-adornment-size: --spacing(10);
+    --spacing-input-adornment-icon-size: --spacing(5);
+}
+
+@layer components {
+    .input-wrapper {
+        @apply relative flex items-center h-input-wrapper-h w-full border border-input-border rounded-md p-input-wrapper-p cursor-text transition-[color,box-shadow];
+    }
+
+    .input-wrapper-focus {
+        @apply data-[focus=true]:ring-ring data-[focus=true]:ring-2 data-[focus=true]:ring-offset-0;
+    }
+
+    .input-wrapper:focus-within {
+        @apply border-ring;
+    }
+
+    .input-base {
+        @apply bg-transparent min-h-0 h-full flex-1 px-input-px text-input-foreground border-none outline-none placeholder:text-input-placeholder placeholder:font-medium placeholder:text-sm focus:ring-0 focus:ring-offset-0;
+    }
+
+    .input-disabled {
+        @apply disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50;
+    }
+
+    .input-read-only {
+        @apply read-only:cursor-default read-only:caret-transparent read-only:opacity-50 read-only:select-text read-only:focus:ring-0 read-only:focus:ring-offset-0 read-only:focus:outline-hidden;
+    }
+
+    .input-start {
+        @apply ml-6;
+    }
+
+    .input-end {
+        @apply mr-6;
+    }
+
+    .input-adornment {
+        @apply absolute -top-[0.5px] flex items-center justify-center text-input-adornment size-input-adornment-size select-none;
+    }
+
+    .input-adornment > * {
+        height: calc(var(--spacing-input-adornment-size) - 4px);
+        width: calc(var(--spacing-input-adornment-size) - 4px);
+        @apply text-input-adornment;
+    }
+
+    .input-adornment > svg {
+        @apply text-input-adornment size-input-adornment-icon-size;
+    }
+
+    .input-adornment-start {
+        @apply -left-0;
+    }
+
+    .input-adornment-end {
+        @apply -right-0;
+    }
+}

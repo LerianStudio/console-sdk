@@ -1,21 +1,50 @@
 import { NextResponse } from 'next/server'
 import { ROUTE_KEY } from '@/constants/keys'
 import { HttpMethods } from '@/constants/http-methods'
-import { bodyDecoratorHandler } from './body-decorator'
-import { paramDecoratorHandler } from './param-decorator'
-import { queryDecoratorHandler } from './query-decorator'
-import { requestDecoratorHandler } from './request-decorator'
+import { RequestHandler } from './request-decorator'
+import { BodyHandler } from './body-decorator'
+import { ParamHandler } from './param-decorator'
+import { QueryHandler } from './query-decorator'
 
 export type RouteMetadata = {
+  methodName: string
   method: HttpMethods
   path: string
+  paramTypes: any[]
 }
 
-export function routeHandler(
-  target: object,
-  propertyKey: string | symbol
-): RouteMetadata | undefined {
-  return Reflect.getOwnMetadata(ROUTE_KEY, target, propertyKey)
+export type RouteContext = {
+  type?: 'body' | 'param' | 'query' | 'custom'
+  parameter: any
+  parameterIndex: number
+  paramType?: any
+}
+
+export class RouteHandler {
+  static getMetadata(
+    target: object,
+    propertyKey: string | symbol
+  ): RouteMetadata {
+    return Reflect.getOwnMetadata(ROUTE_KEY, target, propertyKey)
+  }
+
+  static async getArgs(
+    target: object,
+    propertyKey: string | symbol,
+    originalArgs: any[]
+  ): Promise<RouteContext[]> {
+    const args = [
+      await RequestHandler.handle(target, propertyKey, originalArgs),
+      await QueryHandler.handle(target, propertyKey, originalArgs),
+      await ParamHandler.handle(target, propertyKey, originalArgs),
+      await BodyHandler.handle(target, propertyKey, originalArgs)
+    ]
+      .flat()
+      .filter((a) => a !== null && a !== undefined)
+      .sort((a, b) => a.parameterIndex - b.parameterIndex)
+
+    return args
+  }
 }
 
 export function Route(method: HttpMethods, path: string): MethodDecorator {
@@ -24,11 +53,15 @@ export function Route(method: HttpMethods, path: string): MethodDecorator {
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor
   ) {
+    const paramTypes =
+      Reflect.getMetadata('design:paramtypes', target, propertyKey) || []
     Reflect.defineMetadata(
       ROUTE_KEY,
       {
+        methodName: propertyKey,
         method: method,
-        path
+        path,
+        paramTypes
       },
       target,
       propertyKey
@@ -36,18 +69,7 @@ export function Route(method: HttpMethods, path: string): MethodDecorator {
 
     const originalMethod = descriptor.value
 
-    descriptor.value = async function (...originalArgs: any[]) {
-      const args = [
-        await requestDecoratorHandler(target, propertyKey, originalArgs),
-        await queryDecoratorHandler(target, propertyKey, originalArgs),
-        await paramDecoratorHandler(target, propertyKey, originalArgs),
-        await bodyDecoratorHandler(target, propertyKey, originalArgs)
-      ]
-        .flat()
-        .filter((a) => a !== null && a !== undefined)
-        .sort((a, b) => a.parameterIndex - b.parameterIndex)
-        .map((a) => a.parameter)
-
+    descriptor.value = async function (...args: any[]) {
       const response = await originalMethod.apply(this, args)
 
       if (response instanceof NextResponse) {

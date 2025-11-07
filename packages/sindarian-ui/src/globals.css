@@ -1,4 +1,15 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+
+@import './components/ui/button/styles.css';
+@import './components/ui/icon-button/styles.css';
+@import './components/ui/input/styles.css';
+@import './components/ui/select/styles.css';
+@import './components/ui/breadcrumb/styles.css';
+@import './components/ui/alert/styles.css';
+@import './components/ui/stepper/styles.css';
+@import './components/ui/tabs/styles.css';
+@import './components/ui/dialog/styles.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -103,35 +114,6 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
-
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
-  --animate-fill: fill 2s ease-out forwards;
-
-  @keyframes accordion-down {
-    from {
-      height: 0;
-    }
-    to {
-      height: var(--radix-collapsible-content-height);
-    }
-  }
-  @keyframes accordion-up {
-    from {
-      height: var(--radix-collapsible-content-height);
-    }
-    to {
-      height: 0;
-    }
-  }
-  @keyframes fill {
-    0% {
-      transform: scaleY(0);
-    }
-    100% {
-      transform: scaleY(1);
-    }
-  }
 }
 
 @utility container {

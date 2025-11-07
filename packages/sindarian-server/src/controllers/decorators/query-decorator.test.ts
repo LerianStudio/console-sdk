@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 import z from 'zod'
 import { QUERY_KEY } from '../../constants/keys'
-import { queryDecoratorHandler, Query, QueryMetadata } from './query-decorator'
+import { QueryHandler, Query, QueryMetadata } from './query-decorator'
 import { getNextRequestArgument } from '../../utils/nextjs/get-next-arguments'
 import { ValidationApiException } from '../../exceptions'
 
@@ -10,7 +10,7 @@ jest.mock('../../utils/nextjs/get-next-arguments')
 const mockGetNextRequestArgument =
   getNextRequestArgument as jest.MockedFunction<typeof getNextRequestArgument>
 
-describe('queryDecoratorHandler', () => {
+describe('QueryHandler.handle', () => {
   const mockBaseUrl = 'https://example.com/api/test'
 
   beforeEach(() => {
@@ -40,7 +40,7 @@ describe('queryDecoratorHandler', () => {
       const mockRequest = { url: `${mockBaseUrl}?param1=value1` }
       mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
 
-      const result = queryDecoratorHandler(TestClass.prototype, 'testMethod', [
+      const result = QueryHandler.handle(TestClass.prototype, 'testMethod', [
         mockRequest
       ])
 
@@ -69,11 +69,12 @@ describe('queryDecoratorHandler', () => {
       }
       mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
 
-      const result = queryDecoratorHandler(TestClass.prototype, 'testMethod', [
+      const result = QueryHandler.handle(TestClass.prototype, 'testMethod', [
         mockRequest
       ])
 
       expect(result).toEqual({
+        type: 'query',
         parameter: {
           name: 'john',
           age: '25',
@@ -87,11 +88,12 @@ describe('queryDecoratorHandler', () => {
       const mockRequest = { url: mockBaseUrl }
       mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
 
-      const result = queryDecoratorHandler(TestClass.prototype, 'testMethod', [
+      const result = QueryHandler.handle(TestClass.prototype, 'testMethod', [
         mockRequest
       ])
 
       expect(result).toEqual({
+        type: 'query',
         parameter: {},
         parameterIndex: 0
       })
@@ -103,12 +105,13 @@ describe('queryDecoratorHandler', () => {
       }
       mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
 
-      const result = queryDecoratorHandler(TestClass.prototype, 'testMethod', [
+      const result = QueryHandler.handle(TestClass.prototype, 'testMethod', [
         mockRequest
       ])
 
       // URL.searchParams.entries() returns last value for duplicate keys
       expect(result).toEqual({
+        type: 'query',
         parameter: {
           category: 'news',
           tag: 'important'
@@ -123,11 +126,12 @@ describe('queryDecoratorHandler', () => {
       }
       mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
 
-      const result = queryDecoratorHandler(TestClass.prototype, 'testMethod', [
+      const result = QueryHandler.handle(TestClass.prototype, 'testMethod', [
         mockRequest
       ])
 
       expect(result).toEqual({
+        type: 'query',
         parameter: {
           message: 'hello world',
           symbol: '&#@'
@@ -137,109 +141,6 @@ describe('queryDecoratorHandler', () => {
     })
   })
 
-  describe('when metadata exists with schema', () => {
-    const querySchema = z.object({
-      name: z.string().min(1),
-      age: z.coerce.number().min(0),
-      active: z
-        .string()
-        .transform((val) => val === 'true')
-        .optional()
-    })
-
-    beforeEach(() => {
-      // Set up metadata with schema
-      const metadata: QueryMetadata = {
-        propertyKey: 'testMethod',
-        parameterIndex: 1,
-        schema: () => querySchema
-      }
-      Reflect.defineMetadata(
-        QUERY_KEY,
-        metadata,
-        TestClass.prototype,
-        'testMethod'
-      )
-    })
-
-    it('should return validated and transformed query data when validation passes', () => {
-      const mockRequest = {
-        url: `${mockBaseUrl}?name=john&age=25&active=true`
-      }
-      mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
-
-      const result = queryDecoratorHandler(TestClass.prototype, 'testMethod', [
-        mockRequest
-      ])
-
-      expect(result).toEqual({
-        parameter: {
-          name: 'john',
-          age: 25,
-          active: true
-        },
-        parameterIndex: 1
-      })
-    })
-
-    it('should handle optional parameters correctly', () => {
-      const mockRequest = {
-        url: `${mockBaseUrl}?name=jane&age=30`
-      }
-      mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
-
-      const result = queryDecoratorHandler(TestClass.prototype, 'testMethod', [
-        mockRequest
-      ])
-
-      expect(result).toEqual({
-        parameter: {
-          name: 'jane',
-          age: 30
-        },
-        parameterIndex: 1
-      })
-    })
-
-    it('should throw ValidationApiException when validation fails', () => {
-      const mockRequest = {
-        url: `${mockBaseUrl}?name=&age=invalid&active=maybe`
-      }
-      mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
-
-      expect(() => {
-        queryDecoratorHandler(TestClass.prototype, 'testMethod', [mockRequest])
-      }).toThrow(ValidationApiException)
-    })
-
-    it('should throw ValidationApiException with detailed error message', () => {
-      const mockRequest = {
-        url: `${mockBaseUrl}?name=&age=invalid`
-      }
-      mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
-
-      try {
-        queryDecoratorHandler(TestClass.prototype, 'testMethod', [mockRequest])
-      } catch (error) {
-        expect(error).toBeInstanceOf(ValidationApiException)
-        const validationError = error as ValidationApiException
-        expect(validationError.message).toContain('Invalid query parameters:')
-        expect(validationError.message).toContain('name')
-        expect(validationError.message).toContain('age')
-      }
-    })
-
-    it('should throw ValidationApiException when required fields are missing', () => {
-      const mockRequest = {
-        url: `${mockBaseUrl}?active=true`
-      }
-      mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
-
-      expect(() => {
-        queryDecoratorHandler(TestClass.prototype, 'testMethod', [mockRequest])
-      }).toThrow(ValidationApiException)
-    })
-  })
 
   describe('edge cases', () => {
     beforeEach(() => {
@@ -260,7 +161,7 @@ describe('queryDecoratorHandler', () => {
       mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
 
       expect(() => {
-        queryDecoratorHandler(TestClass.prototype, 'testMethod', [mockRequest])
+        QueryHandler.handle(TestClass.prototype, 'testMethod', [mockRequest])
       }).toThrow()
     })
 
@@ -268,11 +169,12 @@ describe('queryDecoratorHandler', () => {
       const mockRequest = { url: `${mockBaseUrl}?` }
       mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
 
-      const result = queryDecoratorHandler(TestClass.prototype, 'testMethod', [
+      const result = QueryHandler.handle(TestClass.prototype, 'testMethod', [
         mockRequest
       ])
 
       expect(result).toEqual({
+        type: 'query',
         parameter: {},
         parameterIndex: 0
       })
@@ -282,11 +184,12 @@ describe('queryDecoratorHandler', () => {
       const mockRequest = { url: `${mockBaseUrl}?name=&age=&active=` }
       mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
 
-      const result = queryDecoratorHandler(TestClass.prototype, 'testMethod', [
+      const result = QueryHandler.handle(TestClass.prototype, 'testMethod', [
         mockRequest
       ])
 
       expect(result).toEqual({
+        type: 'query',
         parameter: {
           name: '',
           age: '',
@@ -297,84 +200,6 @@ describe('queryDecoratorHandler', () => {
     })
   })
 
-  describe('complex schema validation', () => {
-    const complexSchema = z.object({
-      page: z.coerce.number().min(1).default(1),
-      limit: z.coerce.number().min(1).max(100).default(10),
-      sort: z.enum(['asc', 'desc']).default('asc'),
-      search: z.string().optional(),
-      tags: z
-        .string()
-        .transform((val) => val.split(',').filter(Boolean))
-        .optional()
-    })
-
-    beforeEach(() => {
-      const metadata: QueryMetadata = {
-        propertyKey: 'testMethod',
-        parameterIndex: 0,
-        schema: () => complexSchema
-      }
-      Reflect.defineMetadata(
-        QUERY_KEY,
-        metadata,
-        TestClass.prototype,
-        'testMethod'
-      )
-    })
-
-    it('should handle complex transformations and defaults', () => {
-      const mockRequest = {
-        url: `${mockBaseUrl}?page=2&limit=20&search=test&tags=tag1,tag2,tag3`
-      }
-      mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
-
-      const result = queryDecoratorHandler(TestClass.prototype, 'testMethod', [
-        mockRequest
-      ])
-
-      expect(result).toEqual({
-        parameter: {
-          page: 2,
-          limit: 20,
-          sort: 'asc', // default value
-          search: 'test',
-          tags: ['tag1', 'tag2', 'tag3']
-        },
-        parameterIndex: 0
-      })
-    })
-
-    it('should apply defaults when parameters are missing', () => {
-      const mockRequest = { url: `${mockBaseUrl}?search=minimal` }
-      mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
-
-      const result = queryDecoratorHandler(TestClass.prototype, 'testMethod', [
-        mockRequest
-      ])
-
-      expect(result).toEqual({
-        parameter: {
-          page: 1,
-          limit: 10,
-          sort: 'asc',
-          search: 'minimal'
-        },
-        parameterIndex: 0
-      })
-    })
-
-    it('should validate enum values', () => {
-      const mockRequest = {
-        url: `${mockBaseUrl}?sort=invalid`
-      }
-      mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
-
-      expect(() => {
-        queryDecoratorHandler(TestClass.prototype, 'testMethod', [mockRequest])
-      }).toThrow(ValidationApiException)
-    })
-  })
 })
 
 describe('Query decorator', () => {
@@ -415,42 +240,16 @@ describe('Query decorator', () => {
 
       expect(metadata).toEqual({
         propertyKey: 'testMethod',
-        parameterIndex: 0,
-        schema: undefined
+        parameterIndex: 0
       })
     })
   })
 
-  describe('when used with schema', () => {
-    it('should set metadata with schema correctly', () => {
-      const schema = z.object({
-        name: z.string(),
-        age: z.number()
-      })
-
-      const decorator = Query(schema)
-      decorator(TestClass.prototype, 'withSchema', 1)
-
-      const metadata = Reflect.getOwnMetadata(
-        QUERY_KEY,
-        TestClass.prototype,
-        'withSchema'
-      ) as QueryMetadata
-
-      expect(metadata.propertyKey).toBe('withSchema')
-      expect(metadata.parameterIndex).toBe(1)
-      expect(typeof metadata.schema).toBe('function')
-      expect(metadata.schema()).toEqual(schema)
-    })
-  })
 
   describe('when used on multiple parameters', () => {
     it('should handle different parameter indices correctly', () => {
-      const schemaA = z.object({ filter: z.string() })
-      const schemaB = z.object({ sort: z.string() })
-
-      const decoratorA = Query(schemaA)
-      const decoratorB = Query(schemaB)
+      const decoratorA = Query()
+      const decoratorB = Query()
 
       decoratorA(TestClass.prototype, 'testMethod', 0)
       decoratorB(TestClass.prototype, 'anotherMethod', 2)
@@ -468,21 +267,15 @@ describe('Query decorator', () => {
       ) as QueryMetadata
 
       expect(metadataA.parameterIndex).toBe(0)
-      expect(typeof metadataA.schema).toBe('function')
-      expect(metadataA.schema()).toEqual(schemaA)
-
       expect(metadataB.parameterIndex).toBe(2)
-      expect(typeof metadataB.schema).toBe('function')
-      expect(metadataB.schema()).toEqual(schemaB)
     })
   })
 
   describe('with symbol property keys', () => {
     it('should handle symbol property keys correctly', () => {
       const symbolKey = Symbol('testSymbol')
-      const schema = z.object({ test: z.string() })
 
-      const decorator = Query(schema)
+      const decorator = Query()
       decorator(TestClass.prototype, symbolKey, 0)
 
       const metadata = Reflect.getOwnMetadata(
@@ -493,8 +286,6 @@ describe('Query decorator', () => {
 
       expect(metadata.propertyKey).toBe(symbolKey)
       expect(metadata.parameterIndex).toBe(0)
-      expect(typeof metadata.schema).toBe('function')
-      expect(metadata.schema()).toEqual(schema)
     })
   })
 })

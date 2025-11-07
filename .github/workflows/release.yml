@@ -2,27 +2,28 @@ name: release
 
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [main, develop]
     paths-ignore:
-      - '.gitignore'
-      - '**/*.env' # Ignores all .env files
-      - '*.env' # Ignores .env files in the root directory
-      - '**/*.md' # Ignores all .md files
-      - '*.md' # Ignores .md files in the root directory
-      - '**/*.txt' # Ignores all .txt files
-      - '*.txt' # Ignores .txt files in the root directory
-    tags-ignore: ['**']
+      - ".gitignore"
+      - "**/*.env"
+      - "*.env"
+      - "**/*.md"
+      - "*.md"
+      - "**/*.txt"
+      - "*.txt"
+    tags-ignore: ["**"]
   workflow_dispatch:
     inputs:
       package:
         type: choice
-        description: 'Package to release'
-        options:
-          - sindarian-server
-          - sindarian-ui
-          - all
+        description: "Package to release"
+        options: ["sindarian-server", "sindarian-ui", "all"]
+        required: false
+        default: all
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
 
 permissions:
   id-token: write
@@ -30,69 +31,83 @@ permissions:
   pull-requests: write
   actions: read
   security-events: write
+  packages: write
 
 jobs:
-  # Detect which packages have changed
   detect-changes:
-    name: 🔍 Detect Package Changes
+    name: "🔍 Detect Package Changes"
     runs-on: ubuntu-latest
     outputs:
-      packages: ${{ steps.changes.outputs.changes }}
+      packages: ${{ steps.select.outputs.packages }}
       sindarian-server: ${{ steps.changes.outputs.sindarian-server }}
       sindarian-ui: ${{ steps.changes.outputs.sindarian-ui }}
     steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
+          private-key: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
-      - name: Detect packages
-        id: changes
+      - id: changes
         uses: dorny/paths-filter@v3
         with:
           filters: |
             sindarian-server:
-              - 'packages/sindarian-server/**'
+              - "packages/sindarian-server/**"
             sindarian-ui:
-              - 'packages/sindarian-ui/**'
+              - "packages/sindarian-ui/**"
+
+      - id: select
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed='[]'
+          [[ "${{ steps.changes.outputs.sindarian-server }}" == "true" ]] && changed=$(jq -c '. + ["sindarian-server"]' <<<"$changed")
+          [[ "${{ steps.changes.outputs.sindarian-ui }}" == "true" ]] && changed=$(jq -c '. + ["sindarian-ui"]' <<<"$changed")
+
+          manual='${{ github.event.inputs.package }}'
+          if [[ -n "$manual" && "$manual" != "all" ]]; then
+            packages=$(jq -c -n --arg p "$manual" '[$p]')
+          elif [[ "$manual" == "all" ]]; then
+            packages='["sindarian-server","sindarian-ui"]'
+          else
+            packages="$changed"
+          fi
+
+          [[ -z "$packages" ]] && packages='[]'
+          echo "packages=$packages" | tee -a "$GITHUB_OUTPUT"
+          echo "🔎 Selected packages: $packages"
 
   npm-audit:
-    name: Run npm audit and fix vulnerabilities
-    needs: detect-changes
+    name: "🔒 npm audit (non-blocking)"
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
+    needs: detect-changes
+    if: needs.detect-changes.outputs.packages != '[]'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-
-      - name: Cache Node.js modules
-        uses: actions/cache@v3
+          node-version: "22"
+          cache: "npm"
+      - uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=moderate || echo "🟡 Vulnerabilities found, but audit did not block pipeline"
+      - run: npm audit fix || echo "ℹ️ No fixable vulns or none needed"
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run npm audit (non-blocking)
-        run: |
-          echo "🔍 Running npm audit with moderate threshold..."
-          npm audit --omit=dev --audit-level=moderate || echo "🟡 Vulnerabilities found, but audit did not block pipeline"
-
-      - name: Attempt to fix vulnerabilities
-        run: npm audit fix || echo "ℹ️ No fixable vulnerabilities or none needed"
-
-  # Run tests for changed packages
   test:
-    name: 🧪 Test ${{ matrix.package }}
+    name: "🧪 Unit - ${{ matrix.package }}"
     runs-on: ubuntu-latest
     needs: detect-changes
     if: needs.detect-changes.outputs.packages != '[]'
@@ -100,23 +115,16 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests for ${{ matrix.package }}
-        run: npm run test -- --filter=@lerianstudio/${{ matrix.package }}
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run test -- --filter=@lerianstudio/${{ matrix.package }}
 
   test-e2e:
-    name: 🧪 Test E2E ${{ matrix.package }}
+    name: "🧪 E2E - ${{ matrix.package }}"
     runs-on: ubuntu-latest
     needs: detect-changes
     if: needs.detect-changes.outputs.packages != '[]'
@@ -124,24 +132,16 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run test:e2e -- --filter=@lerianstudio/${{ matrix.package }}
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run E2E tests for ${{ matrix.package }}
-        run: npm run test:e2e -- --filter=@lerianstudio/${{ matrix.package }}
-
-  # Release packages independently
   release:
-    name: 🚀 Release ${{ matrix.package }}
+    name: "🚀 Release - ${{ matrix.package }}"
     runs-on: ubuntu-latest
     needs: [detect-changes, npm-audit, test, test-e2e]
     if: needs.detect-changes.outputs.packages != '[]'
@@ -156,110 +156,131 @@ jobs:
           app_id: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
           private_key: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
 
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # Sync branch early (before building and installing plugins)
+      - name: Sync branch with remote (rebase, autostash)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*" "+refs/tags/*:refs/tags/*"
+          git checkout "${GITHUB_REF_NAME}"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git status
+
+      - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
-          scope: '@lerianstudio'
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+          scope: "@lerianstudio"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Install dependencies
+      - name: Install deps (root)
         run: npm ci
 
       - name: Build ${{ matrix.package }}
         run: npm run build -- --filter=@lerianstudio/${{ matrix.package }}
 
-      - name: Create package-specific semantic-release config
+      - name: Write package-specific .releaserc.json (with exec)
+        shell: bash
         run: |
-          cat > .releaserc.yml << EOF
-          plugins:
-            - path: "@semantic-release/commit-analyzer"
-              preset: conventionalcommits
-              parserOpts:
-                noteKeywords:
-                  - "BREAKING CHANGE"
-                  - "BREAKING CHANGES"
-              releaseRules:
-                - type: feat
-                  release: minor
-                - type: perf
-                  release: minor
-                - type: build
-                  release: minor
-                - type: chore
-                  release: patch
-                - type: ci
-                  release: patch
-                - type: test
-                  release: patch
-                - type: fix
-                  release: patch
-                - type: refactor
-                  release: minor
-                - type: docs
-                  release: patch
-                - breaking: true
-                  release: major
+          set -euo pipefail
+          export PKG="${{ matrix.package }}"
+          export PKG_DIR="packages/${{ matrix.package }}"
+          node -e '
+            const fs = require("fs");
+            const { PKG, PKG_DIR } = process.env;
+            const cfg = {
+              extends: "./.releaserc.base.cjs",
+              plugins: [
+                ["@semantic-release/commit-analyzer", {
+                  preset: "conventionalcommits",
+                  parserOpts: { noteKeywords: ["BREAKING CHANGE","BREAKING CHANGES"] },
+                  releaseRules: [
+                    { type: "feat", release: "minor" },
+                    { type: "perf", release: "minor" },
+                    { type: "build", release: "minor" },
+                    { type: "chore", release: "patch" },
+                    { type: "ci", release: "patch" },
+                    { type: "test", release: "patch" },
+                    { type: "fix", release: "patch" },
+                    { type: "refactor", release: "minor" },
+                    { type: "docs", release: "patch" },
+                    { breaking: true, release: "major" }
+                  ]
+                }],
+                ["@semantic-release/release-notes-generator", { preset: "conventionalcommits" }],
+                ["@semantic-release/npm", { pkgRoot: PKG_DIR, npmPublish: true }],
+                ["@semantic-release/git", {
+                  assets: [`${PKG_DIR}/package.json`],
+                  message: "chore(" + PKG + "): release v${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}"
+                }],
+                ["@semantic-release/github", { assets: [] }],
+                "@semantic-release/exec"
+              ],
+              tagFormat: PKG + "-v${version}",
+              repositoryUrl: "https://github.com/LerianStudio/console-sdk.git"
+            };
+            fs.writeFileSync(".releaserc.json", JSON.stringify(cfg, null, 2));
+            console.log("----- .releaserc.json -----\\n" + JSON.stringify(cfg, null, 2));
+          '
 
-            - path: "@semantic-release/release-notes-generator"
-              preset: conventionalcommits
+      # Install required semantic-release plugins (no package.json changes)
+      - name: Install semantic-release plugins (no-save)
+        run: |
+          echo "Installing semantic-release plugins..."
+          npm install --save-dev --no-audit --prefer-offline \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/npm \
+            @semantic-release/git \
+            @semantic-release/github \
+            @semantic-release/exec \
+            conventional-changelog-conventionalcommits
+          echo "Installation completed. Verifying plugins..."
+          npm list @semantic-release/exec || echo "WARNING: @semantic-release/exec not found in npm list"
+          npm list conventional-changelog-conventionalcommits || echo "WARNING: conventional-changelog-conventionalcommits not found in npm list"
 
-            - path: "@semantic-release/changelog"
-              changelogFile: packages/${{ matrix.package }}/CHANGELOG.md
 
-            - path: "@semantic-release/npm"
-              pkgRoot: packages/${{ matrix.package }}
+      # Ensure conventional-commits preset exists right before SR
+      - name: Ensure conventional-changelog preset (JIT)
+        shell: bash
+        run: |
+          set -e
+          npm ls conventional-changelog-conventionalcommits || \
+          npm install --no-save --no-audit --prefer-offline conventional-changelog-conventionalcommits@7.0.2
 
-            - path: "@semantic-release/git"
-              assets:
-                - packages/${{ matrix.package }}/package.json
-                - packages/${{ matrix.package }}/CHANGELOG.md
-              message: "chore(${{ matrix.package }}): release v\${nextRelease.version} [skip ci]\n\n\${nextRelease.notes}"
+      # Double-check plugins are resolvable from this workspace
+      - name: Verify plugins are resolvable
+        shell: bash
+        run: |
+          echo "Checking installed packages..."
+          npm list --depth=0 | grep semantic-release || echo "No semantic-release packages found in npm list"
+          echo "Checking node_modules directly..."
+          ls -la node_modules/@semantic-release/ || echo "No @semantic-release directory found"
+          echo "Trying to resolve plugins..."
+          node -e "
+            console.log('cwd=', process.cwd());
+            try { console.log('exec=', require.resolve('@semantic-release/exec')); } catch(e) { console.log('exec ERROR:', e.message); }
+            try { console.log('analyzer=', require.resolve('@semantic-release/commit-analyzer')); } catch(e) { console.log('analyzer ERROR:', e.message); }
+            try { console.log('notes=', require.resolve('@semantic-release/release-notes-generator')); } catch(e) { console.log('notes ERROR:', e.message); }
+            try { console.log('npm=', require.resolve('@semantic-release/npm')); } catch(e) { console.log('npm ERROR:', e.message); }
+            try { console.log('git=', require.resolve('@semantic-release/git')); } catch(e) { console.log('git ERROR:', e.message); }
+            try { console.log('github=', require.resolve('@semantic-release/github')); } catch(e) { console.log('github ERROR:', e.message); }
+          "
 
-            - path: "@semantic-release/github"
-              assets:
-                - path: packages/${{ matrix.package }}/CHANGELOG.md
-                  label: "Changelog"
-              successComment: false
-              failComment: false
-              labels: []
-
-            - path: "@semantic-release/exec"
-
-          branches:
-            - name: main
-            - name: develop
-              prerelease: beta
-            - name: hotfix/*
-              prerelease: false
-              channel: false
-
-          tagFormat: ${{ matrix.package }}-v\${version}
-          repositoryUrl: https://github.com/LerianStudio/lib-js-boilerplate.git
-          EOF
-
-      - name: Install missing plugin @semantic-release/exec
-        run: npm install --save-dev @semantic-release/exec
-
-      - name: Run Semantic Release for ${{ matrix.package }}
+      # Important: do NOT git pull after installing node_modules
+      - name: Run Semantic Release (${{ matrix.package }})
         uses: cycjimmy/semantic-release-action@v4
         with:
           ci: false
           semantic_version: 23.0.8
-          extra_plugins: |
-            conventional-changelog-conventionalcommits@v7.0.2
-            @saithodev/semantic-release-backmerge
-            @semantic-release/git
-            @semantic-release/npm
         env:
+          NODE_PATH: ${{ github.workspace }}/node_modules
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -269,7 +290,7 @@ jobs:
           GIT_COMMITTER_EMAIL: ${{ secrets.LERIAN_CI_CD_USER_EMAIL }}
 
   generate-changelog:
-    name: 📝 Generate AI-powered Changelog
+    name: "📝 AI Changelog - ${{ matrix.package }}"
     runs-on: ubuntu-latest
     needs: [detect-changes, release]
     if: needs.detect-changes.outputs.packages != '[]'
@@ -283,8 +304,9 @@ jobs:
           app-id: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
           private-key: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
 
-      - uses: LerianStudio/github-actions-gptchangelog@develop
+      - uses: LerianStudio/github-actions-gptchangelog/helm-repo@chart
         with:
+          WORK_DIR: ${{ matrix.chart.working_dir }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -294,4 +316,3 @@ jobs:
           LERIAN_CI_CD_USER_EMAIL: ${{ secrets.LERIAN_CI_CD_USER_EMAIL }}
           LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
           LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
-          PACKAGE_NAME: ${{ matrix.package }}

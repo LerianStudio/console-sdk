@@ -1,0 +1,57 @@
+@theme {
+    --spacing-select-h: --spacing(10);
+    --spacing-select-px: --spacing(3);
+    --spacing-select-py: --spacing(2);
+
+    --color-select-foreground: var(--color-zinc-700);
+    --color-select-placeholder: var(--color-shadcn-400);
+    --color-select-border: var(--color-shadcn-300);
+    --color-select-chevron: var(--color-shadcn-400);
+}
+
+@layer components {
+    .select-trigger {
+        @apply flex items-center justify-between h-select-h w-full px-select-px py-select-py text-sm font-medium text-select-foreground border border-select-border rounded-md data-placeholder:text-select-placeholder focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden;
+    }
+
+    .select-read-only {
+        @apply data-read-only:cursor-default data-read-only:select-text data-read-only:bg-zinc-100 data-read-only:opacity-50 data-read-only:pointer-events-none data-read-only:focus:outline-hidden data-read-only:focus:ring-0;
+    }
+
+    .select-disabled {
+        @apply disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .select-chevron {
+        @apply text-select-chevron size-4;
+    }
+
+    .select-scroll-button {
+        @apply flex cursor-default items-center justify-center py-1;
+    }
+
+    .select-content {
+        @apply bg-popover text-popover-foreground relative z-50 max-h-96 min-w-32 overflow-hidden rounded-md border shadow-md;
+        @apply data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2;
+    }
+
+    .select-content-popper {
+        @apply data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1;
+    }
+
+    .select-empty {
+        @apply text-muted-foreground hidden py-6 text-center text-sm group-data-[empty=true]/select:block;
+    }
+
+    .select-label {
+        @apply py-1.5 pr-8 pl-2 text-sm font-semibold;
+    }
+
+    .select-item {
+        @apply focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50;
+    }
+
+    .select-separator {
+        @apply bg-muted -mx-1 my-1 h-px;
+    }
+}

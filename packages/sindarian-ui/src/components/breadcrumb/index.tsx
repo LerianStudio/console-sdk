@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   Breadcrumb as BaseBreadcrumb,
   BreadcrumbItem,
@@ -6,7 +7,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb'
-import React from 'react'
 
 export type BreadcrumbPath = {
   name: string
@@ -31,7 +31,7 @@ export const Breadcrumb = ({ paths }: BreadcrumbProps) => {
               )}
             </BreadcrumbItem>
 
-            {index < paths.length - 1 && <BreadcrumbSeparator />}
+            <BreadcrumbSeparator />
           </React.Fragment>
         ))}
       </BreadcrumbList>

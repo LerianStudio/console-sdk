@@ -1,14 +1,39 @@
+import { ArgumentsHost } from '@/context/arguments-host'
+import { ExecutionContext } from '@/context/execution-context'
 import { MODULE_PROPERTY } from '@/constants/keys'
 import { BaseController } from '@/controllers/base-controller'
 import { Container } from '@/dependency-injection/container'
+import { BaseExceptionFilter } from '@/exceptions/base-exception-filter'
+import { catchHandler } from '@/exceptions/decorators/catch-decorator'
+import { FilterHandler } from '@/exceptions/decorators/use-filters-decorator'
+import { ExceptionFilter } from '@/exceptions/exception-filter'
+import { InterceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
+import { Interceptor } from '@/interceptor/interceptor'
 import { moduleHandler, ModuleMetadata } from '@/modules/module-decorator'
+import { APP_FILTER } from '@/services/filters'
+import { APP_INTERCEPTOR } from '@/services/interceptor'
 import { bindRequest } from '@/services/request'
 import { Class } from '@/types/class'
 import { urlMatch } from '@/utils/url/url-match'
 import { NextRequest, NextResponse } from 'next/server'
+import { LoggerService } from '@/logger/logger-service'
+import { Logger } from '@/logger/logger'
+import { NotFoundApiException } from '@/exceptions/api-exception'
+import { isNil } from 'lodash'
+import { PipeTransform } from '@/pipes/pipe-transform'
+import { APP_PIPE } from '@/services/pipes'
+import { PipeHandler } from '@/pipes/decorators/use-pipes'
+import { RouteHandler } from '@/controllers/decorators/route-decorator'
+
+export type ServerFactoryOptions = {
+  logger?: LoggerService | boolean
+}
 
 export class ServerFactory {
   private globalPrefix: string = ''
+  private globalFilters: ExceptionFilter[] = [new BaseExceptionFilter()]
+  private globalInterceptors: Interceptor[] = []
+  private globalPipes: PipeTransform[] = []
 
   private readonly module: Class
   private readonly container: Container
@@ -18,10 +43,14 @@ export class ServerFactory {
     this.module = module
     this.container = container
     this.routes = routes
+
+    Logger.log('Application Started.')
   }
 
-  public static create(module: Class) {
+  public static create(module: Class, options?: ServerFactoryOptions) {
     const container = new Container()
+
+    this._registerLogger(options?.logger)
 
     container.load(module.prototype[MODULE_PROPERTY])
 
@@ -38,6 +67,18 @@ export class ServerFactory {
     this.globalPrefix = prefix
   }
 
+  public useGlobalFilters(...filters: ExceptionFilter[]) {
+    this.globalFilters.push(...filters)
+  }
+
+  public useGlobalInterceptors(...interceptors: Interceptor[]) {
+    this.globalInterceptors.push(...interceptors)
+  }
+
+  public useGlobalPipes(...pipes: PipeTransform[]) {
+    this.globalPipes.push(...pipes)
+  }
+
   /**
    * Handle a request
    * @param request - The request to handle
@@ -48,75 +89,87 @@ export class ServerFactory {
     request: NextRequest,
     { params }: { params: Promise<any> }
   ) {
+    const host = new ArgumentsHost([request])
+    let controller: BaseController | undefined
+
     try {
       // Bind the current request to the container for this request lifecycle
       bindRequest(this.container, request)
 
       const { pathname, method } = this._parseRequest(request)
 
-      const routeMatch = this._fetchRoute(pathname, method)
+      const match = this._fetchRoute(pathname, method)
 
-      // Extract URL parameters from the matched route
-      const extractedParams = this._extractParams(pathname, routeMatch.path)
-
-      // Merge with any existing params
-      const resolvedParams = await params
-      const combinedParams = { ...resolvedParams, ...extractedParams }
-
-      const controller: BaseController = await this.container.getAsync(
-        routeMatch?.controller as Class
+      controller = await this.container.getAsync(
+        match?.controller as Class<BaseController>
       )
 
-      if (!controller) {
-        return NextResponse.json(
-          { message: 'Controller not found' },
-          { status: 500 }
-        )
-      }
+      const handler = this._fetchHandler(controller!, match?.methodName)
 
-      const handler = controller[
-        routeMatch?.methodName as keyof BaseController
-      ] as Function
+      const executionContext = new ExecutionContext(
+        controller!.constructor as Class,
+        handler,
+        [request]
+      )
 
-      if (!handler) {
-        return NextResponse.json(
-          { message: 'Method not found' },
-          { status: 500 }
-        )
-      }
+      // Check if there's any interceptors to execute
+      const interceptors = await this._fetchInterceptors(controller!)
 
-      return await handler.call(controller, request, {
-        params: Promise.resolve(combinedParams)
-      })
+      // Check if there's any pipes to execute
+      const pipes = await this._fetchPipes(controller!, match?.methodName)
+
+      return await InterceptorHandler.execute(
+        executionContext,
+        interceptors,
+        async () => {
+          // Parse args
+          const args = await RouteHandler.getArgs(
+            controller!,
+            match?.methodName,
+            [request, { params }]
+          )
+
+          // Run registered pipes
+          const pipedArgs = await PipeHandler.execute(
+            controller!,
+            match?.methodName,
+            pipes,
+            args
+          )
+
+          // Execute controller
+          return await handler.call(controller!, ...pipedArgs)
+        }
+      )
     } catch (error: any) {
-      // Handle route not found errors
-      if (
-        error.message &&
-        error.message.includes('Route') &&
-        error.message.includes('not found')
-      ) {
-        return NextResponse.json(
-          { message: 'Route not found' },
-          { status: 404 }
-        )
+      const filters = await this._fetchExceptionFilters(controller)
+
+      for (const filter of filters) {
+        // Fetch filter metadata
+        const metadata = catchHandler(filter.constructor)
+        const type = metadata?.type
+
+        // Check if any specific type is registered, if none, it's a catch all filter
+        if (!type || error instanceof type) {
+          const response = await filter.catch(error, host)
+
+          // If a response is returned from the filter, use it
+          if (response) {
+            return response
+          }
+        }
       }
 
-      // Handle validation errors
-      if (
-        error.message &&
-        (error.message.includes('Invalid param') ||
-          error.message.includes('Invalid body') ||
-          error.message.includes('Invalid query'))
-      ) {
-        return NextResponse.json({ message: error.message }, { status: 400 })
-      }
-
-      // Handle other errors
-      console.error('Server error:', error)
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }
       )
+    }
+  }
+
+  private static _registerLogger(logger?: LoggerService | boolean) {
+    if (logger !== false && !isNil(logger)) {
+      Logger.overrideLogger(logger)
     }
   }
 
@@ -151,37 +204,92 @@ export class ServerFactory {
     })
 
     if (!route) {
-      throw new Error(`Server: Route ${pathname} not found`)
+      Logger.error(`Route not found for ${method} ${pathname}`)
+      throw new NotFoundApiException(`Route ${pathname} not found`)
     }
 
     return route
   }
 
-  /**
-   * Extract parameters from the URL using the route pattern
-   * @param pathname - The actual pathname
-   * @param routePattern - The route pattern with :param syntax
-   * @returns The extracted parameters
-   */
-  private _extractParams(
-    pathname: string,
-    routePattern: string
-  ): { [key: string]: string } {
-    const pathSegments = pathname.split('/').filter(Boolean)
-    const patternSegments = routePattern.split('/').filter(Boolean)
+  private async _fetchInterceptors(controller: BaseController) {
+    const interceptors = [...this.globalInterceptors]
 
-    const params: { [key: string]: string } = {}
-
-    for (let i = 0; i < patternSegments.length; i++) {
-      const patternSegment = patternSegments[i]
-      const pathSegment = pathSegments[i]
-
-      if (patternSegment.startsWith(':')) {
-        const paramName = patternSegment.substring(1)
-        params[paramName] = pathSegment
-      }
+    // Fetch any registered global interceptor
+    const appInterceptor = this.container.isBound(APP_INTERCEPTOR)
+    if (appInterceptor) {
+      interceptors.push(
+        await this.container.getAsync<Interceptor>(APP_INTERCEPTOR)
+      )
     }
 
-    return params
+    if (controller) {
+      // Fetch controller interceptors
+      interceptors.push(
+        ...(await InterceptorHandler.fetch(this.container, controller))
+      )
+    }
+
+    return interceptors.reverse()
+  }
+
+  private _fetchHandler(controller: BaseController, methodName: string) {
+    const originalHandler = controller![
+      methodName as keyof BaseController
+    ] as Function
+
+    // Create a named function wrapper to preserve the method name for logging/debugging
+    const handler = Object.defineProperty(
+      function namedHandler(...args: any[]) {
+        return originalHandler.apply(controller!, args)
+      },
+      'name',
+      { value: methodName, configurable: true }
+    )
+
+    return handler
+  }
+
+  private async _fetchExceptionFilters(controller?: BaseController) {
+    const filters = [...this.globalFilters]
+
+    // Fetch any registered global filter
+    const appFilter = this.container.isBound(APP_FILTER)
+    if (appFilter) {
+      filters.push(await this.container.getAsync<ExceptionFilter>(APP_FILTER))
+    }
+
+    if (controller) {
+      filters.push(...(await FilterHandler.fetch(this.container, controller)))
+    }
+
+    return filters.reverse()
+  }
+
+  /**
+   * Fetch the pipes for a controller method
+   * @param controller
+   * @param methodName
+   * @returns
+   */
+  private async _fetchPipes(
+    controller: BaseController,
+    methodName: string | symbol
+  ) {
+    const pipes = [...this.globalPipes]
+
+    // Fetch any registered global pipes
+    const appPipe = this.container.isBound(APP_PIPE)
+    if (appPipe) {
+      pipes.push(await this.container.getAsync<PipeTransform>(APP_PIPE))
+    }
+
+    // Fetch controller pipes
+    if (controller) {
+      pipes.push(
+        ...(await PipeHandler.fetch(this.container, controller, methodName))
+      )
+    }
+
+    return pipes.reverse()
   }
 }

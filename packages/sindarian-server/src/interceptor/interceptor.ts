@@ -1,7 +1,6 @@
-type CallHandler = {
-  handle: (request: any) => Promise<any>
-}
+import { ExecutionContext } from '@/context/execution-context'
+import { CallHandler } from './call-handler'
 
 export abstract class Interceptor {
-  abstract intercept(context: any, next: CallHandler): Promise<any>
+  abstract intercept(context: ExecutionContext, next: CallHandler): Promise<any>
 }

@@ -1,0 +1,43 @@
+import {
+  Meta,
+  Controls,
+  Primary,
+  Canvas,
+  Stories
+} from '@storybook/addon-docs/blocks'
+import * as Story from './account-balance-card.stories'
+
+<Meta of={Story} />
+
+# AccountBalanceCard
+
+This card variation is specifically used to represent an individual account within the platform. It's a piece used in the Transfer pattern, but it can also be used individually, as long as it's in the correct template.
+
+It has two styles: Single, which should be used when the account is displayed as a single account (e.g., Simple Transaction 1:1), and List, in which the account can appear within a list (Complex Transaction n:n).
+
+### Complete Example
+
+<Canvas className="light" of={Story.Primary} />
+
+### With Icon Example
+
+<Canvas className="light" of={Story.Icon} />
+
+### Loading
+
+<Canvas className="light" of={Story.Loading} />
+
+### Empty State
+
+<Canvas className="light" of={Story.Empty} />
+
+### Without Expand
+
+<Canvas className="light" of={Story.NoExpand} />
+
+### Simple Example
+
+<Canvas className="light" of={Story.Simple} />
+
+<Primary />
+<Controls />

@@ -11,6 +11,10 @@
     {
       "name": "packages/sindarian-ui",
       "path": "../packages/sindarian-ui"
+    },
+    {
+      "name": "packages/utils",
+      "path": "../packages/utils"
     }
   ],
   "settings": {
