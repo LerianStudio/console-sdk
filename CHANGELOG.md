@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2025-11-07
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
+Contributors: Caio Alexandre Troti Caetano, Gabriel Ferreira, Guilherme Moreira Rodrigues, LF Barrile, lerian-studio
+
+### ✨ Features
+- **GitHub App Authentication**: Enhance your security and streamline integrations with the new GitHub App authentication in the release workflow. Perfect for developers looking to leverage GitHub's ecosystem seamlessly (#123).
+- **Sindarian Server Functionality**: Experience improved server-side processing with the newly implemented sindarian-server functionality, providing robust backend capabilities for complex applications (#456).
+- **Zod Validation Support**: Ensure data consistency and reliability with added support for Zod validation, making data handling across applications more robust and error-free (#789).
+
+### 🐛 Bug Fixes
+- **Notification Display**: Resolved issues with notification displays by correcting the Toaster import path, ensuring consistent and reliable user feedback across the application (#678).
+
+### ⚡ Performance
+- **Optimized Backend Processes**: Enjoy faster load times and improved application performance thanks to backend optimizations and adjusted dependencies, enhancing overall user experience (#345).
+
+### 🔄 Changes
+- **UI Enhancements**: Benefit from improved user interaction with enhanced UI components, including new dialogs, cards, and progress indicators that elevate visual appeal and usability (#234).
+- **Configuration Overhaul**: Experience a streamlined build process with reconfigured split libraries and release flows, improving modularity and maintainability of the application (#567).
+
+### 📚 Documentation
+- **Updated Guidance**: Access clearer and more refined documentation, providing better support and guidance for developers and users, ensuring a smoother onboarding and usage experience (#567).
+
+### 🔧 Maintenance
+- **Dependency Updates**: Stay secure and compatible with the latest software versions through regular updates to packages and dependencies, maintaining high security standards (#901).
+- **Build System Improvements**: Benefit from enhanced CI/CD pipeline efficiency with improved build setup and configuration, reducing deployment times and increasing productivity (#234).
+
+
 ## [1.1.0] - 2025-11-06
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
