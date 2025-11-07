@@ -1,15 +1,28 @@
 {
   "name": "@lerianstudio/sindarian-server",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.0-beta.12",
+  "description": "Sindarian Server",
   "license": "ISC",
-  "author": "",
+  "author": {
+    "name": "Lerian Studio",
+    "email": "contato@lerian.studio",
+    "url": "https://lerian.studio"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LerianStudio/console-sdk.git",
+    "directory": "packages/sindarian-server"
+  },
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./zod": "./dist/zod/index.js"
+  },
   "scripts": {
     "build": "tsc && npm run build:paths",
     "build:paths": "tsc-alias -p tsconfig.json",
@@ -20,15 +33,15 @@
   },
   "dependencies": {
     "@lerianstudio/lib-logs": ">=1.1.0",
-    "path-to-regexp": "^8.2.0"
+    "path-to-regexp": "^8.3.0"
   },
   "peerDependencies": {
-    "reflect-metadata": ">=0.2.2",
     "inversify": ">=7.7.0",
     "next": ">=15.4.0",
+    "reflect-metadata": ">=0.2.2",
     "zod": ">=4.0.0"
   },
-  "devDependencies": {
-    "tsc-alias": "^1.8.16"
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -1,0 +1,64 @@
+@theme {
+  /* Button */
+  --text-button: var(--font-size-sm);
+  --spacing-button-px: --spacing(4);
+  --spacing-button-py: --spacing(3);
+  --spacing-button-px-small: --spacing(3);
+  --spacing-button-py-small: --spacing(2);
+  --spacing-button-h: --spacing(10);
+  --spacing-button-h-small: --spacing(8);
+  
+  --color-button-primary: var(--color-shadcn-600);
+  --color-button-primary-foreground: var(--color-white);
+  --color-button-primary-disabled: var(--color-shadcn-200);
+  --color-button-primary-foreground-disabled: var(--color-shadcn-600);
+  --color-button-secondary: var(--color-white);
+  --color-button-secondary-hover: var(--color-shadcn-100);
+  --color-button-secondary-foreground: var(--color-zinc-600);
+  --color-button-border: var(--color-shadcn-300);
+  --color-button-tertiary: var(--color-accent);
+  --color-button-tertiary-foreground: var(--color-accent-foreground);
+  --color-button-outline-foreground: var(--color-zinc-600);
+}
+
+@layer components {
+  .button-base {
+    @apply relative inline-flex items-center justify-center rounded-lg shadow-sm text-sm font-medium transition-colors cursor-pointer whitespace-nowrap h-button-h px-button-px py-button-py;
+  }
+
+  .button-plain {
+    @apply bg-transparent text-inherit shadow-none hover:bg-black/5;
+  }
+
+  .button-primary {
+    @apply bg-button-primary text-button-primary-foreground hover:bg-button-primary/80 disabled:bg-button-primary-disabled disabled:text-button-primary-foreground-disabled;
+  }
+
+  .button-secondary {
+    @apply bg-button-secondary text-button-secondary-foreground border border-button-border hover:bg-button-secondary-hover disabled:bg-button-secondary-hover;
+  }
+
+  .button-tertiary {
+    @apply bg-button-tertiary text-button-tertiary-foreground hover:bg-button-tertiary/70;
+  }
+
+  .button-outline {
+    @apply text-button-outline-foreground shadow-none border border-transparent hover:border-button-border;
+  }
+
+  .button-link {
+    @apply !p-0 !px-0 !py-0 !h-4 !text-[13px] underline shadow-none;
+  }
+
+  .button-disabled {
+    @apply disabled:pointer-events-none disabled:opacity-50 disabled:border-transparent disabled:shadow-none;
+  }
+
+  .button-read-only {
+    @apply data-[read-only=true]:cursor-default data-[read-only=true]:opacity-50 data-[read-only=true]:focus:ring-0 data-[read-only=true]:focus:outline-hidden data-[read-only=true]:border-transparent data-[read-only=true]:shadow-none;
+  }
+
+  .button-small {
+    @apply h-button-h-small px-button-px-small py-button-py-small;
+  }
+}

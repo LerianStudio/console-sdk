@@ -7,55 +7,68 @@ export type ParamMetadata = {
   parameterIndex: number
 }
 
-/**
- * Handler to validate the param of the request.
- *
- * @param target - The target object.
- * @param propertyKey - The property key.
- * @param args - The arguments.
- * @returns The parameter and parameter index.
- */
-export async function paramDecoratorHandler(
-  target: object,
-  propertyKey: string | symbol,
-  args: any[]
-): Promise<any> {
-  const metadatas: ParamMetadata[] | undefined = Reflect.getOwnMetadata(
-    PARAM_KEY,
-    target,
-    propertyKey
-  )
+export class ParamHandler {
+  static getMetadata(
+    target: object,
+    propertyKey: string | symbol
+  ): ParamMetadata[] | undefined {
+    let metadatas: ParamMetadata[] | undefined = Reflect.getOwnMetadata(
+      PARAM_KEY,
+      target,
+      propertyKey
+    )
 
-  // If the metadata is found, validate the param.
-  if (metadatas && metadatas.length > 0) {
-    const params: { [key: string]: any } = await getNextParamArgument(args)
-
-    // If params is undefined or null, all required params are missing
-    if (!params) {
-      throw new ValidationApiException(
-        `Invalid param: ${metadatas[0].name} is required`
+    // If not found on instance, try constructor prototype
+    if (!metadatas && target.constructor) {
+      metadatas = Reflect.getOwnMetadata(
+        PARAM_KEY,
+        target.constructor.prototype,
+        propertyKey
       )
     }
 
-    // Validate the param.
-    return metadatas.map((metadata) => {
-      const value = params[metadata.name]
+    return metadatas
+  }
 
-      // If the param is not found, throw a validation error.
-      if (!value) {
+  static async handle(
+    target: object,
+    propertyKey: string | symbol,
+    args: any[]
+  ): Promise<any> {
+    const metadatas = this.getMetadata(target, propertyKey)
+
+    // If the metadata is found, validate the param.
+    if (metadatas && metadatas.length > 0) {
+      const params: { [key: string]: any } = await getNextParamArgument(args)
+
+      // If params is undefined or null, all required params are missing
+      if (!params) {
         throw new ValidationApiException(
-          `Invalid param: ${metadata.name} is required`
+          `Invalid param: ${metadatas[0].name} is required`
         )
       }
 
-      return {
-        parameter: value,
-        parameterIndex: metadata.parameterIndex
-      }
-    })
-  }
+      // Validate the param.
+      return metadatas.map((metadata) => {
+        const value = params[metadata.name]
 
-  return null
+        // If the param is not found, throw a validation error.
+        if (!value) {
+          throw new ValidationApiException(
+            `Invalid param: ${metadata.name} is required`
+          )
+        }
+
+        return {
+          type: 'param',
+          parameter: value,
+          parameterIndex: metadata.parameterIndex
+        }
+      })
+    }
+
+    return null
+  }
 }
 
 /**

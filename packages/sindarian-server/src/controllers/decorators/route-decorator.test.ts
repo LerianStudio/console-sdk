@@ -2,10 +2,10 @@ import 'reflect-metadata'
 import { Route, Get, Post, Put, Patch, Delete } from './route-decorator'
 import { GET_KEY, ROUTE_KEY } from '../../constants/keys'
 import { HttpMethods } from '../../constants/http-methods'
-import { bodyDecoratorHandler } from './body-decorator'
-import { paramDecoratorHandler } from './param-decorator'
-import { queryDecoratorHandler } from './query-decorator'
-import { requestDecoratorHandler } from './request-decorator'
+import { BodyHandler } from './body-decorator'
+import { ParamHandler } from './param-decorator'
+import { QueryHandler } from './query-decorator'
+import { RequestHandler } from './request-decorator'
 
 // Mock all decorator handlers
 jest.mock('./body-decorator')
@@ -19,16 +19,29 @@ type DecoratorHandlerResult =
   | null
 type AsyncDecoratorHandlerResult = Promise<DecoratorHandlerResult>
 
-const mockBodyDecoratorHandler = bodyDecoratorHandler as any
-const mockParamDecoratorHandler = paramDecoratorHandler as any
-const mockQueryDecoratorHandler = queryDecoratorHandler as any
-const mockRequestDecoratorHandler = requestDecoratorHandler as any
+const mockBodyHandler = BodyHandler.handle as jest.MockedFunction<
+  typeof BodyHandler.handle
+>
+const mockParamHandler = ParamHandler.handle as jest.MockedFunction<
+  typeof ParamHandler.handle
+>
+const mockQueryHandler = QueryHandler.handle as jest.MockedFunction<
+  typeof QueryHandler.handle
+>
+const mockRequestHandler = RequestHandler.handle as jest.MockedFunction<
+  typeof RequestHandler.handle
+>
 
 // Mock NextResponse
 jest.mock('next/server', () => {
-  const mockNextResponseJson = jest.fn()
+  const mockJson = jest.fn()
+  const mockNextResponseJson = jest.fn().mockReturnValue({
+    status: 200,
+    json: mockJson
+  })
   const MockedNextResponse: any = jest.fn().mockImplementation(() => ({
-    json: mockNextResponseJson
+    json: mockJson,
+    status: 200
   }))
   MockedNextResponse.json = mockNextResponseJson
 
@@ -42,6 +55,10 @@ import { NextResponse } from 'next/server'
 const MockedNextResponse = NextResponse as any
 
 describe('Route Decorator', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
   class TestController {
     testMethod(arg1?: any, arg2?: any, arg3?: any): any {
       return { message: 'test response' }
@@ -86,8 +103,10 @@ describe('Route Decorator', () => {
       )
 
       expect(metadata).toEqual({
+        methodName: 'testMethod',
         method: HttpMethods.GET,
-        path: testPath
+        path: testPath,
+        paramTypes: []
       })
     })
 
@@ -105,122 +124,61 @@ describe('Route Decorator', () => {
       )
 
       expect(metadata).toEqual({
+        methodName: 'testMethod',
         method: HttpMethods.POST,
-        path: ''
+        path: '',
+        paramTypes: []
       })
     })
 
-    it('should wrap original method and call all decorator handlers', async () => {
-      // Setup mock responses from handlers
-      mockRequestDecoratorHandler.mockResolvedValue({
-        parameter: 'request',
-        parameterIndex: 0
-      })
-      mockQueryDecoratorHandler.mockResolvedValue({
-        parameter: 'query',
-        parameterIndex: 1
-      })
-      mockParamDecoratorHandler.mockResolvedValue({
-        parameter: 'param',
-        parameterIndex: 2
-      })
-      mockBodyDecoratorHandler.mockResolvedValue({
-        parameter: 'body',
-        parameterIndex: 3
-      })
-
+    it('should wrap original method and handle responses correctly', async () => {
+      const originalMethod = jest.fn().mockResolvedValue({ success: true })
       const descriptor = {
-        value: jest.fn().mockResolvedValue({ success: true })
+        value: originalMethod
       }
 
       const decorator = Route(GET_KEY, '/test')
       decorator(TestController.prototype, 'testMethod', descriptor)
 
+      // Verify route metadata was stored
+      const metadata = Reflect.getOwnMetadata(ROUTE_KEY, TestController.prototype, 'testMethod')
+      expect(metadata).toEqual({
+        methodName: 'testMethod',
+        method: GET_KEY,
+        path: '/test',
+        paramTypes: expect.any(Array) // paramTypes should be an array (can be empty)
+      })
+
+      // Test method execution
       const originalArgs = ['arg1', 'arg2']
-      await descriptor.value(...originalArgs)
+      const result = await descriptor.value(...originalArgs)
 
-      // Verify all handlers were called
-      expect(mockRequestDecoratorHandler).toHaveBeenCalledWith(
-        TestController.prototype,
-        'testMethod',
-        originalArgs
-      )
-      expect(mockQueryDecoratorHandler).toHaveBeenCalledWith(
-        TestController.prototype,
-        'testMethod',
-        originalArgs
-      )
-      expect(mockParamDecoratorHandler).toHaveBeenCalledWith(
-        TestController.prototype,
-        'testMethod',
-        originalArgs
-      )
-      expect(mockBodyDecoratorHandler).toHaveBeenCalledWith(
-        TestController.prototype,
-        'testMethod',
-        originalArgs
-      )
+      // Original method should be called with same args
+      expect(originalMethod).toHaveBeenCalledWith('arg1', 'arg2')
+      
+      // Result should be wrapped in NextResponse.json
+      expect(MockedNextResponse.json).toHaveBeenCalledWith({ success: true })
+      expect(result).toBeDefined()
     })
 
-    it('should sort parameters by parameterIndex and pass to original method', async () => {
-      // Setup mock responses with mixed order
-      mockRequestDecoratorHandler.mockResolvedValue({
-        parameter: 'request',
-        parameterIndex: 3
-      })
-      mockQueryDecoratorHandler.mockResolvedValue({
-        parameter: 'query',
-        parameterIndex: 1
-      })
-      mockParamDecoratorHandler.mockResolvedValue({
-        parameter: 'param',
-        parameterIndex: 0
-      })
-      mockBodyDecoratorHandler.mockResolvedValue({
-        parameter: 'body',
-        parameterIndex: 2
-      })
-
-      const originalMethod = jest.fn().mockResolvedValue({ success: true })
+    it('should return NextResponse as-is if original method returns NextResponse', async () => {
+      const nextResponse = new MockedNextResponse()
+      // Ensure the mock passes instanceof check
+      Object.setPrototypeOf(nextResponse, MockedNextResponse.prototype)
+      
+      const originalMethod = jest.fn().mockResolvedValue(nextResponse)
       const descriptor = { value: originalMethod }
 
       const decorator = Route(GET_KEY, '/test')
       decorator(TestController.prototype, 'testMethod', descriptor)
 
-      await descriptor.value('arg1', 'arg2')
+      const result = await descriptor.value('arg1', 'arg2')
 
-      // Verify parameters were sorted correctly by parameterIndex
-      expect(originalMethod).toHaveBeenCalledWith(
-        'param',
-        'query',
-        'body',
-        'request'
-      )
-    })
-
-    it('should filter out null and undefined parameters', async () => {
-      // Setup mock responses with some null/undefined values
-      mockRequestDecoratorHandler.mockResolvedValue({
-        parameter: 'request',
-        parameterIndex: 0
-      })
-      mockQueryDecoratorHandler.mockResolvedValue(null)
-      mockParamDecoratorHandler.mockResolvedValue(undefined)
-      mockBodyDecoratorHandler.mockResolvedValue({
-        parameter: 'body',
-        parameterIndex: 1
-      })
-
-      const originalMethod = jest.fn().mockResolvedValue({ success: true })
-      const descriptor = { value: originalMethod }
-
-      const decorator = Route(GET_KEY, '/test')
-      decorator(TestController.prototype, 'testMethod', descriptor)
-
-      await descriptor.value('arg1', 'arg2')
-
-      // Verify only non-null/undefined parameters were passed
-      expect(originalMethod).toHaveBeenCalledWith('request', 'body')
+      // Should return the NextResponse directly without wrapping
+      expect(result).toBe(nextResponse)
+      expect(originalMethod).toHaveBeenCalledWith('arg1', 'arg2')
+      // Ensure NextResponse.json was NOT called since we're returning a NextResponse directly
+      expect(MockedNextResponse.json).not.toHaveBeenCalled()
     })
 
     it('should return NextResponse as-is if original method returns NextResponse', async () => {
@@ -231,10 +189,7 @@ describe('Route Decorator', () => {
       const originalMethod = jest.fn().mockResolvedValue(nextResponse)
       const descriptor = { value: originalMethod }
 
-      mockRequestDecoratorHandler.mockResolvedValue(null)
-      mockQueryDecoratorHandler.mockResolvedValue(null)
-      mockParamDecoratorHandler.mockResolvedValue(null)
-      mockBodyDecoratorHandler.mockResolvedValue(null)
+      // No handler setup needed - route decorator no longer calls handlers
 
       const decorator = Route(GET_KEY, '/test')
       decorator(TestController.prototype, 'testMethod', descriptor)
@@ -252,10 +207,7 @@ describe('Route Decorator', () => {
       const originalMethod = jest.fn().mockResolvedValue(responseData)
       const descriptor = { value: originalMethod }
 
-      mockRequestDecoratorHandler.mockResolvedValue(null)
-      mockQueryDecoratorHandler.mockResolvedValue(null)
-      mockParamDecoratorHandler.mockResolvedValue(null)
-      mockBodyDecoratorHandler.mockResolvedValue(null)
+      // No handler setup needed - route decorator no longer calls handlers
       MockedNextResponse.json.mockReturnValue(wrappedResponse)
 
       const decorator = Route(GET_KEY, '/test')
@@ -273,10 +225,7 @@ describe('Route Decorator', () => {
       const descriptor = { value: originalMethod }
       const wrappedResponse = new MockedNextResponse()
 
-      mockRequestDecoratorHandler.mockResolvedValue(null)
-      mockQueryDecoratorHandler.mockResolvedValue(null)
-      mockParamDecoratorHandler.mockResolvedValue(null)
-      mockBodyDecoratorHandler.mockResolvedValue(null)
+      // No handler setup needed - route decorator no longer calls handlers
       MockedNextResponse.json.mockReturnValue(wrappedResponse)
 
       const decorator = Route(GET_KEY, '/test')
@@ -299,10 +248,7 @@ describe('Route Decorator', () => {
       }
       const descriptor = { value: originalMethod }
 
-      mockRequestDecoratorHandler.mockResolvedValue(null)
-      mockQueryDecoratorHandler.mockResolvedValue(null)
-      mockParamDecoratorHandler.mockResolvedValue(null)
-      mockBodyDecoratorHandler.mockResolvedValue(null)
+      // No handler setup needed - route decorator no longer calls handlers
       MockedNextResponse.json.mockReturnValue(new MockedNextResponse())
 
       const decorator = Route(GET_KEY, '/test')
@@ -331,8 +277,10 @@ describe('Route Decorator', () => {
         'testMethod'
       )
       expect(metadata).toEqual({
+        methodName: 'testMethod',
         method: HttpMethods.GET,
-        path: testPath
+        path: testPath,
+        paramTypes: []
       })
     })
 
@@ -351,8 +299,10 @@ describe('Route Decorator', () => {
         'testMethod'
       )
       expect(metadata).toEqual({
+        methodName: 'testMethod',
         method: HttpMethods.GET,
-        path: ''
+        path: '',
+        paramTypes: []
       })
     })
 
@@ -372,8 +322,10 @@ describe('Route Decorator', () => {
         'testMethod'
       )
       expect(metadata).toEqual({
+        methodName: 'testMethod',
         method: HttpMethods.POST,
-        path: testPath
+        path: testPath,
+        paramTypes: []
       })
     })
 
@@ -393,8 +345,10 @@ describe('Route Decorator', () => {
         'testMethod'
       )
       expect(metadata).toEqual({
+        methodName: 'testMethod',
         method: HttpMethods.PUT,
-        path: testPath
+        path: testPath,
+        paramTypes: []
       })
     })
 
@@ -414,8 +368,10 @@ describe('Route Decorator', () => {
         'testMethod'
       )
       expect(metadata).toEqual({
+        methodName: 'testMethod',
         method: HttpMethods.PATCH,
-        path: testPath
+        path: testPath,
+        paramTypes: []
       })
     })
 
@@ -435,86 +391,61 @@ describe('Route Decorator', () => {
         'testMethod'
       )
       expect(metadata).toEqual({
+        methodName: 'testMethod',
         method: HttpMethods.DELETE,
-        path: testPath
+        path: testPath,
+        paramTypes: []
       })
     })
   })
 
   describe('Edge Cases', () => {
-    it('should handle handlers returning arrays', async () => {
-      // Setup mock responses where some handlers return arrays
-      mockRequestDecoratorHandler.mockResolvedValue([
-        { parameter: 'request1', parameterIndex: 0 },
-        { parameter: 'request2', parameterIndex: 1 }
-      ])
-      mockQueryDecoratorHandler.mockResolvedValue({
-        parameter: 'query',
-        parameterIndex: 2
-      })
-      mockParamDecoratorHandler.mockResolvedValue(null)
-      mockBodyDecoratorHandler.mockResolvedValue(undefined)
-
+    it('should preserve argument order when calling original method', async () => {
       const originalMethod = jest.fn().mockResolvedValue({ success: true })
       const descriptor = { value: originalMethod }
 
       const decorator = Route(GET_KEY, '/test')
       decorator(TestController.prototype, 'testMethod', descriptor)
 
-      await descriptor.value('arg1', 'arg2')
+      // Call with multiple args
+      await descriptor.value('arg1', 'arg2', 'arg3')
 
-      // Verify flattened and sorted parameters
-      expect(originalMethod).toHaveBeenCalledWith(
-        'request1',
-        'request2',
-        'query'
-      )
+      // Should call original method with same args in same order
+      expect(originalMethod).toHaveBeenCalledWith('arg1', 'arg2', 'arg3')
     })
 
-    it('should handle empty handler responses', async () => {
-      // All handlers return null/undefined
-      mockRequestDecoratorHandler.mockResolvedValue(null)
-      mockQueryDecoratorHandler.mockResolvedValue(undefined)
-      mockParamDecoratorHandler.mockResolvedValue(null)
-      mockBodyDecoratorHandler.mockResolvedValue(undefined)
-
+    it('should handle methods with no arguments', async () => {
       const originalMethod = jest.fn().mockResolvedValue({ success: true })
       const descriptor = { value: originalMethod }
 
-      const decorator = Route(GET_KEY, '/test')
-      decorator(TestController.prototype, 'testMethod', descriptor)
+      const decorator = Route(GET_KEY, '/health')
+      decorator(TestController.prototype, 'healthCheck', descriptor)
 
-      await descriptor.value('arg1', 'arg2')
+      // Call with no args
+      await descriptor.value()
 
       // Original method should be called with no parameters
       expect(originalMethod).toHaveBeenCalledWith()
     })
 
-    it('should handle handlers throwing errors', async () => {
-      const testError = new Error('Handler error')
-      mockRequestDecoratorHandler.mockRejectedValue(testError)
-      mockQueryDecoratorHandler.mockResolvedValue(null)
-      mockParamDecoratorHandler.mockResolvedValue(null)
-      mockBodyDecoratorHandler.mockResolvedValue(null)
+    it('should handle async operations correctly', async () => {
+      const originalMethod = jest.fn().mockResolvedValue({ async: true })
+      const descriptor = { value: originalMethod }
 
-      const descriptor = {
-        value: jest.fn().mockResolvedValue({ success: true })
-      }
+      const decorator = Route(GET_KEY, '/async')
+      decorator(TestController.prototype, 'asyncMethod', descriptor)
 
-      const decorator = Route(GET_KEY, '/test')
-      decorator(TestController.prototype, 'testMethod', descriptor)
+      const result = await descriptor.value('test-data')
 
-      // Should propagate the error
-      await expect(descriptor.value()).rejects.toThrow(testError)
+      expect(originalMethod).toHaveBeenCalledWith('test-data')
+      expect(MockedNextResponse.json).toHaveBeenCalledWith({ async: true })
+      expect(result).toBeDefined()
     })
 
     it('should handle original method throwing errors', async () => {
       const testError = new Error('Original method error')
 
-      mockRequestDecoratorHandler.mockResolvedValue(null)
-      mockQueryDecoratorHandler.mockResolvedValue(null)
-      mockParamDecoratorHandler.mockResolvedValue(null)
-      mockBodyDecoratorHandler.mockResolvedValue(null)
+      // No handler setup needed - route decorator no longer calls handlers
 
       const descriptor = {
         value: jest.fn().mockRejectedValue(testError)

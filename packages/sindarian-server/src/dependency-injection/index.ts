@@ -1,2 +1,3 @@
 export * from './container'
-export { inject as Inject, injectable as Injectable } from 'inversify'
+export * from './injectable-decorator'
+export { inject as Inject, optional as Optional } from 'inversify'

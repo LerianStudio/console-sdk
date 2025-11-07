@@ -1,0 +1,68 @@
+@theme {
+    --spacing-alert-p: --spacing(4.5);
+    --text-alert-title: var(--text-sm);
+    --text-alert-description: 13px;
+    --spacing-alert-icon-size: --spacing(5);
+
+    /* Variants */
+    --color-alert-text: var(--color-zinc-700);
+    --color-alert-informative: var(--color-blue-50);
+    --color-alert-informative-border: var(--color-blue-600);
+    --color-alert-informative-text: var(--color-blue-800);
+    --color-alert-warning: var(--color-yellow-50);
+    --color-alert-warning-border: var(--color-yellow-500);
+    --color-alert-warning-text: var(--color-yellow-800);
+    --color-alert-success: var(--color-green-50);
+    --color-alert-success-border: var(--color-green-600);
+    --color-alert-success-text: var(--color-green-800);
+    --color-alert-destructive: var(--color-red-50);
+    --color-alert-destructive-border: var(--color-red-600);
+    --color-alert-destructive-text: var(--color-red-800);
+}
+
+@layer components {
+    .alert {
+        @apply relative w-full rounded-lg bg-white p-alert-p text-alert-text;
+        @apply [&>svg]:size-alert-icon-size [&>svg~*]:pl-9.5 [&>svg]:absolute [&>svg]:left-4.5 [&>svg]:top-4.5 [&>svg]:text-alert-text;
+    }
+
+    .alert-informative {
+        @apply bg-alert-informative border border-alert-informative-border/50 text-alert-informative-text;
+        @apply [&>svg]:text-alert-informative-border [&>div:nth-child(3)]:text-alert-informative-text/70;
+    }
+
+    .alert-warning {
+        @apply bg-alert-warning border border-alert-warning-border/50 text-alert-warning-text;
+        @apply [&>svg]:text-alert-warning-border [&>div:nth-child(3)]:text-alert-warning-text/70;
+    }
+
+    .alert-success {
+        @apply bg-alert-success border border-alert-success-border/50 text-alert-success-text;
+        @apply [&>svg]:text-alert-success-border [&>div:nth-child(3)]:text-alert-success-text/70;
+    }
+
+    .alert-destructive {
+        @apply bg-alert-destructive border border-alert-destructive-border/50 text-alert-destructive-text;
+        @apply [&>svg]:text-alert-destructive-border [&>div:nth-child(3)]:text-alert-destructive-text/70;
+    }
+
+    .alert-title {
+        @apply text-alert-title font-medium mb-2 leading-none tracking-tight;
+    }
+
+    .alert-description {
+        @apply text-alert-description font-normal [&_p]:leading-relaxed;
+    }
+
+    .alert-actions {
+        @apply flex mt-3.5 gap-5;
+    }
+
+    .alert-top-action {
+        @apply !pl-0 absolute top-2 right-2 flex gap-2;
+    }
+
+    .alert-close {
+        @apply text-inherit;
+    }
+}

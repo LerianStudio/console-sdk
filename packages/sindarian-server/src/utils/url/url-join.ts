@@ -5,10 +5,10 @@
  */
 export function urlJoin(...args: string[]) {
   if (args.length === 0) return '/'
-  
+
   const cleaned = args
     .map((pathPart) => pathPart.replace(/(^\/+|\/+$)/g, ''))
     .filter(Boolean)
-  
+
   return cleaned.length > 0 ? '/' + cleaned.join('/') : '/'
 }

@@ -5,7 +5,7 @@ const meta: Meta = {
   title: 'Primitives/Progress',
   component: Progress,
   argTypes: {
-    percent: {
+    value: {
       control: {
         type: 'range',
         min: 0,
@@ -20,6 +20,6 @@ export default meta
 
 export const Default: StoryObj = {
   args: {
-    percent: 50
+    value: 50
   }
 }

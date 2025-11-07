@@ -2,6 +2,9 @@ import { Meta, StoryObj } from '@storybook/nextjs'
 import { InputField, InputFieldProps } from '.'
 import { useForm } from 'react-hook-form'
 import { Form } from '@/components/ui/form'
+import { IconButton } from '@/components/ui/icon-button'
+import { Search } from 'lucide-react'
+import { InputAdornment } from '@/components/ui/input'
 
 const meta: Meta<InputFieldProps> = {
   title: 'Components/Form/InputField',
@@ -50,6 +53,19 @@ export const WithTooltip: StoryObj<InputFieldProps> = {
 export const WithExtraLabel: StoryObj<InputFieldProps> = {
   args: {
     labelExtra: <span>Extra Label</span>
+  },
+  render: (args) => BaseComponent(args)
+}
+
+export const WithButton: StoryObj<InputFieldProps> = {
+  args: {
+    endAdornment: (
+      <InputAdornment position="end">
+        <IconButton variant="outline" rounded>
+          <Search />
+        </IconButton>
+      </InputAdornment>
+    )
   },
   render: (args) => BaseComponent(args)
 }

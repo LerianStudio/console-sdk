@@ -23,7 +23,7 @@ export class Container {
    * @param module ContainerModule
    */
   load(module: ContainerModule) {
-    if (!module.hasOwnProperty('registry')) {
+    if (!Object.prototype.hasOwnProperty.call(module, 'registry')) {
       throw new Error(
         `Container: module ${module} does not have a registry method`
       )

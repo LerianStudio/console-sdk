@@ -5,10 +5,33 @@ import * as Story from './input.stories'
 
 # Input
 
-This is the input component. It is used to get user input.
+Displays a form input field or a component that looks like an input field.
 
 ### Default
 
 <Canvas of={Story.Default} />
+
+### With Icons
+
+Allows the usage of icons at the start or end of the input component.
+
+<Canvas of={Story.Icons} />
+
+### With Buttons
+
+Allows the usage of buttons at the start or end of the input component.
+
+<Canvas of={Story.Buttons} />
+
+### Read Only
+
+Disables the input's user interactions while keeping the DOM events enabled. Useful when using together with Tooltip or other components
+that relies on JavaScript events.
+
+<Canvas of={Story.ReadOnly} />
+
+### Disabled
+
+<Canvas of={Story.Disabled} />
 
 <Controls />

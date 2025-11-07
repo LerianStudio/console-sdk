@@ -1,0 +1,15 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './paper-collapsible.stories'
+
+<Meta of={Story} />
+
+# PaperCollapsible
+
+The PaperCollapsible is an interactive component used in the Midaz Console to organize information in expandable sections. The header remains visible, while the related content can be expanded or hidden with a click, hence both states of the component: Closed (default) and Open (via click interaction);
+
+This pattern helps reduce visual complexity and makes navigation easier, especially when dealing with large amounts of information or detailed settings.
+
+<Canvas className="light" of={Story.Default} />
+
+<Primary />
+<Controls />

@@ -1,5 +1,6 @@
+import { BindInFluentSyntax, ResolutionContext } from 'inversify'
 import { Class, Constructor } from '@/types/class'
-import { ContainerModule } from '@/dependency-injection/container'
+import { Container, ContainerModule } from '@/dependency-injection/container'
 import {
   MODULE_KEY,
   MODULE_PROPERTY,
@@ -7,11 +8,13 @@ import {
   CONTROLLERS_PROPERTY,
   IMPORTS_PROPERTY
 } from '@/constants/keys'
-import {
-  controllerHandler,
-  ControllerMetadata
-} from '@/controllers/decorators/controller-decorator'
-import { ResolutionContext } from 'inversify'
+import { Scope } from '@/constants/scopes'
+import { ControllerHandler } from '@/controllers/decorators/controller-decorator'
+import { InterceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
+import { Logger } from '@/logger/logger'
+import { PipeHandler } from '@/pipes/decorators/use-pipes'
+import { RouteMetadata } from '@/controllers/decorators/route-decorator'
+import { FilterHandler } from '@/exceptions/decorators/use-filters-decorator'
 
 // Type for injection tokens - can be symbols, strings, or abstract classes
 export type InjectionToken<T = any> = symbol | string | Constructor<T>
@@ -22,6 +25,7 @@ type Provider =
       useClass?: Class
       useValue?: any
       useFactory?: (context: ResolutionContext) => any | Promise<any>
+      scope?: Scope
     }
   | Class
 
@@ -31,11 +35,14 @@ export type ModuleOptions = {
   providers?: Provider[]
 }
 
-export type ModuleMetadata = ControllerMetadata & {
+export type ModuleMetadata = RouteMetadata & {
   controller: Class
 }
 
-export function moduleHandler(target: Function, visited: Set<Function> = new Set()): ModuleMetadata[] {
+export function moduleHandler(
+  target: Function,
+  visited: Set<Function> = new Set()
+): ModuleMetadata[] {
   // Prevent infinite recursion by tracking visited modules
   if (visited.has(target)) {
     return []
@@ -45,7 +52,7 @@ export function moduleHandler(target: Function, visited: Set<Function> = new Set
   const routes = []
   const imports = target.prototype[IMPORTS_PROPERTY]
   const controllers = target.prototype[CONTROLLERS_PROPERTY]
-  
+
   if (imports) {
     for (const importEntity of imports) {
       routes.push(...moduleHandler(importEntity, visited))
@@ -54,10 +61,16 @@ export function moduleHandler(target: Function, visited: Set<Function> = new Set
 
   if (controllers) {
     for (const controller of controllers) {
-      const controllerRoutes = controllerHandler(controller).map((route) => ({
-        ...route,
-        controller
-      }))
+      const controllerRoutes = ControllerHandler.getRoutes(controller).map(
+        (route) => ({
+          ...route,
+          controller
+        })
+      )
+
+      Logger.log(
+        `Registered ${controllerRoutes.length} routes for controller ${controller.name}`
+      )
 
       routes.push(...controllerRoutes)
     }
@@ -79,30 +92,18 @@ export function Module(options?: ModuleOptions): ClassDecorator {
     }
 
     if (providers) {
-      providers.forEach((providerEntity) => {
-        if (typeof providerEntity === 'object') {
-          if (providerEntity.useClass) {
-            container.bind(providerEntity.provide).to(providerEntity.useClass)
-          } else if (providerEntity.useFactory) {
-            container
-              .bind(providerEntity.provide)
-              .toDynamicValue(async (context) => {
-                return await providerEntity.useFactory!(context)
-              })
-          } else if (providerEntity.useValue) {
-            container
-              .bind(providerEntity.provide)
-              .toConstantValue(providerEntity.useValue)
-          }
-        } else {
-          container.bind(providerEntity).to(providerEntity)
-        }
-      })
+      providers.forEach((provider) => registerProvider(container, provider))
     }
 
     if (controllers) {
       controllers.forEach((controller) => {
-        container.bind(controller).to(controller)
+        // Bind the controller
+        container.bind(controller).to(controller).inSingletonScope()
+
+        // Bind other related decorators
+        InterceptorHandler.register(container, controller)
+        PipeHandler.register(container, controller)
+        FilterHandler.register(container, controller)
       })
     }
   })
@@ -124,5 +125,80 @@ export function Module(options?: ModuleOptions): ClassDecorator {
     prototype[MODULE_PROPERTY] = moduleContainer
     prototype[PROVIDERS_PROPERTY] = providers
     prototype[CONTROLLERS_PROPERTY] = controllers
+  }
+}
+
+/**
+ * Register a provider in the container
+ * @param container
+ * @param provider
+ */
+function registerProvider(container: Container, provider: Provider) {
+  // Checks if provider is a object with options
+  if (typeof provider === 'object') {
+    registerProviderObject(container, provider)
+  } else {
+    // If not, it's a simple class type
+    container.bind(provider).to(provider)
+  }
+}
+
+/**
+ * Registers a provider object in the container
+ * @param container
+ * @param provider
+ * @returns
+ */
+function registerProviderObject(container: Container, provider: Provider) {
+  // Protect the method by avoid non objects
+  if (typeof provider !== 'object') {
+    return
+  }
+
+  const { provide, useClass, useValue, useFactory, scope } = provider
+
+  const bind = container.bind(provide)
+
+  if (useClass) {
+    registerScope(bind.to(useClass), scope)
+    return
+  }
+
+  if (useFactory) {
+    registerScope(
+      bind.toDynamicValue(async (context) => {
+        return await useFactory!(context)
+      }),
+      scope
+    )
+    return
+  }
+
+  if (useValue) {
+    bind.toConstantValue(useValue)
+    return
+  }
+
+  const message = `Module: Invalid provider ${provider.provide.toString()} configuration`
+  Logger.error(message)
+  throw new Error(message)
+}
+
+/**
+ * Registers a scope for a binding
+ * @param bind
+ * @param scope
+ * @returns
+ */
+function registerScope<T>(bind: BindInFluentSyntax<T>, scope?: Scope) {
+  switch (scope) {
+    case Scope.DEFAULT:
+      return bind.inSingletonScope()
+    case Scope.REQUEST:
+      return bind.inRequestScope()
+    case Scope.TRANSIENT:
+      return bind.inTransientScope()
+    default:
+      return bind.inSingletonScope()
   }
 }

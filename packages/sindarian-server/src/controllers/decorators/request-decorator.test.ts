@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 import { REQUEST_KEY } from '../../constants/keys'
 import {
-  requestDecoratorHandler,
+  RequestHandler,
   Request,
   Req,
   RequestMetadata
@@ -13,7 +13,7 @@ jest.mock('../../utils/nextjs/get-next-arguments')
 const mockGetNextRequestArgument =
   getNextRequestArgument as jest.MockedFunction<typeof getNextRequestArgument>
 
-describe('requestDecoratorHandler', () => {
+describe('RequestHandler.handle', () => {
   const mockRequest = {
     url: '/test',
     method: 'GET',
@@ -43,7 +43,7 @@ describe('requestDecoratorHandler', () => {
   }
 
   it('should return null when no metadata is found', () => {
-    const result = requestDecoratorHandler(TestClass.prototype, 'testMethod', [
+    const result = RequestHandler.handle(TestClass.prototype, 'testMethod', [
       mockRequest
     ])
 
@@ -64,11 +64,12 @@ describe('requestDecoratorHandler', () => {
       'testMethod'
     )
 
-    const result = requestDecoratorHandler(TestClass.prototype, 'testMethod', [
+    const result = RequestHandler.handle(TestClass.prototype, 'testMethod', [
       mockRequest
     ])
 
     expect(result).toEqual({
+      type: 'custom',
       parameter: mockRequest,
       parameterIndex: 0
     })
@@ -89,13 +90,14 @@ describe('requestDecoratorHandler', () => {
       'testMethod'
     )
 
-    const result = requestDecoratorHandler(TestClass.prototype, 'testMethod', [
+    const result = RequestHandler.handle(TestClass.prototype, 'testMethod', [
       mockRequest,
       'other',
       'params'
     ])
 
     expect(result).toEqual({
+      type: 'custom',
       parameter: mockRequest,
       parameterIndex: 2
     })
@@ -121,11 +123,12 @@ describe('requestDecoratorHandler', () => {
       symbolKey
     )
 
-    const result = requestDecoratorHandler(TestClass.prototype, symbolKey, [
+    const result = RequestHandler.handle(TestClass.prototype, symbolKey, [
       mockRequest
     ])
 
     expect(result).toEqual({
+      type: 'custom',
       parameter: mockRequest,
       parameterIndex: 1
     })
@@ -146,13 +149,14 @@ describe('requestDecoratorHandler', () => {
 
     mockGetNextRequestArgument.mockReturnValue(undefined)
 
-    const result = requestDecoratorHandler(
+    const result = RequestHandler.handle(
       TestClass.prototype,
       'testMethod',
       []
     )
 
     expect(result).toEqual({
+      type: 'custom',
       parameter: undefined,
       parameterIndex: 0
     })
@@ -173,13 +177,14 @@ describe('requestDecoratorHandler', () => {
 
     mockGetNextRequestArgument.mockReturnValue(undefined)
 
-    const result = requestDecoratorHandler(
+    const result = RequestHandler.handle(
       TestClass.prototype,
       'testMethod',
       null as any
     )
 
     expect(result).toEqual({
+      type: 'custom',
       parameter: undefined,
       parameterIndex: 0
     })
@@ -207,11 +212,12 @@ describe('requestDecoratorHandler', () => {
       'testMethod'
     )
 
-    const result = requestDecoratorHandler(TestClass.prototype, 'testMethod', [
+    const result = RequestHandler.handle(TestClass.prototype, 'testMethod', [
       customRequest
     ])
 
     expect(result).toEqual({
+      type: 'custom',
       parameter: customRequest,
       parameterIndex: 0
     })
@@ -241,20 +247,22 @@ describe('requestDecoratorHandler', () => {
       'anotherMethod'
     )
 
-    const result1 = requestDecoratorHandler(TestClass.prototype, 'testMethod', [
+    const result1 = RequestHandler.handle(TestClass.prototype, 'testMethod', [
       mockRequest
     ])
-    const result2 = requestDecoratorHandler(
+    const result2 = RequestHandler.handle(
       TestClass.prototype,
       'anotherMethod',
       [mockRequest, 'param']
     )
 
     expect(result1).toEqual({
+      type: 'custom',
       parameter: mockRequest,
       parameterIndex: 0
     })
     expect(result2).toEqual({
+      type: 'custom',
       parameter: mockRequest,
       parameterIndex: 1
     })
@@ -274,7 +282,7 @@ describe('requestDecoratorHandler', () => {
     )
 
     // Try to get metadata for anotherMethod (which doesn't have metadata)
-    const result = requestDecoratorHandler(
+    const result = RequestHandler.handle(
       TestClass.prototype,
       'anotherMethod',
       [mockRequest]
