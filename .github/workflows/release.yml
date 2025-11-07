@@ -41,10 +41,19 @@ jobs:
       sindarian-server: ${{ steps.changes.outputs.sindarian-server }}
       sindarian-ui: ${{ steps.changes.outputs.sindarian-ui }}
     steps:
+
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
+          private-key: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Detect packages
         id: changes
