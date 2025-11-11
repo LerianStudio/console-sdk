@@ -205,13 +205,44 @@ export abstract class ExceptionFilter {
 #### Filter Registration
 1. **Global Filters**: `app.useGlobalFilters(filter)`
 2. **Controller Filters**: `@UseFilters(filter)` decorator
-3. **Service Registration**: Bind to `APP_FILTER` token
+3. **Service Registration**: Bind to `APP_FILTER` token (supports multiple bindings)
+
+**Multiple APP_FILTER Providers**:
+You can register multiple exception filters using the `APP_FILTER` token:
+
+```typescript
+@Module({
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: ValidationExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: DatabaseExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    }
+  ]
+})
+export class AppModule {}
+```
+
+**Execution Order**: Filters are executed in **reverse registration order** (last registered executes first). This allows more specific filters to handle exceptions before more general ones:
+- `GlobalExceptionFilter` executes first (last registered)
+- `DatabaseExceptionFilter` executes second
+- `ValidationExceptionFilter` executes last (first registered)
+
+This follows NestJS's behavior where filters bound at the controller level take precedence over global filters.
 
 #### Exception Processing Flow
-1. **Filter Collection**: Gathers global + controller filters
-2. **Type Matching**: Matches exception type to filter metadata
-3. **Filter Execution**: Calls first matching filter
-4. **Response Handling**: Returns filter response or fallback error
+1. **Filter Collection**: Gathers global + controller + APP_FILTER filters
+2. **Order Reversal**: Filters are reversed to prioritize more specific handlers
+3. **Type Matching**: Matches exception type to filter metadata
+4. **Filter Execution**: Calls first matching filter
+5. **Response Handling**: Returns filter response or fallback error
 
 ### 6. Interceptor System (`src/interceptor/`)
 

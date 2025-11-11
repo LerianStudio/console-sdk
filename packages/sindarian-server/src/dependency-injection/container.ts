@@ -50,6 +50,10 @@ export class Container {
     return this.container.getAsync(serviceIdentifier)
   }
 
+  getAllAsync<T>(serviceIdentifier: ServiceIdentifier<T>): Promise<T[]> {
+    return this.container.getAllAsync(serviceIdentifier)
+  }
+
   isBound<T>(serviceIdentifier: ServiceIdentifier<T>): boolean {
     return this.container.isBound(serviceIdentifier)
   }

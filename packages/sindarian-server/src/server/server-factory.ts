@@ -252,10 +252,12 @@ export class ServerFactory {
   private async _fetchExceptionFilters(controller?: BaseController) {
     const filters = [...this.globalFilters]
 
-    // Fetch any registered global filter
+    // Fetch all registered global filters
     const appFilter = this.container.isBound(APP_FILTER)
     if (appFilter) {
-      filters.push(await this.container.getAsync<ExceptionFilter>(APP_FILTER))
+      const appFilters =
+        await this.container.getAllAsync<ExceptionFilter>(APP_FILTER)
+      filters.push(...appFilters)
     }
 
     if (controller) {

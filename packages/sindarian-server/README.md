@@ -4,15 +4,15 @@ A lightweight, NestJS-inspired framework designed specifically for Next.js appli
 
 ## ( Features
 
-- =€ **NestJS-like API** - Familiar decorators and patterns
-- ¡ **Next.js Optimized** - Built for serverless environments
-- =‰ **Dependency Injection** - Powered by Inversify
-- =ã **Decorator-based Routing** - Clean, declarative route definitions
+- =ï¿½ **NestJS-like API** - Familiar decorators and patterns
+- ï¿½ **Next.js Optimized** - Built for serverless environments
+- =ï¿½ **Dependency Injection** - Powered by Inversify
+- =ï¿½ **Decorator-based Routing** - Clean, declarative route definitions
 - =' **Middleware Support** - Interceptors and exception filters
-- =Ý **TypeScript First** - Full type safety out of the box
-- <¯ **Lightweight** - Minimal overhead for fast cold starts
+- =ï¿½ **TypeScript First** - Full type safety out of the box
+- <ï¿½ **Lightweight** - Minimal overhead for fast cold starts
 
-## =€ Quick Start
+## =ï¿½ Quick Start
 
 ### Installation
 
@@ -119,7 +119,7 @@ export async function PATCH(request: NextRequest, context: any) {
 }
 ```
 
-## =Ö Core Concepts
+## =ï¿½ Core Concepts
 
 ### Controllers
 
@@ -212,23 +212,40 @@ Create custom exception filters:
 export class ValidationFilter implements ExceptionFilter {
   async catch(exception: ValidationError, host: ArgumentsHost) {
     return NextResponse.json(
-      { 
+      {
         message: 'Validation failed',
-        errors: exception.errors 
+        errors: exception.errors
       },
       { status: 400 }
     )
   }
 }
 
-// Apply globally
+// Apply globally via app
 app.useGlobalFilters(new ValidationFilter())
+
+// Or register via module providers (supports multiple filters)
+@Module({
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: ValidationFilter
+    },
+    {
+      provide: APP_FILTER,
+      useClass: DatabaseErrorFilter
+    }
+  ]
+})
+export class AppModule {}
 
 // Or on specific controllers
 @Controller('/users')
 @UseFilters(ValidationFilter)
 export class UserController extends BaseController {}
 ```
+
+**Note**: When registering multiple filters via `APP_FILTER`, they execute in reverse order (last registered runs first), allowing more specific filters to handle exceptions before general ones.
 
 ### Interceptors
 
@@ -255,7 +272,7 @@ app.useGlobalInterceptors(new LoggingInterceptor())
 export class UserController extends BaseController {}
 ```
 
-## <¯ Parameter Decorators
+## <ï¿½ Parameter Decorators
 
 Extract data from requests with decorators:
 
@@ -333,7 +350,7 @@ export class AuthService {
 }
 ```
 
-## =Ú Documentation
+## =ï¿½ Documentation
 
 - **[Technical Guide](./TECHNICAL.md)** - Deep dive into the framework's architecture and implementation details
 - **[API Reference](./docs/api.md)** - Complete API documentation
@@ -343,7 +360,7 @@ export class AuthService {
 
 Contributions are welcome! Please read our [Contributing Guide](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-## =Ä License
+## =ï¿½ License
 
 This project is licensed under the ISC License - see the [LICENSE](./LICENSE) file for details.
 
@@ -353,7 +370,7 @@ This project is licensed under the ISC License - see the [LICENSE](./LICENSE) fi
 - Built on [Inversify](https://inversify.io/) - A powerful IoC container for TypeScript
 - Designed for [Next.js](https://nextjs.org/) - The React framework for production
 
-## =€ What's Next?
+## =ï¿½ What's Next?
 
 - [ ] Validation pipes with Zod integration
 - [ ] Built-in authentication guards
@@ -364,4 +381,4 @@ This project is licensed under the ISC License - see the [LICENSE](./LICENSE) fi
 
 ---
 
-**Sindarian Server** - Building the future of Next.js APIs, one decorator at a time. =€
+**Sindarian Server** - Building the future of Next.js APIs, one decorator at a time. =ï¿½
