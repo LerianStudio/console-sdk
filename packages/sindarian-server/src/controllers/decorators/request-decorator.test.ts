@@ -149,11 +149,7 @@ describe('RequestHandler.handle', () => {
 
     mockGetNextRequestArgument.mockReturnValue(undefined)
 
-    const result = RequestHandler.handle(
-      TestClass.prototype,
-      'testMethod',
-      []
-    )
+    const result = RequestHandler.handle(TestClass.prototype, 'testMethod', [])
 
     expect(result).toEqual({
       type: 'custom',
@@ -282,11 +278,9 @@ describe('RequestHandler.handle', () => {
     )
 
     // Try to get metadata for anotherMethod (which doesn't have metadata)
-    const result = RequestHandler.handle(
-      TestClass.prototype,
-      'anotherMethod',
-      [mockRequest]
-    )
+    const result = RequestHandler.handle(TestClass.prototype, 'anotherMethod', [
+      mockRequest
+    ])
 
     expect(result).toBeNull()
     expect(mockGetNextRequestArgument).not.toHaveBeenCalled()

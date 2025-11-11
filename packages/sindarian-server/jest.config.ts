@@ -35,7 +35,6 @@ const config: Config = {
   // Make explicit that no UI-specific after-env setup is used in this package
   setupFilesAfterEnv: undefined,
 
-
   testPathIgnorePatterns: ['<rootDir>/test']
 }
 

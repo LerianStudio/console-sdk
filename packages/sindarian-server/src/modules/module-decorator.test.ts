@@ -50,12 +50,14 @@ jest.mock('@/exceptions/decorators/use-filters-decorator', () => ({
 import { ControllerHandler } from '@/controllers/decorators/controller-decorator'
 import { InterceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
 
-const mockControllerHandler = ControllerHandler.getRoutes as jest.MockedFunction<
-  typeof ControllerHandler.getRoutes
->
-const mockInterceptorHandler = InterceptorHandler.register as jest.MockedFunction<
-  typeof InterceptorHandler.register
->
+const mockControllerHandler =
+  ControllerHandler.getRoutes as jest.MockedFunction<
+    typeof ControllerHandler.getRoutes
+  >
+const mockInterceptorHandler =
+  InterceptorHandler.register as jest.MockedFunction<
+    typeof InterceptorHandler.register
+  >
 
 describe('moduleHandler', () => {
   class TestController {}

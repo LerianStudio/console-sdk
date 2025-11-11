@@ -81,9 +81,10 @@ const mockCatchHandler = catchHandler as jest.MockedFunction<
 const mockFilterHandler = FilterHandler.fetch as jest.MockedFunction<
   typeof FilterHandler.fetch
 >
-const mockInterceptorExecute = InterceptorHandler.execute as jest.MockedFunction<
-  typeof InterceptorHandler.execute
->
+const mockInterceptorExecute =
+  InterceptorHandler.execute as jest.MockedFunction<
+    typeof InterceptorHandler.execute
+  >
 const mockInterceptorHandler = InterceptorHandler.fetch as jest.MockedFunction<
   typeof InterceptorHandler.fetch
 >
@@ -120,6 +121,7 @@ describe('ServerFactory', () => {
       bind: jest.fn(),
       get: jest.fn(),
       getAsync: jest.fn(),
+      getAllAsync: jest.fn(),
       isBound: jest.fn(),
       unbind: jest.fn(),
       rebind: jest.fn()
@@ -150,8 +152,13 @@ describe('ServerFactory', () => {
     mockFilterHandler.mockResolvedValue([])
     mockInterceptorHandler.mockResolvedValue([])
     mockPipeHandler.mockResolvedValue([])
-    mockInterceptorExecute.mockImplementation(async (context, interceptors, action) => await action())
-    mockPipeExecute.mockImplementation(async (controller, methodName, pipes, args) => args.map((arg: any) => arg.parameter))
+    mockInterceptorExecute.mockImplementation(
+      async (context, interceptors, action) => await action()
+    )
+    mockPipeExecute.mockImplementation(
+      async (controller, methodName, pipes, args) =>
+        args.map((arg: any) => arg.parameter)
+    )
     mockRouteHandler.mockReturnValue([])
     mockCatchHandler.mockReturnValue({ type: null })
   })
@@ -574,7 +581,7 @@ describe('ServerFactory', () => {
     it('should fetch app interceptor', async () => {
       const appInterceptor = { intercept: jest.fn() }
       mockContainerInstance.isBound.mockReturnValue(true)
-      mockContainerInstance.getAsync.mockResolvedValue(appInterceptor)
+      mockContainerInstance.getAllAsync.mockResolvedValue([appInterceptor])
       mockInterceptorHandler.mockResolvedValue([])
 
       const result = await serverFactory['_fetchInterceptors'](mockController)
@@ -624,7 +631,7 @@ describe('ServerFactory', () => {
     it('should fetch app filter', async () => {
       const appFilter = { catch: jest.fn() }
       mockContainerInstance.isBound.mockReturnValue(true)
-      mockContainerInstance.getAsync.mockResolvedValue(appFilter)
+      mockContainerInstance.getAllAsync.mockResolvedValue([appFilter])
       mockFilterHandler.mockReturnValue([])
 
       const result =

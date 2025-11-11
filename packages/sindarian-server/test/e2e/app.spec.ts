@@ -283,7 +283,7 @@ describe('TestController E2E Tests', () => {
       })
 
       it('should reject request with extra fields not in schema', async () => {
-        const requestBody = { 
+        const requestBody = {
           name: 'Valid Name',
           extraField: 'should be ignored or cause validation error'
         }
@@ -301,7 +301,7 @@ describe('TestController E2E Tests', () => {
         // 2. Reject with validation error (status 400)
         // We'll test what actually happens
         expect([200, 400]).toContain(response.status)
-        
+
         if (response.status === 200) {
           // Extra field should be ignored
           expect(body).toEqual({ id: 1, name: 'Valid Name' })

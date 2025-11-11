@@ -141,7 +141,11 @@ describe('Route Decorator', () => {
       decorator(TestController.prototype, 'testMethod', descriptor)
 
       // Verify route metadata was stored
-      const metadata = Reflect.getOwnMetadata(ROUTE_KEY, TestController.prototype, 'testMethod')
+      const metadata = Reflect.getOwnMetadata(
+        ROUTE_KEY,
+        TestController.prototype,
+        'testMethod'
+      )
       expect(metadata).toEqual({
         methodName: 'testMethod',
         method: GET_KEY,
@@ -155,7 +159,7 @@ describe('Route Decorator', () => {
 
       // Original method should be called with same args
       expect(originalMethod).toHaveBeenCalledWith('arg1', 'arg2')
-      
+
       // Result should be wrapped in NextResponse.json
       expect(MockedNextResponse.json).toHaveBeenCalledWith({ success: true })
       expect(result).toBeDefined()
@@ -165,7 +169,7 @@ describe('Route Decorator', () => {
       const nextResponse = new MockedNextResponse()
       // Ensure the mock passes instanceof check
       Object.setPrototypeOf(nextResponse, MockedNextResponse.prototype)
-      
+
       const originalMethod = jest.fn().mockResolvedValue(nextResponse)
       const descriptor = { value: originalMethod }
 

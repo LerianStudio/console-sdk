@@ -257,20 +257,37 @@ export class LoggingInterceptor implements Interceptor {
     const start = Date.now()
     const result = await next.handle()
     const duration = Date.now() - start
-    
+
     console.log(`${context.getClass().name}.${context.getHandler().name} - ${duration}ms`)
     return result
   }
 }
 
-// Apply globally
+// Apply globally via app
 app.useGlobalInterceptors(new LoggingInterceptor())
+
+// Or register via module providers (supports multiple interceptors)
+@Module({
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor
+    }
+  ]
+})
+export class AppModule {}
 
 // Or on specific controllers
 @Controller('/users')
 @UseInterceptors(LoggingInterceptor)
 export class UserController extends BaseController {}
 ```
+
+**Note**: Multiple `APP_INTERCEPTOR` and `APP_PIPE` providers are supported and execute in reverse registration order (last registered runs first).
 
 ## <� Parameter Decorators
 

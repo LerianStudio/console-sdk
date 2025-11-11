@@ -170,8 +170,14 @@ describe('BaseExceptionFilter', () => {
       { status: HttpStatus.OK, message: 'OK' },
       { status: HttpStatus.CREATED, message: 'Created' },
       { status: HttpStatus.NOT_FOUND, message: 'Not Found' },
-      { status: HttpStatus.UNPROCESSABLE_ENTITY, message: 'Unprocessable Entity' },
-      { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Internal Server Error' }
+      {
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        message: 'Unprocessable Entity'
+      },
+      {
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Internal Server Error'
+      }
     ]
 
     for (const testCase of testCases) {

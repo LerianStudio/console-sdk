@@ -271,7 +271,26 @@ The `interceptorExecute` function creates a middleware chain:
 #### Interceptor Registration
 1. **Global**: `app.useGlobalInterceptors(interceptor)`
 2. **Controller**: `@UseInterceptors(interceptor)` class decorator
-3. **Service**: Bind to `APP_INTERCEPTOR` token
+3. **Service**: Bind to `APP_INTERCEPTOR` token (supports multiple bindings)
+
+**Multiple APP_INTERCEPTOR Providers**:
+```typescript
+@Module({
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
+    }
+  ]
+})
+export class AppModule {}
+```
+
+**Execution Order**: Interceptors execute in **reverse registration order** (last registered executes first), matching the filter behavior.
 
 ### 7. Pipe System (`src/pipes/`)
 
@@ -319,14 +338,17 @@ static async execute(
 
 #### Pipe Registration
 
-1. **Global Pipes**: 
+1. **Global Pipes**:
    ```typescript
    @Module({
      providers: [
-       { provide: APP_PIPE, useClass: ZodValidationPipe }
+       { provide: APP_PIPE, useClass: ZodValidationPipe },
+       { provide: APP_PIPE, useClass: TransformPipe }
      ]
    })
    ```
+
+   Multiple `APP_PIPE` providers are supported and execute in **reverse registration order** (last registered executes first).
 
 2. **Controller Pipes**: `@UsePipes(ValidationPipe)` class decorator
 

@@ -214,12 +214,12 @@ export class ServerFactory {
   private async _fetchInterceptors(controller: BaseController) {
     const interceptors = [...this.globalInterceptors]
 
-    // Fetch any registered global interceptor
+    // Fetch all registered global interceptors
     const appInterceptor = this.container.isBound(APP_INTERCEPTOR)
     if (appInterceptor) {
-      interceptors.push(
-        await this.container.getAsync<Interceptor>(APP_INTERCEPTOR)
-      )
+      const appInterceptors =
+        await this.container.getAllAsync<Interceptor>(APP_INTERCEPTOR)
+      interceptors.push(...appInterceptors)
     }
 
     if (controller) {
@@ -279,10 +279,11 @@ export class ServerFactory {
   ) {
     const pipes = [...this.globalPipes]
 
-    // Fetch any registered global pipes
+    // Fetch all registered global pipes
     const appPipe = this.container.isBound(APP_PIPE)
     if (appPipe) {
-      pipes.push(await this.container.getAsync<PipeTransform>(APP_PIPE))
+      const appPipes = await this.container.getAllAsync<PipeTransform>(APP_PIPE)
+      pipes.push(...appPipes)
     }
 
     // Fetch controller pipes

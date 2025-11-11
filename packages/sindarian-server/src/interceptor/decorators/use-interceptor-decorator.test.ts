@@ -52,7 +52,11 @@ describe('InterceptorHandler.execute', () => {
     const interceptor = new MockInterceptor('test')
     const action = jest.fn().mockResolvedValue('result')
 
-    const result = await InterceptorHandler.execute(mockContext, [interceptor], action)
+    const result = await InterceptorHandler.execute(
+      mockContext,
+      [interceptor],
+      action
+    )
 
     expect(result).toBe('test(result)')
     expect(action).toHaveBeenCalledTimes(1)
@@ -114,7 +118,11 @@ describe('InterceptorHandler.execute', () => {
           )
       )
 
-    const result = await InterceptorHandler.execute(mockContext, [interceptor], action)
+    const result = await InterceptorHandler.execute(
+      mockContext,
+      [interceptor],
+      action
+    )
 
     expect(result).toBe('test(async-result)')
     expect(action).toHaveBeenCalledTimes(1)
