@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2025-11-11
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
+Contributors: Caio Alexandre Troti Caetano, Gabriel Castro, Gabriel Ferreira, Guilherme Moreira Rodrigues, LF Barrile, lerian-studio
+
+### ✨ Features
+- **Enhanced Server Capabilities**: The Sindarian-server has been implemented with new features like Pipes, Interceptors, and APP_FILTER support, improving modularity and error handling. This boosts server reliability and performance, providing a more robust backend experience.
+- **GitHub App Authentication**: Streamline your CI/CD workflow with the new GitHub App authentication feature, enhancing security and simplifying deployment processes.
+- **New UI Components**: Enjoy richer interactions with the introduction of LargeDialog, PaperCollapsible, and IconButton components, enhancing the frontend user experience.
+
+### 🐛 Bug Fixes
+- **Accurate Test Results**: Updated test mocks to align with the actual `PipeHandler.execute` implementation, ensuring more reliable test outcomes.
+- **Notification Display**: Fixed the Toaster import path, resolving issues that affected notification visibility and functionality.
+- **API Response Accuracy**: Adjusted backend decorators to return actual values, improving the accuracy of API responses.
+
+### ⚡ Performance
+- **Consistent Styling**: The build process now includes CSS files in the distribution directory, ensuring uniform styling across deployments.
+- **Optimized Code Management**: Configured split libraries and backmerge flow, enhancing code management and deployment efficiency.
+
+### 📚 Documentation
+- **Improved Guidance**: Updates to the main README and CHANGELOG provide clearer instructions and documentation for both users and developers, facilitating easier onboarding and usage.
+
+### 🔧 Maintenance
+- **Dependency Updates**: Regular updates to dependencies and build configurations ensure compatibility with the latest libraries and tools, maintaining system stability.
+- **CI/CD Pipeline Enhancements**: Debugged and refined the CI/CD pipeline, increasing deployment reliability and efficiency.
+
+
 ## [1.1.0] - 2025-11-06
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
