@@ -151,7 +151,7 @@ describe('ServerFactory', () => {
     mockInterceptorHandler.mockResolvedValue([])
     mockPipeHandler.mockResolvedValue([])
     mockInterceptorExecute.mockImplementation(async (context, interceptors, action) => await action())
-    mockPipeExecute.mockImplementation(async (controller, methodName, pipes, args) => args)
+    mockPipeExecute.mockImplementation(async (controller, methodName, pipes, args) => args.map((arg: any) => arg.parameter))
     mockRouteHandler.mockReturnValue([])
     mockCatchHandler.mockReturnValue({ type: null })
   })
