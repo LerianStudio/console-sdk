@@ -20,9 +20,10 @@
   ],
   "scripts": {
     "check-types": "tsc --noEmit",
-    "build": "tsc && npm run copy:assets && npm run build:paths",
+    "build": "tsc && npm run copy:assets && npm run copy:styles && npm run build:paths",
     "build:paths": "tsc-alias -p tsconfig.json",
     "copy:assets": "copyfiles -f src/public/**/* dist/public",
+    "copy:styles": "copyfiles -u 1 'src/**/*.css' dist",
     "lint": "eslint . --fix",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
