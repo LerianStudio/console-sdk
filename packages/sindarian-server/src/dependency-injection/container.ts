@@ -13,7 +13,9 @@ export class Container {
   private loadedModules: Set<ContainerModule> = new Set()
 
   constructor() {
-    this.container = new InversifyContainer()
+    this.container = new InversifyContainer({
+      defaultScope: 'Singleton'
+    })
   }
 
   /**

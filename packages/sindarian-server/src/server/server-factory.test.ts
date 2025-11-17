@@ -580,13 +580,12 @@ describe('ServerFactory', () => {
 
     it('should fetch app interceptor', async () => {
       const appInterceptor = { intercept: jest.fn() }
-      mockContainerInstance.isBound.mockReturnValue(true)
       mockContainerInstance.getAllAsync.mockResolvedValue([appInterceptor])
       mockInterceptorHandler.mockResolvedValue([])
 
       const result = await serverFactory['_fetchInterceptors'](mockController)
 
-      expect(mockContainerInstance.isBound).toHaveBeenCalledWith(
+      expect(mockContainerInstance.getAllAsync).toHaveBeenCalledWith(
         expect.any(Symbol)
       )
       expect(result).toContain(appInterceptor)
@@ -630,14 +629,13 @@ describe('ServerFactory', () => {
 
     it('should fetch app filter', async () => {
       const appFilter = { catch: jest.fn() }
-      mockContainerInstance.isBound.mockReturnValue(true)
       mockContainerInstance.getAllAsync.mockResolvedValue([appFilter])
       mockFilterHandler.mockReturnValue([])
 
       const result =
         await serverFactory['_fetchExceptionFilters'](mockController)
 
-      expect(mockContainerInstance.isBound).toHaveBeenCalledWith(
+      expect(mockContainerInstance.getAllAsync).toHaveBeenCalledWith(
         expect.any(Symbol)
       )
       expect(result).toEqual(expect.arrayContaining([expect.any(Object)]))

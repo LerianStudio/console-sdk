@@ -1,3 +1,5 @@
+'use client'
+
 // Primitives
 export * from './components/ui/alert'
 export * from './components/ui/autocomplete'

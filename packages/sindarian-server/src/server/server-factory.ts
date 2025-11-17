@@ -24,6 +24,7 @@ import { PipeTransform } from '@/pipes/pipe-transform'
 import { APP_PIPE } from '@/services/pipes'
 import { PipeHandler } from '@/pipes/decorators/use-pipes'
 import { RouteHandler } from '@/controllers/decorators/route-decorator'
+import { sortRoutesBySpecificity } from '@/utils/routes/route-specificity'
 
 export type ServerFactoryOptions = {
   logger?: LoggerService | boolean
@@ -56,7 +57,11 @@ export class ServerFactory {
 
     const routes = moduleHandler(module)
 
-    return new ServerFactory(module, container, routes)
+    // Sort routes by specificity (most specific first)
+    // This ensures routes like /users/active match before /users/:id
+    const sortedRoutes = sortRoutesBySpecificity(routes)
+
+    return new ServerFactory(module, container, sortedRoutes)
   }
 
   /**
@@ -180,7 +185,17 @@ export class ServerFactory {
    */
   private _parseRequest(request: NextRequest) {
     const { pathname } = new URL(request.url)
-    const strippedPathname = pathname.replace(this.globalPrefix, '')
+
+    // Strip the global prefix from the pathname
+    let strippedPathname = pathname
+    if (this.globalPrefix && pathname.startsWith(this.globalPrefix)) {
+      strippedPathname = pathname.slice(this.globalPrefix.length)
+    }
+
+    // Ensure pathname starts with / after stripping prefix
+    if (!strippedPathname.startsWith('/')) {
+      strippedPathname = '/' + strippedPathname
+    }
 
     return {
       pathname: strippedPathname,
@@ -215,11 +230,14 @@ export class ServerFactory {
     const interceptors = [...this.globalInterceptors]
 
     // Fetch all registered global interceptors
-    const appInterceptor = this.container.isBound(APP_INTERCEPTOR)
-    if (appInterceptor) {
+    try {
       const appInterceptors =
         await this.container.getAllAsync<Interceptor>(APP_INTERCEPTOR)
-      interceptors.push(...appInterceptors)
+      if (appInterceptors.length > 0) {
+        interceptors.push(...appInterceptors)
+      }
+    } catch {
+      // No bindings found or error retrieving - continue without APP_INTERCEPTOR providers
     }
 
     if (controller) {
@@ -253,11 +271,14 @@ export class ServerFactory {
     const filters = [...this.globalFilters]
 
     // Fetch all registered global filters
-    const appFilter = this.container.isBound(APP_FILTER)
-    if (appFilter) {
+    try {
       const appFilters =
         await this.container.getAllAsync<ExceptionFilter>(APP_FILTER)
-      filters.push(...appFilters)
+      if (appFilters.length > 0) {
+        filters.push(...appFilters)
+      }
+    } catch {
+      // No bindings found or error retrieving - continue without APP_FILTER providers
     }
 
     if (controller) {
@@ -280,10 +301,13 @@ export class ServerFactory {
     const pipes = [...this.globalPipes]
 
     // Fetch all registered global pipes
-    const appPipe = this.container.isBound(APP_PIPE)
-    if (appPipe) {
+    try {
       const appPipes = await this.container.getAllAsync<PipeTransform>(APP_PIPE)
-      pipes.push(...appPipes)
+      if (appPipes.length > 0) {
+        pipes.push(...appPipes)
+      }
+    } catch {
+      // No bindings found or error retrieving - continue without APP_PIPE providers
     }
 
     // Fetch controller pipes

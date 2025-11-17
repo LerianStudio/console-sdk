@@ -179,6 +179,11 @@ describe('urlMatch', () => {
     it('should handle routes with trailing slashes', () => {
       expect(urlMatch('/users/', '/users/')).toBe(true)
       expect(urlMatch('/users', '/users')).toBe(true)
+      // Should match with or without trailing slash (Next.js trailingSlash support)
+      expect(urlMatch('/users/', '/users')).toBe(true)
+      expect(urlMatch('/users', '/users/')).toBe(true)
+      expect(urlMatch('/organizations/', '/organizations')).toBe(true)
+      expect(urlMatch('/api/users/', '/api/users')).toBe(true)
     })
 
     it('should handle routes with query parameters in pathname', () => {
