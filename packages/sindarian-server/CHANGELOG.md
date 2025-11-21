@@ -1,3 +1,11 @@
+## [1.0.0-beta.18](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.17...sindarian-server-v1.0.0-beta.18) (2025-11-21)
+
+
+### Features
+
+* Added more unit tests. ([37d303d](https://github.com/LerianStudio/console-sdk/commit/37d303d27eacdaf0744d049f77beb7529d912258))
+* Exported IconButton ([aa089f3](https://github.com/LerianStudio/console-sdk/commit/aa089f319a25bab3ee06048f672a3f8ea3289bae))
+
 ## [1.0.0-beta.17](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.16...sindarian-server-v1.0.0-beta.17) (2025-11-21)
 
 
