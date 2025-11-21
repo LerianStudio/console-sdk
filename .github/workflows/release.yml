@@ -33,41 +33,29 @@ permissions:
 
 jobs:
   # Detect which packages have changed
-  detect-changes:
-    name: 🔍 Detect Package Changes
+  get-changed-paths:
+    if: github.actor != 'lerian-studio-midaz-push-bot[bot]'
+    name: Get Changed Paths
     runs-on: ubuntu-latest
     outputs:
-      packages: ${{ steps.changes.outputs.changes }}
-      sindarian-server: ${{ steps.changes.outputs.sindarian-server }}
-      sindarian-ui: ${{ steps.changes.outputs.sindarian-ui }}
+      matrix: ${{ steps.changed-paths.outputs.matrix }}
     steps:
-
-      - name: Generate GitHub App Token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
-          private-key: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
-
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
 
-      - name: Detect packages
-        id: changes
-        uses: dorny/paths-filter@v3
+      - name: Get changed paths
+        id: changed-paths
+        uses: LerianStudio/github-actions-changed-paths@main
         with:
-          filters: |
-            sindarian-server:
-              - 'packages/sindarian-server/**'
-            sindarian-ui:
-              - 'packages/sindarian-ui/**'
+          filter_paths: packages/
+          get_app_name: true
+          path_level: 2
 
   npm-audit:
     name: Run npm audit and fix vulnerabilities
-    needs: detect-changes
+    needs: get-changed-paths
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -103,11 +91,11 @@ jobs:
   test:
     name: 🧪 Test ${{ matrix.package }}
     runs-on: ubuntu-latest
-    needs: detect-changes
-    if: needs.detect-changes.outputs.packages != '[]'
+    needs: get-changed-paths
+    if: needs.get-changed-paths.outputs.matrix != '[]'
     strategy:
       matrix:
-        package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
+        package: ${{ fromJSON(needs.get-changed-paths.outputs.matrix) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -127,11 +115,11 @@ jobs:
   test-e2e:
     name: 🧪 Test E2E ${{ matrix.package }}
     runs-on: ubuntu-latest
-    needs: detect-changes
-    if: needs.detect-changes.outputs.packages != '[]'
+    needs: get-changed-paths
+    if: needs.get-changed-paths.outputs.matrix != '[]'
     strategy:
       matrix:
-        package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
+        package: ${{ fromJSON(needs.get-changed-paths.outputs.matrix) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -152,12 +140,12 @@ jobs:
   release:
     name: 🚀 Release ${{ matrix.package }}
     runs-on: ubuntu-latest
-    needs: [detect-changes, npm-audit, test, test-e2e]
-    if: needs.detect-changes.outputs.packages != '[]'
+    needs: [get-changed-paths, npm-audit, test, test-e2e]
+    if: needs.get-changed-paths.outputs.matrix != '[]'
     strategy:
       max-parallel: 1  # Force sequential execution
       matrix:
-        package: ${{ fromJSON(needs.detect-changes.outputs.packages) }}
+        package: ${{ fromJSON(needs.get-changed-paths.outputs.matrix) }}
     steps:
       - name: Generate GitHub App Token
         id: app-token
@@ -258,7 +246,6 @@ jobs:
               channel: false
 
           tagFormat: ${{ matrix.package }}-v\${version}
-          repositoryUrl: https://github.com/LerianStudio/lib-js-boilerplate.git
           EOF
 
       - name: Install missing plugin @semantic-release/exec
