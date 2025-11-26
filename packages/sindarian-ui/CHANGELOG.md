@@ -1,3 +1,12 @@
+## [1.0.0-beta.12](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.11...sindarian-ui-v1.0.0-beta.12) (2025-11-26)
+
+
+### Features
+
+* Added more module tests. ([7516e78](https://github.com/LerianStudio/console-sdk/commit/7516e78fd174867be1dae64f226f2e946bbf76b9))
+* Added more unit tests. ([37d303d](https://github.com/LerianStudio/console-sdk/commit/37d303d27eacdaf0744d049f77beb7529d912258))
+* Added sidebar ([8405e43](https://github.com/LerianStudio/console-sdk/commit/8405e433c88b069e36cd2edcf673dcfce2e4f85c))
+
 ## [sindarian-ui-1.0.0-beta.11] - 2025-11-21
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.10...sindarian-ui-v1.0.0-beta.11)
