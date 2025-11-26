@@ -1,3 +1,19 @@
+## [sindarian-ui-1.0.0-beta.12] - 2025-11-26
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.11...sindarian-ui-v1.0.0-beta.12)
+Contributors: Caio Alexandre Troti Caetano, lerian-studio
+
+### ✨ Features
+- **New Navigation Sidebar**: We've added a sidebar to the frontend, making it easier for users to navigate through different sections of the application. This improvement enhances accessibility and streamlines user interaction with the platform.
+
+### 📚 Documentation
+- **Updated CHANGELOG for sindarian-ui**: The changelog now reflects recent updates and improvements, providing users with clear insights into the latest version's changes and new features.
+
+### 🔧 Maintenance
+- **Dependency Updates**: Released new beta versions for sindarian-ui (v1.0.0-beta.12) and sindarian-server (v1.0.0-beta.18 and v1.0.0-beta.19). These updates ensure compatibility with the latest tools and libraries, contributing to overall system stability and security.
+- **Code Quality Enhancements**: General maintenance across backend and frontend components, including minor code quality improvements. These changes help maintain the health of the codebase and prepare the system for future enhancements.
+
+
 ## [sindarian-ui-1.0.0-beta.11] - 2025-11-21
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.10...sindarian-ui-v1.0.0-beta.11)
