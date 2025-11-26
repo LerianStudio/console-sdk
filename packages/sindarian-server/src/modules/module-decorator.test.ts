@@ -926,6 +926,149 @@ describe('Error handling', () => {
   })
 })
 
+describe('Multi-injection support', () => {
+  it('should support multiple providers with the same token', async () => {
+    const APP_FILTER = Symbol('APP_FILTER')
+
+    class Filter1 {
+      catch() {
+        return 'filter1'
+      }
+    }
+
+    class Filter2 {
+      catch() {
+        return 'filter2'
+      }
+    }
+
+    class Filter3 {
+      catch() {
+        return 'filter3'
+      }
+    }
+
+    @Module({
+      providers: [
+        {
+          provide: APP_FILTER,
+          useClass: Filter1
+        },
+        {
+          provide: APP_FILTER,
+          useClass: Filter2
+        },
+        {
+          provide: APP_FILTER,
+          useClass: Filter3
+        }
+      ]
+    })
+    class TestModule {}
+
+    const container = new Container()
+    container.load(TestModule.prototype[MODULE_PROPERTY])
+
+    // Should be able to retrieve all filters
+    const filters = await container.getAllAsync(APP_FILTER)
+    expect(filters).toHaveLength(3)
+    expect(filters[0]).toBeInstanceOf(Filter1)
+    expect(filters[1]).toBeInstanceOf(Filter2)
+    expect(filters[2]).toBeInstanceOf(Filter3)
+  })
+
+  it('should support multiple exception filters like the example', async () => {
+    const APP_FILTER = Symbol('APP_FILTER')
+
+    class GlobalExceptionFilter {
+      name = 'GlobalExceptionFilter'
+    }
+
+    class DatabaseExceptionFilter {
+      name = 'DatabaseExceptionFilter'
+    }
+
+    class MongoExceptionFilter {
+      name = 'MongoExceptionFilter'
+    }
+
+    class MongooseExceptionFilter {
+      name = 'MongooseExceptionFilter'
+    }
+
+    @Module({
+      providers: [
+        {
+          provide: APP_FILTER,
+          useClass: GlobalExceptionFilter
+        },
+        {
+          provide: APP_FILTER,
+          useClass: DatabaseExceptionFilter
+        },
+        {
+          provide: APP_FILTER,
+          useClass: MongoExceptionFilter
+        },
+        {
+          provide: APP_FILTER,
+          useClass: MongooseExceptionFilter
+        }
+      ]
+    })
+    class AppModule {}
+
+    const container = new Container()
+    container.load(AppModule.prototype[MODULE_PROPERTY])
+
+    // Should be able to retrieve all filters without ambiguous binding error
+    const filters = await container.getAllAsync(APP_FILTER)
+    expect(filters).toHaveLength(4)
+    expect(filters[0].name).toBe('GlobalExceptionFilter')
+    expect(filters[1].name).toBe('DatabaseExceptionFilter')
+    expect(filters[2].name).toBe('MongoExceptionFilter')
+    expect(filters[3].name).toBe('MongooseExceptionFilter')
+  })
+
+  it('should allow retrieving filters via token using getAllAsync', async () => {
+    const APP_FILTER = Symbol('APP_FILTER')
+
+    class Filter1 {
+      name = 'filter1'
+    }
+
+    class Filter2 {
+      name = 'filter2'
+    }
+
+    @Module({
+      providers: [
+        {
+          provide: APP_FILTER,
+          useClass: Filter1
+        },
+        {
+          provide: APP_FILTER,
+          useClass: Filter2
+        }
+      ]
+    })
+    class TestModule {}
+
+    const container = new Container()
+    container.load(TestModule.prototype[MODULE_PROPERTY])
+
+    // Should be able to retrieve all filters via the token
+    const filters = await container.getAllAsync(APP_FILTER)
+
+    expect(filters).toHaveLength(2)
+    expect(filters[0]).toBeInstanceOf(Filter1)
+    expect(filters[1]).toBeInstanceOf(Filter2)
+    expect(filters[0].name).toBe('filter1')
+    expect(filters[1].name).toBe('filter2')
+  })
+})
+
 describe('Type definitions', () => {
   it('should accept string injection tokens', () => {
     const token: InjectionToken = 'stringToken'
