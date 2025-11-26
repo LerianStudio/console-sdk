@@ -1,3 +1,16 @@
+## [sindarian-serer-1.0.0-beta.19] - 2025-11-26
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.18...sindarian-server-v1.0.0-beta.19)
+Contributors: Caio Alexandre Troti Caetano, lerian-studio
+
+### ✨ Features
+- **New Sidebar Navigation**: A new sidebar has been added to the frontend, significantly enhancing user navigation. This feature allows users to access different sections of the application more efficiently, streamlining workflows and saving time on navigation.
+
+### 🔧 Maintenance
+- **Expanded Testing**: We've broadened our test coverage across the backend, frontend, and dependencies. This improvement ensures a more stable and reliable application by reducing bugs and enhancing overall software quality.
+- **Dependency Updates**: Various dependencies have been updated to their latest versions. This proactive step enhances security and compatibility, helping to prevent vulnerabilities and ensuring smoother integration with other systems.
+
+
 ## [1.0.0-beta.18](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.17...sindarian-server-v1.0.0-beta.18) (2025-11-21)
 
 
