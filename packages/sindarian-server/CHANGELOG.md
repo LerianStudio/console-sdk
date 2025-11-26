@@ -1,3 +1,11 @@
+## [1.0.0-beta.19](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.18...sindarian-server-v1.0.0-beta.19) (2025-11-26)
+
+
+### Features
+
+* Added more module tests. ([7516e78](https://github.com/LerianStudio/console-sdk/commit/7516e78fd174867be1dae64f226f2e946bbf76b9))
+* Added sidebar ([8405e43](https://github.com/LerianStudio/console-sdk/commit/8405e433c88b069e36cd2edcf673dcfce2e4f85c))
+
 ## [1.0.0-beta.18](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.17...sindarian-server-v1.0.0-beta.18) (2025-11-21)
 
 
