@@ -212,22 +212,6 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  html {
-    @apply h-full overflow-y-auto;
-    font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
-  }
-
-  body {
-    @apply bg-background text-foreground h-full overflow-y-auto;
-    font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
-  }
-}
-
 .ticket {
   mask: radial-gradient(21px 13px at 50% 102%, #0000 98%, #000) 50%
     calc(100% - 16px) / 64px 100% repeat-x;

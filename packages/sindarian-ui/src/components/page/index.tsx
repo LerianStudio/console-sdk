@@ -5,7 +5,7 @@ export function PageRoot({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="page-root"
       className={cn(
-        'bg-background text-foreground flex h-full min-h-screen w-full overflow-y-auto',
+        'bg-background text-foreground flex h-screen min-h-screen w-full flex-col overflow-y-auto',
         className
       )}
       {...props}
@@ -17,10 +17,7 @@ export function PageView({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="page-view"
-      className={cn(
-        'bg-shadcn-100 flex min-h-full grow flex-col overflow-y-auto',
-        className
-      )}
+      className={cn('flex min-h-0 flex-1', className)}
       {...props}
     />
   )
@@ -33,7 +30,7 @@ export function PageContent({
   return (
     <div
       data-slot="page-content"
-      className={cn('h-full w-full overflow-y-auto p-16', className)}
+      className={cn('flex grow flex-col overflow-y-auto p-16', className)}
       {...props}
     />
   )
