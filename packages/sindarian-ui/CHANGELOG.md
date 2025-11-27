@@ -1,3 +1,10 @@
+## [1.0.0-beta.13](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.12...sindarian-ui-v1.0.0-beta.13) (2025-11-27)
+
+
+### Features
+
+* Adjusted CSS styles ([9e7b985](https://github.com/LerianStudio/console-sdk/commit/9e7b9854f139c5806c932446c93d40106b6ff3e2))
+
 ## [sindarian-ui-1.0.0-beta.12] - 2025-11-26
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.11...sindarian-ui-v1.0.0-beta.12)
