@@ -5,7 +5,7 @@ export function PageRoot({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="page-root"
       className={cn(
-        'bg-background text-foreground flex h-screen min-h-screen w-full flex-col overflow-y-auto',
+        'text-foreground flex h-screen min-h-screen w-full flex-col overflow-y-auto bg-zinc-100',
         className
       )}
       {...props}

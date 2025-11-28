@@ -20,12 +20,18 @@ export const useSidebar = () => {
 }
 
 export const SidebarProvider = ({ children }: React.PropsWithChildren) => {
-  const [isCollapsed, setIsCollapsed] = React.useState<boolean>(true)
+  const [collapsed, setCollapsed] = React.useState<boolean>(
+    localStorage.getItem('sidebar-collapsed') === 'true'
+  )
 
-  const toggleSidebar = () => setIsCollapsed(!isCollapsed)
+  const toggleSidebar = () => setCollapsed((collapsed) => !collapsed)
+
+  React.useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', JSON.stringify(collapsed))
+  }, [collapsed])
 
   return (
-    <SidebarContext.Provider value={{ isCollapsed, toggleSidebar }}>
+    <SidebarContext.Provider value={{ isCollapsed: collapsed, toggleSidebar }}>
       {children}
     </SidebarContext.Provider>
   )

@@ -36,9 +36,8 @@ export const SidebarContent = ({
   <div
     data-slot="sidebar-content"
     className={cn(
-      'group flex flex-1 flex-col gap-4 bg-white px-4 pt-4',
+      'group flex flex-1 flex-col gap-4 overflow-hidden bg-white px-4 pt-4 transition-all duration-300 ease-in-out',
       'group-data-[collapsed=true]/sidebar:items-center group-data-[collapsed=true]/sidebar:px-2',
-      'group-data-[collapsed=false]/sidebar:min-w-[244px]',
       className
     )}
     {...props}

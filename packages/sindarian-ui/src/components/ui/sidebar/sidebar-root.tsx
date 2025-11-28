@@ -6,11 +6,11 @@ import { useSidebar } from './sidebar-provider'
 import { cn } from '@/lib/utils'
 
 const sidebarVariants = cva(
-  'group/sidebar shadow-sidebar dark:bg-cod-gray-950 relative flex flex-col transition-all duration-100',
+  'group/sidebar shadow-sidebar dark:bg-cod-gray-950 relative flex flex-col transition-[width] duration-300 ease-in-out',
   {
     variants: {
       collapsed: {
-        true: 'w-fit',
+        true: 'w-[72px]',
         false: 'w-[244px]'
       }
     },
