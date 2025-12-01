@@ -1,3 +1,10 @@
+## [1.0.0-beta.22](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.21...sindarian-server-v1.0.0-beta.22) (2025-12-01)
+
+
+### Features
+
+* Try to publish changes. ([a43d3ab](https://github.com/LerianStudio/console-sdk/commit/a43d3abdeba772c56b2908065728867af505b4bd))
+
 ## [sindarian-serer-1.0.0-beta.21] - 2025-12-01
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.20...sindarian-server-v1.0.0-beta.21)
