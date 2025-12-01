@@ -52,7 +52,7 @@ export class Container {
     options?: OptionalGetOptions
   ): T {
     if (options !== undefined) {
-      return this.container.get(serviceIdentifier, options)
+      return this.container.get(serviceIdentifier, options) as T
     }
     return this.container.get(serviceIdentifier) as T
   }
