@@ -1,9 +1,15 @@
-## [1.0.0-beta.13](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.12...sindarian-ui-v1.0.0-beta.13) (2025-11-27)
+## [sindarian-ui-1.0.0-beta.13] - 2025-11-27
 
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.12...sindarian-ui-v1.0.0-beta.13)
+Contributors: Caio Alexandre Troti Caetano, lerian-studio
 
-### Features
+### ✨ Features
+- **Enhanced Visual Styling**: The application now boasts new CSS styles that offer a more cohesive and modern appearance. This update not only improves the aesthetic appeal but also enhances usability, making navigation and interaction more intuitive for users.
 
-* Adjusted CSS styles ([9e7b985](https://github.com/LerianStudio/console-sdk/commit/9e7b9854f139c5806c932446c93d40106b6ff3e2))
+### 🔧 Maintenance
+- **Dependency Updates**: The build process and dependencies have been updated to align with `sindarian-ui` version 1.0.0-beta.13. This ensures that the project remains stable and compatible with the latest development tools, providing a smoother development experience and reducing potential technical debt.
+- **Changelog Documentation**: Updated the changelog to accurately reflect the changes and improvements from `sindarian-ui` version 1.0.0-beta.12. This helps users track the project's progress and understand the evolution of its features.
+
 
 ## [sindarian-ui-1.0.0-beta.12] - 2025-11-26
 
