@@ -1,3 +1,18 @@
+## [sindarian-serer-1.0.0-beta.22] - 2025-12-01
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.21...sindarian-server-v1.0.0-beta.22)
+Contributors: Caio Alexandre Troti Caetano, lerian-studio
+
+### ✨ Features
+- **Streamlined Publishing Process**: Enjoy a more efficient and reliable update experience with enhancements that simplify deploying changes across backend, frontend, and dependencies. This feature minimizes downtime and ensures smoother transitions during updates.
+
+### 📚 Documentation
+- **Updated Changelog for sindarian-server v1.0.0-beta.21**: Stay informed with the latest documentation updates that provide detailed insights into recent changes and improvements, enhancing your understanding of the software's evolution.
+
+### 🔧 Maintenance
+- **Release of sindarian-server v1.0.0-beta.22**: This maintenance release includes critical updates across backend, build, dependencies, and frontend components, ensuring the system remains stable and up-to-date. These updates are essential for maintaining optimal performance and system health.
+
+
 ## [sindarian-serer-1.0.0-beta.21] - 2025-12-01
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.20...sindarian-server-v1.0.0-beta.21)
