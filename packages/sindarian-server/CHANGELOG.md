@@ -1,9 +1,18 @@
-## [1.0.0-beta.21](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.20...sindarian-server-v1.0.0-beta.21) (2025-12-01)
+## [sindarian-serer-1.0.0-beta.21] - 2025-12-01
 
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.20...sindarian-server-v1.0.0-beta.21)
+Contributors: Caio Alexandre Troti Caetano, lerian-studio
 
-### Features
+### ✨ Features
+- **Enhanced Testing**: We've introduced additional tests to our backend systems, significantly boosting the robustness and reliability of the software. This improvement helps maintain high-quality standards and ensures a stable experience for all users.
 
-* Added more tests ([509c318](https://github.com/LerianStudio/console-sdk/commit/509c31823feddcf274af8b75efc7510d2e57dd4a))
+### 📚 Documentation
+- **Changelog Updates**: The changelog for sindarian-ui has been updated to reflect the latest changes in version v1.0.0-beta.13. This update provides users with a clear understanding of recent improvements, enhancing transparency and ease of tracking changes.
+
+### 🔧 Maintenance
+- **General Release**: We've released sindarian-server v1.0.0-beta.21, incorporating updates across backend, build, dependencies, frontend, and testing components. These updates are part of our ongoing efforts to maintain system stability and integrate the latest improvements.
+- **Dependency Updates**: Various dependencies have been updated to ensure compatibility and leverage performance improvements and security patches. This proactive maintenance reduces potential vulnerabilities and enhances overall system performance.
+
 
 ## [1.0.0-beta.20](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.19...sindarian-server-v1.0.0-beta.20) (2025-12-01)
 
