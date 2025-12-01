@@ -1,3 +1,13 @@
+## [1.0.0-beta.20](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.19...sindarian-server-v1.0.0-beta.20) (2025-12-01)
+
+
+### Features
+
+* Added new methods to server factory. ([ddcb9e1](https://github.com/LerianStudio/console-sdk/commit/ddcb9e1638fe0c139c188c7723531f90f2703f07))
+* Added Sidebar animation ([b83497e](https://github.com/LerianStudio/console-sdk/commit/b83497ee745a350a62c36ca9165a52ed8ee0a43b))
+* Adjusted CSS styles ([9e7b985](https://github.com/LerianStudio/console-sdk/commit/9e7b9854f139c5806c932446c93d40106b6ff3e2))
+* Fixed build ([fd7e801](https://github.com/LerianStudio/console-sdk/commit/fd7e801f9727997023185d4c2efbdd9865abb742))
+
 ## [1.0.0-beta.19](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.18...sindarian-server-v1.0.0-beta.19) (2025-11-26)
 
 
