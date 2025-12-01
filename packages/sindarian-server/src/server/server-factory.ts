@@ -25,6 +25,7 @@ import { APP_PIPE } from '@/services/pipes'
 import { PipeHandler } from '@/pipes/decorators/use-pipes'
 import { RouteHandler } from '@/controllers/decorators/route-decorator'
 import { sortRoutesBySpecificity } from '@/utils/routes/route-specificity'
+import { GetOptions, OptionalGetOptions } from 'inversify'
 
 export type ServerFactoryOptions = {
   logger?: LoggerService | boolean
@@ -82,6 +83,26 @@ export class ServerFactory {
 
   public useGlobalPipes(...pipes: PipeTransform[]) {
     this.globalPipes.push(...pipes)
+  }
+
+  /**
+   * Get a service synchronously
+   * @param service - The service to get
+   * @param options - The options for getting the service
+   * @returns The service instance
+   */
+  public get<T>(service: Class<T>, options?: OptionalGetOptions): T {
+    return this.container.get<T>(service, options)
+  }
+
+  /**
+   * Get a service asynchronously
+   * @param service - The service to get
+   * @param options - The options for getting the service
+   * @returns A promise that resolves to the service instance
+   */
+  public getAsync<T>(service: Class<T>, options?: GetOptions): Promise<T> {
+    return this.container.getAsync<T>(service, options)
   }
 
   /**

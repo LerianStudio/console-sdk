@@ -762,6 +762,84 @@ describe('ServerFactory', () => {
     })
   })
 
+  describe('get', () => {
+    beforeEach(() => {
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
+    })
+
+    it('should get service from container synchronously', () => {
+      class TestService {}
+      const mockServiceInstance = new TestService()
+      mockContainerInstance.get.mockReturnValue(mockServiceInstance)
+
+      const result = serverFactory.get(TestService)
+
+      expect(mockContainerInstance.get).toHaveBeenCalledWith(
+        TestService,
+        undefined
+      )
+      expect(result).toBe(mockServiceInstance)
+    })
+
+    it('should get service with options', () => {
+      class TestService {}
+      const mockServiceInstance = new TestService()
+      const options = { optional: true }
+      mockContainerInstance.get.mockReturnValue(mockServiceInstance)
+
+      const result = serverFactory.get(TestService, options)
+
+      expect(mockContainerInstance.get).toHaveBeenCalledWith(
+        TestService,
+        options
+      )
+      expect(result).toBe(mockServiceInstance)
+    })
+  })
+
+  describe('getAsync', () => {
+    beforeEach(() => {
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
+    })
+
+    it('should get service from container asynchronously', async () => {
+      class TestService {}
+      const mockServiceInstance = new TestService()
+      mockContainerInstance.getAsync.mockResolvedValue(mockServiceInstance)
+
+      const result = await serverFactory.getAsync(TestService)
+
+      expect(mockContainerInstance.getAsync).toHaveBeenCalledWith(
+        TestService,
+        undefined
+      )
+      expect(result).toBe(mockServiceInstance)
+    })
+
+    it('should get service with options asynchronously', async () => {
+      class TestService {}
+      const mockServiceInstance = new TestService()
+      const options = { optional: false }
+      mockContainerInstance.getAsync.mockResolvedValue(mockServiceInstance)
+
+      const result = await serverFactory.getAsync(TestService, options)
+
+      expect(mockContainerInstance.getAsync).toHaveBeenCalledWith(
+        TestService,
+        options
+      )
+      expect(result).toBe(mockServiceInstance)
+    })
+  })
+
   describe('_registerLogger static method', () => {
     it('should register logger service', () => {
       const mockLoggerService = { log: jest.fn() }
