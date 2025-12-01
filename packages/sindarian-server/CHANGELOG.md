@@ -1,3 +1,10 @@
+## [1.0.0-beta.21](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.20...sindarian-server-v1.0.0-beta.21) (2025-12-01)
+
+
+### Features
+
+* Added more tests ([509c318](https://github.com/LerianStudio/console-sdk/commit/509c31823feddcf274af8b75efc7510d2e57dd4a))
+
 ## [1.0.0-beta.20](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.19...sindarian-server-v1.0.0-beta.20) (2025-12-01)
 
 
