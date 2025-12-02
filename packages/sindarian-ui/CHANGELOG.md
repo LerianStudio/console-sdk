@@ -1,3 +1,14 @@
+## [1.0.0-beta.14](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.13...sindarian-ui-v1.0.0-beta.14) (2025-12-02)
+
+
+### Features
+
+* Added more tests ([509c318](https://github.com/LerianStudio/console-sdk/commit/509c31823feddcf274af8b75efc7510d2e57dd4a))
+* Added new methods to server factory. ([ddcb9e1](https://github.com/LerianStudio/console-sdk/commit/ddcb9e1638fe0c139c188c7723531f90f2703f07))
+* Added Sidebar animation ([b83497e](https://github.com/LerianStudio/console-sdk/commit/b83497ee745a350a62c36ca9165a52ed8ee0a43b))
+* Fixed build ([fd7e801](https://github.com/LerianStudio/console-sdk/commit/fd7e801f9727997023185d4c2efbdd9865abb742))
+* Try to publish changes. ([a43d3ab](https://github.com/LerianStudio/console-sdk/commit/a43d3abdeba772c56b2908065728867af505b4bd))
+
 ## [sindarian-ui-1.0.0-beta.13] - 2025-11-27
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.12...sindarian-ui-v1.0.0-beta.13)
