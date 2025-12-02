@@ -1,5 +1,5 @@
 @theme inline {
-    --spacing-icon-button-p: var(--spacing(2))
+    --spacing-icon-button-p: var(--spacing-2)
 }
 
 @layer components {
