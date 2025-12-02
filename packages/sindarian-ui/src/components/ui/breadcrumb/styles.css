@@ -1,4 +1,4 @@
-@theme {
+@theme inline {
     --color-breadcrumb-link-foreground: var(--color-zinc-700);
     --color-breadcrumb-link-foreground-hover: var(--color-zinc-900);
     --color-breadcrumb-muted-foreground: var(--color-shadcn-400);

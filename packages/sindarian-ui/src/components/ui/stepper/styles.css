@@ -1,4 +1,4 @@
-@theme {
+@theme inline {
     --color-stepper-item-text: var(--color-shadcn-400);
     --color-stepper-item-active: var(--color-zinc-700);
     --color-stepper-item-number: var(--color-shadcn-400);

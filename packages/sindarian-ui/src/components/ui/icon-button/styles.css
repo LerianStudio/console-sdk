@@ -1,4 +1,4 @@
-@theme {
+@theme inline {
     --spacing-icon-button-p: var(--spacing(2))
 }
 

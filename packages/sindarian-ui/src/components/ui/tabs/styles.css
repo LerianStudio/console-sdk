@@ -1,4 +1,4 @@
-@theme {
+@theme inline {
     --color-tabs-trigger-text: var(--color-shadcn-400);
     --color-tabs-trigger-hover: var(--color-white);
     --color-tabs-trigger-text-hover: var(--color-shadcn-500);

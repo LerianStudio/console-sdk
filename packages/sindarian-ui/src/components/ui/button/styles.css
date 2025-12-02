@@ -1,4 +1,4 @@
-@theme {
+@theme inline {
   /* Button */
   --text-button: var(--font-size-sm);
   --spacing-button-px: --spacing(4);

@@ -1,4 +1,4 @@
-@theme {
+@theme inline {
     --spacing-alert-p: --spacing(4.5);
     --text-alert-title: var(--text-sm);
     --text-alert-description: 13px;

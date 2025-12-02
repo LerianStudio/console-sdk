@@ -1,4 +1,4 @@
-@theme {
+@theme inline {
     --spacing-select-h: --spacing(10);
     --spacing-select-px: --spacing(3);
     --spacing-select-py: --spacing(2);

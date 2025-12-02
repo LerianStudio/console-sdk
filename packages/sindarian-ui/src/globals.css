@@ -13,7 +13,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@theme {
+@theme inline {
   --font-sans: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
 
   --shadow-sidebar: 5px 0px 15px -3px rgba(0, 0, 0, 0.05);
@@ -190,25 +190,25 @@
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --color-background: oklch(0.209 0.042 265.755);
+    --color-foreground: oklch(0.98 0.002 247.839);
+    --color-card: oklch(0.209 0.042 265.755);
+    --color-card-foreground: oklch(0.98 0.002 247.839);
+    --color-popover: oklch(0.209 0.042 265.755);
+    --color-popover-foreground: oklch(0.98 0.002 247.839);
+    --color-primary: oklch(0.98 0.002 247.839);
+    --color-primary-foreground: oklch(0.279 0.041 260.031);
+    --color-secondary: oklch(0.279 0.041 260.031);
+    --color-secondary-foreground: oklch(0.98 0.002 247.839);
+    --color-muted: oklch(0.279 0.041 260.031);
+    --color-muted-foreground: oklch(0.551 0.027 264.364);
+    --color-accent: oklch(0.279 0.041 260.031);
+    --color-accent-foreground: oklch(0.98 0.002 247.839);
+    --color-destructive: oklch(0.505 0.213 27.518);
+    --color-destructive-foreground: oklch(0.98 0.002 247.839);
+    --color-border: oklch(0.279 0.041 260.031);
+    --color-input: oklch(0.279 0.041 260.031);
+    --color-ring: oklch(0.551 0.027 264.364);
   }
 }
 

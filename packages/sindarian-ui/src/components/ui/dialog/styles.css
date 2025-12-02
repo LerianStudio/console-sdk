@@ -1,4 +1,4 @@
-@theme {
+@theme inline {
     --color-dialog-title-text: var(--color-zinc-600);
     --color-dialog-description-text: var(--color-shadcn-400);
 }
