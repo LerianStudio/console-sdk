@@ -1,12 +1,12 @@
 @theme inline {
   /* Button */
   --text-button: var(--font-size-sm);
-  --spacing-button-px: var(--spacing-4);
-  --spacing-button-py: var(--spacing-3);
-  --spacing-button-px-small: var(--spacing-3);
-  --spacing-button-py-small: var(--spacing-2);
-  --spacing-button-h: var(--spacing-10);
-  --spacing-button-h-small: var(--spacing-8);
+  --spacing-button-px: calc(var(--spacing) * 4);
+  --spacing-button-py: calc(var(--spacing) * 3);
+  --spacing-button-px-small: calc(var(--spacing) * 3);
+  --spacing-button-py-small: calc(var(--spacing) * 2);
+  --spacing-button-h: calc(var(--spacing) * 10);
+  --spacing-button-h-small: calc(var(--spacing) * 8);
   
   --color-button-primary: var(--color-shadcn-600);
   --color-button-primary-foreground: var(--color-white);

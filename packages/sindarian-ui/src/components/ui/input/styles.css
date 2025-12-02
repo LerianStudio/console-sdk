@@ -1,14 +1,14 @@
 @theme inline {
-    --spacing-input-wrapper-h: var(--spacing-10);
-    --spacing-input-wrapper-p: var(--spacing-2);
-    --spacing-input-px: var(--spacing-4);
+    --spacing-input-wrapper-h: calc(var(--spacing) * 10);
+    --spacing-input-wrapper-p: calc(var(--spacing) * 2);
+    --spacing-input-px: calc(var(--spacing) * 4);
     --color-input-foreground: var(--color-zinc-700);
     --color-input-placeholder: var(--color-shadcn-400);
     --color-input-border: var(--color-shadcn-300);
 
     --color-input-adornment: var(--color-shadcn-400);
-    --spacing-input-adornment-size: var(--spacing-10);
-    --spacing-input-adornment-icon-size: var(--spacing-5);
+    --spacing-input-adornment-size: calc(var(--spacing) * 10);
+    --spacing-input-adornment-icon-size: calc(var(--spacing) * 5);
 }
 
 @layer components {

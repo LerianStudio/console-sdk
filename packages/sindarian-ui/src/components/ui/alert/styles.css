@@ -1,8 +1,8 @@
 @theme inline {
-    --spacing-alert-p: var(--spacing-4-5);
+    --spacing-alert-p: calc(var(--spacing) * 4.5);
     --text-alert-title: var(--text-sm);
     --text-alert-description: 13px;
-    --spacing-alert-icon-size: var(--spacing-5);
+    --spacing-alert-icon-size: calc(var(--spacing) * 5);
 
     /* Variants */
     --color-alert-text: var(--color-zinc-700);

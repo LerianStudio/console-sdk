@@ -1,7 +1,7 @@
 @theme inline {
-    --spacing-select-h: var(--spacing-10);
-    --spacing-select-px: var(--spacing-3);
-    --spacing-select-py: var(--spacing-2);
+    --spacing-select-h: calc(var(--spacing) * 10);
+    --spacing-select-px: calc(var(--spacing) * 3);
+    --spacing-select-py: calc(var(--spacing) * 2);
 
     --color-select-foreground: var(--color-zinc-700);
     --color-select-placeholder: var(--color-shadcn-400);
