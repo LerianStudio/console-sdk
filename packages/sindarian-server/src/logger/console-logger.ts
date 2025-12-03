@@ -70,6 +70,14 @@ export class ConsoleLogger implements LoggerService {
     message: any,
     writeStreamType: 'stdout' | 'stderr' = 'stdout'
   ): void {
+    // Always log error and fatal levels, regardless of configuration
+    const isErrorLevel = level === 'error' || level === 'fatal'
+    const isLevelEnabled = this.options.logLevels?.includes(level as LogLevel)
+
+    if (!isErrorLevel && !isLevelEnabled) {
+      return
+    }
+
     const logLevel = level.toUpperCase()
 
     process[writeStreamType].write(this.formatMessage(logLevel, message))

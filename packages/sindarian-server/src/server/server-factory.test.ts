@@ -400,14 +400,14 @@ describe('ServerFactory', () => {
       expect(response).toBe(mockExceptionResponse)
     })
 
-    it.skip('should handle exceptions with filters', async () => {
+    it('should handle exceptions with filters', async () => {
       const testError = new Error('Test error')
       mockController.testMethod.mockRejectedValue(testError)
 
+      const mockResponse = NextResponse.json({ error: 'handled' })
       const mockFilter = {
-        catch: jest
-          .fn()
-          .mockResolvedValue(NextResponse.json({ error: 'handled' }))
+        catch: jest.fn().mockResolvedValue(mockResponse),
+        constructor: { name: 'TestFilter' }
       }
 
       mockCatchHandler.mockReturnValue({ type: Error })
@@ -421,16 +421,23 @@ describe('ServerFactory', () => {
         testError,
         expect.any(Object)
       )
-      expect(response).toBeDefined()
+      expect(response).toBe(mockResponse)
     })
 
-    it.skip('should return 500 when no filter handles exception', async () => {
+    it('should return 500 when no filter handles exception', async () => {
       const testError = new Error('Unhandled error')
       mockController.testMethod.mockRejectedValue(testError)
 
+      const mock500Response = NextResponse.json(
+        { message: 'Internal server error' },
+        { status: 500 }
+      )
+      ;(NextResponse.json as jest.Mock).mockReturnValue(mock500Response)
+
       mockCatchHandler.mockReturnValue({ type: null })
       const mockFilter = {
-        catch: jest.fn().mockResolvedValue(null)
+        catch: jest.fn().mockResolvedValue(null),
+        constructor: { name: 'TestFilter' }
       }
       serverFactory['globalFilters'] = [mockFilter as any]
 
@@ -438,7 +445,11 @@ describe('ServerFactory', () => {
         params: mockParams
       })
 
-      expect(response).toBeDefined()
+      expect(response).toBe(mock500Response)
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        { message: 'Internal server error' },
+        { status: 500 }
+      )
     })
 
     it('should execute interceptors', async () => {

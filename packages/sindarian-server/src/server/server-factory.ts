@@ -179,6 +179,17 @@ export class ServerFactory {
         if (!type || error instanceof type) {
           const response = await filter.catch(error, host)
 
+          // Add validation
+          if (response && !(response instanceof Response)) {
+            Logger.error(
+              `ExceptionFilter ${filter.constructor.name} returned invalid response type: ${response?.constructor?.name}`
+            )
+            return NextResponse.json(
+              { message: 'Internal server error' },
+              { status: 500 }
+            )
+          }
+
           // If a response is returned from the filter, use it
           if (response) {
             return response

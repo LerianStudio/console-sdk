@@ -264,19 +264,19 @@ describe('ConsoleLogger', () => {
     })
 
     it('should default to stdout when no writeStreamType specified', () => {
-      logger['printMessage']('info', 'test message')
+      logger['printMessage']('log', 'test message')
 
       expect(originalStdout).toHaveBeenCalledWith(
-        '[Sindarian] - 2023-01-01T12:00:00 [INFO] test message\n'
+        '[Sindarian] - 2023-01-01T12:00:00 [LOG] test message\n'
       )
       expect(originalStderr).not.toHaveBeenCalled()
     })
 
     it('should write to stdout when specified', () => {
-      logger['printMessage']('info', 'test message', 'stdout')
+      logger['printMessage']('log', 'test message', 'stdout')
 
       expect(originalStdout).toHaveBeenCalledWith(
-        '[Sindarian] - 2023-01-01T12:00:00 [INFO] test message\n'
+        '[Sindarian] - 2023-01-01T12:00:00 [LOG] test message\n'
       )
       expect(originalStderr).not.toHaveBeenCalled()
     })
@@ -293,16 +293,15 @@ describe('ConsoleLogger', () => {
     it('should handle empty level', () => {
       logger['printMessage']('', 'test message')
 
-      expect(originalStdout).toHaveBeenCalledWith(
-        '[Sindarian] - 2023-01-01T12:00:00 [] test message\n'
-      )
+      // Empty level is not in logLevels, so nothing should be printed
+      expect(originalStdout).not.toHaveBeenCalled()
     })
 
     it('should convert level to uppercase', () => {
-      logger['printMessage']('info', 'test message')
+      logger['printMessage']('log', 'test message')
 
       expect(originalStdout).toHaveBeenCalledWith(
-        '[Sindarian] - 2023-01-01T12:00:00 [INFO] test message\n'
+        '[Sindarian] - 2023-01-01T12:00:00 [LOG] test message\n'
       )
     })
   })
