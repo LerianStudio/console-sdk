@@ -1,3 +1,18 @@
+## [1.0.0-beta.23](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.22...sindarian-server-v1.0.0-beta.23) (2025-12-17)
+
+
+### Features
+
+* Added data-testid to missing components ([3be7734](https://github.com/LerianStudio/console-sdk/commit/3be77349bd92b55de870d3a61a155b468a17ad2f))
+* Fixed CSS ([3b46ba4](https://github.com/LerianStudio/console-sdk/commit/3b46ba471e01a0685ce5e5a727a5aff43ecc48af))
+* Fixed CSS again ([9d4a129](https://github.com/LerianStudio/console-sdk/commit/9d4a129f5baf99f55487c2181fb0847e7fdf21bc))
+* More small fixes ([e5ea1c3](https://github.com/LerianStudio/console-sdk/commit/e5ea1c3c72274411b027cccc49826e6acfe9bd91))
+
+
+### Bug Fixes
+
+* Case where exception filter returns invalid response. ([fc529bb](https://github.com/LerianStudio/console-sdk/commit/fc529bb49e7195c3193ead77baf8a37fee63b0cc))
+
 ## [1.0.0-beta.22](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.21...sindarian-server-v1.0.0-beta.22) (2025-12-01)
 
 
