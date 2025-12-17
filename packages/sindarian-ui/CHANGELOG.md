@@ -1,3 +1,16 @@
+## [1.0.0-beta.17](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.16...sindarian-ui-v1.0.0-beta.17) (2025-12-17)
+
+
+### Features
+
+* Added data-testid to missing components ([3be7734](https://github.com/LerianStudio/console-sdk/commit/3be77349bd92b55de870d3a61a155b468a17ad2f))
+* More small fixes ([e5ea1c3](https://github.com/LerianStudio/console-sdk/commit/e5ea1c3c72274411b027cccc49826e6acfe9bd91))
+
+
+### Bug Fixes
+
+* Case where exception filter returns invalid response. ([fc529bb](https://github.com/LerianStudio/console-sdk/commit/fc529bb49e7195c3193ead77baf8a37fee63b0cc))
+
 ## [1.0.0-beta.16](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.15...sindarian-ui-v1.0.0-beta.16) (2025-12-02)
 
 
