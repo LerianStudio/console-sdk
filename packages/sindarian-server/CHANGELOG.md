@@ -1,3 +1,20 @@
+## [sindarian-serer-1.0.0-beta.23] - 2025-12-17
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.22...sindarian-server-v1.0.0-beta.23)
+Contributors: Caio Alexandre Troti Caetano, lerian-studio
+
+### ✨ Features
+- **Enhanced Testability**: Added `data-testid` attributes to frontend components, making automated testing more robust and reliable. This improvement ensures consistent validation of the user interface, helping maintain a high-quality user experience.
+
+### 🐛 Bug Fixes
+- **Backend Reliability**: Resolved an issue with the exception filter that caused invalid responses. This fix enhances error handling, ensuring users receive accurate feedback and improving the overall reliability of backend operations.
+
+### 🔧 Maintenance
+- **Dependency Updates**: Updated dependencies across the frontend, backend, and test environments. These updates enhance security and performance by ensuring compatibility with the latest libraries and tools.
+- **UI Component Stabilization**: Released several beta versions (v1.0.0-beta.14 to v1.0.0-beta.16) of the sindarian-ui, focusing on dependency updates and build optimizations. These efforts are part of ongoing work to prepare the UI component for future production readiness.
+- **Backend Preparation**: Released v1.0.0-beta.23 of the sindarian-server, which includes updates to dependencies and build processes. This release aims to enhance backend stability and prepare for upcoming feature integrations.
+
+
 ## [1.0.0-beta.22](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.21...sindarian-server-v1.0.0-beta.22) (2025-12-01)
 
 
