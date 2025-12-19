@@ -1,3 +1,20 @@
+## [sindarian-serer-1.0.0-beta.24] - 2025-12-19
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.23...sindarian-server-v1.0.0-beta.24)
+Contributors: Caio Alexandre Troti Caetano, lerian-studio
+
+### ✨ Features
+- **Enhanced Security with Backend Guards**: Strengthened access control to prevent unauthorized access and protect sensitive operations. This feature ensures a more secure environment for all users.
+- **Improved Frontend Interaction**: Updated the `IdTableCell` component for a more intuitive and responsive user interface, enhancing overall user experience.
+
+### 📚 Documentation
+- **Updated README**: Expanded documentation to clarify setup processes and application functionality, making it easier for new developers to get started and reducing onboarding time.
+
+### 🔧 Maintenance
+- **Dependency Updates**: Released multiple updates for `sindarian-server` and `sindarian-ui` to ensure compatibility with the latest library versions, improving system stability and performance.
+- **Testing Enhancements**: Integrated additional testing to validate new security features, ensuring they are reliable and effective.
+
+
 ## [1.0.0-beta.23](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.22...sindarian-server-v1.0.0-beta.23) (2025-12-17)
 
 
