@@ -1,3 +1,15 @@
+## [sindarian-ui-1.0.0-beta.18] - 2025-12-19
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.17...sindarian-ui-v1.0.0-beta.18)
+Contributors: Caio Alexandre Troti Caetano, lerian-studio
+
+### ✨ Features
+- **Enhanced ID Display**: The IdTableCell component has been updated to provide a more intuitive and efficient way to display and interact with ID data. Users will enjoy a streamlined and responsive experience when working with ID-related information, enhancing overall usability.
+
+### 🔧 Maintenance
+- **Updated Dependencies**: Upgraded to Sindarian UI version 1.0.0-beta.18, along with updates to build configurations. These changes ensure that the application remains current with the latest libraries and tools, improving stability and maintainability. Users can expect more reliable and consistent performance from the application.
+
+
 ## [1.0.0-beta.17](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.16...sindarian-ui-v1.0.0-beta.17) (2025-12-17)
 
 
