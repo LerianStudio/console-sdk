@@ -12,7 +12,10 @@ import {
 import { truncate } from 'lodash'
 import { Copy } from 'lucide-react'
 
-export type IdTableCellProps = React.ComponentProps<typeof TableCell> & {
+export type IdTableCellProps = Omit<
+  React.ComponentProps<typeof TableCell>,
+  'onCopy'
+> & {
   id?: string
   onCopy?: (id: string) => void
 }
