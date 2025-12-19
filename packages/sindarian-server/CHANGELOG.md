@@ -1,3 +1,12 @@
+## [1.0.0-beta.24](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.23...sindarian-server-v1.0.0-beta.24) (2025-12-19)
+
+
+### Features
+
+* Implemented guards ([a5137c5](https://github.com/LerianStudio/console-sdk/commit/a5137c5cf3733fbe834aa7186145c6c9bf12a6d4))
+* Updated IdTableCell ([61fd443](https://github.com/LerianStudio/console-sdk/commit/61fd443e30bbacddea4824254ef04aab05011806))
+* Updated readme ([773ae26](https://github.com/LerianStudio/console-sdk/commit/773ae26f2677f532b3d04685ba0f4f977c8fb0d7))
+
 ## [1.0.0-beta.23](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.22...sindarian-server-v1.0.0-beta.23) (2025-12-17)
 
 
