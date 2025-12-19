@@ -1,3 +1,10 @@
+## [1.0.0-beta.18](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.17...sindarian-ui-v1.0.0-beta.18) (2025-12-19)
+
+
+### Features
+
+* Updated IdTableCell ([61fd443](https://github.com/LerianStudio/console-sdk/commit/61fd443e30bbacddea4824254ef04aab05011806))
+
 ## [1.0.0-beta.17](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.16...sindarian-ui-v1.0.0-beta.17) (2025-12-17)
 
 
