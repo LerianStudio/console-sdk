@@ -6,6 +6,7 @@ export const CATCH_KEY = Symbol('catch')
 export const FILTER_KEY = Symbol('filter')
 export const INTERCEPTOR_KEY = Symbol('interceptor')
 export const PIPE_KEY = Symbol('pipe')
+export const GUARD_KEY = Symbol('guard')
 
 export const ROUTE_KEY = Symbol('route')
 export const GET_KEY = Symbol('get')

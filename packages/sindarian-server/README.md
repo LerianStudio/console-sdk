@@ -8,7 +8,7 @@ A lightweight, NestJS-inspired framework designed specifically for Next.js appli
 - � **Next.js Optimized** - Built for serverless environments
 - =� **Dependency Injection** - Powered by Inversify
 - =� **Decorator-based Routing** - Clean, declarative route definitions
-- =' **Middleware Support** - Interceptors, pipes, and exception filters
+- =' **Middleware Support** - Guards, interceptors, pipes, and exception filters
 - ✅ **Zod Validation** - Built-in schema validation with Zod
 - =� **TypeScript First** - Full type safety out of the box
 - <� **Lightweight** - Minimal overhead for fast cold starts
@@ -290,6 +290,74 @@ export class UserController extends BaseController {}
 
 **Note**: Multiple `APP_INTERCEPTOR` and `APP_PIPE` providers are supported and execute in reverse registration order (last registered runs first).
 
+### Guards
+
+Guards determine whether a request should be handled by the route handler. They're commonly used for authentication and authorization:
+
+```typescript
+import { CanActivate, ExecutionContext, UseGuards } from '@lerianstudio/sindarian-server'
+import { injectable } from 'inversify'
+
+@injectable()
+export class AuthGuard implements CanActivate {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest()
+    const token = request.headers.get('authorization')
+
+    if (!token) {
+      return false // Will throw ForbiddenApiException
+    }
+
+    // Validate token...
+    return true
+  }
+}
+
+// Apply to controller
+@Controller('/admin')
+@UseGuards(AuthGuard)
+export class AdminController extends BaseController {
+  @Get()
+  async dashboard() {
+    return { message: 'Welcome to admin' }
+  }
+}
+
+// Or apply to specific methods
+@Controller('/users')
+export class UserController extends BaseController {
+  @Get()
+  async findAll() {
+    return { users: [] } // Public route
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  async remove(@Param('id') id: string) {
+    return { deleted: id } // Protected route
+  }
+}
+```
+
+Register global guards via module providers:
+
+```typescript
+@Module({
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard
+    }
+  ]
+})
+export class AppModule {}
+
+// Or globally via app
+app.useGlobalGuards(new AuthGuard())
+```
+
+**Note**: Guards execute before interceptors and pipes. If a guard returns `false`, a `ForbiddenApiException` is thrown.
+
 ### Pipes
 
 Transform and validate input data with pipes:
@@ -535,7 +603,7 @@ This project is licensed under the ISC License - see the [LICENSE](./LICENSE) fi
 ## =� What's Next?
 
 - [x] Validation pipes with Zod integration
-- [ ] Built-in authentication guards
+- [x] Guards system for authentication/authorization
 - [ ] WebSocket support
 - [ ] GraphQL integration
 - [ ] CLI tools for scaffolding

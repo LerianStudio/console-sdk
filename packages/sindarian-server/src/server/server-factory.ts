@@ -7,10 +7,12 @@ import { BaseExceptionFilter } from '@/exceptions/base-exception-filter'
 import { catchHandler } from '@/exceptions/decorators/catch-decorator'
 import { FilterHandler } from '@/exceptions/decorators/use-filters-decorator'
 import { ExceptionFilter } from '@/exceptions/exception-filter'
+import { CanActivate, GuardHandler } from '@/guards'
 import { InterceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
 import { Interceptor } from '@/interceptor/interceptor'
 import { moduleHandler, ModuleMetadata } from '@/modules/module-decorator'
 import { APP_FILTER } from '@/services/filters'
+import { APP_GUARD } from '@/services/guards'
 import { APP_INTERCEPTOR } from '@/services/interceptor'
 import { bindRequest } from '@/services/request'
 import { Class } from '@/types/class'
@@ -34,6 +36,7 @@ export type ServerFactoryOptions = {
 export class ServerFactory {
   private globalPrefix: string = ''
   private globalFilters: ExceptionFilter[] = [new BaseExceptionFilter()]
+  private globalGuards: CanActivate[] = []
   private globalInterceptors: Interceptor[] = []
   private globalPipes: PipeTransform[] = []
 
@@ -75,6 +78,10 @@ export class ServerFactory {
 
   public useGlobalFilters(...filters: ExceptionFilter[]) {
     this.globalFilters.push(...filters)
+  }
+
+  public useGlobalGuards(...guards: CanActivate[]) {
+    this.globalGuards.push(...guards)
   }
 
   public useGlobalInterceptors(...interceptors: Interceptor[]) {
@@ -137,6 +144,12 @@ export class ServerFactory {
         handler,
         [request]
       )
+
+      // Check if there's any guards to execute
+      const guards = await this._fetchGuards(controller!, match?.methodName)
+
+      // Execute guards - throws ForbiddenApiException if any guard returns false
+      await GuardHandler.execute(executionContext, guards)
 
       // Check if there's any interceptors to execute
       const interceptors = await this._fetchInterceptors(controller!)
@@ -256,6 +269,38 @@ export class ServerFactory {
     }
 
     return route
+  }
+
+  /**
+   * Fetch guards for a controller method
+   * @param controller - The controller instance
+   * @param methodName - The method name
+   * @returns Array of guard instances
+   */
+  private async _fetchGuards(
+    controller: BaseController,
+    methodName: string | symbol
+  ) {
+    const guards = [...this.globalGuards]
+
+    // Fetch all registered global guards
+    try {
+      const appGuards = await this.container.getAllAsync<CanActivate>(APP_GUARD)
+      if (appGuards.length > 0) {
+        guards.push(...appGuards)
+      }
+    } catch {
+      // No bindings found or error retrieving - continue without APP_GUARD providers
+    }
+
+    // Fetch controller and method guards
+    if (controller) {
+      guards.push(
+        ...(await GuardHandler.fetch(this.container, controller, methodName))
+      )
+    }
+
+    return guards
   }
 
   private async _fetchInterceptors(controller: BaseController) {
