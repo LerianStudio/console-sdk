@@ -8,7 +8,8 @@ A lightweight, NestJS-inspired framework designed specifically for Next.js appli
 - � **Next.js Optimized** - Built for serverless environments
 - =� **Dependency Injection** - Powered by Inversify
 - =� **Decorator-based Routing** - Clean, declarative route definitions
-- =' **Middleware Support** - Interceptors and exception filters
+- =' **Middleware Support** - Interceptors, pipes, and exception filters
+- ✅ **Zod Validation** - Built-in schema validation with Zod
 - =� **TypeScript First** - Full type safety out of the box
 - <� **Lightweight** - Minimal overhead for fast cold starts
 
@@ -289,6 +290,150 @@ export class UserController extends BaseController {}
 
 **Note**: Multiple `APP_INTERCEPTOR` and `APP_PIPE` providers are supported and execute in reverse registration order (last registered runs first).
 
+### Pipes
+
+Transform and validate input data with pipes:
+
+```typescript
+import { PipeTransform, ArgumentMetadata, UsePipes } from '@lerianstudio/sindarian-server'
+
+@injectable()
+export class ParseIntPipe implements PipeTransform {
+  transform(value: any, metadata: ArgumentMetadata): number {
+    const val = parseInt(value, 10)
+    if (isNaN(val)) {
+      throw new Error('Validation failed: not a number')
+    }
+    return val
+  }
+}
+
+// Apply to controller or method
+@Controller('/items')
+@UsePipes(ParseIntPipe)
+export class ItemController extends BaseController {
+  @Get(':id')
+  async findOne(@Param('id') id: number) {
+    return this.itemService.findById(id)
+  }
+}
+```
+
+Register global pipes via module providers:
+
+```typescript
+@Module({
+  providers: [
+    {
+      provide: APP_PIPE,
+      useClass: ValidationPipe
+    }
+  ]
+})
+export class AppModule {}
+```
+
+### Validation with Zod
+
+Built-in Zod integration for schema validation:
+
+```typescript
+import { createZodDto, ZodValidationPipe, UsePipes } from '@lerianstudio/sindarian-server'
+import { z } from 'zod'
+
+// Define your schema
+const CreateUserSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  age: z.number().min(18).optional()
+})
+
+// Create a DTO class from the schema
+const CreateUserDto = createZodDto(CreateUserSchema)
+
+// Use in your controller with the validation pipe
+@Controller('/users')
+@UsePipes(ZodValidationPipe)
+export class UserController extends BaseController {
+  @Post()
+  async create(@Body() userData: typeof CreateUserDto) {
+    // userData is validated and typed
+    return this.userService.create(userData)
+  }
+}
+```
+
+The `ZodValidationPipe` automatically validates incoming data against Zod schemas and throws a `ValidationApiException` on validation errors.
+
+### Logger Service
+
+Use the built-in logger for consistent application logging:
+
+```typescript
+import { ConsoleLogger, LoggerService } from '@lerianstudio/sindarian-server'
+
+// Use the default ConsoleLogger
+const logger = new ConsoleLogger({ prefix: 'MyApp' })
+logger.log('Application started')
+logger.error('Something went wrong')
+logger.warn('This is a warning')
+logger.debug('Debug information')
+
+// Or inject as a service
+@injectable()
+export class MyService {
+  constructor(private logger: ConsoleLogger) {}
+
+  doSomething() {
+    this.logger.log('Doing something...')
+  }
+}
+```
+
+Available log levels: `verbose`, `debug`, `log`, `warn`, `error`, `fatal`
+
+### HttpService
+
+Abstract base class for building API client services with built-in error handling:
+
+```typescript
+import { HttpService, FetchModuleOptions } from '@lerianstudio/sindarian-server'
+import { injectable } from 'inversify'
+
+@injectable()
+export class MyApiService extends HttpService {
+  protected async createDefaults(): Promise<FetchModuleOptions> {
+    return {
+      baseUrl: 'https://api.example.com',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.getToken()}`
+      }
+    }
+  }
+
+  async getUsers() {
+    return this.get<User[]>('/users')
+  }
+
+  async createUser(data: CreateUserDto) {
+    return this.post<User>('/users', {
+      body: JSON.stringify(data)
+    })
+  }
+
+  async uploadFile(data: { file: File; name: string }) {
+    return this.postFormData<UploadResponse>('/upload', data)
+  }
+}
+```
+
+The `HttpService` provides:
+- HTTP methods: `get`, `post`, `put`, `patch`, `delete`, `head`
+- FormData support: `postFormData`, `patchFormData`
+- Automatic error handling with typed exceptions
+- Lifecycle hooks: `onBeforeFetch`, `onAfterFetch`, `catch`
+
 ## <� Parameter Decorators
 
 Extract data from requests with decorators:
@@ -389,7 +534,7 @@ This project is licensed under the ISC License - see the [LICENSE](./LICENSE) fi
 
 ## =� What's Next?
 
-- [ ] Validation pipes with Zod integration
+- [x] Validation pipes with Zod integration
 - [ ] Built-in authentication guards
 - [ ] WebSocket support
 - [ ] GraphQL integration
