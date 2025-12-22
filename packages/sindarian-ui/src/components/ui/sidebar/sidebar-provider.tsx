@@ -1,5 +1,6 @@
 'use client'
 
+import { getStorage } from '@/lib/storage'
 import React from 'react'
 
 export type SidebarContextProps = {
@@ -21,7 +22,7 @@ export const useSidebar = () => {
 
 export const SidebarProvider = ({ children }: React.PropsWithChildren) => {
   const [collapsed, setCollapsed] = React.useState<boolean>(
-    localStorage.getItem('sidebar-collapsed') === 'true'
+    getStorage('sidebar-collapsed', false)
   )
 
   const toggleSidebar = () => setCollapsed((collapsed) => !collapsed)
