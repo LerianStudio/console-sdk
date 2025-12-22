@@ -1,3 +1,16 @@
+## [1.0.0-beta.19](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.18...sindarian-ui-v1.0.0-beta.19) (2025-12-22)
+
+
+### Features
+
+* Implemented guards ([a5137c5](https://github.com/LerianStudio/console-sdk/commit/a5137c5cf3733fbe834aa7186145c6c9bf12a6d4))
+* Updated readme ([773ae26](https://github.com/LerianStudio/console-sdk/commit/773ae26f2677f532b3d04685ba0f4f977c8fb0d7))
+
+
+### Bug Fixes
+
+* LocalStorage is undefined. ([15b2252](https://github.com/LerianStudio/console-sdk/commit/15b2252ad86604b6500dbe2ce743aaf23eb3bd50))
+
 ## [1.0.0-beta.18](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.17...sindarian-ui-v1.0.0-beta.18) (2025-12-19)
 
 
