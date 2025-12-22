@@ -1,3 +1,10 @@
+## [1.0.0-beta.20](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.19...sindarian-ui-v1.0.0-beta.20) (2025-12-22)
+
+
+### Bug Fixes
+
+* Sidebar issues ([bfb007b](https://github.com/LerianStudio/console-sdk/commit/bfb007b40db5326e8b9dc6ddbb4c9bfcb50e0a09))
+
 ## [1.0.0-beta.19](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.18...sindarian-ui-v1.0.0-beta.19) (2025-12-22)
 
 
