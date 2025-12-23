@@ -1,3 +1,10 @@
+## [1.0.0-beta.21](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.20...sindarian-ui-v1.0.0-beta.21) (2025-12-23)
+
+
+### Features
+
+* Implemented Sidebar collapsible items ([42cef79](https://github.com/LerianStudio/console-sdk/commit/42cef79f8d4c5f2ec3adab704ea04c3a02f52153))
+
 ## [1.0.0-beta.20](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.19...sindarian-ui-v1.0.0-beta.20) (2025-12-22)
 
 
