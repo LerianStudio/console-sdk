@@ -52,8 +52,8 @@ export const SidebarGroup = ({ className, ...props }: SidebarGroupProps) => (
   <nav
     data-slot="sidebar-group"
     className={cn(
-      'grid gap-1',
-      'group-data[collapsed=true]/sidebar:justify-center',
+      'flex flex-col gap-1',
+      'group-data-[collapsed=true]/sidebar:items-center',
       className
     )}
     {...props}

@@ -8,17 +8,22 @@ import {
   SidebarProvider,
   SidebarExpandButton,
   SidebarHeader,
-  SidebarBackButton
+  SidebarBackButton,
+  SidebarItemCollapsible,
+  SidebarItemCollapsibleTrigger,
+  SidebarItemCollapsibleContent
 } from '.'
 import { PageContent, PageRoot, PageView } from '../../page'
 import {
   ArrowLeftRight,
+  Building,
   ChevronLeft,
+  CircleUser,
   Coins,
   DollarSign,
   Home,
   Settings,
-  User
+  Users
 } from 'lucide-react'
 
 const meta: Meta = {
@@ -44,20 +49,29 @@ export const Primary: StoryObj = {
             </SidebarHeader>
             <SidebarContent>
               <SidebarGroup>
-                <SidebarItem title="Home" icon={<Home />} href="" />
                 <SidebarItem title="Home" active icon={<Home />} href="" />
-                <SidebarItem title="Home" disabled icon={<Home />} href="" />
                 <SidebarItem
                   title="Transactions"
                   icon={<ArrowLeftRight />}
                   href=""
+                  disabled
                 />
                 <SidebarItem title="Accounts" icon={<DollarSign />} href="" />
                 <SidebarItem title="Assets" icon={<Coins />} href="" />
               </SidebarGroup>
               <SidebarGroup>
                 <SidebarGroupTitle>Plugins</SidebarGroupTitle>
-                <SidebarItem title="CRM" icon={<User />} href="" />
+                <SidebarItemCollapsible>
+                  <SidebarItemCollapsibleTrigger title="CRM" icon={<Users />} />
+                  <SidebarItemCollapsibleContent>
+                    <SidebarItem
+                      title="Holders"
+                      icon={<CircleUser />}
+                      href=""
+                    />
+                    <SidebarItem title="Alias" icon={<Building />} href="" />
+                  </SidebarItemCollapsibleContent>
+                </SidebarItemCollapsible>
                 <SidebarItem title="Settings" icon={<Settings />} href="" />
               </SidebarGroup>
             </SidebarContent>

@@ -13,12 +13,13 @@ export type SidebarItemProps = React.ComponentProps<typeof SidebarItemButton> &
     href: string
     active?: boolean
     disabled?: boolean
+    children?: React.ReactNode
   }
 
 export const SidebarItem = ({
   active,
-  disabled,
   href,
+  children,
   ...props
 }: SidebarItemProps) => {
   const pathname = usePathname()
@@ -32,7 +33,6 @@ export const SidebarItem = ({
         data-slot="sidebar-item"
         href={href}
         active={isActive(href) || active}
-        disabled={disabled}
         {...props}
       />
     )
@@ -43,7 +43,6 @@ export const SidebarItem = ({
       data-slot="sidebar-item"
       href={href}
       active={isActive(href) || active}
-      disabled={disabled}
       {...props}
     />
   )

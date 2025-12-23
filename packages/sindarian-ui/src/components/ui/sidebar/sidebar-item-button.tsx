@@ -10,6 +10,7 @@ export type SidebarItemButtonProps = React.ComponentProps<typeof Link> & {
   title: string
   icon?: React.ReactNode
   active?: boolean
+  inactive?: boolean
   disabled?: boolean
 }
 
@@ -19,6 +20,7 @@ export function SidebarItemButton({
   icon,
   href,
   active,
+  inactive,
   disabled = false,
   ...props
 }: SidebarItemButtonProps) {
@@ -29,6 +31,7 @@ export function SidebarItemButton({
       size: 'small'
     }),
     'group/link flex items-center justify-start',
+    inactive && 'hover:border-transparent',
     disabled && 'cursor-default opacity-30',
     className
   )
@@ -46,7 +49,7 @@ export function SidebarItemButton({
     </>
   )
 
-  if (disabled) {
+  if (disabled || inactive) {
     return (
       <div data-slot="sidebar-item-button" className={sharedClassName}>
         {content}

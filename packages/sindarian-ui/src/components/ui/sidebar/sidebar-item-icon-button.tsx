@@ -16,6 +16,7 @@ type SidebarItemIconButtonProps = React.ComponentProps<typeof Link> & {
   title: string
   icon: React.ReactNode
   active?: boolean
+  inactive?: boolean
   disabled?: boolean
 }
 
@@ -24,6 +25,7 @@ export const SidebarItemIconButton = ({
   icon,
   href,
   active,
+  inactive,
   disabled,
   ...props
 }: SidebarItemIconButtonProps) => {
@@ -32,6 +34,7 @@ export const SidebarItemIconButton = ({
       variant: active ? 'tertiary' : 'outline'
     }),
     iconButtonVariants(),
+    inactive && 'hover:border-transparent',
     disabled && 'cursor-default opacity-30'
   )
 
@@ -39,7 +42,7 @@ export const SidebarItemIconButton = ({
     <TooltipProvider>
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>
-          {disabled ? (
+          {disabled || inactive ? (
             <div
               data-slot="sidebar-item-icon-button"
               className={sharedClassName}
