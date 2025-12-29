@@ -1,3 +1,4 @@
+import React from 'react'
 import { cn } from '@/lib/utils'
 import {
   Collapsible,
@@ -11,14 +12,37 @@ import { SidebarItemButton } from './sidebar-item-button'
 import { buttonVariants } from '../button'
 import { SidebarItemIconButton } from './sidebar-item-icon-button'
 
+export type SidebarItemCollapsibleProps = React.ComponentProps<
+  typeof Collapsible
+> & {
+  name?: string
+}
+
 export function SidebarItemCollapsible({
+  name,
   className,
   ...props
-}: React.ComponentProps<typeof Collapsible>) {
-  const { isCollapsed } = useSidebar()
+}: SidebarItemCollapsibleProps) {
+  const { isCollapsed, getItemCollapsed, setItemCollapsed } = useSidebar()
+  const [open, setOpen] = React.useState(name ? getItemCollapsed(name) : false)
+
+  const handleOpenChange = (open: boolean) => {
+    setOpen(open)
+    if (name) {
+      setItemCollapsed(name, open)
+    }
+  }
+
+  React.useEffect(() => {
+    if (name) {
+      setOpen(getItemCollapsed(name))
+    }
+  }, [name, getItemCollapsed])
 
   return (
     <Collapsible
+      open={open}
+      onOpenChange={handleOpenChange}
       data-slot="sidebar-item-collapsible"
       className={cn(
         {
@@ -102,7 +126,7 @@ export function SidebarItemCollapsibleContent({
       ) : (
         <div className="flex items-stretch gap-3">
           <Separator className="ml-5 h-auto" orientation="vertical" />
-          <div className="w-full gap-1">{children}</div>
+          <div className="flex w-full flex-col gap-1">{children}</div>
         </div>
       )}
     </CollapsibleContent>

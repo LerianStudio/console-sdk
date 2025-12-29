@@ -61,7 +61,7 @@ export const Primary: StoryObj = {
               </SidebarGroup>
               <SidebarGroup>
                 <SidebarGroupTitle>Plugins</SidebarGroupTitle>
-                <SidebarItemCollapsible>
+                <SidebarItemCollapsible name="crm">
                   <SidebarItemCollapsibleTrigger title="CRM" icon={<Users />} />
                   <SidebarItemCollapsibleContent>
                     <SidebarItem
