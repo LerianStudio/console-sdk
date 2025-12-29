@@ -1,3 +1,10 @@
+## [1.0.0-beta.24](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.23...sindarian-ui-v1.0.0-beta.24) (2025-12-29)
+
+
+### Features
+
+* Added new method to the provider. ([68cbf11](https://github.com/LerianStudio/console-sdk/commit/68cbf1118d79234aa6f5c992cd90f08811f860c0))
+
 ## [1.0.0-beta.23](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.22...sindarian-ui-v1.0.0-beta.23) (2025-12-29)
 
 
