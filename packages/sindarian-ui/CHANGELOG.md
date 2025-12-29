@@ -1,3 +1,10 @@
+## [1.0.0-beta.23](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.22...sindarian-ui-v1.0.0-beta.23) (2025-12-29)
+
+
+### Bug Fixes
+
+* Hydration errors ([d616bfc](https://github.com/LerianStudio/console-sdk/commit/d616bfcc7a64c4c49827987454ac939a028b38f8))
+
 ## [1.0.0-beta.22](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.21...sindarian-ui-v1.0.0-beta.22) (2025-12-29)
 
 
