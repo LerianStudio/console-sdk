@@ -6,6 +6,7 @@ import { getStorage, getStorageObject } from '@/lib/storage'
 export type SidebarContextProps = {
   isCollapsed: boolean
   items: Record<string, boolean>
+  setItems: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
   getItemCollapsed: (key: string) => boolean
   setItemCollapsed: (key: string, value: boolean) => void
   toggleSidebar: () => void
@@ -67,6 +68,7 @@ export const SidebarProvider = ({ children }: React.PropsWithChildren) => {
       value={{
         isCollapsed: collapsed,
         items,
+        setItems: _setItems,
         getItemCollapsed,
         setItemCollapsed,
         toggleSidebar
