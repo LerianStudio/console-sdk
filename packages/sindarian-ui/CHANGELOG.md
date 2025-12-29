@@ -1,3 +1,10 @@
+## [1.0.0-beta.25](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.24...sindarian-ui-v1.0.0-beta.25) (2025-12-29)
+
+
+### Features
+
+* Added unit tests for SidebarProvider ([11354bf](https://github.com/LerianStudio/console-sdk/commit/11354bfa738aa742d3d15ef9970f68ab5d7efe86))
+
 ## [1.0.0-beta.24](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.23...sindarian-ui-v1.0.0-beta.24) (2025-12-29)
 
 
