@@ -1,7 +1,7 @@
 'use client'
 
-import { getStorage, getStorageObject } from '@/lib/storage'
 import React from 'react'
+import { getStorage, getStorageObject } from '@/lib/storage'
 
 export type SidebarContextProps = {
   isCollapsed: boolean
@@ -24,12 +24,9 @@ export const useSidebar = () => {
 }
 
 export const SidebarProvider = ({ children }: React.PropsWithChildren) => {
-  const [collapsed, setCollapsed] = React.useState<boolean>(
-    getStorage('sidebar-collapsed', false) === 'true'
-  )
-  const [items, _setItems] = React.useState<Record<string, boolean>>(
-    getStorageObject('sidebar-items', {})
-  )
+  const [hydrated, setHydrated] = React.useState(false)
+  const [collapsed, setCollapsed] = React.useState<boolean>(false)
+  const [items, _setItems] = React.useState<Record<string, boolean>>({})
 
   const toggleSidebar = () => setCollapsed((collapsed) => !collapsed)
 
@@ -41,13 +38,29 @@ export const SidebarProvider = ({ children }: React.PropsWithChildren) => {
     _setItems((items) => ({ ...items, [key]: value }))
   }
 
+  // Read from localStorage after hydration to avoid SSR mismatch
   React.useEffect(() => {
+    setCollapsed(getStorage('sidebar-collapsed', false) === 'true')
+    _setItems(getStorageObject('sidebar-items', {}))
+    setHydrated(true)
+  }, [])
+
+  // Only persist to localStorage after hydration to avoid overwriting stored values
+  React.useEffect(() => {
+    if (!hydrated) {
+      return
+    }
+
     localStorage.setItem('sidebar-collapsed', JSON.stringify(collapsed))
-  }, [collapsed])
+  }, [collapsed, hydrated])
 
   React.useEffect(() => {
+    if (!hydrated) {
+      return
+    }
+
     localStorage.setItem('sidebar-items', JSON.stringify(items))
-  }, [items])
+  }, [items, hydrated])
 
   return (
     <SidebarContext.Provider

@@ -17,7 +17,7 @@ export const SidebarHeader = ({
     data-slot="sidebar-header"
     data-collapsed={collapsed}
     className={cn(
-      'dark:bg-cod-gray-950 flex h-[60px] w-full items-center bg-white px-4',
+      'dark:bg-cod-gray-950 flex w-full flex-col items-center bg-white p-4',
       collapsed && 'justify-center p-0',
       className
     )}
