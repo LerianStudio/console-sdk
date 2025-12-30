@@ -1,3 +1,10 @@
+## [1.0.0-beta.26](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.25...sindarian-ui-v1.0.0-beta.26) (2025-12-30)
+
+
+### Features
+
+* Added scroll to sidebar ([9d3204f](https://github.com/LerianStudio/console-sdk/commit/9d3204f9d3162573ea9a35f45e3bdb9996c07de5))
+
 ## [1.0.0-beta.25](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.24...sindarian-ui-v1.0.0-beta.25) (2025-12-29)
 
 
