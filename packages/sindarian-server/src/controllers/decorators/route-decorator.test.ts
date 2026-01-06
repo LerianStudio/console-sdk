@@ -462,4 +462,69 @@ describe('Route Decorator', () => {
       await expect(descriptor.value()).rejects.toThrow(testError)
     })
   })
+
+  describe('DELETE 204 No Content behavior', () => {
+    it('should return 204 No Content when DELETE method returns null', async () => {
+      const originalMethod = jest.fn().mockResolvedValue(null)
+      const descriptor = { value: originalMethod }
+
+      const decorator = Route(HttpMethods.DELETE, '/resource/:id')
+      decorator(TestController.prototype, 'deleteMethod', descriptor)
+
+      const result = await descriptor.value('123')
+
+      expect(originalMethod).toHaveBeenCalledWith('123')
+      expect(MockedNextResponse).toHaveBeenCalledWith(null, { status: 204 })
+      expect(MockedNextResponse.json).not.toHaveBeenCalled()
+    })
+
+    it('should return 204 No Content when DELETE method returns undefined', async () => {
+      const originalMethod = jest.fn().mockResolvedValue(undefined)
+      const descriptor = { value: originalMethod }
+
+      const decorator = Route(HttpMethods.DELETE, '/resource/:id')
+      decorator(TestController.prototype, 'deleteMethod', descriptor)
+
+      const result = await descriptor.value('456')
+
+      expect(originalMethod).toHaveBeenCalledWith('456')
+      expect(MockedNextResponse).toHaveBeenCalledWith(null, { status: 204 })
+      expect(MockedNextResponse.json).not.toHaveBeenCalled()
+    })
+
+    it('should return JSON when DELETE method returns non-null value', async () => {
+      const responseData = { deleted: true, id: '789' }
+      const originalMethod = jest.fn().mockResolvedValue(responseData)
+      const descriptor = { value: originalMethod }
+      const wrappedResponse = new MockedNextResponse()
+
+      MockedNextResponse.json.mockReturnValue(wrappedResponse)
+
+      const decorator = Route(HttpMethods.DELETE, '/resource/:id')
+      decorator(TestController.prototype, 'deleteMethod', descriptor)
+
+      const result = await descriptor.value('789')
+
+      expect(originalMethod).toHaveBeenCalledWith('789')
+      expect(MockedNextResponse.json).toHaveBeenCalledWith(responseData)
+      expect(result).toBe(wrappedResponse)
+    })
+
+    it('should not return 204 for non-DELETE methods with null response', async () => {
+      const originalMethod = jest.fn().mockResolvedValue(null)
+      const descriptor = { value: originalMethod }
+      const wrappedResponse = new MockedNextResponse()
+
+      MockedNextResponse.json.mockReturnValue(wrappedResponse)
+
+      const decorator = Route(HttpMethods.POST, '/resource')
+      decorator(TestController.prototype, 'postMethod', descriptor)
+
+      const result = await descriptor.value()
+
+      expect(originalMethod).toHaveBeenCalled()
+      // POST with null should still wrap in JSON, not return 204
+      expect(MockedNextResponse.json).toHaveBeenCalledWith(null)
+    })
+  })
 })
