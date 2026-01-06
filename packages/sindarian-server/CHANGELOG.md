@@ -1,3 +1,22 @@
+## [1.0.0-beta.25](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.24...sindarian-server-v1.0.0-beta.25) (2026-01-06)
+
+
+### Features
+
+* Added new method to the provider. ([68cbf11](https://github.com/LerianStudio/console-sdk/commit/68cbf1118d79234aa6f5c992cd90f08811f860c0))
+* Added scroll to sidebar ([9d3204f](https://github.com/LerianStudio/console-sdk/commit/9d3204f9d3162573ea9a35f45e3bdb9996c07de5))
+* Added unit tests for SidebarProvider ([11354bf](https://github.com/LerianStudio/console-sdk/commit/11354bfa738aa742d3d15ef9970f68ab5d7efe86))
+* Finished sub item collapsible on Sidebar ([e815145](https://github.com/LerianStudio/console-sdk/commit/e815145bae15164acf45dee6bf86d86eb4da2a39))
+* Implemented Sidebar collapsible items ([42cef79](https://github.com/LerianStudio/console-sdk/commit/42cef79f8d4c5f2ec3adab704ea04c3a02f52153))
+* **sindarian-server:** return 204 No Content for DELETE routes with null response ([7065070](https://github.com/LerianStudio/console-sdk/commit/7065070bfda088d38763f6276cb8df9e580baad0))
+
+
+### Bug Fixes
+
+* Hydration errors ([d616bfc](https://github.com/LerianStudio/console-sdk/commit/d616bfcc7a64c4c49827987454ac939a028b38f8))
+* LocalStorage is undefined. ([15b2252](https://github.com/LerianStudio/console-sdk/commit/15b2252ad86604b6500dbe2ce743aaf23eb3bd50))
+* Sidebar issues ([bfb007b](https://github.com/LerianStudio/console-sdk/commit/bfb007b40db5326e8b9dc6ddbb4c9bfcb50e0a09))
+
 ## [1.0.0-beta.24](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.23...sindarian-server-v1.0.0-beta.24) (2025-12-19)
 
 
