@@ -60,18 +60,42 @@ function CommandInput({
 
 function CommandList({
   className,
+  children,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.List>) {
+  const listRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const listElement = listRef.current
+    if (!listElement) return
+
+    const handleWheel = (event: WheelEvent) => {
+      const { scrollTop, scrollHeight, clientHeight } = listElement
+      const isAtTop = scrollTop === 0 && event.deltaY < 0
+      const isAtBottom =
+        scrollTop + clientHeight >= scrollHeight && event.deltaY > 0
+
+      if (!isAtTop && !isAtBottom) {
+        event.stopPropagation()
+      }
+    }
+
+    listElement.addEventListener('wheel', handleWheel, { passive: true })
+    return () => listElement.removeEventListener('wheel', handleWheel)
+  }, [])
+
   return (
     <CommandPrimitive.List
+      ref={listRef}
       data-slot="command-list"
       className={cn(
         'max-h-[300px] overflow-x-hidden overflow-y-auto',
         className
       )}
-      style={{ scrollBehavior: 'smooth' }}
       {...props}
-    />
+    >
+      {children}
+    </CommandPrimitive.List>
   )
 }
 
