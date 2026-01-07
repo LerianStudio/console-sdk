@@ -1,3 +1,17 @@
+## [1.0.0-beta.27](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.26...sindarian-ui-v1.0.0-beta.27) (2026-01-07)
+
+
+### Features
+
+* **sindarian-server:** return 204 No Content for DELETE routes with null response ([7065070](https://github.com/LerianStudio/console-sdk/commit/7065070bfda088d38763f6276cb8df9e580baad0))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** correct ref type in CommandList ([c4a5207](https://github.com/LerianStudio/console-sdk/commit/c4a5207cd74a4cea957d2f5dd3b5ae491a933d91))
+* **sindarian-ui:** correct ref type in CommandList ([36ef7e1](https://github.com/LerianStudio/console-sdk/commit/36ef7e1c83612e1354b8bc4184fef9d7801c58aa))
+* **sindarian-ui:** prevent scroll propagation in CommandList ([152443a](https://github.com/LerianStudio/console-sdk/commit/152443a197c3950ecd4d373811fd55014ca18c3d))
+
 ## [1.0.0-beta.26](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.25...sindarian-ui-v1.0.0-beta.26) (2025-12-30)
 
 
