@@ -63,7 +63,7 @@ function CommandList({
   children,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.List>) {
-  const listRef = React.useRef<HTMLUListElement>(null)
+  const listRef = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
     const listElement = listRef.current
