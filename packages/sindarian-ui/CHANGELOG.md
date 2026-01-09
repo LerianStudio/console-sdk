@@ -1,3 +1,10 @@
+## [1.0.0-beta.28](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.27...sindarian-ui-v1.0.0-beta.28) (2026-01-09)
+
+
+### Features
+
+* **page-header:** add context for open state and improve layout ([dfd7a1b](https://github.com/LerianStudio/console-sdk/commit/dfd7a1b5eec4ac5f714d97c765de5a16c03b1f1d))
+
 ## [1.0.0-beta.27](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.26...sindarian-ui-v1.0.0-beta.27) (2026-01-07)
 
 
