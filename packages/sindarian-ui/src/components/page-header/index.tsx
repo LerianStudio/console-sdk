@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { ReactNode, useState } from 'react'
+import { createContext, ReactNode, useContext, useState } from 'react'
 import {
   Collapsible,
   CollapsibleContent,
@@ -16,6 +16,8 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { Arrow } from '@radix-ui/react-tooltip'
 
+const PageHeaderContext = createContext<{ isOpen: boolean }>({ isOpen: false })
+
 export function PageHeaderActionButtons({
   className,
   ...props
@@ -23,7 +25,7 @@ export function PageHeaderActionButtons({
   return (
     <div
       data-slot="page-header-action-buttons"
-      className={cn('flex gap-8', className)}
+      className={cn('flex items-center gap-8', className)}
       {...props}
     />
   )
@@ -33,10 +35,16 @@ export function PageHeaderWrapper({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
+  const { isOpen } = useContext(PageHeaderContext)
+
   return (
     <div
       data-slot="page-header-wrapper"
-      className={cn('flex justify-between border-b', className)}
+      className={cn(
+        'flex items-start justify-between',
+        isOpen && 'border-b',
+        className
+      )}
       {...props}
     />
   )
@@ -51,11 +59,17 @@ export function PageHeader({ children, className }: PageHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div data-slot="page-header" className="mt-12">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className={className}>
-        {children}
-      </Collapsible>
-    </div>
+    <PageHeaderContext.Provider value={{ isOpen }}>
+      <div data-slot="page-header" className={cn('mt-12', isOpen && 'mb-12')}>
+        <Collapsible
+          open={isOpen}
+          onOpenChange={setIsOpen}
+          className={className}
+        >
+          {children}
+        </Collapsible>
+      </div>
+    </PageHeaderContext.Provider>
   )
 }
 
@@ -166,7 +180,7 @@ export function PageHeaderCollapsibleInfo({
   return (
     <div data-slot="page-header-collapsible-info">
       <CollapsibleContent>
-        <div className="flex w-full justify-between">
+        <div className="flex w-full justify-between pt-6">
           <div className="mt-12 flex flex-col gap-3">
             <h1 className="text-xl font-bold text-[#3f3f46]">{question}</h1>
 
