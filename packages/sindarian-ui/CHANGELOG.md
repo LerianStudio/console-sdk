@@ -1,3 +1,10 @@
+## [1.0.0-beta.29](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.28...sindarian-ui-v1.0.0-beta.29) (2026-01-13)
+
+
+### Bug Fixes
+
+* **page-header:** add max-width constraint to description in collapsible info ([4e802b8](https://github.com/LerianStudio/console-sdk/commit/4e802b835910cab391a60edd8137df48b9b716f5))
+
 ## [1.0.0-beta.28](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.27...sindarian-ui-v1.0.0-beta.28) (2026-01-09)
 
 
