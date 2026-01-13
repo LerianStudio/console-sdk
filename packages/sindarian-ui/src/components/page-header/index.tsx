@@ -184,17 +184,17 @@ export function PageHeaderCollapsibleInfo({
           <div className="mt-12 flex flex-col gap-3">
             <h1 className="text-xl font-bold text-[#3f3f46]">{question}</h1>
 
-            <div className="flex items-center gap-3">
-              <p className="text-shadcn-500 text-sm leading-none font-medium">
+            <div className="flex items-start gap-6">
+              <p className="text-shadcn-500 max-w-2xl text-sm leading-relaxed font-medium">
                 {answer}
               </p>
 
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-1">
                 <a
                   target="_blank"
                   rel="noopener noreferrer"
                   href={href}
-                  className="text-shadcn-600 justify-start text-sm font-medium underline underline-offset-4"
+                  className="text-shadcn-600 whitespace-nowrap text-sm font-medium underline underline-offset-4"
                 >
                   {seeMore}
                 </a>
