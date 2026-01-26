@@ -1,3 +1,16 @@
+## [1.0.0-beta.30](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.29...sindarian-ui-v1.0.0-beta.30) (2026-01-26)
+
+
+### Features
+
+* Implemented DatePicker and DateRange fields ([dedc04d](https://github.com/LerianStudio/console-sdk/commit/dedc04d4cb240c8bc9979097a1b8a89da9526167))
+* Updated dependencies ([57b55ac](https://github.com/LerianStudio/console-sdk/commit/57b55ac1a09197469c92ad09d586ad5714f1a913))
+
+
+### Bug Fixes
+
+* Jest new version issues with node 22 ([41f2467](https://github.com/LerianStudio/console-sdk/commit/41f246758c3298fa8f22faf9d1646d6e2cb5f526))
+
 ## [1.0.0-beta.29](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.28...sindarian-ui-v1.0.0-beta.29) (2026-01-13)
 
 
