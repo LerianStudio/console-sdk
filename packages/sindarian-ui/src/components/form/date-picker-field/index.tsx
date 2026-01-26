@@ -84,7 +84,7 @@ export const DatePickerField = ({
                       readOnly && 'pointer-events-none'
                     )}
                     data-testid={others['data-testid']}
-                    icon={<CalendarIcon className="size-2" />}
+                    icon={<CalendarIcon className="size-4" />}
                   >
                     {value ? (
                       dayjs(value).format(dateFormat)
