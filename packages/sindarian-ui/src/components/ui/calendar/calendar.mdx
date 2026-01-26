@@ -1,0 +1,40 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './calendar.stories'
+
+<Meta of={Story} />
+
+# Calendar
+
+A calendar component that allows users to select a date or a range of dates. \
+[Docs](https://react-day-picker.js.org/)
+
+### Primary
+
+<Canvas of={Story.Primary} />
+
+### With Selected Date
+
+Single date selection mode.
+
+<Canvas of={Story.WithSelectedDate} />
+
+### Range Selection
+
+Select a date range.
+
+<Canvas of={Story.RangeSelection} />
+
+### With Week Numbers
+
+Display week numbers alongside the calendar.
+
+<Canvas of={Story.WithWeekNumbers} />
+
+### Multiple Months
+
+Display multiple months at once.
+
+<Canvas of={Story.MultipleMonths} />
+
+<Primary />
+<Controls />
