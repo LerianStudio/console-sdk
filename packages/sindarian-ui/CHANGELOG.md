@@ -1,3 +1,10 @@
+## [1.0.0-beta.33](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.32...sindarian-ui-v1.0.0-beta.33) (2026-01-28)
+
+
+### Features
+
+* Fixed StateField styles ([1fb78c4](https://github.com/LerianStudio/console-sdk/commit/1fb78c4793ea72915693004afdf7c30f61b23eed))
+
 ## [1.0.0-beta.32](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.31...sindarian-ui-v1.0.0-beta.32) (2026-01-28)
 
 
