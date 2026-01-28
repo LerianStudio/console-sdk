@@ -1,3 +1,10 @@
+## [1.0.0-beta.32](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.31...sindarian-ui-v1.0.0-beta.32) (2026-01-28)
+
+
+### Features
+
+* Added PasswordField to exports ([7d0a5ba](https://github.com/LerianStudio/console-sdk/commit/7d0a5bab0f9f18aff0e58cd47460e5bcc5c4fa28))
+
 ## [1.0.0-beta.31](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.30...sindarian-ui-v1.0.0-beta.31) (2026-01-28)
 
 
