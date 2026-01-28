@@ -37,6 +37,7 @@ export type SelectFieldProps = PropsWithChildren & {
   multi?: boolean
   required?: boolean
   emptyMessage?: string
+  onChange?: (value: string | string[]) => void
   'data-testid'?: string
 }
 
@@ -54,6 +55,7 @@ export const SelectField = ({
   control,
   children,
   emptyMessage = 'No options found.',
+  onChange,
   ...others
 }: SelectFieldProps) => {
   return (
@@ -76,7 +78,10 @@ export const SelectField = ({
 
             {multi ? (
               <MultipleSelect
-                onValueChange={field.onChange}
+                onValueChange={(value) => {
+                  field.onChange(value)
+                  onChange?.(value)
+                }}
                 disabled={disabled}
                 {...field}
               >
@@ -87,7 +92,10 @@ export const SelectField = ({
               </MultipleSelect>
             ) : (
               <Select
-                onValueChange={field.onChange}
+                onValueChange={(value) => {
+                  field.onChange(value)
+                  onChange?.(value)
+                }}
                 value={field.value}
                 disabled={disabled}
                 open={readOnly ? false : undefined}
