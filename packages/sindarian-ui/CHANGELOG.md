@@ -1,3 +1,10 @@
+## [1.0.0-beta.31](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.30...sindarian-ui-v1.0.0-beta.31) (2026-01-28)
+
+
+### Features
+
+* Added onChange to SelectField ([69e8866](https://github.com/LerianStudio/console-sdk/commit/69e8866d893ce99bdb1298845d9b53b87a2ba0a4))
+
 ## [1.0.0-beta.30](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.29...sindarian-ui-v1.0.0-beta.30) (2026-01-26)
 
 
