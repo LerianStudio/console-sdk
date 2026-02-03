@@ -36,6 +36,7 @@ export type DatePickerFieldProps = {
   dateFormat?: string
   align?: 'start' | 'center' | 'end'
   'data-testid'?: string
+  valueAsString?: boolean
 }
 
 export const DatePickerField = ({
@@ -51,6 +52,7 @@ export const DatePickerField = ({
   required,
   dateFormat = 'MMM DD, YYYY',
   align = 'start',
+  valueAsString,
   ...others
 }: DatePickerFieldProps) => {
   return (
@@ -58,7 +60,27 @@ export const DatePickerField = ({
       name={name}
       control={control}
       render={({ field }) => {
-        const value = field.value as Date | undefined
+        const convertFieldValueToDate = (
+          fieldValue: unknown
+        ): Date | undefined => {
+          if (!fieldValue) return undefined
+          return valueAsString
+            ? dayjs(fieldValue as string).toDate()
+            : (fieldValue as Date)
+        }
+
+        const convertDateToOutputFormat = (
+          date: Date | undefined
+        ): Date | string | undefined => {
+          if (!date) return undefined
+          return valueAsString ? dayjs(date).format('YYYY-MM-DD') : date
+        }
+
+        const value = convertFieldValueToDate(field.value)
+
+        const handleSelect = (date: Date | undefined) => {
+          field.onChange(convertDateToOutputFormat(date))
+        }
 
         return (
           <FormItem required={required}>
@@ -99,7 +121,7 @@ export const DatePickerField = ({
                   mode="single"
                   defaultMonth={value}
                   selected={value}
-                  onSelect={field.onChange}
+                  onSelect={handleSelect}
                   disabled={disabled || readOnly}
                 />
               </PopoverContent>
