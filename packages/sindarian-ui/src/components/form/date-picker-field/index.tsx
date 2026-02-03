@@ -64,16 +64,22 @@ export const DatePickerField = ({
           fieldValue: unknown
         ): Date | undefined => {
           if (!fieldValue) return undefined
-          return valueAsString
-            ? dayjs(fieldValue as string).toDate()
-            : (fieldValue as Date)
+          if (valueAsString) {
+            const parsed = dayjs(fieldValue as string)
+            return parsed.isValid() ? parsed.toDate() : undefined
+          }
+          return fieldValue as Date
         }
 
         const convertDateToOutputFormat = (
           date: Date | undefined
         ): Date | string | undefined => {
           if (!date) return undefined
-          return valueAsString ? dayjs(date).format('YYYY-MM-DD') : date
+          if (valueAsString) {
+            const parsed = dayjs(date)
+            return parsed.isValid() ? parsed.format('YYYY-MM-DD') : undefined
+          }
+          return date
         }
 
         const value = convertFieldValueToDate(field.value)
