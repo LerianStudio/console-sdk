@@ -1,3 +1,15 @@
+## [1.0.0-beta.34](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.33...sindarian-ui-v1.0.0-beta.34) (2026-02-03)
+
+
+### Features
+
+* **date-picker-field:** add valueAsString prop for string date handling ([a5a2c63](https://github.com/LerianStudio/console-sdk/commit/a5a2c63197967502dd603e2b01f26d2cfec8fc49))
+
+
+### Bug Fixes
+
+* **date-picker-field:** add validation for invalid date parsing ([72026a9](https://github.com/LerianStudio/console-sdk/commit/72026a91a345c4662f580d6d005a7a556f81400e))
+
 ## [1.0.0-beta.33](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.32...sindarian-ui-v1.0.0-beta.33) (2026-01-28)
 
 
