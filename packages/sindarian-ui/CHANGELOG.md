@@ -1,3 +1,10 @@
+## [1.0.0-beta.35](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.34...sindarian-ui-v1.0.0-beta.35) (2026-02-12)
+
+
+### Features
+
+* Small fixes to Sheet styling ([1b15539](https://github.com/LerianStudio/console-sdk/commit/1b1553974a3d26d1d88d63030b8637e46ebe9ae7))
+
 ## [1.0.0-beta.34](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.33...sindarian-ui-v1.0.0-beta.34) (2026-02-03)
 
 
