@@ -12,11 +12,36 @@ import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { EllipsisVertical } from 'lucide-react'
 
-export function EntityCardWrapper({
+export function EntityCardGrid({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
-  return <div data-slot="entity-card-wrapper" {...props} />
+  return (
+    <div
+      className={cn(
+        'grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3',
+        className
+      )}
+      data-slot="entity-card-grid"
+      {...props}
+    />
+  )
+}
+
+export function EntityCardGridFooter({
+  className,
+  ...props
+}: React.ComponentProps<'div'>) {
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-6 py-4',
+        className
+      )}
+      data-slot="entity-card-grid-footer"
+      {...props}
+    />
+  )
 }
 
 export type EntityCardProps = React.ComponentProps<'div'> & {

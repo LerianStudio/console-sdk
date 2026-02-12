@@ -78,7 +78,7 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          'flex max-h-screen flex-col justify-between overflow-x-auto px-8 pb-0',
+          'flex max-h-screen flex-col overflow-x-auto px-8 pb-0',
           sheetVariants({ side }),
           className
         )}
