@@ -7,23 +7,23 @@
   --spacing-button-py-small: calc(var(--spacing) * 2);
   --spacing-button-h: calc(var(--spacing) * 10);
   --spacing-button-h-small: calc(var(--spacing) * 8);
-  
-  --color-button-primary: var(--color-shadcn-600);
-  --color-button-primary-foreground: var(--color-white);
-  --color-button-primary-disabled: var(--color-shadcn-200);
-  --color-button-primary-foreground-disabled: var(--color-shadcn-600);
-  --color-button-secondary: var(--color-white);
-  --color-button-secondary-hover: var(--color-shadcn-100);
-  --color-button-secondary-foreground: var(--color-zinc-600);
-  --color-button-border: var(--color-shadcn-300);
+
+  --color-button-primary: var(--color-button-primary-surface);
+  --color-button-primary-foreground: var(--color-button-primary-text);
+  --color-button-primary-disabled: var(--color-muted);
+  --color-button-primary-foreground-disabled: var(--color-container-title);
+  --color-button-secondary: var(--color-secondary);
+  --color-button-secondary-hover: var(--color-background);
+  --color-button-secondary-foreground: var(--color-muted-foreground);
+  --color-button-border: var(--color-border);
   --color-button-tertiary: var(--color-accent);
   --color-button-tertiary-foreground: var(--color-accent-foreground);
-  --color-button-outline-foreground: var(--color-zinc-600);
+  --color-button-outline-foreground: var(--color-muted-foreground);
 }
 
 @layer components {
   .button-base {
-    @apply relative inline-flex items-center justify-center rounded-lg shadow-sm text-sm font-medium transition-colors cursor-pointer whitespace-nowrap h-button-h px-button-px py-button-py;
+    @apply h-button-h px-button-px py-button-py relative inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium shadow-sm transition-colors;
   }
 
   .button-plain {
@@ -35,7 +35,7 @@
   }
 
   .button-secondary {
-    @apply bg-button-secondary text-button-secondary-foreground border border-button-border hover:bg-button-secondary-hover disabled:bg-button-secondary-hover;
+    @apply bg-button-secondary text-button-secondary-foreground border-button-border hover:bg-button-secondary-hover disabled:bg-button-secondary-hover border;
   }
 
   .button-tertiary {
@@ -43,19 +43,19 @@
   }
 
   .button-outline {
-    @apply text-button-outline-foreground shadow-none border border-transparent hover:border-button-border;
+    @apply text-button-outline-foreground hover:border-button-border border border-transparent shadow-none;
   }
 
   .button-link {
-    @apply !p-0 !px-0 !py-0 !h-4 !text-[13px] underline shadow-none;
+    @apply !h-4 !p-0 !px-0 !py-0 !text-[13px] underline shadow-none;
   }
 
   .button-disabled {
-    @apply disabled:pointer-events-none disabled:opacity-50 disabled:border-transparent disabled:shadow-none;
+    @apply disabled:pointer-events-none disabled:border-transparent disabled:opacity-50 disabled:shadow-none;
   }
 
   .button-read-only {
-    @apply data-[read-only=true]:cursor-default data-[read-only=true]:opacity-50 data-[read-only=true]:focus:ring-0 data-[read-only=true]:focus:outline-hidden data-[read-only=true]:border-transparent data-[read-only=true]:shadow-none;
+    @apply data-[read-only=true]:focus:outline-hidden data-[read-only=true]:cursor-default data-[read-only=true]:border-transparent data-[read-only=true]:opacity-50 data-[read-only=true]:shadow-none data-[read-only=true]:focus:ring-0;
   }
 
   .button-small {

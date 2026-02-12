@@ -79,7 +79,7 @@ export const MultipleSelectTrigger = React.forwardRef<
     <div
       ref={_ref}
       className={cn(
-        'bg-background ring-offset-background placeholder:text-shadcn-400 focus:ring-ring flex flex-row rounded-md border border-[#C7C7C7] text-sm focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden md:text-sm dark:border-inherit [&>span]:line-clamp-1',
+        'bg-background ring-offset-background placeholder:text-shadcn-400 focus:ring-ring border-input focus:outline-hidden focus-visible:outline-hidden flex flex-row rounded-md border text-sm focus:ring-2 focus:ring-offset-0 md:text-sm [&>span]:line-clamp-1',
         {
           'h-9': value.length === 0,
           'min-h-9': value.length > 0,
@@ -89,7 +89,7 @@ export const MultipleSelectTrigger = React.forwardRef<
         readOnly && [
           'data-read-only:cursor-default',
           'data-read-only:select-text',
-          'data-read-only:bg-zinc-100',
+          'data-read-only:bg-muted',
           'data-read-only:opacity-50',
           'data-read-only:pointer-events-none',
           'data-read-only:focus:outline-hidden',
@@ -173,7 +173,7 @@ export const MultipleSelectValue = React.forwardRef<
             <button
               type="button"
               className={cn(
-                'ring-offset-background focus:ring-ring ml-1 rounded-full outline-hidden focus:ring-2 focus:ring-offset-2',
+                'ring-offset-background focus:ring-ring outline-hidden ml-1 rounded-full focus:ring-2 focus:ring-offset-2',
                 disabled && 'hidden'
               )}
             >
@@ -192,7 +192,7 @@ export const MultipleSelectValue = React.forwardRef<
         ref={inputRef}
         disabled={disabled}
         className={cn(
-          'placeholder:text-muted-foreground bg-transparent outline-hidden focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 disabled:placeholder:opacity-0',
+          'placeholder:text-muted-foreground outline-hidden focus:outline-hidden bg-transparent disabled:cursor-not-allowed disabled:opacity-50 disabled:placeholder:opacity-0',
           className
         )}
       />
@@ -267,7 +267,7 @@ export const MultipleSelectContent = React.forwardRef<
         <CommandPrimitive.List
           ref={ref}
           className={cn(
-            'bg-popover text-popover-foreground animate-in absolute top-1 z-50 max-h-96 w-full min-w-32 overflow-x-hidden overflow-y-auto rounded-md border shadow-md outline-hidden',
+            'bg-popover text-popover-foreground animate-in outline-hidden absolute top-1 z-50 max-h-96 w-full min-w-32 overflow-y-auto overflow-x-hidden rounded-md border shadow-md',
             position === 'popper' &&
               'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
             className
@@ -297,7 +297,7 @@ export const MultipleSelectGroup = React.forwardRef<
   <CommandPrimitive.Group
     ref={ref}
     className={cn(
-      'overflow-hidden p-1 text-slate-950 dark:text-slate-50 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-slate-500 dark:[&_[cmdk-group-heading]]:text-slate-400',
+      'text-foreground [&_[cmdk-group-heading]]:text-muted-foreground overflow-hidden p-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium',
       className
     )}
     {...props}
@@ -316,7 +316,7 @@ export const MultipleSelectItem = React.forwardRef<
       ref={ref}
       value={value}
       className={cn(
-        "data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground dark:data-[selected='true']:bg-accent relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 dark:data-[selected=true]:text-slate-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        "data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground outline-hidden relative flex w-full cursor-default select-none items-center gap-2 rounded-sm py-1.5 pl-2 pr-8 text-sm data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
         className
       )}
       {...props}
@@ -445,7 +445,7 @@ export const MultipleSelect = React.forwardRef<
         <CommandPrimitive
           ref={_ref}
           className={cn(
-            'flex h-auto w-full flex-col overflow-visible rounded-md bg-transparent text-slate-950 dark:text-slate-50',
+            'text-foreground flex h-auto w-full flex-col overflow-visible rounded-md bg-transparent',
             className
           )}
           aria-disabled={disabled}

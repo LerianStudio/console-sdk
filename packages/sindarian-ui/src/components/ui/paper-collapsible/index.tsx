@@ -63,7 +63,7 @@ function PaperCollapsibleTrigger({
       )}
       {...props}
     >
-      <ChevronDown className="size-6 shrink-0 cursor-pointer text-zinc-700 transition-transform duration-200" />
+      <ChevronDown className="text-foreground size-6 shrink-0 cursor-pointer transition-transform duration-200" />
     </CollapsibleTrigger>
   )
 }
