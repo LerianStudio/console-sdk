@@ -6,7 +6,7 @@ import { useSidebar } from './sidebar-provider'
 import { cn } from '@/lib/utils'
 
 const sidebarVariants = cva(
-  'group/sidebar shadow-sidebar dark:bg-cod-gray-950 relative flex flex-col transition-[width] duration-300 ease-in-out',
+  'group/sidebar shadow-sidebar relative flex flex-col transition-[width] duration-300 ease-in-out',
   {
     variants: {
       collapsed: {

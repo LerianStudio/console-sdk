@@ -7,7 +7,7 @@ export function DashboardCard({
   return (
     <div
       className={cn(
-        'relative flex flex-col rounded-lg bg-white p-6 pt-4',
+        'bg-card relative flex flex-col rounded-lg p-6 pt-4',
         className
       )}
       {...props}
@@ -22,7 +22,7 @@ export function DashboardCardIcon({
   return (
     <div
       className={cn(
-        'text-shadcn-400 absolute top-4 right-6 flex size-6 items-center justify-center [&>svg]:size-6',
+        'text-shadcn-400 absolute right-6 top-4 flex size-6 items-center justify-center [&>svg]:size-6',
         className
       )}
       {...props}
@@ -37,7 +37,7 @@ export function DashboardCardTitle({
   return (
     <h2
       className={cn(
-        'mb-4 text-sm font-medium text-zinc-600 uppercase',
+        'text-muted-foreground mb-4 text-sm font-medium uppercase',
         className
       )}
       {...props}
@@ -51,7 +51,10 @@ export function DashboardCardContent({
 }: React.ComponentProps<'div'>) {
   return (
     <div
-      className={cn('text-[32px] font-extrabold text-zinc-600', className)}
+      className={cn(
+        'text-muted-foreground text-[32px] font-extrabold',
+        className
+      )}
       {...props}
     />
   )
