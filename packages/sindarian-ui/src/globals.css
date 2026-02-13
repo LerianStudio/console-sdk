@@ -137,22 +137,22 @@
   --color-system-error: hsl(var(--system-error));
   --color-system-error-surface: hsl(var(--system-error-surface));
   --color-system-error-h1a: hsl(var(--system-error-h1a));
-  --color-system-error-border: hsl(var(--system-error-border) / 0.5);
+  --color-system-error-border: hsl(var(--system-error-border));
   --color-system-error-text: hsl(var(--system-error-text) / 0.7);
   --color-system-success: hsl(var(--system-success));
   --color-system-success-surface: hsl(var(--system-success-surface));
   --color-system-success-h1a: hsl(var(--system-success-h1a));
-  --color-system-success-border: hsl(var(--system-success-border) / 0.5);
+  --color-system-success-border: hsl(var(--system-success-border));
   --color-system-success-text: hsl(var(--system-success-text) / 0.7);
   --color-system-info: hsl(var(--system-info));
   --color-system-info-surface: hsl(var(--system-info-surface));
   --color-system-info-h1a: hsl(var(--system-info-h1a));
-  --color-system-info-border: hsl(var(--system-info-border) / 0.5);
+  --color-system-info-border: hsl(var(--system-info-border));
   --color-system-info-text: hsl(var(--system-info-text) / 0.7);
   --color-system-alert: hsl(var(--system-alert));
   --color-system-alert-surface: hsl(var(--system-alert-surface));
   --color-system-alert-h1a: hsl(var(--system-alert-h1a));
-  --color-system-alert-border: hsl(var(--system-alert-border) / 0.5);
+  --color-system-alert-border: hsl(var(--system-alert-border));
   --color-system-alert-text: hsl(var(--system-alert-text) / 0.7);
 
   --radius-lg: var(--radius);
@@ -194,30 +194,30 @@
     /* Application tokens (from Figma ring-tokens) */
     --body-surface: 240 5% 96%; /* base/100 = #F4F4F5 */
     --body-text: 240 4% 46%; /* base/500 = #71717A */
-    --body-title: 240 6% 10%; /* base/700 = #18181B */
+    --body-title: 240 5% 26%; /* base/700 = #3F3F46 */
     --container-surface: 0 0% 100%; /* base/white = #FFFFFF */
-    --container-text: 240 4% 65%; /* base/400 = #A1A1AA */
-    --container-title: 240 4% 16%; /* base/600 = #27272A */
+    --container-text: 240 4% 46%; /* base/500 = #71717A */
+    --container-title: 240 5% 34%; /* base/600 = #52525B */
     --container-border: 0 0% 100%; /* #FFFFFF */
-    --link: 240 10% 4%; /* base/800 = #09090B */
+    --link: 240 4% 16%; /* base/800 = #27272A */
     --link-hover: 240 4% 16%; /* #27272A with 80% opacity via /80 */
     --link-mute: 240 4% 16%; /* #27272A with 40% opacity via /40 */
-    --button-primary-surface: 240 10% 4%; /* base/800 = #09090B */
+    --button-primary-surface: 240 4% 16%; /* base/800 = #27272A */
     --button-primary-text: 0 0% 100%; /* base/white */
 
     /* Shadcn semantic tokens (aligned with Figma) */
-    --background: 240 5% 96%; /* base/100 = #F4F4F5 */
-    --foreground: 240 6% 10%; /* base/700 = #18181B */
+    --background: 0 0% 100%; /* base/white = #FFFFFF */
+    --foreground: 240 5% 26%; /* base/700 = #3F3F46 */
     --card: 0 0% 100%; /* = container-surface (white) */
-    --card-foreground: 240 4% 65%; /* = container-text (base/400) */
+    --card-foreground: 240 4% 46%; /* = container-text (base/500) */
     --popover: 0 0% 100%; /* base/white */
-    --popover-foreground: 240 4% 16%; /* base/600 = #27272A */
-    --primary: 240 10% 4%; /* base/800 = #09090B */
+    --popover-foreground: 240 5% 34%; /* base/600 = #52525B */
+    --primary: 240 4% 16%; /* base/800 = #27272A */
     --primary-foreground: 0 0% 100%; /* base/white */
     --secondary: 0 0% 100%; /* base/white */
-    --secondary-foreground: 240 4% 16%; /* base/600 = #27272A */
+    --secondary-foreground: 240 5% 34%; /* base/600 = #52525B */
     --muted: 240 5% 90%; /* base/200 = #E4E4E7 */
-    --muted-foreground: 240 4% 16%; /* base/600 = #27272A */
+    --muted-foreground: 240 5% 34%; /* base/600 = #52525B */
     --accent: 56 99% 50%; /* #FEED02 (sunglow) */
     --accent-foreground: 240 10% 4%; /* base/800 for contrast on yellow */
     --destructive: 0 84% 60%; /* red/500 = #EF4444 */
@@ -231,26 +231,26 @@
     --accent-hover: 56 99% 50%; /* #FEED02 - opacity handled via /70 */
     --accent-mute: 56 99% 50%; /* #FEED02 - opacity handled via /50 */
 
-    /* System tokens (identical in light and dark per Figma) */
+    /* System tokens (light mode — dark overrides in .dark) */
     --system-error: 0 84% 60%; /* red/500 = #EF4444 */
     --system-error-surface: 0 86% 97%; /* red/50 = #FEF2F2 */
     --system-error-h1a: 0 74% 35%; /* red/800 = #991B1B */
-    --system-error-border: 0 84% 60%; /* #EF4444 - opacity via /50 */
+    --system-error-border: 0 84% 60% / 0.5; /* #EF4444 50% */
     --system-error-text: 0 74% 35%; /* #991B1B - opacity via /70 */
     --system-success: 142 76% 36%; /* green/600 = #16A34A */
     --system-success-surface: 139 76% 97%; /* green/50 = #F0FDF4 */
     --system-success-h1a: 143 64% 24%; /* green/800 = #166534 */
-    --system-success-border: 142 76% 36%; /* #16A34A - opacity via /50 */
+    --system-success-border: 142 76% 36% / 0.5; /* #16A34A 50% */
     --system-success-text: 143 64% 24%; /* #166534 - opacity via /70 */
     --system-info: 221 83% 53%; /* blue/600 = #2563EB */
     --system-info-surface: 214 100% 97%; /* blue/50 = #EFF6FF */
     --system-info-h1a: 224 76% 40%; /* blue/800 = #1E40AF */
-    --system-info-border: 221 83% 53%; /* #2563EB - opacity via /50 */
+    --system-info-border: 221 83% 53% / 0.5; /* #2563EB 50% */
     --system-info-text: 224 76% 40%; /* #1E40AF - opacity via /70 */
     --system-alert: 48 96% 47%; /* yellow/500 = #EAB308 */
     --system-alert-surface: 55 92% 95%; /* yellow/50 = #FEFCE8 */
     --system-alert-h1a: 36 92% 29%; /* yellow/800 = #854D0E */
-    --system-alert-border: 48 96% 47%; /* #EAB308 - opacity via /50 */
+    --system-alert-border: 48 96% 47% / 0.5; /* #EAB308 50% */
     --system-alert-text: 36 92% 29%; /* #854D0E - opacity via /70 */
 
     /* Shadow color token for dark mode adaptation */
@@ -258,29 +258,71 @@
   }
 
   .dark {
-    /* Application tokens that invert */
-    --body-surface: 240 10% 4%; /* base/800 = #09090B */
-    --body-text: 0 0% 100%; /* base/white */
-    --container-surface: 240 5% 26%; /* base/700 ≈ #3F3F46 (zinc-700) */
+    /* Custom — Layout */
+    --link-hover: 240 5% 96%; /* #F4F4F5 80% (opacity via /80) */
+    --link-mute: 240 5% 96%; /* #F4F4F5 40% (opacity via /40) */
+    --container-surface: 240 5% 26%; /* base/700 = #3F3F46 */
     --container-text: 240 5% 96%; /* base/100 = #F4F4F5 */
     --container-title: 0 0% 100%; /* base/white */
-    --container-border: var(--border); /* inherits --border (base/200) */
+    --body-surface: 240 4% 16%; /* base/800 = #27272A */
+    --body-text: 240 5% 84%; /* base/300 = #D4D4D8 */
+    --body-title: 0 0% 100%; /* base/white */
+    --link: 240 5% 96%; /* base/100 = #F4F4F5 */
+    --button-primary-surface: 240 5% 96%; /* base/100 = #F4F4F5 */
+    --button-primary-text: 240 4% 16%; /* base/800 = #27272A */
+    --container-border: var(--border); /* shadcn/--border */
 
-    /* Shadcn tokens that inherit inversion */
+    /* Shadcn — Core */
+    --background: 240 4% 16%; /* base/800 = #27272A */
+    --foreground: 240 5% 96%; /* base/100 = #F4F4F5 */
+    --muted: 240 5% 26%; /* base/700 = #3F3F46 */
+    --muted-foreground: 240 5% 65%; /* base/400 = #A1A1AA */
     --card: var(--container-surface);
     --card-foreground: var(--container-text);
+    --popover: 240 4% 16%; /* base/800 = #27272A */
+    --popover-foreground: 240 5% 96%; /* base/100 = #F4F4F5 */
+    --border: 240 5% 26%; /* base/700 = #3F3F46 */
+    --input: 240 4% 16%; /* base/800 = #27272A */
+    --primary: 240 5% 96%; /* base/100 = #F4F4F5 */
+    --primary-foreground: 240 4% 16%; /* base/800 = #27272A */
+    --secondary: 240 4% 16%; /* base/800 = #27272A */
+    --secondary-foreground: 240 5% 96%; /* base/100 = #F4F4F5 */
 
-    /* Accent - use sunglow/400 in dark (CONFIRMED by designer) */
-    --accent: 44 98% 57%; /* sunglow/400 = #FDCB28 */
-    --accent-hover: 44 98% 57%; /* #FDCB28 - opacity via /70 */
-    --accent-mute: 44 98% 57%; /* #FDCB28 - opacity via /50 */
+    /* Shadcn — Accent (Brand Lerian) */
+    --accent: 47 92% 51%; /* sunglow = #F5C211 */
+    --accent-hover: 46 98% 57%; /* sunglow/400 = #FDCB28 - opacity via /70 */
+    --accent-mute: 46 98% 57%; /* sunglow/400 = #FDCB28 - opacity via /50 */
+
+    /* Shadcn — System Error */
+    --system-error: 0 91% 71%; /* red/400 = #F87171 */
+    --system-error-surface: 0 75% 15%; /* red/950 = #450A0A */
+    --system-error-text: 0 94% 82%; /* red/300 = #FCA5A5 - opacity via /70 */
+    --system-error-h1a: 0 96% 89%; /* red/200 = #FECACA */
+    --system-error-border: 0 94% 82% / 0.3; /* #FCA5A5 30% */
+
+    /* Shadcn — System Success */
+    --system-success: 142 69% 58%; /* green/400 = #4ADE80 */
+    --system-success-surface: 145 80% 10%; /* green/950 = #052E16 */
+    --system-success-text: 142 77% 73%; /* green/300 = #86EFAC - opacity via /70 */
+    --system-success-h1a: 141 79% 85%; /* green/200 = #BBF7D0 */
+    --system-success-border: 142 69% 58% / 0.3; /* #4ADE80 30% */
+
+    /* Shadcn — System Info */
+    --system-info: 213 94% 68%; /* blue/400 = #60A5FA */
+    --system-info-surface: 226 57% 21%; /* blue/950 = #172554 */
+    --system-info-text: 212 96% 78%; /* blue/300 = #93C5FD - opacity via /70 */
+    --system-info-h1a: 213 97% 87%; /* blue/200 = #BFDBFE */
+    --system-info-border: 213 94% 68% / 0.3; /* #60A5FA 30% */
+
+    /* Shadcn — System Alert */
+    --system-alert: 48 96% 53%; /* yellow/400 = #FACC15 */
+    --system-alert-surface: 26 83% 14%; /* yellow/950 = #422006 */
+    --system-alert-text: 48 97% 77%; /* yellow/300 = #FDE68A - opacity via /70 */
+    --system-alert-h1a: 53 98% 77%; /* yellow/200 = #FEF08A */
+    --system-alert-border: 48 96% 53% / 0.3; /* #FACC15 30% */
 
     /* Shadow color for dark mode */
     --shadow-color: 0 0% 100%;
-
-    /* NOTE: --background, --foreground, --muted, --border, --primary, --popover,
-       --secondary, system-* tokens are IDENTICAL in light and dark per Figma.
-       They do NOT need overrides here. */
   }
 }
 
