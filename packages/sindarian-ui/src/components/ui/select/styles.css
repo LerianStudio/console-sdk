@@ -5,17 +5,17 @@
 
   --color-select-foreground: var(--color-foreground);
   --color-select-placeholder: var(--color-container-text);
-  --color-select-border: var(--color-border);
+  --color-select-border: var(--color-shadcn-400);
   --color-select-chevron: var(--color-container-text);
 }
 
 @layer components {
   .select-trigger {
-    @apply h-select-h px-select-px py-select-py text-select-foreground border-select-border data-placeholder:text-select-placeholder focus:outline-hidden focus-visible:outline-hidden flex w-full items-center justify-between rounded-md border text-sm font-medium focus:ring-2 focus:ring-offset-0;
+    @apply h-select-h px-select-px py-select-py text-select-foreground border-select-border data-placeholder:text-select-placeholder flex w-full items-center justify-between rounded-md border text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden;
   }
 
   .select-read-only {
-    @apply data-read-only:cursor-default data-read-only:select-text data-read-only:bg-muted data-read-only:opacity-50 data-read-only:pointer-events-none data-read-only:focus:outline-hidden data-read-only:focus:ring-0;
+    @apply data-read-only:bg-muted data-read-only:pointer-events-none data-read-only:cursor-default data-read-only:opacity-50 data-read-only:select-text data-read-only:focus:ring-0 data-read-only:focus:outline-hidden;
   }
 
   .select-disabled {
@@ -44,11 +44,11 @@
   }
 
   .select-label {
-    @apply py-1.5 pl-2 pr-8 text-sm font-semibold;
+    @apply py-1.5 pr-8 pl-2 text-sm font-semibold;
   }
 
   .select-item {
-    @apply focus:bg-accent focus:text-accent-foreground outline-hidden data-disabled:pointer-events-none data-disabled:opacity-50 relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm;
+    @apply focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50;
   }
 
   .select-separator {

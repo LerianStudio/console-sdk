@@ -109,7 +109,7 @@ function TableCell({
     <td
       data-slot="data-table-cell"
       className={cn(
-        'group/table-cell text-shadcn-600 px-6 py-4 align-middle text-sm font-normal [&:has([role=checkbox])]:pr-0',
+        'group/table-cell text-foreground px-6 py-4 align-middle text-sm font-normal [&:has([role=checkbox])]:pr-0',
         {
           'hover:underline': onClick
         },

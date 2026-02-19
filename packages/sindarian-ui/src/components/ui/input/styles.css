@@ -4,7 +4,7 @@
   --spacing-input-px: calc(var(--spacing) * 4);
   --color-input-foreground: var(--color-foreground);
   --color-input-placeholder: var(--color-container-text);
-  --color-input-border: var(--color-border);
+  --color-input-border: var(--color-shadcn-400);
 
   --color-input-adornment: var(--color-container-text);
   --spacing-input-adornment-size: calc(var(--spacing) * 10);
@@ -33,7 +33,7 @@
   }
 
   .input-read-only {
-    @apply read-only:focus:outline-hidden read-only:cursor-default read-only:select-text read-only:caret-transparent read-only:opacity-50 read-only:focus:ring-0 read-only:focus:ring-offset-0;
+    @apply read-only:cursor-default read-only:caret-transparent read-only:opacity-50 read-only:select-text read-only:focus:ring-0 read-only:focus:ring-offset-0 read-only:focus:outline-hidden;
   }
 
   .input-start {
@@ -45,7 +45,7 @@
   }
 
   .input-adornment {
-    @apply text-input-adornment size-input-adornment-size absolute -top-[0.5px] flex select-none items-center justify-center;
+    @apply text-input-adornment size-input-adornment-size absolute -top-[0.5px] flex items-center justify-center select-none;
   }
 
   .input-adornment > * {

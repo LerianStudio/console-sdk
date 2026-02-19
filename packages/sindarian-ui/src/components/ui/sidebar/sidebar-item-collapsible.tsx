@@ -46,7 +46,7 @@ export function SidebarItemCollapsible({
       data-slot="sidebar-item-collapsible"
       className={cn(
         {
-          'bg-shadcn-100 rounded-md': isCollapsed
+          'rounded-md': isCollapsed
         },
         className
       )}
