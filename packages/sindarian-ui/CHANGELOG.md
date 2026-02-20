@@ -1,3 +1,11 @@
+## [1.0.0-beta.36](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.35...sindarian-ui-v1.0.0-beta.36) (2026-02-20)
+
+
+### Features
+
+* **sindarian-ui:** add dark mode toggle to Storybook ([ca87f15](https://github.com/LerianStudio/console-sdk/commit/ca87f159a1f08a60b03b243c7bb6c19419f4e466))
+* **sindarian-ui:** add design token system and dark mode CSS vars ([87ea615](https://github.com/LerianStudio/console-sdk/commit/87ea6156c3b633dd0c1f81f5eba88d1beb29e9b2))
+
 ## [1.0.0-beta.35](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.34...sindarian-ui-v1.0.0-beta.35) (2026-02-12)
 
 
