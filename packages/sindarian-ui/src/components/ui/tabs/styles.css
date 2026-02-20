@@ -1,31 +1,31 @@
 @theme inline {
-    --color-tabs-trigger-text: var(--color-shadcn-400);
-    --color-tabs-trigger-hover: var(--color-white);
-    --color-tabs-trigger-text-hover: var(--color-shadcn-500);
-    --color-tabs-trigger-active: var(--color-accent);
-    --color-tabs-trigger-text-active: var(--color-zinc-700);
+  --color-tabs-trigger-text: var(--color-container-text);
+  --color-tabs-trigger-hover: var(--color-card);
+  --color-tabs-trigger-text-hover: var(--color-body-text);
+  --color-tabs-trigger-active: var(--color-accent);
+  --color-tabs-trigger-text-active: var(--color-primary-foreground);
 }
 
 @layer components {
-    .tabs {
-        @apply mt-6 w-full;
-    }
+  .tabs {
+    @apply mt-6 w-full;
+  }
 
-    .tabs-list {
-        @apply flex h-10 items-center justify-start gap-4 rounded-md p-1;
-    }
+  .tabs-list {
+    @apply flex h-10 items-center justify-start gap-4 rounded-md p-1;
+  }
 
-    .tabs-trigger {
-        @apply text-tabs-trigger-text hover:text-tabs-trigger-text-hover cursor-pointer inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium whitespace-nowrap ring-offset-white transition-all hover:bg-tabs-trigger-hover;
-        @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2;
-        @apply data-[state=active]:bg-tabs-trigger-active data-[state=active]:text-tabs-trigger-text-active;
-    }
+  .tabs-trigger {
+    @apply text-tabs-trigger-text hover:text-tabs-trigger-text-hover hover:bg-tabs-trigger-hover ring-offset-background inline-flex cursor-pointer items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all;
+    @apply focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none;
+    @apply data-[state=active]:bg-tabs-trigger-active data-[state=active]:text-tabs-trigger-text-active;
+  }
 
-    .tabs-trigger-disabled {
-        @apply disabled:pointer-events-none disabled:opacity-50;
-    }
+  .tabs-trigger-disabled {
+    @apply disabled:pointer-events-none disabled:opacity-50;
+  }
 
-    .tabs-content {
-        @apply mt-4 ring-offset-white focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 focus-visible:outline-hidden;
-    }
+  .tabs-content {
+    @apply ring-offset-background focus-visible:ring-ring mt-4 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden;
+  }
 }

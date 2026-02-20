@@ -93,7 +93,7 @@ export function PageHeaderInfoTitle({
       className="mb-12 flex flex-col gap-4"
     >
       <h1
-        className={cn('text-4xl font-bold text-[#3f3f46]', className)}
+        className={cn('text-foreground text-4xl font-bold', className)}
         data-testid="title"
       >
         {title}
@@ -156,7 +156,9 @@ export function PageHeaderCollapsibleInfoTrigger({
     <div data-slot="page-header-collapsible-info-trigger">
       <CollapsibleTrigger asChild>
         <Button variant="link" className="flex gap-2 pr-0">
-          <span className="text-sm font-medium text-[#3f3f46]">{question}</span>
+          <span className="text-foreground text-sm font-medium">
+            {question}
+          </span>
           <HelpCircle className="h-4 w-4" />
         </Button>
       </CollapsibleTrigger>
@@ -182,10 +184,10 @@ export function PageHeaderCollapsibleInfo({
       <CollapsibleContent>
         <div className="flex w-full justify-between pt-6">
           <div className="mt-12 flex flex-col gap-3">
-            <h1 className="text-xl font-bold text-[#3f3f46]">{question}</h1>
+            <h1 className="text-foreground text-xl font-bold">{question}</h1>
 
             <div className="flex items-start gap-6">
-              <p className="text-shadcn-500 max-w-2xl text-sm leading-relaxed font-medium">
+              <p className="text-shadcn-500 max-w-2xl text-sm font-medium leading-relaxed">
                 {answer}
               </p>
 

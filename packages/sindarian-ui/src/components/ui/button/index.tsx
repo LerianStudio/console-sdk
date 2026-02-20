@@ -9,7 +9,7 @@ const buttonVariants = cva('button-base button-disabled button-read-only', {
     variant: {
       plain: 'button-plain',
       hoverLink:
-        'hover:bg-accent text-black hover:text-accent-foreground font-normal',
+        'hover:bg-accent text-foreground hover:text-accent-foreground font-normal',
       default: 'button-primary',
       primary: 'button-primary',
       secondary: 'button-secondary',

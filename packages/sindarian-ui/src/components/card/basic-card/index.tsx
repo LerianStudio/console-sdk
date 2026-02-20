@@ -7,7 +7,7 @@ export function BasicCard({
 }: React.ComponentProps<'div'>) {
   return (
     <div
-      className={cn('flex flex-col rounded-lg bg-white p-6', className)}
+      className={cn('bg-card flex flex-col rounded-lg p-6', className)}
       {...props}
     />
   )
