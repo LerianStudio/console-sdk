@@ -22,7 +22,7 @@ export function DashboardCardIcon({
   return (
     <div
       className={cn(
-        'text-shadcn-400 absolute right-6 top-4 flex size-6 items-center justify-center [&>svg]:size-6',
+        'text-muted-foreground absolute right-6 top-4 flex size-6 items-center justify-center [&>svg]:size-6',
         className
       )}
       {...props}
