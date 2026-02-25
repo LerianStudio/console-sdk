@@ -275,13 +275,13 @@
     /* Shadcn — Core */
     --background: 240 4% 16%; /* base/800 = #27272A */
     --foreground: 240 5% 96%; /* base/100 = #F4F4F5 */
-    --muted: 240 5% 26%; /* base/700 = #3F3F46 */
+    --muted: 240 5% 34%; /* base/600 = #52525B */
     --muted-foreground: 240 5% 65%; /* base/400 = #A1A1AA */
     --card: var(--container-surface);
     --card-foreground: var(--container-text);
     --popover: 240 4% 16%; /* base/800 = #27272A */
     --popover-foreground: 240 5% 96%; /* base/100 = #F4F4F5 */
-    --border: 240 5% 26%; /* base/700 = #3F3F46 */
+    --border: 240 5% 34%; /* base/600 = #52525B */
     --input: 240 4% 16%; /* base/800 = #27272A */
     --primary: 240 5% 96%; /* base/100 = #F4F4F5 */
     --primary-foreground: 240 4% 16%; /* base/800 = #27272A */

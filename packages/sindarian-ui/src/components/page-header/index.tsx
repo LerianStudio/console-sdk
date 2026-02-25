@@ -187,7 +187,7 @@ export function PageHeaderCollapsibleInfo({
             <h1 className="text-foreground text-xl font-bold">{question}</h1>
 
             <div className="flex items-start gap-6">
-              <p className="text-shadcn-500 max-w-2xl text-sm font-medium leading-relaxed">
+              <p className="text-shadcn-500 max-w-2xl text-sm leading-relaxed font-medium">
                 {answer}
               </p>
 
@@ -196,7 +196,7 @@ export function PageHeaderCollapsibleInfo({
                   target="_blank"
                   rel="noopener noreferrer"
                   href={href}
-                  className="text-shadcn-600 whitespace-nowrap text-sm font-medium underline underline-offset-4"
+                  className="text-shadcn-600 dark:text-shadcn-400 text-sm font-medium whitespace-nowrap underline underline-offset-4"
                 >
                   {seeMore}
                 </a>
