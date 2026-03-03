@@ -29,7 +29,7 @@ function EntityBox({
     <div
       data-slot="entity-box"
       className={cn(
-        'shadow-entity-box mb-2 flex items-center justify-between rounded-lg bg-white p-6',
+        'shadow-entity-box bg-card mb-2 flex items-center justify-between rounded-lg p-6',
         className
       )}
       {...props}
@@ -43,7 +43,7 @@ function EntityBoxCollapsible({ className, ...props }: CollapsibleProps) {
   return (
     <Collapsible
       className={cn(
-        'shadow-entity-box mb-2 flex flex-col rounded-lg bg-white',
+        'shadow-entity-box bg-card mb-2 flex flex-col rounded-lg',
         className
       )}
       {...props}
@@ -95,7 +95,7 @@ function EntityBoxHeaderTitle({
       {...props}
     >
       <div className="flex items-center gap-[10px]">
-        <h1 className="text-lg font-medium text-zinc-600">{title}</h1>
+        <h1 className="text-muted-foreground text-lg font-medium">{title}</h1>
         {tooltip && (
           <TooltipProvider>
             <Tooltip>

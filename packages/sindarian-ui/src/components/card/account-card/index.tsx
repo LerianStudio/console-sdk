@@ -33,7 +33,7 @@ export function AccountBalanceCard({
       {...props}
     >
       <AccountBalanceCardContext.Provider value={{ open }}>
-        <Card className="relative gap-2 px-5 py-4 shadow-xs">{children}</Card>
+        <Card className="shadow-xs relative gap-2 px-5 py-4">{children}</Card>
       </AccountBalanceCardContext.Provider>
     </Collapsible>
   )
@@ -44,7 +44,7 @@ export function AccountBalanceCardIcon({ className, ...props }: LucideProps) {
     <User
       data-slot="account-balance-card-icon"
       strokeWidth={1}
-      className={cn('mb-[14px] size-8 text-zinc-800 opacity-40', className)}
+      className={cn('text-foreground mb-[14px] size-8 opacity-40', className)}
       {...props}
     />
   )
@@ -86,10 +86,10 @@ export function AccountBalanceCardDeleteButton({
       size="small"
       rounded
       data-slot="account-balance-card-delete-button"
-      className={cn('absolute top-3 right-3', className)}
+      className={cn('absolute right-3 top-3', className)}
       {...props}
     >
-      <Trash className="h-4 w-4 text-zinc-600" />
+      <Trash className="text-muted-foreground h-4 w-4" />
     </IconButton>
   )
 }
@@ -117,7 +117,7 @@ export function AccountBalanceCardLoading({
   return (
     <Skeleton
       data-slot="account-balance-card-loading"
-      className={cn('mt-3 h-3 w-full rounded-md bg-zinc-200', className)}
+      className={cn('bg-muted mt-3 h-3 w-full rounded-md', className)}
       {...props}
     />
   )

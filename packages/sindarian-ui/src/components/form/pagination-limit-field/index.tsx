@@ -17,7 +17,7 @@ export const PaginationLimitField = ({
 }: PaginationLimitFieldProps) => {
   return (
     <div className="flex items-center gap-4">
-      <p className="text-sm font-medium whitespace-nowrap text-gray-600">
+      <p className="text-muted-foreground whitespace-nowrap text-sm font-medium">
         {label}
       </p>
       <SelectField name="limit" control={control} data-testid={dataTestId}>

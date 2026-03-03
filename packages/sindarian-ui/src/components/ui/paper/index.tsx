@@ -7,7 +7,7 @@ export function Paper({ className, ...others }: PaperProps) {
   return (
     <div
       data-slot="paper"
-      className={cn('rounded-lg bg-white shadow-lg', className)}
+      className={cn('bg-card rounded-lg shadow-lg', className)}
       {...others}
     />
   )

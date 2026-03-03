@@ -85,7 +85,7 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="data-[state=open]:bg-secondary absolute top-7 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden disabled:pointer-events-none">
+        <SheetPrimitive.Close className="data-[state=open]:bg-secondary focus:outline-hidden absolute right-4 top-7 rounded-sm opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none">
           <X className="h-6 w-6" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
@@ -127,7 +127,10 @@ function SheetTitle({
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn('mb-2 flex text-xl font-bold text-[#52525b]', className)}
+      className={cn(
+        'text-muted-foreground mb-2 flex text-xl font-bold',
+        className
+      )}
       {...props}
     />
   )

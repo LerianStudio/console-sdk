@@ -46,7 +46,7 @@ export function SidebarItemCollapsible({
       data-slot="sidebar-item-collapsible"
       className={cn(
         {
-          'bg-shadcn-100 rounded-md': isCollapsed
+          'rounded-md': isCollapsed
         },
         className
       )}
@@ -94,7 +94,7 @@ export function SidebarItemCollapsibleTrigger({
       {!isCollapsed && (
         <>
           <SidebarItemButton title={title} icon={icon} href={''} inactive />
-          <ChevronRight className="mr-1 size-6 shrink-0 cursor-pointer text-zinc-900 transition-transform duration-200" />
+          <ChevronRight className="text-foreground mr-1 size-6 shrink-0 cursor-pointer transition-transform duration-200" />
         </>
       )}
     </CollapsibleTrigger>
