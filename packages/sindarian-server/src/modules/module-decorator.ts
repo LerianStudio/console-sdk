@@ -15,6 +15,22 @@ import { Logger } from '@/logger/logger'
 import { PipeHandler } from '@/pipes/decorators/use-pipes'
 import { RouteMetadata } from '@/controllers/decorators/route-decorator'
 import { FilterHandler } from '@/exceptions/decorators/use-filters-decorator'
+import { APP_FILTER } from '@/services/filters'
+import { APP_GUARD } from '@/services/guards'
+import { APP_INTERCEPTOR } from '@/services/interceptor'
+import { APP_PIPE } from '@/services/pipes'
+
+/**
+ * Tokens that support multiple bindings (accumulated via getAllAsync).
+ * These are NOT overridden when re-provided - they accumulate like NestJS.
+ * All other tokens follow "last provider wins" override semantics.
+ */
+const MULTI_PROVIDER_TOKENS: Set<symbol> = new Set([
+  APP_FILTER,
+  APP_GUARD,
+  APP_INTERCEPTOR,
+  APP_PIPE
+])
 
 // Type for injection tokens - can be symbols, strings, or abstract classes
 export type InjectionToken<T = any> = symbol | string | Constructor<T>
@@ -138,7 +154,10 @@ function registerProvider(container: Container, provider: Provider) {
   if (typeof provider === 'object') {
     registerProviderObject(container, provider)
   } else {
-    // If not, it's a simple class type
+    // Simple class type - override if already bound (NestJS-style "last wins")
+    if (container.isBound(provider)) {
+      container.unbind(provider)
+    }
     container.bind(provider).to(provider)
   }
 }
@@ -156,6 +175,15 @@ function registerProviderObject(container: Container, provider: Provider) {
   }
 
   const { provide, useClass, useValue, useFactory, scope } = provider
+
+  // Multi-provider tokens (APP_FILTER, APP_GUARD, etc.) accumulate bindings.
+  // All other tokens follow "last provider wins" - override if already bound.
+  const isMultiProvider =
+    typeof provide === 'symbol' && MULTI_PROVIDER_TOKENS.has(provide)
+
+  if (!isMultiProvider && container.isBound(provide)) {
+    container.unbind(provide)
+  }
 
   const bind = container.bind(provide)
 
