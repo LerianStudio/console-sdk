@@ -1,3 +1,30 @@
+## [1.0.0-beta.26](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.25...sindarian-server-v1.0.0-beta.26) (2026-03-03)
+
+
+### Features
+
+* Added bind overwrite for simple classes ([27f8eb6](https://github.com/LerianStudio/console-sdk/commit/27f8eb604c2e2cb9d5f8ddfce60e2cbb1161e77b))
+* Added onChange to SelectField ([69e8866](https://github.com/LerianStudio/console-sdk/commit/69e8866d893ce99bdb1298845d9b53b87a2ba0a4))
+* Added PasswordField to exports ([7d0a5ba](https://github.com/LerianStudio/console-sdk/commit/7d0a5bab0f9f18aff0e58cd47460e5bcc5c4fa28))
+* **date-picker-field:** add valueAsString prop for string date handling ([a5a2c63](https://github.com/LerianStudio/console-sdk/commit/a5a2c63197967502dd603e2b01f26d2cfec8fc49))
+* Fixed StateField styles ([1fb78c4](https://github.com/LerianStudio/console-sdk/commit/1fb78c4793ea72915693004afdf7c30f61b23eed))
+* Implemented DatePicker and DateRange fields ([dedc04d](https://github.com/LerianStudio/console-sdk/commit/dedc04d4cb240c8bc9979097a1b8a89da9526167))
+* **page-header:** add context for open state and improve layout ([dfd7a1b](https://github.com/LerianStudio/console-sdk/commit/dfd7a1b5eec4ac5f714d97c765de5a16c03b1f1d))
+* **sindarian-ui:** add dark mode toggle to Storybook ([ca87f15](https://github.com/LerianStudio/console-sdk/commit/ca87f159a1f08a60b03b243c7bb6c19419f4e466))
+* **sindarian-ui:** add design token system and dark mode CSS vars ([87ea615](https://github.com/LerianStudio/console-sdk/commit/87ea6156c3b633dd0c1f81f5eba88d1beb29e9b2))
+* Small fixes to Sheet styling ([1b15539](https://github.com/LerianStudio/console-sdk/commit/1b1553974a3d26d1d88d63030b8637e46ebe9ae7))
+* Updated dependencies ([57b55ac](https://github.com/LerianStudio/console-sdk/commit/57b55ac1a09197469c92ad09d586ad5714f1a913))
+
+
+### Bug Fixes
+
+* **date-picker-field:** add validation for invalid date parsing ([72026a9](https://github.com/LerianStudio/console-sdk/commit/72026a91a345c4662f580d6d005a7a556f81400e))
+* Jest new version issues with node 22 ([41f2467](https://github.com/LerianStudio/console-sdk/commit/41f246758c3298fa8f22faf9d1646d6e2cb5f526))
+* **page-header:** add max-width constraint to description in collapsible info ([4e802b8](https://github.com/LerianStudio/console-sdk/commit/4e802b835910cab391a60edd8137df48b9b716f5))
+* **sindarian-ui:** correct ref type in CommandList ([c4a5207](https://github.com/LerianStudio/console-sdk/commit/c4a5207cd74a4cea957d2f5dd3b5ae491a933d91))
+* **sindarian-ui:** correct ref type in CommandList ([36ef7e1](https://github.com/LerianStudio/console-sdk/commit/36ef7e1c83612e1354b8bc4184fef9d7801c58aa))
+* **sindarian-ui:** prevent scroll propagation in CommandList ([152443a](https://github.com/LerianStudio/console-sdk/commit/152443a197c3950ecd4d373811fd55014ca18c3d))
+
 ## [1.0.0-beta.25](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.24...sindarian-server-v1.0.0-beta.25) (2026-01-06)
 
 
