@@ -1,3 +1,15 @@
+## [1.0.0-beta.38](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.37...sindarian-ui-v1.0.0-beta.38) (2026-03-04)
+
+
+### Features
+
+* Added bind overwrite for simple classes ([27f8eb6](https://github.com/LerianStudio/console-sdk/commit/27f8eb604c2e2cb9d5f8ddfce60e2cbb1161e77b))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** improve active tab trigger text contrast in light mode ([20c51b2](https://github.com/LerianStudio/console-sdk/commit/20c51b2e965b6ab6cfe824350766ae51aafcfac7))
+
 ## [1.0.0-beta.37](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.36...sindarian-ui-v1.0.0-beta.37) (2026-02-25)
 
 ## [1.0.0-beta.36](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.35...sindarian-ui-v1.0.0-beta.36) (2026-02-20)
