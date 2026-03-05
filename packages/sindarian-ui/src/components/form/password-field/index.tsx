@@ -60,6 +60,7 @@ export function PasswordField<
               endAdornment={
                 <InputAdornment position="end">
                   <IconButton
+                    type="button"
                     variant="outline"
                     rounded
                     onClick={() => setShow(!show)}
