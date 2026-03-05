@@ -1,3 +1,10 @@
+## [1.0.0-beta.39](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.38...sindarian-ui-v1.0.0-beta.39) (2026-03-05)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** improve multiple-select robustness and password field form behavior ([50b914b](https://github.com/LerianStudio/console-sdk/commit/50b914b37c1e49e3828a9a2f6283fe754e50797c))
+
 ## [1.0.0-beta.38](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.37...sindarian-ui-v1.0.0-beta.38) (2026-03-04)
 
 
