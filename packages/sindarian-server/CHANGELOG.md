@@ -1,3 +1,12 @@
+## [1.0.0-beta.27](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.26...sindarian-server-v1.0.0-beta.27) (2026-03-09)
+
+
+### Bug Fixes
+
+* Bug when empty response breaks on Patch operations. ([9179bcf](https://github.com/LerianStudio/console-sdk/commit/9179bcfeae735774d8a52724c811ad88ced8cacf))
+* **sindarian-ui:** improve active tab trigger text contrast in light mode ([20c51b2](https://github.com/LerianStudio/console-sdk/commit/20c51b2e965b6ab6cfe824350766ae51aafcfac7))
+* **sindarian-ui:** improve multiple-select robustness and password field form behavior ([50b914b](https://github.com/LerianStudio/console-sdk/commit/50b914b37c1e49e3828a9a2f6283fe754e50797c))
+
 ## [1.0.0-beta.26](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.25...sindarian-server-v1.0.0-beta.26) (2026-03-03)
 
 
