@@ -76,7 +76,7 @@ export function Route(method: HttpMethods, path: string): MethodDecorator {
         return response
       }
 
-      if (method === HttpMethods.DELETE && response == null) {
+      if (response == null) {
         return new NextResponse(null, { status: 204 })
       }
 

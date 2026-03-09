@@ -69,26 +69,20 @@ export class InterceptorHandler {
       return await action()
     }
 
-    let i = 0
-
-    const next: CallHandler = {
+    const createNext = (i: number): CallHandler => ({
       handle: async () => {
         if (i >= middlewares.length) {
           return await action()
         }
 
-        const layer = middlewares[i++]
-
-        try {
-          return await layer.intercept(executionContext, next)
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (error: any) {
-          return await next.handle()
-        }
+        return await middlewares[i].intercept(
+          executionContext,
+          createNext(i + 1)
+        )
       }
-    }
+    })
 
-    return await next.handle()
+    return await createNext(0).handle()
   }
 }
 

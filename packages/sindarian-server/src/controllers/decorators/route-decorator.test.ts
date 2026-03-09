@@ -510,12 +510,9 @@ describe('Route Decorator', () => {
       expect(result).toBe(wrappedResponse)
     })
 
-    it('should not return 204 for non-DELETE methods with null response', async () => {
+    it('should return 204 for non-DELETE methods with null response', async () => {
       const originalMethod = jest.fn().mockResolvedValue(null)
       const descriptor = { value: originalMethod }
-      const wrappedResponse = new MockedNextResponse()
-
-      MockedNextResponse.json.mockReturnValue(wrappedResponse)
 
       const decorator = Route(HttpMethods.POST, '/resource')
       decorator(TestController.prototype, 'postMethod', descriptor)
@@ -523,8 +520,9 @@ describe('Route Decorator', () => {
       const result = await descriptor.value()
 
       expect(originalMethod).toHaveBeenCalled()
-      // POST with null should still wrap in JSON, not return 204
-      expect(MockedNextResponse.json).toHaveBeenCalledWith(null)
+      // Any method returning null/undefined should get 204 No Content
+      expect(MockedNextResponse).toHaveBeenCalledWith(null, { status: 204 })
+      expect(MockedNextResponse.json).not.toHaveBeenCalled()
     })
   })
 })
