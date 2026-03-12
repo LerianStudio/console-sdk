@@ -1,3 +1,15 @@
+## [1.0.0-beta.40](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.39...sindarian-ui-v1.0.0-beta.40) (2026-03-12)
+
+
+### Features
+
+* **sindarian-ui:** add scrollbar-thin-translucent Tailwind utility ([c5a6935](https://github.com/LerianStudio/console-sdk/commit/c5a6935970c8b8b977a1e7ae118abe5ed5f59134))
+
+
+### Bug Fixes
+
+* Bug when empty response breaks on Patch operations. ([9179bcf](https://github.com/LerianStudio/console-sdk/commit/9179bcfeae735774d8a52724c811ad88ced8cacf))
+
 ## [1.0.0-beta.39](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.38...sindarian-ui-v1.0.0-beta.39) (2026-03-05)
 
 
