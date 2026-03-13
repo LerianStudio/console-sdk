@@ -1,3 +1,10 @@
+## [1.0.0-beta.41](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.40...sindarian-ui-v1.0.0-beta.41) (2026-03-13)
+
+
+### Features
+
+* **sindarian-ui:** apply scrollbar-thin-translucent to page content and sidebar ([fce5995](https://github.com/LerianStudio/console-sdk/commit/fce5995ec59bc5a8c5a9a0236db546b558b8873b))
+
 ## [1.0.0-beta.40](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.39...sindarian-ui-v1.0.0-beta.40) (2026-03-12)
 
 
