@@ -30,7 +30,7 @@ export function PageContent({
   return (
     <div
       data-slot="page-content"
-      className={cn('flex grow flex-col overflow-y-auto p-16 scrollbar-thin-translucent', className)}
+      className={cn('flex grow flex-col overflow-y-auto p-16', className)}
       {...props}
     />
   )
