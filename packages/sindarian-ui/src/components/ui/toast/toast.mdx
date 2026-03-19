@@ -6,24 +6,26 @@ import * as Story from './toast.stories'
 # Toast
 
 A succinct message that is displayed temporarily. \
-[Docs](https://www.radix-ui.com/primitives/docs/components/toast)
+Powered by [Sonner](https://sonner.emilkowal.dev/).
 
 <Canvas of={Story.Default} />
 
-### Default
-
-<Canvas of={Story.DefaultToast} />
-
-### With Action
-
-<Canvas of={Story.DefaultToastWithAction} />
-
 ### Success
 
-<Canvas of={Story.SuccessToast} />
+<Canvas of={Story.Success} />
 
 ### Destructive
 
-<Canvas of={Story.DestructiveToast} />
+<Canvas of={Story.Destructive} />
+
+### Description Only
+
+<Canvas of={Story.DescriptionOnly} />
+
+### Queue Behavior
+
+Only 3 toasts are visible at a time. Hover to expand.
+
+<Canvas of={Story.QueueBehavior} />
 
 <Controls />

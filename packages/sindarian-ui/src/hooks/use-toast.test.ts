@@ -1,94 +1,115 @@
 import { renderHook, act } from '@testing-library/react'
-import { useToast } from './use-toast'
+import { toast as sonnerToast } from 'sonner'
+import { useToast, toast } from './use-toast'
+
+jest.mock('sonner', () => {
+  let idCounter = 0
+  const dismiss = jest.fn()
+
+  const mockToast: jest.Mock & {
+    success: jest.Mock
+    error: jest.Mock
+    dismiss: jest.Mock
+  } = Object.assign(
+    jest.fn(() => ++idCounter),
+    {
+      success: jest.fn(() => ++idCounter),
+      error: jest.fn(() => ++idCounter),
+      dismiss
+    }
+  )
+
+  return { toast: mockToast }
+})
 
 describe('useToast', () => {
-  beforeAll(() => {
-    jest.useFakeTimers()
+  beforeEach(() => {
+    jest.clearAllMocks()
   })
 
-  afterAll(() => {
-    jest.useRealTimers()
-  })
-
-  it('should add a toast', () => {
+  it('should return toast and dismiss functions', () => {
     const { result } = renderHook(() => useToast())
 
-    act(() => {
-      result.current.toast({
-        title: 'Test Toast',
-        description: 'This is a test'
-      })
-    })
+    expect(result.current.toast).toBe(toast)
+    expect(typeof result.current.dismiss).toBe('function')
+    expect(result.current.toasts).toEqual([])
+  })
 
-    expect(result.current.toasts).toHaveLength(1)
-    expect(result.current.toasts[0]).toMatchObject({
+  it('should call sonner toast for default variant', () => {
+    const result = toast({
       title: 'Test Toast',
+      description: 'This is a test'
+    })
+
+    expect(sonnerToast).toHaveBeenCalledWith('Test Toast', {
       description: 'This is a test',
-      open: true
+      duration: 5000
+    })
+    expect(result.id).toBeDefined()
+    expect(typeof result.dismiss).toBe('function')
+    expect(typeof result.update).toBe('function')
+  })
+
+  it('should call sonner toast.success for success variant', () => {
+    toast({
+      title: 'Success!',
+      description: 'Operation completed',
+      variant: 'success'
+    })
+
+    expect(sonnerToast.success).toHaveBeenCalledWith('Success!', {
+      description: 'Operation completed',
+      duration: 5000
     })
   })
 
-  it('should dismiss a toast', () => {
-    const { result } = renderHook(() => useToast())
-
-    let toastId: string
-    act(() => {
-      const newToast = result.current.toast({ title: 'Dismiss Test' })
-      toastId = newToast.id
+  it('should call sonner toast.error with Infinity duration for destructive variant', () => {
+    toast({
+      title: 'Error',
+      description: 'Something went wrong',
+      variant: 'destructive'
     })
 
-    act(() => {
-      result.current.dismiss(toastId)
+    expect(sonnerToast.error).toHaveBeenCalledWith('Error', {
+      description: 'Something went wrong',
+      duration: Infinity
     })
-
-    expect(result.current.toasts[0].open).toBe(false)
   })
 
-  it('should update a toast', () => {
-    const { result } = renderHook(() => useToast())
+  it('should handle toast with no title (description only)', () => {
+    toast({ description: 'Copied to clipboard' })
 
-    let toastId: string
-    act(() => {
-      const newToast = result.current.toast({ title: 'Update Test' })
-      toastId = newToast.id
+    expect(sonnerToast).toHaveBeenCalledWith('', {
+      description: 'Copied to clipboard',
+      duration: 5000
     })
-
-    act(() => {
-      result.current.toast({ id: toastId, title: 'Updated Title' } as any)
-    })
-
-    expect(result.current.toasts[0].title).toBe('Updated Title')
   })
 
-  it('should remove a toast after dismissing', () => {
-    const { result } = renderHook(() => useToast())
+  it('should dismiss a specific toast by id', () => {
+    const result = toast({ title: 'Dismiss me' })
 
-    let toastId: string
-    act(() => {
-      const newToast = result.current.toast({ title: 'Remove Test' })
-      toastId = newToast.id
-    })
+    result.dismiss()
 
-    act(() => {
-      result.current.dismiss(toastId)
-    })
-
-    act(() => {
-      jest.advanceTimersByTime(1000001) // Simulate TOAST_REMOVE_DELAY
-    })
-
-    expect(result.current.toasts).toHaveLength(0)
+    expect(sonnerToast.dismiss).toHaveBeenCalled()
   })
 
-  it('should limit the number of toasts to TOAST_LIMIT', () => {
+  it('should dismiss all toasts when no id is provided', () => {
     const { result } = renderHook(() => useToast())
 
     act(() => {
-      result.current.toast({ title: 'Toast 1' })
-      result.current.toast({ title: 'Toast 2' })
+      result.current.dismiss()
     })
 
-    expect(result.current.toasts).toHaveLength(1) // TOAST_LIMIT is 1
-    expect(result.current.toasts[0].title).toBe('Toast 2') // Only the latest toast is kept
+    expect(sonnerToast.dismiss).toHaveBeenCalledWith()
+  })
+
+  it('should dismiss a specific toast via useToast.dismiss', () => {
+    const { result } = renderHook(() => useToast())
+
+    act(() => {
+      result.current.dismiss('some-id')
+    })
+
+    expect(sonnerToast.dismiss).toHaveBeenCalledWith('some-id')
   })
 })
