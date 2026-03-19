@@ -18,6 +18,7 @@ import { FilterHandler } from '@/exceptions/decorators/use-filters-decorator'
 import { APP_FILTER } from '@/services/filters'
 import { APP_GUARD } from '@/services/guards'
 import { APP_INTERCEPTOR } from '@/services/interceptor'
+import { APP_MIDDLEWARE } from '@/services/middleware'
 import { APP_PIPE } from '@/services/pipes'
 
 /**
@@ -29,6 +30,7 @@ const MULTI_PROVIDER_TOKENS: Set<symbol> = new Set([
   APP_FILTER,
   APP_GUARD,
   APP_INTERCEPTOR,
+  APP_MIDDLEWARE,
   APP_PIPE
 ])
 

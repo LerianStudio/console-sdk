@@ -28,6 +28,9 @@ import { PipeHandler } from '@/pipes/decorators/use-pipes'
 import { RouteHandler } from '@/controllers/decorators/route-decorator'
 import { sortRoutesBySpecificity } from '@/utils/routes/route-specificity'
 import { GetOptions, OptionalGetOptions } from 'inversify'
+import { Middleware } from '@/middleware/middleware'
+import { MiddlewareHandler } from '@/middleware/middleware-handler'
+import { APP_MIDDLEWARE } from '@/services/middleware'
 
 export type ServerFactoryOptions = {
   logger?: LoggerService | boolean
@@ -39,6 +42,7 @@ export class ServerFactory {
   private globalGuards: CanActivate[] = []
   private globalInterceptors: Interceptor[] = []
   private globalPipes: PipeTransform[] = []
+  private globalMiddlewares: Middleware[] = []
 
   private readonly module: Class
   private readonly container: Container
@@ -92,6 +96,10 @@ export class ServerFactory {
     this.globalPipes.push(...pipes)
   }
 
+  public useGlobalMiddleware(...middlewares: Middleware[]) {
+    this.globalMiddlewares.push(...middlewares)
+  }
+
   /**
    * Get a service synchronously
    * @param service - The service to get
@@ -122,6 +130,23 @@ export class ServerFactory {
     request: NextRequest,
     { params }: { params: Promise<any> }
   ) {
+    // Resolve middleware chain: explicit globals + APP_MIDDLEWARE container bindings
+    const middlewares = await this._fetchMiddlewares()
+
+    return MiddlewareHandler.execute(
+      request,
+      middlewares,
+      () => this._handleRequest(request, params)
+    )
+  }
+
+  /**
+   * Core request handling pipeline: guards -> interceptors -> handler -> exception filters
+   */
+  private async _handleRequest(
+    request: NextRequest,
+    params: Promise<any>
+  ): Promise<Response> {
     const host = new ArgumentsHost([request])
     let controller: BaseController | undefined
 
@@ -363,6 +388,26 @@ export class ServerFactory {
     }
 
     return filters.reverse()
+  }
+
+  /**
+   * Fetch all middleware: explicit globals + APP_MIDDLEWARE container bindings
+   * Execution order: first registered = outermost
+   */
+  private async _fetchMiddlewares(): Promise<Middleware[]> {
+    const middlewares = [...this.globalMiddlewares]
+
+    try {
+      const appMiddlewares =
+        await this.container.getAllAsync<Middleware>(APP_MIDDLEWARE)
+      if (appMiddlewares.length > 0) {
+        middlewares.push(...appMiddlewares)
+      }
+    } catch {
+      // No bindings found - continue without APP_MIDDLEWARE providers
+    }
+
+    return middlewares
   }
 
   /**

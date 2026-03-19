@@ -1,4 +1,5 @@
 export const INJECTABLE_KEY = Symbol('injectable')
+export const CLASS_NAME_KEY = Symbol('class_name')
 
 export const MODULE_KEY = Symbol('module')
 export const CONTROLLER_KEY = Symbol('controller')
