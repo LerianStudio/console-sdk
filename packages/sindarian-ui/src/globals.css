@@ -10,8 +10,6 @@
 @import './components/ui/stepper/styles.css';
 @import './components/ui/tabs/styles.css';
 @import './components/ui/dialog/styles.css';
-@import './utilities.css';
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -413,6 +411,43 @@
   box-shadow:
     0 10px 15px -3px rgba(0, 0, 0, 0.3),
     0 4px 6px -4px rgba(0, 0, 0, 0.2);
+}
+
+/* Autofill — remove browser default blue/white background */
+@layer base {
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-background) inset !important;
+    -webkit-text-fill-color: var(--color-foreground) !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+}
+
+/* Scrollbar — thin translucent thumb for scrollable layout containers */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-shadcn-300) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-shadcn-300);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-shadcn-400);
+  }
 }
 
 .ticket {

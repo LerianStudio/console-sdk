@@ -3,7 +3,7 @@
   --spacing-input-wrapper-p: calc(var(--spacing) * 2);
   --spacing-input-px: calc(var(--spacing) * 4);
   --color-input-foreground: var(--color-foreground);
-  --color-input-placeholder: var(--color-container-text);
+  --color-input-placeholder: var(--color-muted-foreground);
   --color-input-border: var(--color-shadcn-400);
 
   --color-input-adornment: var(--color-container-text);
