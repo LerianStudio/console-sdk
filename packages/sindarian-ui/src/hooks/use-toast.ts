@@ -4,7 +4,7 @@ import { toast as sonnerToast } from 'sonner'
 
 import type { ToastActionElement } from '@/components/ui/toast'
 
-const DEFAULT_DURATION = 5000
+const DEFAULT_DURATION = 10000
 const DESTRUCTIVE_DURATION = Infinity
 
 type ToastVariant = 'default' | 'success' | 'destructive'

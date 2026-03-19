@@ -43,7 +43,7 @@ describe('useToast', () => {
 
     expect(sonnerToast).toHaveBeenCalledWith('Test Toast', {
       description: 'This is a test',
-      duration: 5000
+      duration: 10000
     })
     expect(result.id).toBeDefined()
     expect(typeof result.dismiss).toBe('function')
@@ -59,7 +59,7 @@ describe('useToast', () => {
 
     expect(sonnerToast.success).toHaveBeenCalledWith('Success!', {
       description: 'Operation completed',
-      duration: 5000
+      duration: 10000
     })
   })
 
@@ -81,7 +81,7 @@ describe('useToast', () => {
 
     expect(sonnerToast).toHaveBeenCalledWith('', {
       description: 'Copied to clipboard',
-      duration: 5000
+      duration: 10000
     })
   })
 
