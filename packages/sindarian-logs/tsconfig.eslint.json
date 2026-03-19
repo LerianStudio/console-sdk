@@ -1,0 +1,30 @@
+{
+  "extends": "../utils/tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "isolatedModules": true,
+    "types": ["jest", "node", "reflect-metadata"],
+    "noEmit": true,
+    "allowJs": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "test/**/*.ts",
+    "test/**/*.tsx",
+    "setupJest.ts"
+  ]
+}
