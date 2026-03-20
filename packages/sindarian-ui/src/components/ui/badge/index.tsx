@@ -15,9 +15,16 @@ const badgeVariants = cva(
           'bg-system-success-surface text-system-success-h1a border-none py-[2px] px-3',
         inactive: 'bg-muted text-foreground border-none py-[2px] px-3',
         secondary:
-          'border-transparent bg-muted text-foreground hover:bg-muted/80',
+          'border-transparent bg-muted-foreground text-white dark:text-black',
         destructive:
           'border-transparent bg-red-500 text-primary-foreground hover:bg-red-500/80',
+        error:
+          'border-system-error-border bg-system-error-surface text-system-error-text px-[10px] py-1',
+        success:
+          'border-system-success-border bg-system-success-surface text-system-success-text px-[10px] py-1',
+        info: 'border-system-info-border bg-system-info-surface text-system-info-text px-[10px] py-1',
+        alert:
+          'border-system-alert-border bg-system-alert-surface text-system-alert-text px-[10px] py-1',
         outline: 'text-foreground'
       }
     },
