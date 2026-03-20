@@ -10,7 +10,7 @@ const DESTRUCTIVE_DURATION = Infinity
 type ToastVariant = 'default' | 'success' | 'destructive'
 
 type ToasterToast = {
-  id: string
+  id: string | number
   title?: React.ReactNode
   description?: React.ReactNode
   variant?: ToastVariant
@@ -43,10 +43,8 @@ function toast({ title, description, variant, ...rest }: Toast) {
       break
   }
 
-  const toastId = String(id)
-
   return {
-    id: toastId,
+    id,
     dismiss: () => sonnerToast.dismiss(id),
     update: (props: Partial<ToasterToast>) => {
       sonnerToast(props.title ?? message, {
@@ -69,8 +67,8 @@ function toast({ title, description, variant, ...rest }: Toast) {
 function useToast() {
   return {
     toast,
-    dismiss: (toastId?: string) => {
-      if (toastId) {
+    dismiss: (toastId?: string | number) => {
+      if (toastId !== undefined) {
         sonnerToast.dismiss(toastId)
       } else {
         sonnerToast.dismiss()
