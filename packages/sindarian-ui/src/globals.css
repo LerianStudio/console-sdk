@@ -403,8 +403,8 @@
 [data-sonner-toast][data-type='success'] [data-close-button]:hover,
 [data-sonner-toast][data-type='error'] [data-close-button]:hover {
   color: #ffffff !important;
-  background-color: rgba(0, 0, 0, 0.2) !important;
-  border-color: rgba(0, 0, 0, 0.2) !important;
+  background-color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--foreground)) !important;
 }
 
 [data-sonner-toast][data-type='warning'] [data-close-button] {
