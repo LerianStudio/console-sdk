@@ -14,6 +14,22 @@
 * **toast:** improve close button styles and align ID type with Sonner ([2081067](https://github.com/LerianStudio/console-sdk/commit/208106703f595a046ae717db27fd85411fada41e))
 * **toast:** use theme foreground color for close button hover state ([9cf50ca](https://github.com/LerianStudio/console-sdk/commit/9cf50ca6ceb23136798cf94580279b1deec28183))
 
+## [1.0.0-beta.42](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.41...sindarian-ui-v1.0.0-beta.42) (2026-03-24)
+
+
+### Features
+
+* **badge:** add semantic status variants (error, success, info, alert) ([82dd7c6](https://github.com/LerianStudio/console-sdk/commit/82dd7c683439c6a1f9495c4e6740b735311a26b9))
+* **toast:** migrate from Radix Toast to Sonner ([915ec12](https://github.com/LerianStudio/console-sdk/commit/915ec123b9e33facca5dd56f8f9af95624eb5e1a))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** fix dark mode input styles, autofill and scrollbar ([992a431](https://github.com/LerianStudio/console-sdk/commit/992a4312c22827b197e0c9f3131b1930aac69e8d))
+* **toast:** align default duration with Toaster component (10s) ([6088597](https://github.com/LerianStudio/console-sdk/commit/60885972f3c682f9bfe5684b8b5933e129a669fb))
+* **toast:** improve close button styles and align ID type with Sonner ([2081067](https://github.com/LerianStudio/console-sdk/commit/208106703f595a046ae717db27fd85411fada41e))
+* **toast:** use theme foreground color for close button hover state ([9cf50ca](https://github.com/LerianStudio/console-sdk/commit/9cf50ca6ceb23136798cf94580279b1deec28183))
+
 ## [1.0.0-beta.41](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.40...sindarian-ui-v1.0.0-beta.41) (2026-03-13)
 
 
