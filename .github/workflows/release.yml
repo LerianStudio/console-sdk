@@ -260,35 +260,20 @@ jobs:
           GIT_COMMITTER_NAME: ${{ secrets.LERIAN_CI_CD_USER_NAME }}
           GIT_COMMITTER_EMAIL: ${{ secrets.LERIAN_CI_CD_USER_EMAIL }}
 
-  # AI-powered changelog generation (per-package, same as original)
+  # AI-powered changelog generation using shared workflow
   generate-changelog:
-    name: Generate Changelog ${{ matrix.name }}
-    runs-on: ubuntu-latest
+    name: Generate Changelog
     needs: [get-changed-paths, release]
     if: needs.get-changed-paths.outputs.matrix != '[]'
-    strategy:
-      matrix:
-        include: ${{ fromJSON(needs.get-changed-paths.outputs.matrix) }}
-    steps:
-      - name: Generate GitHub App Token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
-          private-key: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
-
-      - uses: LerianStudio/github-actions-gptchangelog/helm-repo@chart
-        with:
-          WORK_DIR: packages/${{ matrix.name }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LERIAN_CI_CD_USER_GPG_KEY: ${{ secrets.LERIAN_CI_CD_USER_GPG_KEY }}
-          LERIAN_CI_CD_USER_GPG_KEY_PASSWORD: ${{ secrets.LERIAN_CI_CD_USER_GPG_KEY_PASSWORD }}
-          LERIAN_CI_CD_USER_NAME: ${{ secrets.LERIAN_CI_CD_USER_NAME }}
-          LERIAN_CI_CD_USER_EMAIL: ${{ secrets.LERIAN_CI_CD_USER_EMAIL }}
-          LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_APP_ID }}
-          LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY: ${{ secrets.LERIAN_STUDIO_MIDAZ_PUSH_BOT_PRIVATE_KEY }}
+    uses: LerianStudio/github-actions-shared-workflows/.github/workflows/gptchangelog.yml@v1.18.1
+    with:
+      runner_type: ubuntu-latest
+      filter_paths: |
+        packages/sindarian-server
+        packages/sindarian-ui
+      path_level: '2'
+      stable_releases_only: false
+    secrets: inherit
 
   # Release notification using shared workflow (Slack only)
   release-notification:
