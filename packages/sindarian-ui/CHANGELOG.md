@@ -1,3 +1,161 @@
+## [sindarian-ui-1.0.0-beta.42] - 2026-03-24
+
+### ✨ Features
+- migrate from Radix Toast to Sonner
+- add semantic status variants (error, success, info, alert)
+- apply scrollbar-thin-translucent to page content and sidebar
+- add scrollbar-thin-translucent Tailwind utility
+- Added bind overwrite for simple classes
+- Small fixes to Sheet styling
+- add dark mode toggle to Storybook
+- add design token system and dark mode CSS vars
+- add valueAsString prop for string date handling
+- Fixed StateField styles
+- Added PasswordField to exports
+- Added onChange to SelectField
+- Implemented DatePicker and DateRange fields
+- Updated dependencies
+- add context for open state and improve layout
+- return 204 No Content for DELETE routes with null response
+- Added scroll to sidebar
+- Added unit tests for SidebarProvider
+- Added new method to the provider.
+- Finished sub item collapsible on Sidebar
+- Implemented Sidebar collapsible items
+- Implemented guards
+- Updated readme
+- Updated IdTableCell
+- More small fixes
+- Added data-testid to missing components
+- Fixed CSS again
+- Fixed CSS
+- : Fixed styling
+- Try to publish changes.
+- Added more tests
+- Fixed build
+- Added new methods to server factory.
+- Added Sidebar animation
+- Adjusted CSS styles
+- Added more module tests.
+- Added sidebar
+- Added more unit tests.
+- Exported IconButton
+- Added missing client directive on form.tsx
+- copy CSS files to dist during build process
+- Added multiples Pipes and Interceptors
+- Added support for multiple APP_FILTER
+
+### 🐛 Bug Fixes
+- use theme foreground color for close button hover state
+- improve close button styles and align ID type with Sonner
+- align default duration with Toaster component (10s)
+- fix dark mode input styles, autofill and scrollbar
+- Bug when empty response breaks on Patch operations.
+- improve multiple-select robustness and password field form behavior
+- improve active tab trigger text contrast in light mode
+- add validation for invalid date parsing
+- Jest new version issues with node 22
+- add max-width constraint to description in collapsible info
+- correct ref type in CommandList
+- correct ref type in CommandList
+- prevent scroll propagation in CommandList
+- Hydration errors
+- Sidebar issues
+- LocalStorage is undefined.
+- Case where exception filter returns invalid response.
+- update changelog action to use helm-repo branch with working directory
+- prevent Git conflicts in parallel package releases
+- Route specificity on sindarian-server
+- update the test mock to match the actual PipeHandler.execute implementation
+- decorators now return actual values instead of metadata objects
+
+### 🔄 Changes
+- improve dark mode contrast and link visibility
+- fix style inconsistencies in component classNames
+- align component styles with design token system
+- sync design tokens with Figma export
+- migrate composite components to design tokens
+- migrate UI primitives to design tokens
+- trigger release flow
+- trigger release flow
+- matrix output keys
+- streamline release workflow with custom changed-paths action
+- streamline release workflow with custom changed-paths action
+
+### 📚 Documentation
+- packages/sindarian-server: Update CHANGELOG for sindarian-server-v1.0.0-beta.21
+- packages/sindarian-ui: Update CHANGELOG for sindarian-ui-v1.0.0-beta.13
+- packages/sindarian-ui: Update CHANGELOG for sindarian-ui-v1.0.0-beta.12
+- packages/sindarian-ui: Update CHANGELOG for sindarian-ui-v1.0.0-beta.11
+
+### 🧪 Testing
+- update stepper story for dark mode
+- add tests and docs for DELETE 204 No Content behavior
+
+### 🔧 Maintenance
+- release v1.0.0-beta.42 [skip ci]
+- release v1.0.0-beta.42 [skip ci]
+- release v1.0.0-beta.41 [skip ci]
+- release v1.0.0-beta.40 [skip ci]
+- release v1.0.0-beta.27 [skip ci]
+- release v1.0.0-beta.39 [skip ci]
+- release v1.0.0-beta.38 [skip ci]
+- release v1.0.0-beta.26 [skip ci]
+- release v1.0.0-beta.37 [skip ci]
+- release v1.0.0-beta.36 [skip ci]
+- release v1.0.0-beta.35 [skip ci]
+- update package-lock.json
+- release v1.0.0-beta.34 [skip ci]
+- release v1.0.0-beta.33 [skip ci]
+- release v1.0.0-beta.32 [skip ci]
+- release v1.0.0-beta.31 [skip ci]
+- release v1.0.0-beta.30 [skip ci]
+- Update packages/sindarian-ui/src/components/form/date-picker-field/index.tsx
+
+Co-authored-by: coderabbitai[bot] <136622811+coderabbitai[bot]@users.noreply.github.com>
+- Update packages/sindarian-ui/src/components/form/date-range-field/index.tsx
+
+Co-authored-by: coderabbitai[bot] <136622811+coderabbitai[bot]@users.noreply.github.com>
+- Update packages/sindarian-ui/src/components/ui/field/index.tsx
+
+Co-authored-by: coderabbitai[bot] <136622811+coderabbitai[bot]@users.noreply.github.com>
+- release v1.0.0-beta.29 [skip ci]
+- release v1.0.0-beta.28 [skip ci]
+- release v1.0.0-beta.27 [skip ci]
+- add .ring/ directory to gitignore
+- release v1.0.0-beta.25 [skip ci]
+- release v1.0.0-beta.26 [skip ci]
+- release v1.0.0-beta.25 [skip ci]
+- release v1.0.0-beta.24 [skip ci]
+- release v1.0.0-beta.23 [skip ci]
+- release v1.0.0-beta.22 [skip ci]
+- release v1.0.0-beta.21 [skip ci]
+- release v1.0.0-beta.20 [skip ci]
+- release v1.0.0-beta.19 [skip ci]
+- release v1.0.0-beta.24 [skip ci]
+- release v1.0.0-beta.18 [skip ci]
+- release v1.0.0-beta.17 [skip ci]
+- release v1.0.0-beta.23 [skip ci]
+- release v1.0.0-beta.16 [skip ci]
+- release v1.0.0-beta.15 [skip ci]
+- release v1.0.0-beta.14 [skip ci]
+- release v1.0.0-beta.22 [skip ci]
+- release v1.0.0-beta.21 [skip ci]
+- release v1.0.0-beta.20 [skip ci]
+- release v1.0.0-beta.13 [skip ci]
+- release v1.0.0-beta.12 [skip ci]
+- release v1.0.0-beta.19 [skip ci]
+- release v1.0.0-beta.18 [skip ci]
+- release v1.0.0-beta.11 [skip ci]
+- release v1.0.0-beta.10 [skip ci]
+- release v1.0.0-beta.17 [skip ci]
+- release v1.0.0-beta.9 [skip ci]\n\n## [1.0.0-beta.9](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.8...sindarian-ui-v1.0.0-beta.9) (2025-11-17)
+- release v1.0.0-beta.16 [skip ci]\n\n## [1.0.0-beta.16](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.15...sindarian-server-v1.0.0-beta.16) (2025-11-11)
+- release v1.0.0-beta.15 [skip ci]\n\n## [1.0.0-beta.15](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.14...sindarian-server-v1.0.0-beta.15) (2025-11-11)
+- release v1.0.0-beta.14 [skip ci]\n\n## [1.0.0-beta.14](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.13...sindarian-server-v1.0.0-beta.14) (2025-11-11)
+- release v1.0.0-beta.13 [skip ci]\n\n## [1.0.0-beta.13](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.12...sindarian-server-v1.0.0-beta.13) (2025-11-11)
+
+
 ## [1.0.0-beta.42](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.41...sindarian-ui-v1.0.0-beta.42) (2026-03-24)
 
 
