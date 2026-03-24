@@ -272,7 +272,7 @@ jobs:
         packages/sindarian-server
         packages/sindarian-ui
       path_level: '2'
-      stable_releases_only: true
+      stable_releases_only: false
     secrets: inherit
 
   # Release notification using shared workflow
