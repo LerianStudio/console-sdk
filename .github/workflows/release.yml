@@ -264,7 +264,6 @@ jobs:
   # AI-powered changelog generation using shared workflow
   generate-changelog:
     name: Generate Changelog
-    continue-on-error: true
     needs: [get-changed-paths, release]
     if: needs.get-changed-paths.outputs.matrix != '[]' && github.ref_name == 'main'
     uses: LerianStudio/github-actions-shared-workflows/.github/workflows/gptchangelog.yml@v1.18.1
