@@ -1,3 +1,27 @@
+# Sindarian-server Changelog
+
+## [1.0.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-server-v1.0.0)
+
+Features:
+- Main sindarian-server implementation.
+- Added more functionality and unit tests for sindarian-server.
+- Implemented Zod support for validation.
+- Configure split libs.
+- Implemented exceptions filter system.
+
+Improvements:
+- Updated packages.
+- Changed method access level.
+- Adjusted dependencies.
+- Compacted package.json dependencies.
+- Better build setup.
+
+Contributors: @caio_aletroca, @ferr3ira-gabriel, @ferr3ira.gabriel, @lf, @lfbarrile01
+
+[View all changes](https://github.com/LerianStudio/console-sdk/commits/sindarian-server-v1.0.0)
+
+---
+
 ## [1.0.0-beta.28](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.27...sindarian-server-v1.0.0-beta.28) (2026-03-25)
 
 
@@ -158,3 +182,4 @@ Contributors: Caio Alexandre Troti Caetano, lerian-studio
 * prevent Git conflicts in parallel package releases ([abc3ae1](https://github.com/LerianStudio/console-sdk/commit/abc3ae1992fb545d6eb55b5028a126c0910c36c6))
 * Route specificity on sindarian-server ([0e91ba5](https://github.com/LerianStudio/console-sdk/commit/0e91ba5cf7acec1cd4b561e2b2cafc232ce377f6))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
+
