@@ -1,3 +1,28 @@
+# Sindarian-ui Changelog
+
+## [1.0.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-ui-v1.0.0)
+
+- **Features:**
+  - Implemented LargeDialog and adjusted dialogs.
+  - Added basic and more advanced card components.
+  - Introduced PaperCollapsible and adjusted Progress.
+  - Configured split libraries for better modularity.
+  - Adjusted various UI components including Tabs, Stepper, Alert, Breadcrumb, Input, and Button.
+
+- **Fixes:**
+  - Corrected Toaster import path.
+
+- **Improvements:**
+  - Updated packages and improved build setup.
+  - Enhanced Jest configuration and added more components.
+  - Improved storybook configuration and updated components.
+
+Contributors: @caio_aletroca, @ferr3ira-gabriel, @ferr3ira.gabriel, @lf, @lfbarrile01
+
+[View all changes](https://github.com/LerianStudio/console-sdk/commits/sindarian-ui-v1.0.0)
+
+---
+
 ## [1.0.0-beta.42](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.41...sindarian-ui-v1.0.0-beta.42) (2026-03-24)
 
 
@@ -314,3 +339,4 @@ Contributors: Caio Alexandre Troti Caetano, lerian-studio
 
 * prevent Git conflicts in parallel package releases ([abc3ae1](https://github.com/LerianStudio/console-sdk/commit/abc3ae1992fb545d6eb55b5028a126c0910c36c6))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
+
