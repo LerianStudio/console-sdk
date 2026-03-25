@@ -1,3 +1,12 @@
+## [1.0.0-beta.29](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.28...sindarian-server-v1.0.0-beta.29) (2026-03-25)
+
+
+### Bug Fixes
+
+* **ci:** add continue-on-error to changelog job to prevent pipeline breaks ([8173805](https://github.com/LerianStudio/console-sdk/commit/81738057bb34b0e88cc40d67b1a66faca35cc306))
+* **ci:** remove invalid continue-on-error from reusable workflow job ([b2de64a](https://github.com/LerianStudio/console-sdk/commit/b2de64af81886b3144d1834af5ba81315196bace))
+* **ci:** restrict changelog generation to main branch only ([f71f759](https://github.com/LerianStudio/console-sdk/commit/f71f759836dda98371964e8143d258b0a1d6b3bd))
+
 # Sindarian-server Changelog
 
 ## [1.0.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-server-v1.0.0)
@@ -182,4 +191,3 @@ Contributors: Caio Alexandre Troti Caetano, lerian-studio
 * prevent Git conflicts in parallel package releases ([abc3ae1](https://github.com/LerianStudio/console-sdk/commit/abc3ae1992fb545d6eb55b5028a126c0910c36c6))
 * Route specificity on sindarian-server ([0e91ba5](https://github.com/LerianStudio/console-sdk/commit/0e91ba5cf7acec1cd4b561e2b2cafc232ce377f6))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
-
