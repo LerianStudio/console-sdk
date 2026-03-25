@@ -58,6 +58,7 @@ jobs:
   npm-audit:
     name: Run npm audit
     needs: get-changed-paths
+    if: needs.get-changed-paths.outputs.matrix != '[]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
