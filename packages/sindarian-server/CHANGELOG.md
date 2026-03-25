@@ -1,3 +1,27 @@
+## [1.0.0-beta.28](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.27...sindarian-server-v1.0.0-beta.28) (2026-03-25)
+
+
+### Features
+
+* **badge:** add semantic status variants (error, success, info, alert) ([82dd7c6](https://github.com/LerianStudio/console-sdk/commit/82dd7c683439c6a1f9495c4e6740b735311a26b9))
+* **ci:** use shared gptchangelog workflow for changelog generation ([dd0a169](https://github.com/LerianStudio/console-sdk/commit/dd0a16928cf91f2739c8024128ccbf7c96d10893))
+* **sindarian-ui:** add scrollbar-thin-translucent Tailwind utility ([c5a6935](https://github.com/LerianStudio/console-sdk/commit/c5a6935970c8b8b977a1e7ae118abe5ed5f59134))
+* **sindarian-ui:** apply scrollbar-thin-translucent to page content and sidebar ([fce5995](https://github.com/LerianStudio/console-sdk/commit/fce5995ec59bc5a8c5a9a0236db546b558b8873b))
+* **toast:** migrate from Radix Toast to Sonner ([915ec12](https://github.com/LerianStudio/console-sdk/commit/915ec123b9e33facca5dd56f8f9af95624eb5e1a))
+
+
+### Bug Fixes
+
+* **ci:** disable changelog generation for beta releases ([1986659](https://github.com/LerianStudio/console-sdk/commit/1986659a7451f76f9c1d59e94f4f2a3a10c6093d))
+* **ci:** enable changelog generation for beta releases on develop ([68712bb](https://github.com/LerianStudio/console-sdk/commit/68712bb2a9580f134967b3d64c0b7aa6eecf87f7))
+* **ci:** revert changelog to original per-package model and remove discord notification ([74be704](https://github.com/LerianStudio/console-sdk/commit/74be704c0b2cc624743248e52a06ab0785ff046c))
+* **ci:** revert semantic-release-action to v4 for v23 compatibility ([74302b5](https://github.com/LerianStudio/console-sdk/commit/74302b5d6026a20d5d7e9e280aa762755a21c9f3))
+* **ci:** skip npm-audit when no packages changed ([bacaee8](https://github.com/LerianStudio/console-sdk/commit/bacaee8d9146537268dc30a339d2acf436d7a42e))
+* **sindarian-ui:** fix dark mode input styles, autofill and scrollbar ([992a431](https://github.com/LerianStudio/console-sdk/commit/992a4312c22827b197e0c9f3131b1930aac69e8d))
+* **toast:** align default duration with Toaster component (10s) ([6088597](https://github.com/LerianStudio/console-sdk/commit/60885972f3c682f9bfe5684b8b5933e129a669fb))
+* **toast:** improve close button styles and align ID type with Sonner ([2081067](https://github.com/LerianStudio/console-sdk/commit/208106703f595a046ae717db27fd85411fada41e))
+* **toast:** use theme foreground color for close button hover state ([9cf50ca](https://github.com/LerianStudio/console-sdk/commit/9cf50ca6ceb23136798cf94580279b1deec28183))
+
 ## [1.0.0-beta.27](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.26...sindarian-server-v1.0.0-beta.27) (2026-03-09)
 
 
