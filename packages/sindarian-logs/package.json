@@ -43,6 +43,9 @@
       "optional": true
     }
   },
+  "devDependencies": {
+    "@lerianstudio/sindarian-server": ">=1.0.0-beta.30"
+  },
   "publishConfig": {
     "access": "public"
   }
