@@ -2,7 +2,7 @@
   "name": "@lerianstudio/console-sdk",
   "version": "0.0.0",
   "description": "Libraries monorepo for Frontend projects",
-  "packageManager": "npm@11.8.0",
+  "packageManager": "npm@11.12.1",
   "files": [
     "dist"
   ],
@@ -37,8 +37,8 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/jest": "^30.0.0",
-    "@types/lodash": "^4.17.23",
-    "@types/node": "^25.0.10",
+    "@types/lodash": "^4.17.24",
+    "@types/node": "^25.5.0",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
     "copyfiles": "^2.4.1",
@@ -51,12 +51,12 @@
     "node-git-hooks": "^1.0.7",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
-    "semantic-release": "^25.0.2",
-    "ts-jest": "^29.4.6",
+    "semantic-release": "^25.0.3",
+    "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
-    "turbo": "^2.7.6",
+    "turbo": "^2.9.3",
     "typescript": "^5.9.3"
   },
   "dependencies": {
