@@ -1,7 +1,7 @@
 {
   "name": "@lerianstudio/sindarian-logs",
   "version": "1.0.0-beta.1",
-  "description": "Unified logging system for Sindarian Server",
+  "description": "Unified logging and tracing system for Sindarian Server",
   "license": "ISC",
   "author": {
     "name": "Lerian Studio",
