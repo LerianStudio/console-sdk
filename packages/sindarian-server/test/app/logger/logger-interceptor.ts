@@ -1,32 +1,23 @@
-import { LoggerAggregator } from '@lerianstudio/lib-logs'
 import {
   CallHandler,
   ExecutionContext,
-  Inject,
   Interceptor
 } from '@lerianstudio/sindarian-server'
 import { NextRequest } from 'next/server'
 
 export class LoggerInterceptor implements Interceptor {
-  constructor(@Inject(LoggerAggregator) private logger: LoggerAggregator) {}
-
   async intercept(context: ExecutionContext, next: CallHandler): Promise<any> {
     const request = context.switchToHttp().getRequest<NextRequest>()
+    const handler = `${context.getClass().name}.${context.getHandler().name}`
 
-    const body =
-      request.method !== 'GET' && request.method !== 'DELETE'
-        ? { body: request.body }
-        : {}
+    console.log(`[LOG] ${request.method} ${request.url} -> ${handler}`)
 
-    return await this.logger.runWithContext(
-      request.url,
-      request.method,
-      {
-        //   requestId: this.requestIdRepository.get(),
-        handler: `${context.getClass().name}.${context.getHandler().name}`,
-        ...body
-      },
-      () => next.handle()
-    )
+    const start = Date.now()
+    const result = await next.handle()
+    const duration = Date.now() - start
+
+    console.log(`[LOG] ${handler} completed in ${duration}ms`)
+
+    return result
   }
 }

@@ -1,7 +1,7 @@
 {
-  "name": "@lerianstudio/sindarian-server",
-  "version": "1.0.0-beta.29",
-  "description": "Sindarian Server",
+  "name": "@lerianstudio/sindarian-logs",
+  "version": "1.0.0-beta.1",
+  "description": "Unified logging system for Sindarian Server",
   "license": "ISC",
   "author": {
     "name": "Lerian Studio",
@@ -11,7 +11,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/LerianStudio/console-sdk.git",
-    "directory": "packages/sindarian-server"
+    "directory": "packages/sindarian-logs"
   },
   "type": "commonjs",
   "main": "dist/index.js",
@@ -20,25 +20,28 @@
     "dist"
   ],
   "exports": {
-    ".": "./dist/index.js",
-    "./zod": "./dist/zod/index.js"
+    ".": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc && npm run build:paths",
     "build:paths": "tsc-alias -p tsconfig.json",
     "test": "jest",
-    "test:e2e": "cd test && npm run test",
+    "test:e2e": "exit 0",
     "lint": "eslint . --fix",
     "lint:check": "eslint ."
   },
-  "dependencies": {
-    "path-to-regexp": "^8.3.0"
-  },
   "peerDependencies": {
+    "@lerianstudio/sindarian-server": ">=1.0.0-beta.27",
     "inversify": ">=7.7.0",
     "next": ">=15.4.0",
-    "reflect-metadata": ">=0.2.2",
-    "zod": ">=4.0.0"
+    "pino": ">=9.0.0",
+    "pino-pretty": ">=9.0.0",
+    "reflect-metadata": ">=0.2.2"
+  },
+  "peerDependenciesMeta": {
+    "pino-pretty": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"
