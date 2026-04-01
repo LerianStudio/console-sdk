@@ -1,3 +1,79 @@
+# Sindarian-ui Changelog
+
+## [1.0.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-ui-v1.0.0)
+
+- **Features:**
+  - Implemented LargeDialog and adjusted dialogs.
+  - Added basic and more advanced card components.
+  - Introduced PaperCollapsible and adjusted Progress.
+  - Configured split libraries for better modularity.
+  - Adjusted various UI components including Tabs, Stepper, Alert, Breadcrumb, Input, and Button.
+
+- **Fixes:**
+  - Corrected Toaster import path.
+
+- **Improvements:**
+  - Updated packages and improved build setup.
+  - Enhanced Jest configuration and added more components.
+  - Improved storybook configuration and updated components.
+
+Contributors: @caio_aletroca, @ferr3ira-gabriel, @ferr3ira.gabriel, @lf, @lfbarrile01
+
+[View all changes](https://github.com/LerianStudio/console-sdk/commits/sindarian-ui-v1.0.0)
+
+---
+
+## [1.0.0-beta.42](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.41...sindarian-ui-v1.0.0-beta.42) (2026-03-24)
+
+
+### Features
+
+* **badge:** add semantic status variants (error, success, info, alert) ([82dd7c6](https://github.com/LerianStudio/console-sdk/commit/82dd7c683439c6a1f9495c4e6740b735311a26b9))
+* **toast:** migrate from Radix Toast to Sonner ([915ec12](https://github.com/LerianStudio/console-sdk/commit/915ec123b9e33facca5dd56f8f9af95624eb5e1a))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** fix dark mode input styles, autofill and scrollbar ([992a431](https://github.com/LerianStudio/console-sdk/commit/992a4312c22827b197e0c9f3131b1930aac69e8d))
+* **toast:** align default duration with Toaster component (10s) ([6088597](https://github.com/LerianStudio/console-sdk/commit/60885972f3c682f9bfe5684b8b5933e129a669fb))
+* **toast:** improve close button styles and align ID type with Sonner ([2081067](https://github.com/LerianStudio/console-sdk/commit/208106703f595a046ae717db27fd85411fada41e))
+* **toast:** use theme foreground color for close button hover state ([9cf50ca](https://github.com/LerianStudio/console-sdk/commit/9cf50ca6ceb23136798cf94580279b1deec28183))
+
+## [1.0.0-beta.42](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.41...sindarian-ui-v1.0.0-beta.42) (2026-03-24)
+
+
+### Features
+
+* **badge:** add semantic status variants (error, success, info, alert) ([82dd7c6](https://github.com/LerianStudio/console-sdk/commit/82dd7c683439c6a1f9495c4e6740b735311a26b9))
+* **toast:** migrate from Radix Toast to Sonner ([915ec12](https://github.com/LerianStudio/console-sdk/commit/915ec123b9e33facca5dd56f8f9af95624eb5e1a))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** fix dark mode input styles, autofill and scrollbar ([992a431](https://github.com/LerianStudio/console-sdk/commit/992a4312c22827b197e0c9f3131b1930aac69e8d))
+* **toast:** align default duration with Toaster component (10s) ([6088597](https://github.com/LerianStudio/console-sdk/commit/60885972f3c682f9bfe5684b8b5933e129a669fb))
+* **toast:** improve close button styles and align ID type with Sonner ([2081067](https://github.com/LerianStudio/console-sdk/commit/208106703f595a046ae717db27fd85411fada41e))
+* **toast:** use theme foreground color for close button hover state ([9cf50ca](https://github.com/LerianStudio/console-sdk/commit/9cf50ca6ceb23136798cf94580279b1deec28183))
+
+## [1.0.0-beta.41](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.40...sindarian-ui-v1.0.0-beta.41) (2026-03-13)
+
+
+### Features
+
+* **sindarian-ui:** apply scrollbar-thin-translucent to page content and sidebar ([fce5995](https://github.com/LerianStudio/console-sdk/commit/fce5995ec59bc5a8c5a9a0236db546b558b8873b))
+
+## [1.0.0-beta.40](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.39...sindarian-ui-v1.0.0-beta.40) (2026-03-12)
+
+
+### Features
+
+* **sindarian-ui:** add scrollbar-thin-translucent Tailwind utility ([c5a6935](https://github.com/LerianStudio/console-sdk/commit/c5a6935970c8b8b977a1e7ae118abe5ed5f59134))
+
+
+### Bug Fixes
+
+* Bug when empty response breaks on Patch operations. ([9179bcf](https://github.com/LerianStudio/console-sdk/commit/9179bcfeae735774d8a52724c811ad88ced8cacf))
+
 ## [1.0.0-beta.39](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.38...sindarian-ui-v1.0.0-beta.39) (2026-03-05)
 
 
@@ -263,3 +339,4 @@ Contributors: Caio Alexandre Troti Caetano, lerian-studio
 
 * prevent Git conflicts in parallel package releases ([abc3ae1](https://github.com/LerianStudio/console-sdk/commit/abc3ae1992fb545d6eb55b5028a126c0910c36c6))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
+
