@@ -53,6 +53,7 @@ jobs:
           filter-paths: |
             packages/sindarian-server
             packages/sindarian-ui
+            packages/sindarian-logs
           path-level: '2'
           get-app-name: 'true'
 
@@ -273,6 +274,7 @@ jobs:
       filter_paths: |
         packages/sindarian-server
         packages/sindarian-ui
+        packages/sindarian-logs
       path_level: '2'
       stable_releases_only: true
     secrets: inherit
