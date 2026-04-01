@@ -1,3 +1,12 @@
+## [1.0.0-beta.30](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.29...sindarian-server-v1.0.0-beta.30) (2026-04-01)
+
+
+### Features
+
+* Implemented middleware into server ([7a1790a](https://github.com/LerianStudio/console-sdk/commit/7a1790a60eae66b0ef626021cd40d1e18c6f3623))
+* Implemented sindarian-logs ([9db48de](https://github.com/LerianStudio/console-sdk/commit/9db48de49a016c0bd5bcf6fa771a90d1390492da))
+* Upgraded dependencies ([984a9ee](https://github.com/LerianStudio/console-sdk/commit/984a9ee36f545869eba16c19ad14a6f35ea5aae5))
+
 ## [1.0.0-beta.29](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.28...sindarian-server-v1.0.0-beta.29) (2026-03-25)
 
 
