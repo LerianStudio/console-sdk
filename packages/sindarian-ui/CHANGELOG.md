@@ -1,3 +1,32 @@
+## [1.0.0-beta.43](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.42...sindarian-ui-v1.0.0-beta.43) (2026-04-06)
+
+
+### Features
+
+* Adjusted pipeline ([352f6cb](https://github.com/LerianStudio/console-sdk/commit/352f6cbde7df6427bac8c218c6475057c93c115b))
+* **ci:** use shared gptchangelog workflow for changelog generation ([dd0a169](https://github.com/LerianStudio/console-sdk/commit/dd0a16928cf91f2739c8024128ccbf7c96d10893))
+* Implemented middleware into server ([7a1790a](https://github.com/LerianStudio/console-sdk/commit/7a1790a60eae66b0ef626021cd40d1e18c6f3623))
+* Implemented sindarian-logs ([9db48de](https://github.com/LerianStudio/console-sdk/commit/9db48de49a016c0bd5bcf6fa771a90d1390492da))
+* Trigger pipeline ([40d045d](https://github.com/LerianStudio/console-sdk/commit/40d045d238b56be6411e0fed8e3ee676c0e12b0e))
+* Upgraded dependencies ([984a9ee](https://github.com/LerianStudio/console-sdk/commit/984a9ee36f545869eba16c19ad14a6f35ea5aae5))
+
+
+### Bug Fixes
+
+* CI test ([32f0002](https://github.com/LerianStudio/console-sdk/commit/32f00029800e50570056488b0fd9c82b41493cc9))
+* CI test ([fcc5961](https://github.com/LerianStudio/console-sdk/commit/fcc59614b2ae0e81ecc08093c93b4f33a1094292))
+* **ci:** add continue-on-error to changelog job to prevent pipeline breaks ([8173805](https://github.com/LerianStudio/console-sdk/commit/81738057bb34b0e88cc40d67b1a66faca35cc306))
+* **ci:** disable changelog generation for beta releases ([1986659](https://github.com/LerianStudio/console-sdk/commit/1986659a7451f76f9c1d59e94f4f2a3a10c6093d))
+* **ci:** enable changelog generation for beta releases on develop ([68712bb](https://github.com/LerianStudio/console-sdk/commit/68712bb2a9580f134967b3d64c0b7aa6eecf87f7))
+* **ci:** remove invalid continue-on-error from reusable workflow job ([b2de64a](https://github.com/LerianStudio/console-sdk/commit/b2de64af81886b3144d1834af5ba81315196bace))
+* **ci:** restrict changelog generation to main branch only ([f71f759](https://github.com/LerianStudio/console-sdk/commit/f71f759836dda98371964e8143d258b0a1d6b3bd))
+* **ci:** revert changelog to original per-package model and remove discord notification ([74be704](https://github.com/LerianStudio/console-sdk/commit/74be704c0b2cc624743248e52a06ab0785ff046c))
+* **ci:** revert semantic-release-action to v4 for v23 compatibility ([74302b5](https://github.com/LerianStudio/console-sdk/commit/74302b5d6026a20d5d7e9e280aa762755a21c9f3))
+* **ci:** skip npm-audit when no packages changed ([bacaee8](https://github.com/LerianStudio/console-sdk/commit/bacaee8d9146537268dc30a339d2acf436d7a42e))
+* **sheet:** prevent sheet from closing when interacting with sonner toasts ([eb88df7](https://github.com/LerianStudio/console-sdk/commit/eb88df77eb5ecb375104c160208f44b036b2f2e8))
+* Trigger pipeline ([b5d7092](https://github.com/LerianStudio/console-sdk/commit/b5d7092a171c885c97dbcdf6ff25104be3ecc443))
+* Turbo configuration ([3b7f209](https://github.com/LerianStudio/console-sdk/commit/3b7f2095f2168abb8789a188eea36e9cee1e18a9))
+
 # Sindarian-ui Changelog
 
 ## [1.0.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-ui-v1.0.0)
@@ -339,4 +368,3 @@ Contributors: Caio Alexandre Troti Caetano, lerian-studio
 
 * prevent Git conflicts in parallel package releases ([abc3ae1](https://github.com/LerianStudio/console-sdk/commit/abc3ae1992fb545d6eb55b5028a126c0910c36c6))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
-
