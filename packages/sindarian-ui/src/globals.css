@@ -328,6 +328,7 @@
 /* Sonner toast overrides — solid bold backgrounds (Radix parity) */
 [data-sonner-toaster] {
   --width: 420px;
+  pointer-events: auto !important;
 }
 
 [data-sonner-toast] {
@@ -376,7 +377,12 @@
   font-size: 0.875rem;
   font-weight: 600 !important;
   line-height: 1.25rem;
-  opacity: 0.9;
+  color: var(--normal-text) !important;
+}
+
+/* Hide icons from all sonner toast variants */
+[data-sonner-toast] [data-icon] {
+  display: none !important;
 }
 
 [data-sonner-toast] [data-close-button] {

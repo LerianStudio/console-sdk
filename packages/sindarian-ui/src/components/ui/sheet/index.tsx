@@ -70,8 +70,25 @@ function SheetContent({
   side = 'right',
   className,
   children,
+  onInteractOutside,
   ...props
 }: SheetContentProps) {
+  const handleInteractOutside = React.useCallback(
+    (event: CustomEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.closest('[data-sonner-toaster]')) {
+        event.preventDefault()
+        return
+      }
+      onInteractOutside?.(
+        event as Parameters<
+          NonNullable<SheetContentProps['onInteractOutside']>
+        >[0]
+      )
+    },
+    [onInteractOutside]
+  )
+
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -82,10 +99,11 @@ function SheetContent({
           sheetVariants({ side }),
           className
         )}
+        onInteractOutside={handleInteractOutside}
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="data-[state=open]:bg-secondary focus:outline-hidden absolute right-4 top-7 rounded-sm opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none">
+        <SheetPrimitive.Close className="data-[state=open]:bg-secondary absolute top-7 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden disabled:pointer-events-none">
           <X className="h-6 w-6" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
