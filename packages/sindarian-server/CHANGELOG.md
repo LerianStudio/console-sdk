@@ -1,3 +1,33 @@
+# Sindarian-server Changelog
+
+## [1.1.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-server-v1.1.0)
+
+- **Features:**
+  - Implemented middleware into server.
+  - Added bind overwrite for simple classes.
+  - Implemented guards.
+  - Added new methods to server factory.
+  - Added support for multiple APP_FILTER.
+
+- **Fixes:**
+  - Resolved bug where empty response breaks on Patch operations.
+  - Fixed case where exception filter returns invalid response.
+  - Fixed route specificity issue.
+  - Updated test mock to match actual PipeHandler.execute implementation.
+  - Decorators now return actual values instead of metadata objects.
+
+- **Improvements:**
+  - Added more module and unit tests.
+  - Streamlined release workflow with custom changed-paths action.
+  - Updated readme documentation.
+  - Added tests and documentation for DELETE 204 No Content behavior.
+
+Contributors: @caio_aletroca, @gabrielcastro.xy, @gui.rodrigues, @lucas.bedatty
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0...sindarian-server-v1.1.0)
+
+---
+
 ## [1.1.0](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0...sindarian-server-v1.1.0) (2026-04-29)
 
 
@@ -293,3 +323,4 @@ Contributors: Caio Alexandre Troti Caetano, lerian-studio
 * prevent Git conflicts in parallel package releases ([abc3ae1](https://github.com/LerianStudio/console-sdk/commit/abc3ae1992fb545d6eb55b5028a126c0910c36c6))
 * Route specificity on sindarian-server ([0e91ba5](https://github.com/LerianStudio/console-sdk/commit/0e91ba5cf7acec1cd4b561e2b2cafc232ce377f6))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
+
