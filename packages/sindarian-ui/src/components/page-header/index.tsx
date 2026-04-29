@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { ReactNode, useState } from 'react'
+import { createContext, ReactNode, useContext, useState } from 'react'
 import {
   Collapsible,
   CollapsibleContent,
@@ -16,6 +16,8 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { Arrow } from '@radix-ui/react-tooltip'
 
+const PageHeaderContext = createContext<{ isOpen: boolean }>({ isOpen: false })
+
 export function PageHeaderActionButtons({
   className,
   ...props
@@ -23,7 +25,7 @@ export function PageHeaderActionButtons({
   return (
     <div
       data-slot="page-header-action-buttons"
-      className={cn('flex gap-8', className)}
+      className={cn('flex items-center gap-8', className)}
       {...props}
     />
   )
@@ -33,10 +35,16 @@ export function PageHeaderWrapper({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
+  const { isOpen } = useContext(PageHeaderContext)
+
   return (
     <div
       data-slot="page-header-wrapper"
-      className={cn('flex justify-between border-b', className)}
+      className={cn(
+        'flex items-start justify-between',
+        isOpen && 'border-b',
+        className
+      )}
       {...props}
     />
   )
@@ -51,11 +59,17 @@ export function PageHeader({ children, className }: PageHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div data-slot="page-header" className="mt-12">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className={className}>
-        {children}
-      </Collapsible>
-    </div>
+    <PageHeaderContext.Provider value={{ isOpen }}>
+      <div data-slot="page-header" className={cn('mt-12', isOpen && 'mb-12')}>
+        <Collapsible
+          open={isOpen}
+          onOpenChange={setIsOpen}
+          className={className}
+        >
+          {children}
+        </Collapsible>
+      </div>
+    </PageHeaderContext.Provider>
   )
 }
 
@@ -79,7 +93,7 @@ export function PageHeaderInfoTitle({
       className="mb-12 flex flex-col gap-4"
     >
       <h1
-        className={cn('text-4xl font-bold text-[#3f3f46]', className)}
+        className={cn('text-foreground text-4xl font-bold', className)}
         data-testid="title"
       >
         {title}
@@ -142,7 +156,9 @@ export function PageHeaderCollapsibleInfoTrigger({
     <div data-slot="page-header-collapsible-info-trigger">
       <CollapsibleTrigger asChild>
         <Button variant="link" className="flex gap-2 pr-0">
-          <span className="text-sm font-medium text-[#3f3f46]">{question}</span>
+          <span className="text-foreground text-sm font-medium">
+            {question}
+          </span>
           <HelpCircle className="h-4 w-4" />
         </Button>
       </CollapsibleTrigger>
@@ -166,21 +182,21 @@ export function PageHeaderCollapsibleInfo({
   return (
     <div data-slot="page-header-collapsible-info">
       <CollapsibleContent>
-        <div className="flex w-full justify-between">
+        <div className="flex w-full justify-between pt-6">
           <div className="mt-12 flex flex-col gap-3">
-            <h1 className="text-xl font-bold text-[#3f3f46]">{question}</h1>
+            <h1 className="text-foreground text-xl font-bold">{question}</h1>
 
-            <div className="flex items-center gap-3">
-              <p className="text-shadcn-500 text-sm leading-none font-medium">
+            <div className="flex items-start gap-6">
+              <p className="text-shadcn-500 max-w-2xl text-sm leading-relaxed font-medium">
                 {answer}
               </p>
 
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-1">
                 <a
                   target="_blank"
                   rel="noopener noreferrer"
                   href={href}
-                  className="text-shadcn-600 justify-start text-sm font-medium underline underline-offset-4"
+                  className="text-shadcn-600 dark:text-shadcn-400 text-sm font-medium whitespace-nowrap underline underline-offset-4"
                 >
                   {seeMore}
                 </a>

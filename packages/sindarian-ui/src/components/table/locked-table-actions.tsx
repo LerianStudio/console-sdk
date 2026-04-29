@@ -23,7 +23,7 @@ export const LockedTableActions = ({
         <TooltipTrigger asChild>
           <div
             className={cn(
-              'border-border bg-muted flex h-[36px] w-[36px] items-center justify-center rounded-md border',
+              'border-border bg-muted flex size-9 items-center justify-center rounded-md border',
               className
             )}
           >

@@ -49,11 +49,9 @@ describe('BodyHandler.handle', () => {
   }
 
   it('should return null when no metadata is found', async () => {
-    const result = await BodyHandler.handle(
-      TestClass.prototype,
-      'testMethod',
-      [mockRequest]
-    )
+    const result = await BodyHandler.handle(TestClass.prototype, 'testMethod', [
+      mockRequest
+    ])
 
     expect(result).toBeNull()
   })
@@ -73,11 +71,9 @@ describe('BodyHandler.handle', () => {
       'testMethod'
     )
 
-    const result = await BodyHandler.handle(
-      TestClass.prototype,
-      'testMethod',
-      [mockRequest]
-    )
+    const result = await BodyHandler.handle(TestClass.prototype, 'testMethod', [
+      mockRequest
+    ])
 
     expect(result).toEqual({
       type: 'body',
@@ -86,9 +82,6 @@ describe('BodyHandler.handle', () => {
     })
     expect(mockRequest.json).toHaveBeenCalledTimes(1)
   })
-
-
-
 
   it('should handle request.json() rejection', async () => {
     const jsonError = new Error('Failed to parse JSON')
@@ -115,14 +108,11 @@ describe('BodyHandler.handle', () => {
     )
 
     await expect(
-      BodyHandler.handle(TestClass.prototype, 'testMethod', [
-        errorMockRequest
-      ])
+      BodyHandler.handle(TestClass.prototype, 'testMethod', [errorMockRequest])
     ).rejects.toThrow('Missing or invalid request body')
 
     expect(errorMockRequest.json).toHaveBeenCalledTimes(1)
   })
-
 
   it('should handle empty body object', async () => {
     const mockBody = {}
@@ -149,11 +139,9 @@ describe('BodyHandler.handle', () => {
       'testMethod'
     )
 
-    const result = await BodyHandler.handle(
-      TestClass.prototype,
-      'testMethod',
-      [emptyMockRequest]
-    )
+    const result = await BodyHandler.handle(TestClass.prototype, 'testMethod', [
+      emptyMockRequest
+    ])
 
     expect(result).toEqual({
       type: 'body',
@@ -188,11 +176,9 @@ describe('BodyHandler.handle', () => {
       'testMethod'
     )
 
-    const result = await BodyHandler.handle(
-      TestClass.prototype,
-      'testMethod',
-      [nullMockRequest]
-    )
+    const result = await BodyHandler.handle(TestClass.prototype, 'testMethod', [
+      nullMockRequest
+    ])
 
     expect(result).toEqual({
       type: 'body',
@@ -232,5 +218,4 @@ describe('Body decorator', () => {
       parameterIndex: 0
     })
   })
-
 })

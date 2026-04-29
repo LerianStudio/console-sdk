@@ -1,3 +1,5 @@
+'use client'
+
 import * as React from 'react'
 import * as LabelPrimitive from '@radix-ui/react-label'
 import { Slot } from '@radix-ui/react-slot'
@@ -114,7 +116,7 @@ const FormLabel = React.forwardRef<
     <Label
       ref={ref}
       className={cn(
-        'flex justify-between text-sm font-semibold text-[#52525b]',
+        'text-muted-foreground flex justify-between text-sm font-semibold',
         error && 'text-destructive',
         className
       )}
@@ -135,7 +137,7 @@ export const FormTooltip = ({ children, ...others }: TooltipProviderProps) => (
   <TooltipProvider {...others}>
     <Tooltip>
       <TooltipTrigger asChild>
-        <HelpCircle className="ml-2 h-4 w-4 text-gray-400" />
+        <HelpCircle className="text-container-text ml-2 h-4 w-4" />
       </TooltipTrigger>
       <TooltipContent>{children}</TooltipContent>
     </Tooltip>

@@ -82,8 +82,8 @@ export function AutosizeTextarea({
       value={value}
       ref={textAreaRef}
       className={cn(
-        'border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full overflow-y-hidden rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden',
-        'read-only:cursor-default read-only:bg-zinc-100 read-only:caret-transparent read-only:opacity-50 read-only:select-text read-only:focus:ring-0 read-only:focus:ring-offset-0 read-only:focus:outline-hidden',
+        'border-input-border ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full overflow-y-hidden rounded-md border bg-transparent px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden',
+        'read-only:bg-muted read-only:cursor-default read-only:caret-transparent read-only:opacity-50 read-only:select-text read-only:focus:ring-0 read-only:focus:ring-offset-0 read-only:focus:outline-hidden',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className
       )}

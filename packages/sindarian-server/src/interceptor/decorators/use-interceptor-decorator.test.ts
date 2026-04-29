@@ -52,7 +52,11 @@ describe('InterceptorHandler.execute', () => {
     const interceptor = new MockInterceptor('test')
     const action = jest.fn().mockResolvedValue('result')
 
-    const result = await InterceptorHandler.execute(mockContext, [interceptor], action)
+    const result = await InterceptorHandler.execute(
+      mockContext,
+      [interceptor],
+      action
+    )
 
     expect(result).toBe('test(result)')
     expect(action).toHaveBeenCalledTimes(1)
@@ -73,34 +77,36 @@ describe('InterceptorHandler.execute', () => {
     expect(action).toHaveBeenCalledTimes(1)
   })
 
-  it('should continue to next interceptor when one throws', async () => {
+  it('should propagate error when interceptor throws', async () => {
     const interceptor1 = new MockInterceptor('first', true)
     const interceptor2 = new MockInterceptor('second')
     const action = jest.fn().mockResolvedValue('result')
 
-    const result = await InterceptorHandler.execute(
-      mockContext,
-      [interceptor1, interceptor2],
-      action
-    )
+    await expect(
+      InterceptorHandler.execute(
+        mockContext,
+        [interceptor1, interceptor2],
+        action
+      )
+    ).rejects.toThrow('first error')
 
-    expect(result).toBe('second(result)')
-    expect(action).toHaveBeenCalledTimes(1)
+    expect(action).not.toHaveBeenCalled()
   })
 
-  it('should execute action when all interceptors throw', async () => {
+  it('should propagate error when all interceptors throw', async () => {
     const interceptor1 = new MockInterceptor('first', true)
     const interceptor2 = new MockInterceptor('second', true)
     const action = jest.fn().mockResolvedValue('result')
 
-    const result = await InterceptorHandler.execute(
-      mockContext,
-      [interceptor1, interceptor2],
-      action
-    )
+    await expect(
+      InterceptorHandler.execute(
+        mockContext,
+        [interceptor1, interceptor2],
+        action
+      )
+    ).rejects.toThrow('first error')
 
-    expect(result).toBe('result')
-    expect(action).toHaveBeenCalledTimes(1)
+    expect(action).not.toHaveBeenCalled()
   })
 
   it('should handle async action', async () => {
@@ -114,7 +120,11 @@ describe('InterceptorHandler.execute', () => {
           )
       )
 
-    const result = await InterceptorHandler.execute(mockContext, [interceptor], action)
+    const result = await InterceptorHandler.execute(
+      mockContext,
+      [interceptor],
+      action
+    )
 
     expect(result).toBe('test(async-result)')
     expect(action).toHaveBeenCalledTimes(1)

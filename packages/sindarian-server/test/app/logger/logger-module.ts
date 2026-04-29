@@ -1,10 +1,4 @@
 import { APP_INTERCEPTOR, Module } from '@lerianstudio/sindarian-server'
-import { ResolutionContext } from 'inversify'
-import {
-  LoggerAggregator,
-  LoggerRepository,
-  PinoLoggerRepository
-} from '@lerianstudio/lib-logs'
 import { LoggerInterceptor } from './logger-interceptor'
 
 @Module({
@@ -12,21 +6,6 @@ import { LoggerInterceptor } from './logger-interceptor'
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggerInterceptor
-    },
-    {
-      provide: LoggerRepository,
-      useValue: new PinoLoggerRepository({
-        debug: Boolean(process.env.ENABLE_DEBUG)
-      })
-    },
-    {
-      provide: LoggerAggregator,
-      useFactory: (context: ResolutionContext) => {
-        const loggerRepository = context.get<LoggerRepository>(LoggerRepository)
-        return new LoggerAggregator(loggerRepository, {
-          debug: Boolean(process.env.ENABLE_DEBUG)
-        })
-      }
     }
   ]
 })

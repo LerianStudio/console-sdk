@@ -70,18 +70,36 @@ function SheetContent({
   side = 'right',
   className,
   children,
+  onInteractOutside,
   ...props
 }: SheetContentProps) {
+  const handleInteractOutside = React.useCallback(
+    (event: CustomEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.closest('[data-sonner-toaster]')) {
+        event.preventDefault()
+        return
+      }
+      onInteractOutside?.(
+        event as Parameters<
+          NonNullable<SheetContentProps['onInteractOutside']>
+        >[0]
+      )
+    },
+    [onInteractOutside]
+  )
+
   return (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          'flex max-h-screen flex-col justify-between overflow-x-auto px-8 pb-0',
+          'flex max-h-screen flex-col overflow-x-auto px-8 pb-0',
           sheetVariants({ side }),
           className
         )}
+        onInteractOutside={handleInteractOutside}
         {...props}
       >
         {children}
@@ -127,7 +145,10 @@ function SheetTitle({
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn('mb-2 flex text-xl font-bold text-[#52525b]', className)}
+      className={cn(
+        'text-muted-foreground mb-2 flex text-xl font-bold',
+        className
+      )}
       {...props}
     />
   )

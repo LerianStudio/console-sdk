@@ -46,8 +46,10 @@ function OnboardDialogTitle({
       className={cn('flex flex-col gap-8', className)}
       {...props}
     >
-      <p className="text-base font-medium text-zinc-600">{upperTitle}</p>
-      <DialogTitle className="text-4xl font-bold text-zinc-600">
+      <p className="text-muted-foreground text-base font-medium">
+        {upperTitle}
+      </p>
+      <DialogTitle className="text-muted-foreground text-4xl font-bold">
         {title}
       </DialogTitle>
     </div>

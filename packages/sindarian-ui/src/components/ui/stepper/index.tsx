@@ -24,7 +24,7 @@ export function StepperItem({
       data-slot="stepper-item"
       data-active={active}
       data-complete={complete}
-      className={cn('group stepper-item', className)}
+      className={cn('stepper-item group', className)}
       {...props}
     />
   )
@@ -79,7 +79,7 @@ export const StepperContent = ({ active, children }: StepperControlProps) => {
 
 export const StepperItemSkeleton = () => (
   <div className="flex flex-row items-center gap-3">
-    <Skeleton className="h-8 w-8 rounded-full bg-zinc-200" />
-    <Skeleton className="h-5 w-32 bg-zinc-200" />
+    <Skeleton className="bg-muted h-8 w-8 rounded-full" />
+    <Skeleton className="bg-muted h-5 w-32" />
   </div>
 )

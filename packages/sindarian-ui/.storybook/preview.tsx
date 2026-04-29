@@ -10,7 +10,10 @@ dayjs.extend(relativeTime)
 const preview: Preview = {
   parameters: {
     backgrounds: {
-      values: [{ name: 'Light', value: '#f4f4f5' }],
+      values: [
+        { name: 'Light', value: '#f4f4f5' },
+        { name: 'Dark', value: '#09090b' }
+      ],
       default: 'Light'
     },
     controls: {
@@ -22,6 +25,17 @@ const preview: Preview = {
   }
 }
 
-export const decorators = [(Story) => <Story />]
+export const decorators = [
+  (Story, context) => {
+    const background = context.globals?.backgrounds?.value ?? '#f4f4f5'
+    const isDark = background === '#09090b'
+
+    return (
+      <div className={isDark ? 'dark' : ''}>
+        <Story />
+      </div>
+    )
+  }
+]
 
 export default preview

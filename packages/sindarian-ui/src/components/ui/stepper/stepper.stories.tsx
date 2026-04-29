@@ -14,7 +14,7 @@ export default meta
 
 export const Primary: StoryObj<HTMLAttributes<HTMLDivElement>> = {
   render: (args) => (
-    <div className="bg-zinc-100 p-6">
+    <div className="bg-muted p-6">
       <Stepper {...args}>
         <StepperItem complete>
           <StepperItemNumber>1</StepperItemNumber>
@@ -47,7 +47,7 @@ export const Controlled: StoryObj<HTMLAttributes<HTMLDivElement>> = {
     const { step, handlePrevious, handleNext } = useStepper({ maxSteps: 3 })
 
     return (
-      <div className="grid grid-cols-4 gap-10 bg-zinc-100 p-6">
+      <div className="bg-muted grid grid-cols-4 gap-10 p-6">
         <Stepper {...args}>
           <StepperItem active={step === 0} complete={step > 0}>
             <StepperItemNumber>1</StepperItemNumber>

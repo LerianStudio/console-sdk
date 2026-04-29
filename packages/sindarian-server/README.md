@@ -4,15 +4,16 @@ A lightweight, NestJS-inspired framework designed specifically for Next.js appli
 
 ## ( Features
 
-- =€ **NestJS-like API** - Familiar decorators and patterns
-- ¡ **Next.js Optimized** - Built for serverless environments
-- =‰ **Dependency Injection** - Powered by Inversify
-- =ã **Decorator-based Routing** - Clean, declarative route definitions
-- =' **Middleware Support** - Interceptors and exception filters
-- =Ý **TypeScript First** - Full type safety out of the box
-- <¯ **Lightweight** - Minimal overhead for fast cold starts
+- =ï¿½ **NestJS-like API** - Familiar decorators and patterns
+- ï¿½ **Next.js Optimized** - Built for serverless environments
+- =ï¿½ **Dependency Injection** - Powered by Inversify
+- =ï¿½ **Decorator-based Routing** - Clean, declarative route definitions
+- =' **Middleware Support** - Guards, interceptors, pipes, and exception filters
+- âœ… **Zod Validation** - Built-in schema validation with Zod
+- =ï¿½ **TypeScript First** - Full type safety out of the box
+- <ï¿½ **Lightweight** - Minimal overhead for fast cold starts
 
-## =€ Quick Start
+## =ï¿½ Quick Start
 
 ### Installation
 
@@ -119,7 +120,7 @@ export async function PATCH(request: NextRequest, context: any) {
 }
 ```
 
-## =Ö Core Concepts
+## =ï¿½ Core Concepts
 
 ### Controllers
 
@@ -212,23 +213,40 @@ Create custom exception filters:
 export class ValidationFilter implements ExceptionFilter {
   async catch(exception: ValidationError, host: ArgumentsHost) {
     return NextResponse.json(
-      { 
+      {
         message: 'Validation failed',
-        errors: exception.errors 
+        errors: exception.errors
       },
       { status: 400 }
     )
   }
 }
 
-// Apply globally
+// Apply globally via app
 app.useGlobalFilters(new ValidationFilter())
+
+// Or register via module providers (supports multiple filters)
+@Module({
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: ValidationFilter
+    },
+    {
+      provide: APP_FILTER,
+      useClass: DatabaseErrorFilter
+    }
+  ]
+})
+export class AppModule {}
 
 // Or on specific controllers
 @Controller('/users')
 @UseFilters(ValidationFilter)
 export class UserController extends BaseController {}
 ```
+
+**Note**: When registering multiple filters via `APP_FILTER`, they execute in reverse order (last registered runs first), allowing more specific filters to handle exceptions before general ones.
 
 ### Interceptors
 
@@ -240,14 +258,29 @@ export class LoggingInterceptor implements Interceptor {
     const start = Date.now()
     const result = await next.handle()
     const duration = Date.now() - start
-    
+
     console.log(`${context.getClass().name}.${context.getHandler().name} - ${duration}ms`)
     return result
   }
 }
 
-// Apply globally
+// Apply globally via app
 app.useGlobalInterceptors(new LoggingInterceptor())
+
+// Or register via module providers (supports multiple interceptors)
+@Module({
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor
+    }
+  ]
+})
+export class AppModule {}
 
 // Or on specific controllers
 @Controller('/users')
@@ -255,7 +288,221 @@ app.useGlobalInterceptors(new LoggingInterceptor())
 export class UserController extends BaseController {}
 ```
 
-## <¯ Parameter Decorators
+**Note**: Multiple `APP_INTERCEPTOR` and `APP_PIPE` providers are supported and execute in reverse registration order (last registered runs first).
+
+### Guards
+
+Guards determine whether a request should be handled by the route handler. They're commonly used for authentication and authorization:
+
+```typescript
+import { CanActivate, ExecutionContext, UseGuards } from '@lerianstudio/sindarian-server'
+import { injectable } from 'inversify'
+
+@injectable()
+export class AuthGuard implements CanActivate {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest()
+    const token = request.headers.get('authorization')
+
+    if (!token) {
+      return false // Will throw ForbiddenApiException
+    }
+
+    // Validate token...
+    return true
+  }
+}
+
+// Apply to controller
+@Controller('/admin')
+@UseGuards(AuthGuard)
+export class AdminController extends BaseController {
+  @Get()
+  async dashboard() {
+    return { message: 'Welcome to admin' }
+  }
+}
+
+// Or apply to specific methods
+@Controller('/users')
+export class UserController extends BaseController {
+  @Get()
+  async findAll() {
+    return { users: [] } // Public route
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  async remove(@Param('id') id: string) {
+    return { deleted: id } // Protected route
+  }
+}
+```
+
+Register global guards via module providers:
+
+```typescript
+@Module({
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard
+    }
+  ]
+})
+export class AppModule {}
+
+// Or globally via app
+app.useGlobalGuards(new AuthGuard())
+```
+
+**Note**: Guards execute before interceptors and pipes. If a guard returns `false`, a `ForbiddenApiException` is thrown.
+
+### Pipes
+
+Transform and validate input data with pipes:
+
+```typescript
+import { PipeTransform, ArgumentMetadata, UsePipes } from '@lerianstudio/sindarian-server'
+
+@injectable()
+export class ParseIntPipe implements PipeTransform {
+  transform(value: any, metadata: ArgumentMetadata): number {
+    const val = parseInt(value, 10)
+    if (isNaN(val)) {
+      throw new Error('Validation failed: not a number')
+    }
+    return val
+  }
+}
+
+// Apply to controller or method
+@Controller('/items')
+@UsePipes(ParseIntPipe)
+export class ItemController extends BaseController {
+  @Get(':id')
+  async findOne(@Param('id') id: number) {
+    return this.itemService.findById(id)
+  }
+}
+```
+
+Register global pipes via module providers:
+
+```typescript
+@Module({
+  providers: [
+    {
+      provide: APP_PIPE,
+      useClass: ValidationPipe
+    }
+  ]
+})
+export class AppModule {}
+```
+
+### Validation with Zod
+
+Built-in Zod integration for schema validation:
+
+```typescript
+import { createZodDto, ZodValidationPipe, UsePipes } from '@lerianstudio/sindarian-server'
+import { z } from 'zod'
+
+// Define your schema
+const CreateUserSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  age: z.number().min(18).optional()
+})
+
+// Create a DTO class from the schema
+const CreateUserDto = createZodDto(CreateUserSchema)
+
+// Use in your controller with the validation pipe
+@Controller('/users')
+@UsePipes(ZodValidationPipe)
+export class UserController extends BaseController {
+  @Post()
+  async create(@Body() userData: typeof CreateUserDto) {
+    // userData is validated and typed
+    return this.userService.create(userData)
+  }
+}
+```
+
+The `ZodValidationPipe` automatically validates incoming data against Zod schemas and throws a `ValidationApiException` on validation errors.
+
+### Logger Service
+
+Use the built-in logger for consistent application logging:
+
+```typescript
+import { ConsoleLogger, LoggerService } from '@lerianstudio/sindarian-server'
+
+// Use the default ConsoleLogger
+const logger = new ConsoleLogger({ prefix: 'MyApp' })
+logger.log('Application started')
+logger.error('Something went wrong')
+logger.warn('This is a warning')
+logger.debug('Debug information')
+
+// Or inject as a service
+@injectable()
+export class MyService {
+  constructor(private logger: ConsoleLogger) {}
+
+  doSomething() {
+    this.logger.log('Doing something...')
+  }
+}
+```
+
+Available log levels: `verbose`, `debug`, `log`, `warn`, `error`, `fatal`
+
+### HttpService
+
+Abstract base class for building API client services with built-in error handling:
+
+```typescript
+import { HttpService, FetchModuleOptions } from '@lerianstudio/sindarian-server'
+import { injectable } from 'inversify'
+
+@injectable()
+export class MyApiService extends HttpService {
+  protected async createDefaults(): Promise<FetchModuleOptions> {
+    return {
+      baseUrl: 'https://api.example.com',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.getToken()}`
+      }
+    }
+  }
+
+  async getUsers() {
+    return this.get<User[]>('/users')
+  }
+
+  async createUser(data: CreateUserDto) {
+    return this.post<User>('/users', {
+      body: JSON.stringify(data)
+    })
+  }
+
+  async uploadFile(data: { file: File; name: string }) {
+    return this.postFormData<UploadResponse>('/upload', data)
+  }
+}
+```
+
+The `HttpService` provides:
+- HTTP methods: `get`, `post`, `put`, `patch`, `delete`, `head`
+- FormData support: `postFormData`, `patchFormData`
+- Automatic error handling with typed exceptions
+- Lifecycle hooks: `onBeforeFetch`, `onAfterFetch`, `catch`
+
+## <ï¿½ Parameter Decorators
 
 Extract data from requests with decorators:
 
@@ -333,7 +580,7 @@ export class AuthService {
 }
 ```
 
-## =Ú Documentation
+## =ï¿½ Documentation
 
 - **[Technical Guide](./TECHNICAL.md)** - Deep dive into the framework's architecture and implementation details
 - **[API Reference](./docs/api.md)** - Complete API documentation
@@ -343,7 +590,7 @@ export class AuthService {
 
 Contributions are welcome! Please read our [Contributing Guide](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-## =Ä License
+## =ï¿½ License
 
 This project is licensed under the ISC License - see the [LICENSE](./LICENSE) file for details.
 
@@ -353,10 +600,10 @@ This project is licensed under the ISC License - see the [LICENSE](./LICENSE) fi
 - Built on [Inversify](https://inversify.io/) - A powerful IoC container for TypeScript
 - Designed for [Next.js](https://nextjs.org/) - The React framework for production
 
-## =€ What's Next?
+## =ï¿½ What's Next?
 
-- [ ] Validation pipes with Zod integration
-- [ ] Built-in authentication guards
+- [x] Validation pipes with Zod integration
+- [x] Guards system for authentication/authorization
 - [ ] WebSocket support
 - [ ] GraphQL integration
 - [ ] CLI tools for scaffolding
@@ -364,4 +611,4 @@ This project is licensed under the ISC License - see the [LICENSE](./LICENSE) fi
 
 ---
 
-**Sindarian Server** - Building the future of Next.js APIs, one decorator at a time. =€
+**Sindarian Server** - Building the future of Next.js APIs, one decorator at a time. =ï¿½

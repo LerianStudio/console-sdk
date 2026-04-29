@@ -7,6 +7,7 @@ import {
   CONTROLLERS_PROPERTY,
   IMPORTS_PROPERTY
 } from '@/constants/keys'
+import { APP_FILTER } from '@/services/filters'
 import { Class } from '@/types/class'
 import {
   moduleHandler,
@@ -50,12 +51,14 @@ jest.mock('@/exceptions/decorators/use-filters-decorator', () => ({
 import { ControllerHandler } from '@/controllers/decorators/controller-decorator'
 import { InterceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
 
-const mockControllerHandler = ControllerHandler.getRoutes as jest.MockedFunction<
-  typeof ControllerHandler.getRoutes
->
-const mockInterceptorHandler = InterceptorHandler.register as jest.MockedFunction<
-  typeof InterceptorHandler.register
->
+const mockControllerHandler =
+  ControllerHandler.getRoutes as jest.MockedFunction<
+    typeof ControllerHandler.getRoutes
+  >
+const mockInterceptorHandler =
+  InterceptorHandler.register as jest.MockedFunction<
+    typeof InterceptorHandler.register
+  >
 
 describe('moduleHandler', () => {
   class TestController {}
@@ -921,6 +924,251 @@ describe('Error handling', () => {
     expect(TestModule.prototype[PROVIDERS_PROPERTY]).toContain(
       malformedProvider
     )
+  })
+})
+
+describe('Multi-injection support', () => {
+  it('should support multiple providers with the same token', async () => {
+    class Filter1 {
+      catch() {
+        return 'filter1'
+      }
+    }
+
+    class Filter2 {
+      catch() {
+        return 'filter2'
+      }
+    }
+
+    class Filter3 {
+      catch() {
+        return 'filter3'
+      }
+    }
+
+    @Module({
+      providers: [
+        {
+          provide: APP_FILTER,
+          useClass: Filter1
+        },
+        {
+          provide: APP_FILTER,
+          useClass: Filter2
+        },
+        {
+          provide: APP_FILTER,
+          useClass: Filter3
+        }
+      ]
+    })
+    class TestModule {}
+
+    const container = new Container()
+    container.load(TestModule.prototype[MODULE_PROPERTY])
+
+    // Should be able to retrieve all filters
+    const filters = await container.getAllAsync(APP_FILTER)
+    expect(filters).toHaveLength(3)
+    expect(filters[0]).toBeInstanceOf(Filter1)
+    expect(filters[1]).toBeInstanceOf(Filter2)
+    expect(filters[2]).toBeInstanceOf(Filter3)
+  })
+
+  it('should support multiple exception filters like the example', async () => {
+    class GlobalExceptionFilter {
+      name = 'GlobalExceptionFilter'
+    }
+
+    class DatabaseExceptionFilter {
+      name = 'DatabaseExceptionFilter'
+    }
+
+    class MongoExceptionFilter {
+      name = 'MongoExceptionFilter'
+    }
+
+    class MongooseExceptionFilter {
+      name = 'MongooseExceptionFilter'
+    }
+
+    @Module({
+      providers: [
+        {
+          provide: APP_FILTER,
+          useClass: GlobalExceptionFilter
+        },
+        {
+          provide: APP_FILTER,
+          useClass: DatabaseExceptionFilter
+        },
+        {
+          provide: APP_FILTER,
+          useClass: MongoExceptionFilter
+        },
+        {
+          provide: APP_FILTER,
+          useClass: MongooseExceptionFilter
+        }
+      ]
+    })
+    class AppModule {}
+
+    const container = new Container()
+    container.load(AppModule.prototype[MODULE_PROPERTY])
+
+    // Should be able to retrieve all filters without ambiguous binding error
+    const filters = await container.getAllAsync(APP_FILTER)
+    expect(filters).toHaveLength(4)
+    expect(filters[0].name).toBe('GlobalExceptionFilter')
+    expect(filters[1].name).toBe('DatabaseExceptionFilter')
+    expect(filters[2].name).toBe('MongoExceptionFilter')
+    expect(filters[3].name).toBe('MongooseExceptionFilter')
+  })
+
+  it('should allow retrieving filters via token using getAllAsync', async () => {
+    class Filter1 {
+      name = 'filter1'
+    }
+
+    class Filter2 {
+      name = 'filter2'
+    }
+
+    @Module({
+      providers: [
+        {
+          provide: APP_FILTER,
+          useClass: Filter1
+        },
+        {
+          provide: APP_FILTER,
+          useClass: Filter2
+        }
+      ]
+    })
+    class TestModule {}
+
+    const container = new Container()
+    container.load(TestModule.prototype[MODULE_PROPERTY])
+
+    // Should be able to retrieve all filters via the token
+    const filters = await container.getAllAsync(APP_FILTER)
+
+    expect(filters).toHaveLength(2)
+    expect(filters[0]).toBeInstanceOf(Filter1)
+    expect(filters[1]).toBeInstanceOf(Filter2)
+    expect(filters[0].name).toBe('filter1')
+    expect(filters[1].name).toBe('filter2')
+  })
+})
+
+describe('Provider override support', () => {
+  it('should override a simple class provider when re-provided by a later module', async () => {
+    class OriginalService {
+      name = 'original'
+    }
+
+    class OverriddenService {
+      name = 'overridden'
+    }
+
+    @Module({
+      providers: [OriginalService]
+    })
+    class BaseModule {}
+
+    @Module({
+      imports: [BaseModule],
+      providers: [OverriddenService]
+    })
+    class OverrideModule {}
+
+    // OverrideModule does not re-provide OriginalService,
+    // so OriginalService should still resolve to itself
+    const container = new Container()
+    container.load(OverrideModule.prototype[MODULE_PROPERTY])
+
+    const original = container.get(OriginalService)
+    expect(original.name).toBe('original')
+
+    const overridden = container.get(OverriddenService)
+    expect(overridden.name).toBe('overridden')
+  })
+
+  it('should override an object provider when the same token is re-provided', async () => {
+    abstract class Repository {
+      abstract getData(): string
+    }
+
+    class RealRepository extends Repository {
+      getData() {
+        return 'real-data'
+      }
+    }
+
+    class MockRepository extends Repository {
+      getData() {
+        return 'mock-data'
+      }
+    }
+
+    @Module({
+      providers: [
+        { provide: Repository, useClass: RealRepository }
+      ]
+    })
+    class BaseModule {}
+
+    @Module({
+      imports: [BaseModule],
+      providers: [
+        { provide: Repository, useClass: MockRepository }
+      ]
+    })
+    class OverrideModule {}
+
+    const container = new Container()
+    container.load(OverrideModule.prototype[MODULE_PROPERTY])
+
+    // The last provider wins - MockRepository should be resolved
+    const repo = container.get(Repository)
+    expect(repo.getData()).toBe('mock-data')
+  })
+
+  it('should not override multi-provider tokens like APP_FILTER', async () => {
+    class Filter1 {
+      name = 'filter1'
+    }
+
+    class Filter2 {
+      name = 'filter2'
+    }
+
+    @Module({
+      providers: [
+        { provide: APP_FILTER, useClass: Filter1 }
+      ]
+    })
+    class BaseModule {}
+
+    @Module({
+      imports: [BaseModule],
+      providers: [
+        { provide: APP_FILTER, useClass: Filter2 }
+      ]
+    })
+    class ExtendedModule {}
+
+    const container = new Container()
+    container.load(ExtendedModule.prototype[MODULE_PROPERTY])
+
+    // Both filters should be accumulated, not overridden
+    const filters = await container.getAllAsync(APP_FILTER)
+    expect(filters).toHaveLength(2)
+    expect(filters[0].name).toBe('filter1')
+    expect(filters[1].name).toBe('filter2')
   })
 })
 

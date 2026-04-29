@@ -7,10 +7,12 @@ import { BaseExceptionFilter } from '@/exceptions/base-exception-filter'
 import { catchHandler } from '@/exceptions/decorators/catch-decorator'
 import { FilterHandler } from '@/exceptions/decorators/use-filters-decorator'
 import { ExceptionFilter } from '@/exceptions/exception-filter'
+import { CanActivate, GuardHandler } from '@/guards'
 import { InterceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
 import { Interceptor } from '@/interceptor/interceptor'
 import { moduleHandler, ModuleMetadata } from '@/modules/module-decorator'
 import { APP_FILTER } from '@/services/filters'
+import { APP_GUARD } from '@/services/guards'
 import { APP_INTERCEPTOR } from '@/services/interceptor'
 import { bindRequest } from '@/services/request'
 import { Class } from '@/types/class'
@@ -24,6 +26,11 @@ import { PipeTransform } from '@/pipes/pipe-transform'
 import { APP_PIPE } from '@/services/pipes'
 import { PipeHandler } from '@/pipes/decorators/use-pipes'
 import { RouteHandler } from '@/controllers/decorators/route-decorator'
+import { sortRoutesBySpecificity } from '@/utils/routes/route-specificity'
+import { GetOptions, OptionalGetOptions } from 'inversify'
+import { Middleware } from '@/middleware/middleware'
+import { MiddlewareHandler } from '@/middleware/middleware-handler'
+import { APP_MIDDLEWARE } from '@/services/middleware'
 
 export type ServerFactoryOptions = {
   logger?: LoggerService | boolean
@@ -32,8 +39,10 @@ export type ServerFactoryOptions = {
 export class ServerFactory {
   private globalPrefix: string = ''
   private globalFilters: ExceptionFilter[] = [new BaseExceptionFilter()]
+  private globalGuards: CanActivate[] = []
   private globalInterceptors: Interceptor[] = []
   private globalPipes: PipeTransform[] = []
+  private globalMiddlewares: Middleware[] = []
 
   private readonly module: Class
   private readonly container: Container
@@ -56,7 +65,11 @@ export class ServerFactory {
 
     const routes = moduleHandler(module)
 
-    return new ServerFactory(module, container, routes)
+    // Sort routes by specificity (most specific first)
+    // This ensures routes like /users/active match before /users/:id
+    const sortedRoutes = sortRoutesBySpecificity(routes)
+
+    return new ServerFactory(module, container, sortedRoutes)
   }
 
   /**
@@ -71,12 +84,40 @@ export class ServerFactory {
     this.globalFilters.push(...filters)
   }
 
+  public useGlobalGuards(...guards: CanActivate[]) {
+    this.globalGuards.push(...guards)
+  }
+
   public useGlobalInterceptors(...interceptors: Interceptor[]) {
     this.globalInterceptors.push(...interceptors)
   }
 
   public useGlobalPipes(...pipes: PipeTransform[]) {
     this.globalPipes.push(...pipes)
+  }
+
+  public useGlobalMiddleware(...middlewares: Middleware[]) {
+    this.globalMiddlewares.push(...middlewares)
+  }
+
+  /**
+   * Get a service synchronously
+   * @param service - The service to get
+   * @param options - The options for getting the service
+   * @returns The service instance
+   */
+  public get<T>(service: Class<T>, options?: OptionalGetOptions): T {
+    return this.container.get<T>(service, options)
+  }
+
+  /**
+   * Get a service asynchronously
+   * @param service - The service to get
+   * @param options - The options for getting the service
+   * @returns A promise that resolves to the service instance
+   */
+  public getAsync<T>(service: Class<T>, options?: GetOptions): Promise<T> {
+    return this.container.getAsync<T>(service, options)
   }
 
   /**
@@ -89,6 +130,23 @@ export class ServerFactory {
     request: NextRequest,
     { params }: { params: Promise<any> }
   ) {
+    // Resolve middleware chain: explicit globals + APP_MIDDLEWARE container bindings
+    const middlewares = await this._fetchMiddlewares()
+
+    return MiddlewareHandler.execute(
+      request,
+      middlewares,
+      () => this._handleRequest(request, params)
+    )
+  }
+
+  /**
+   * Core request handling pipeline: guards -> interceptors -> handler -> exception filters
+   */
+  private async _handleRequest(
+    request: NextRequest,
+    params: Promise<any>
+  ): Promise<Response> {
     const host = new ArgumentsHost([request])
     let controller: BaseController | undefined
 
@@ -111,6 +169,12 @@ export class ServerFactory {
         handler,
         [request]
       )
+
+      // Check if there's any guards to execute
+      const guards = await this._fetchGuards(controller!, match?.methodName)
+
+      // Execute guards - throws ForbiddenApiException if any guard returns false
+      await GuardHandler.execute(executionContext, guards)
 
       // Check if there's any interceptors to execute
       const interceptors = await this._fetchInterceptors(controller!)
@@ -153,6 +217,17 @@ export class ServerFactory {
         if (!type || error instanceof type) {
           const response = await filter.catch(error, host)
 
+          // Add validation
+          if (response && !(response instanceof Response)) {
+            Logger.error(
+              `ExceptionFilter ${filter.constructor.name} returned invalid response type: ${response?.constructor?.name}`
+            )
+            return NextResponse.json(
+              { message: 'Internal server error' },
+              { status: 500 }
+            )
+          }
+
           // If a response is returned from the filter, use it
           if (response) {
             return response
@@ -180,7 +255,17 @@ export class ServerFactory {
    */
   private _parseRequest(request: NextRequest) {
     const { pathname } = new URL(request.url)
-    const strippedPathname = pathname.replace(this.globalPrefix, '')
+
+    // Strip the global prefix from the pathname
+    let strippedPathname = pathname
+    if (this.globalPrefix && pathname.startsWith(this.globalPrefix)) {
+      strippedPathname = pathname.slice(this.globalPrefix.length)
+    }
+
+    // Ensure pathname starts with / after stripping prefix
+    if (!strippedPathname.startsWith('/')) {
+      strippedPathname = '/' + strippedPathname
+    }
 
     return {
       pathname: strippedPathname,
@@ -211,15 +296,50 @@ export class ServerFactory {
     return route
   }
 
+  /**
+   * Fetch guards for a controller method
+   * @param controller - The controller instance
+   * @param methodName - The method name
+   * @returns Array of guard instances
+   */
+  private async _fetchGuards(
+    controller: BaseController,
+    methodName: string | symbol
+  ) {
+    const guards = [...this.globalGuards]
+
+    // Fetch all registered global guards
+    try {
+      const appGuards = await this.container.getAllAsync<CanActivate>(APP_GUARD)
+      if (appGuards.length > 0) {
+        guards.push(...appGuards)
+      }
+    } catch {
+      // No bindings found or error retrieving - continue without APP_GUARD providers
+    }
+
+    // Fetch controller and method guards
+    if (controller) {
+      guards.push(
+        ...(await GuardHandler.fetch(this.container, controller, methodName))
+      )
+    }
+
+    return guards
+  }
+
   private async _fetchInterceptors(controller: BaseController) {
     const interceptors = [...this.globalInterceptors]
 
-    // Fetch any registered global interceptor
-    const appInterceptor = this.container.isBound(APP_INTERCEPTOR)
-    if (appInterceptor) {
-      interceptors.push(
-        await this.container.getAsync<Interceptor>(APP_INTERCEPTOR)
-      )
+    // Fetch all registered global interceptors
+    try {
+      const appInterceptors =
+        await this.container.getAllAsync<Interceptor>(APP_INTERCEPTOR)
+      if (appInterceptors.length > 0) {
+        interceptors.push(...appInterceptors)
+      }
+    } catch {
+      // No bindings found or error retrieving - continue without APP_INTERCEPTOR providers
     }
 
     if (controller) {
@@ -252,10 +372,15 @@ export class ServerFactory {
   private async _fetchExceptionFilters(controller?: BaseController) {
     const filters = [...this.globalFilters]
 
-    // Fetch any registered global filter
-    const appFilter = this.container.isBound(APP_FILTER)
-    if (appFilter) {
-      filters.push(await this.container.getAsync<ExceptionFilter>(APP_FILTER))
+    // Fetch all registered global filters
+    try {
+      const appFilters =
+        await this.container.getAllAsync<ExceptionFilter>(APP_FILTER)
+      if (appFilters.length > 0) {
+        filters.push(...appFilters)
+      }
+    } catch {
+      // No bindings found or error retrieving - continue without APP_FILTER providers
     }
 
     if (controller) {
@@ -263,6 +388,26 @@ export class ServerFactory {
     }
 
     return filters.reverse()
+  }
+
+  /**
+   * Fetch all middleware: explicit globals + APP_MIDDLEWARE container bindings
+   * Execution order: first registered = outermost
+   */
+  private async _fetchMiddlewares(): Promise<Middleware[]> {
+    const middlewares = [...this.globalMiddlewares]
+
+    try {
+      const appMiddlewares =
+        await this.container.getAllAsync<Middleware>(APP_MIDDLEWARE)
+      if (appMiddlewares.length > 0) {
+        middlewares.push(...appMiddlewares)
+      }
+    } catch {
+      // No bindings found - continue without APP_MIDDLEWARE providers
+    }
+
+    return middlewares
   }
 
   /**
@@ -277,10 +422,14 @@ export class ServerFactory {
   ) {
     const pipes = [...this.globalPipes]
 
-    // Fetch any registered global pipes
-    const appPipe = this.container.isBound(APP_PIPE)
-    if (appPipe) {
-      pipes.push(await this.container.getAsync<PipeTransform>(APP_PIPE))
+    // Fetch all registered global pipes
+    try {
+      const appPipes = await this.container.getAllAsync<PipeTransform>(APP_PIPE)
+      if (appPipes.length > 0) {
+        pipes.push(...appPipes)
+      }
+    } catch {
+      // No bindings found or error retrieving - continue without APP_PIPE providers
     }
 
     // Fetch controller pipes

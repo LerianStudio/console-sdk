@@ -1,6 +1,6 @@
 {
   "name": "@lerianstudio/sindarian-server",
-  "version": "1.0.0",
+  "version": "1.0.0-beta.30",
   "description": "Sindarian Server",
   "license": "ISC",
   "author": {
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/LerianStudio/console-sdk.git",
+    "url": "git+https://github.com/LerianStudio/console-sdk.git",
     "directory": "packages/sindarian-server"
   },
   "type": "commonjs",
@@ -32,7 +32,6 @@
     "lint:check": "eslint ."
   },
   "dependencies": {
-    "@lerianstudio/lib-logs": ">=1.1.0",
     "path-to-regexp": "^8.3.0"
   },
   "peerDependencies": {

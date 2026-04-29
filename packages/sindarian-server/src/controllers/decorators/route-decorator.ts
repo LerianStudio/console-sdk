@@ -76,6 +76,10 @@ export function Route(method: HttpMethods, path: string): MethodDecorator {
         return response
       }
 
+      if (response == null) {
+        return new NextResponse(null, { status: 204 })
+      }
+
       return NextResponse.json(response)
     }
   }
@@ -123,6 +127,10 @@ export function Patch(path: string = '') {
 
 /**
  * Decorator to define a DELETE route.
+ *
+ * When the decorated method returns `null` or `undefined`, the response will
+ * automatically be HTTP 204 No Content (with no body). If the method returns
+ * a non-null value, it will be serialized as JSON with status 200.
  *
  * @param path - The path of the route.
  * @returns A decorator function that can be used to decorate a controller method.

@@ -104,7 +104,7 @@ export class PipeHandler {
     const metadata = RouteHandler.getMetadata(target.constructor, propertyKey)
 
     if (pipes.length === 0) {
-      return args
+      return args.map((arg) => arg.parameter)
     }
 
     // Get paramTypes from route metadata (which contains the method parameter types)

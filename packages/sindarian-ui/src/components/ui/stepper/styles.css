@@ -1,41 +1,41 @@
-@theme {
-    --color-stepper-item-text: var(--color-shadcn-400);
-    --color-stepper-item-active: var(--color-zinc-700);
-    --color-stepper-item-number: var(--color-shadcn-400);
-    --color-stepper-item-icon: var(--color-green-600);
-    --color-stepper-item-description: var(--color-zinc-500);
+@theme inline {
+  --color-stepper-item-text: var(--color-container-text);
+  --color-stepper-item-active: var(--color-foreground);
+  --color-stepper-item-number: var(--color-container-text);
+  --color-stepper-item-icon: var(--color-system-success);
+  --color-stepper-item-description: var(--color-body-text);
 }
 
 @layer components {
-    .stepper {
-        @apply flex flex-col gap-4;
-    }
+  .stepper {
+    @apply flex flex-col gap-4;
+  }
 
-    .stepper-item {
-        @apply flex flex-row gap-3 data-[complete=true]:cursor-pointer;
-    }
+  .stepper-item {
+    @apply flex flex-row gap-3 data-[complete=true]:cursor-pointer;
+  }
 
-    .stepper-item-number {
-        @apply border-stepper-item-number text-stepper-item-number flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-medium;
-        @apply group-data-[active=true]:border-none group-data-[active=true]:bg-stepper-item-active group-data-[active=true]:text-white;
-        @apply group-data-[complete=true]:border-none group-data-[complete=true]:bg-white group-data-[complete=true]:text-stepper-item-active;
-    }
+  .stepper-item-number {
+    @apply border-stepper-item-number text-stepper-item-number flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-medium;
+    @apply group-data-[active=true]:bg-stepper-item-active group-data-[active=true]:text-primary-foreground group-data-[active=true]:border-none;
+    @apply group-data-[complete=true]:text-stepper-item-active group-data-[complete=true]:bg-card group-data-[complete=true]:border-none;
+  }
 
-    .stepper-item-text {
-        @apply text-stepper-item-text flex flex-col text-sm font-medium;
-        @apply group-data-[active=true]:text-stepper-item-active;
-        @apply group-data-[complete=true]:text-stepper-item-active group-data-[complete=true]:underline;
-    }
+  .stepper-item-text {
+    @apply text-stepper-item-text flex flex-col text-sm font-medium;
+    @apply group-data-[active=true]:text-stepper-item-active;
+    @apply group-data-[complete=true]:text-stepper-item-active group-data-[complete=true]:underline;
+  }
 
-    .stepper-item-title {
-        @apply flex h-8 items-center gap-3;
-    }
+  .stepper-item-title {
+    @apply flex h-8 items-center gap-3;
+  }
 
-    .stepper-item-icon {
-        @apply text-stepper-item-icon group-data-[complete=false]:hidden;
-    }
+  .stepper-item-icon {
+    @apply text-stepper-item-icon group-data-[complete=false]:hidden;
+  }
 
-    .stepper-item-description {
-        @apply text-xs text-stepper-item-description group-data-[active=false]:hidden;
-    }
+  .stepper-item-description {
+    @apply text-stepper-item-description text-xs group-data-[active=false]:hidden;
+  }
 }

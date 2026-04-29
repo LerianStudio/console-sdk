@@ -79,17 +79,17 @@ export const MultipleSelectTrigger = React.forwardRef<
     <div
       ref={_ref}
       className={cn(
-        'bg-background ring-offset-background placeholder:text-shadcn-400 focus:ring-ring flex flex-row rounded-md border border-[#C7C7C7] text-sm focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden md:text-sm dark:border-inherit [&>span]:line-clamp-1',
+        'bg-background ring-offset-background placeholder:text-shadcn-400 focus:ring-ring border-shadcn-400 flex flex-row rounded-md border text-sm focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden md:text-sm [&>span]:line-clamp-1',
         {
-          'h-9': value.length === 0,
-          'min-h-9': value.length > 0,
+          'h-10': value.length === 0,
+          'min-h-10': value.length > 0,
           'cursor-text': !disabled && !readOnly && value.length !== 0,
           'bg-shadcn-100 cursor-not-allowed opacity-50': disabled
         },
         readOnly && [
           'data-read-only:cursor-default',
           'data-read-only:select-text',
-          'data-read-only:bg-zinc-100',
+          'data-read-only:bg-muted',
           'data-read-only:opacity-50',
           'data-read-only:pointer-events-none',
           'data-read-only:focus:outline-hidden',
@@ -297,7 +297,7 @@ export const MultipleSelectGroup = React.forwardRef<
   <CommandPrimitive.Group
     ref={ref}
     className={cn(
-      'overflow-hidden p-1 text-slate-950 dark:text-slate-50 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-slate-500 dark:[&_[cmdk-group-heading]]:text-slate-400',
+      'text-foreground [&_[cmdk-group-heading]]:text-muted-foreground overflow-hidden p-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium',
       className
     )}
     {...props}
@@ -308,15 +308,16 @@ MultipleSelectGroup.displayName = 'MultipleSelectGroup'
 export const MultipleSelectItem = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, value, onClick, onSelect, ...props }, ref) => {
+>(({ className, value, onClick, onSelect, children, ...props }, ref) => {
   const { handleChange } = useMultipleSelect()
 
   return (
     <CommandPrimitive.Item
       ref={ref}
       value={value}
+      keywords={typeof children === 'string' ? [children] : undefined}
       className={cn(
-        "data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground dark:data-[selected='true']:bg-accent relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 dark:data-[selected=true]:text-slate-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        'data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
         className
       )}
       {...props}
@@ -328,7 +329,9 @@ export const MultipleSelectItem = React.forwardRef<
         handleChange(value)
         onSelect?.(value)
       }}
-    />
+    >
+      {children}
+    </CommandPrimitive.Item>
   )
 })
 MultipleSelectItem.displayName = 'MultipleSelectItem'
@@ -357,6 +360,7 @@ export const MultipleSelect = React.forwardRef<
       disabled,
       onKeyDown,
       children,
+      onChange: _onChange,
       ...props
     },
     ref
@@ -365,8 +369,10 @@ export const MultipleSelect = React.forwardRef<
     const [open, setOpen] = React.useState(false)
     const inputRef = React.useRef<HTMLInputElement>(null)
     const [onScrollbar, setOnScrollbar] = React.useState(false)
+    const safeValue = Array.isArray(value) ? value : []
+    const safeDefault = Array.isArray(defaultValue) ? defaultValue : []
     const [selected, setSelected] = React.useState<string[]>(
-      defaultValue ?? value ?? []
+      safeDefault.length > 0 ? safeDefault : safeValue
     )
     const [options, addOption] = React.useReducer(
       (prev: Record<string, string>, state: Record<string, string>) => ({
@@ -419,7 +425,7 @@ export const MultipleSelect = React.forwardRef<
 
     // Keeps the selected value in sync with the value prop
     React.useEffect(() => {
-      if (value) {
+      if (Array.isArray(value)) {
         setSelected(value)
       }
     }, [value])
@@ -445,7 +451,7 @@ export const MultipleSelect = React.forwardRef<
         <CommandPrimitive
           ref={_ref}
           className={cn(
-            'flex h-auto w-full flex-col overflow-visible rounded-md bg-transparent text-slate-950 dark:text-slate-50',
+            'text-foreground flex h-auto w-full flex-col overflow-visible rounded-md bg-transparent',
             className
           )}
           aria-disabled={disabled}

@@ -25,6 +25,7 @@ export type SwitchFieldProps = {
   required?: boolean
   disabled?: boolean
   disabledTooltip?: string
+  'data-testid'?: string
 }
 
 export const SwitchField = ({
@@ -35,7 +36,8 @@ export const SwitchField = ({
   tooltip,
   required,
   disabled,
-  disabledTooltip
+  disabledTooltip,
+  'data-testid': dataTestId
 }: SwitchFieldProps) => {
   return (
     <FormField
@@ -75,6 +77,7 @@ export const SwitchField = ({
                   checked={field.value}
                   onCheckedChange={field.onChange}
                   disabled={disabled}
+                  data-testid={dataTestId}
                 />
               )}
             </FormControl>

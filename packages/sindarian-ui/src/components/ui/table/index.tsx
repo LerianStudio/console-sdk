@@ -67,10 +67,10 @@ function TableRow({ className, active, button, ...props }: TableRowProps) {
     <tr
       data-slot="data-table-row"
       className={cn(
-        'data-[state=selected]:bg-muted border-b transition-colors hover:bg-[#FAFAFA]',
+        'data-[state=selected]:bg-muted hover:bg-muted border-b transition-colors',
         {
           'cursor-pointer': button,
-          'bg-[#FEED0280] hover:bg-[#FEED0280]': active
+          'bg-accent/50 hover:bg-accent/50': active
         },
         className
       )}
@@ -88,7 +88,7 @@ function TableHead({ className, align, ...props }: TableHeadProps) {
     <th
       data-slot="data-table-head"
       className={cn(
-        'h-12 px-6 py-4 text-left align-middle font-medium text-[#52525B] [&:has([role=checkbox])]:pr-0',
+        'text-muted-foreground h-12 px-6 py-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0',
         {
           'text-center': align === 'center',
           'text-right': align === 'right'
@@ -109,7 +109,7 @@ function TableCell({
     <td
       data-slot="data-table-cell"
       className={cn(
-        'group/table-cell text-shadcn-600 px-6 py-4 align-middle text-sm font-normal [&:has([role=checkbox])]:pr-0',
+        'group/table-cell text-foreground px-6 py-4 align-middle text-sm font-normal [&:has([role=checkbox])]:pr-0',
         {
           'hover:underline': onClick
         },

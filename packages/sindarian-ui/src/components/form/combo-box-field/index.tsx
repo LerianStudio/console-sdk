@@ -88,7 +88,7 @@ export const ComboBoxField = ({
                 readOnly={readOnly}
                 tabIndex={0}
                 className={cn(
-                  'w-full justify-between',
+                  'border-border bg-input hover:bg-input h-10 w-full justify-between rounded-md border px-4 py-2 pl-6 text-left text-sm font-normal focus:outline-none focus:ring-2 focus:ring-offset-0',
                   !field.value && 'text-muted-foreground'
                 )}
               >

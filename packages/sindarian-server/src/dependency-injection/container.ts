@@ -1,6 +1,9 @@
 import {
   BindToFluentSyntax,
+  GetAllOptions,
+  GetOptions,
   Container as InversifyContainer,
+  OptionalGetOptions,
   ServiceIdentifier
 } from 'inversify'
 
@@ -13,7 +16,9 @@ export class Container {
   private loadedModules: Set<ContainerModule> = new Set()
 
   constructor() {
-    this.container = new InversifyContainer()
+    this.container = new InversifyContainer({
+      defaultScope: 'Singleton'
+    })
   }
 
   /**
@@ -42,12 +47,31 @@ export class Container {
     return this.container.bind(serviceIdentifier)
   }
 
-  get<T>(serviceIdentifier: ServiceIdentifier<T>): T {
-    return this.container.get(serviceIdentifier)
+  get<T>(
+    serviceIdentifier: ServiceIdentifier<T>,
+    options?: OptionalGetOptions
+  ): T {
+    if (options !== undefined) {
+      return this.container.get(serviceIdentifier, options) as T
+    }
+    return this.container.get(serviceIdentifier) as T
   }
 
-  getAsync<T>(serviceIdentifier: ServiceIdentifier<T>): Promise<T> {
-    return this.container.getAsync(serviceIdentifier)
+  getAsync<T>(
+    serviceIdentifier: ServiceIdentifier<T>,
+    options?: GetOptions
+  ): Promise<T> {
+    if (options !== undefined) {
+      return this.container.getAsync(serviceIdentifier, options)
+    }
+    return this.container.getAsync(serviceIdentifier) as Promise<T>
+  }
+
+  getAllAsync<T>(
+    serviceIdentifier: ServiceIdentifier<T>,
+    options?: GetAllOptions
+  ): Promise<T[]> {
+    return this.container.getAllAsync(serviceIdentifier, options)
   }
 
   isBound<T>(serviceIdentifier: ServiceIdentifier<T>): boolean {

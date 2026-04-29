@@ -12,11 +12,36 @@ import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { EllipsisVertical } from 'lucide-react'
 
-export function EntityCardWrapper({
+export function EntityCardGrid({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
-  return <div data-slot="entity-card-wrapper" {...props} />
+  return (
+    <div
+      className={cn(
+        'grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3',
+        className
+      )}
+      data-slot="entity-card-grid"
+      {...props}
+    />
+  )
+}
+
+export function EntityCardGridFooter({
+  className,
+  ...props
+}: React.ComponentProps<'div'>) {
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-6 py-4',
+        className
+      )}
+      data-slot="entity-card-grid-footer"
+      {...props}
+    />
+  )
 }
 
 export type EntityCardProps = React.ComponentProps<'div'> & {
@@ -39,7 +64,7 @@ export function EntityCard({
       <div
         data-slot="entity-card"
         className={cn(
-          'relative flex flex-col gap-4 rounded-lg bg-white px-5 py-4',
+          'bg-card relative flex flex-col gap-4 rounded-lg px-5 py-4',
           { 'rounded-b-none': progress },
           className
         )}
@@ -58,7 +83,7 @@ export function EntityCardAction({
 }: React.ComponentProps<typeof DropdownMenu>) {
   return (
     <DropdownMenu {...props}>
-      <DropdownMenuTrigger className="absolute top-2.5 right-2.5">
+      <DropdownMenuTrigger className="absolute right-2.5 top-2.5">
         <IconButton variant="outline" size="small" rounded>
           <EllipsisVertical />
         </IconButton>
@@ -90,7 +115,7 @@ export function EntityCardTitle({
   return (
     <h3
       data-slot="entity-card-title"
-      className={cn('text-sm font-semibold text-zinc-700', className)}
+      className={cn('text-foreground text-sm font-semibold', className)}
       {...props}
     />
   )
@@ -195,7 +220,7 @@ export function EntityCardFooter({
       {...props}
     >
       <Separator />
-      <div className="flex flex-row items-center gap-2 [&>svg]:size-4 [&>svg]:stroke-[1.5] [&>svg]:text-zinc-600">
+      <div className="[&>svg]:text-muted-foreground flex flex-row items-center gap-2 [&>svg]:size-4 [&>svg]:stroke-[1.5]">
         {children}
       </div>
     </div>

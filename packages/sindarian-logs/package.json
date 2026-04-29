@@ -1,0 +1,52 @@
+{
+  "name": "@lerianstudio/sindarian-logs",
+  "version": "1.0.0-beta.1",
+  "description": "Unified logging and tracing system for Sindarian Server",
+  "license": "ISC",
+  "author": {
+    "name": "Lerian Studio",
+    "email": "contato@lerian.studio",
+    "url": "https://lerian.studio"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LerianStudio/console-sdk.git",
+    "directory": "packages/sindarian-logs"
+  },
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc && npm run build:paths",
+    "build:paths": "tsc-alias -p tsconfig.json",
+    "test": "jest",
+    "test:e2e": "exit 0",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint ."
+  },
+  "peerDependencies": {
+    "@lerianstudio/sindarian-server": ">=1.0.0-beta.27",
+    "inversify": ">=7.7.0",
+    "next": ">=15.4.0",
+    "pino": ">=9.0.0",
+    "pino-pretty": ">=9.0.0",
+    "reflect-metadata": ">=0.2.2"
+  },
+  "peerDependenciesMeta": {
+    "pino-pretty": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@lerianstudio/sindarian-server": ">=1.0.0-beta.30"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

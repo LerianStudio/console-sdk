@@ -23,6 +23,7 @@ export type PasswordFieldProps<
   control: Control<TFieldValues>
   required?: boolean
   disabled?: boolean
+  'data-testid'?: string
 }
 
 export function PasswordField<
@@ -35,7 +36,8 @@ export function PasswordField<
   placeholder,
   control,
   required = false,
-  disabled = false
+  disabled = false,
+  'data-testid': dataTestId
 }: PasswordFieldProps<TFieldValues, TName>) {
   const [show, setShow] = React.useState(false)
 
@@ -58,6 +60,7 @@ export function PasswordField<
               endAdornment={
                 <InputAdornment position="end">
                   <IconButton
+                    type="button"
                     variant="outline"
                     rounded
                     onClick={() => setShow(!show)}
@@ -68,6 +71,7 @@ export function PasswordField<
               }
               disabled={disabled}
               className="pr-10"
+              data-testid={dataTestId}
             />
           </FormControl>
 

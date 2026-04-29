@@ -141,7 +141,6 @@ describe('QueryHandler.handle', () => {
     })
   })
 
-
   describe('edge cases', () => {
     beforeEach(() => {
       const metadata: QueryMetadata = {
@@ -199,7 +198,6 @@ describe('QueryHandler.handle', () => {
       })
     })
   })
-
 })
 
 describe('Query decorator', () => {
@@ -244,7 +242,6 @@ describe('Query decorator', () => {
       })
     })
   })
-
 
   describe('when used on multiple parameters', () => {
     it('should handle different parameter indices correctly', () => {

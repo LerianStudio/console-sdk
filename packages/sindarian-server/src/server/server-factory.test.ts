@@ -81,9 +81,10 @@ const mockCatchHandler = catchHandler as jest.MockedFunction<
 const mockFilterHandler = FilterHandler.fetch as jest.MockedFunction<
   typeof FilterHandler.fetch
 >
-const mockInterceptorExecute = InterceptorHandler.execute as jest.MockedFunction<
-  typeof InterceptorHandler.execute
->
+const mockInterceptorExecute =
+  InterceptorHandler.execute as jest.MockedFunction<
+    typeof InterceptorHandler.execute
+  >
 const mockInterceptorHandler = InterceptorHandler.fetch as jest.MockedFunction<
   typeof InterceptorHandler.fetch
 >
@@ -120,6 +121,7 @@ describe('ServerFactory', () => {
       bind: jest.fn(),
       get: jest.fn(),
       getAsync: jest.fn(),
+      getAllAsync: jest.fn(),
       isBound: jest.fn(),
       unbind: jest.fn(),
       rebind: jest.fn()
@@ -150,8 +152,13 @@ describe('ServerFactory', () => {
     mockFilterHandler.mockResolvedValue([])
     mockInterceptorHandler.mockResolvedValue([])
     mockPipeHandler.mockResolvedValue([])
-    mockInterceptorExecute.mockImplementation(async (context, interceptors, action) => await action())
-    mockPipeExecute.mockImplementation(async (controller, methodName, pipes, args) => args)
+    mockInterceptorExecute.mockImplementation(
+      async (context, interceptors, action) => await action()
+    )
+    mockPipeExecute.mockImplementation(
+      async (controller, methodName, pipes, args) =>
+        args.map((arg: any) => arg.parameter)
+    )
     mockRouteHandler.mockReturnValue([])
     mockCatchHandler.mockReturnValue({ type: null })
   })
@@ -393,14 +400,14 @@ describe('ServerFactory', () => {
       expect(response).toBe(mockExceptionResponse)
     })
 
-    it.skip('should handle exceptions with filters', async () => {
+    it('should handle exceptions with filters', async () => {
       const testError = new Error('Test error')
       mockController.testMethod.mockRejectedValue(testError)
 
+      const mockResponse = NextResponse.json({ error: 'handled' })
       const mockFilter = {
-        catch: jest
-          .fn()
-          .mockResolvedValue(NextResponse.json({ error: 'handled' }))
+        catch: jest.fn().mockResolvedValue(mockResponse),
+        constructor: { name: 'TestFilter' }
       }
 
       mockCatchHandler.mockReturnValue({ type: Error })
@@ -414,16 +421,23 @@ describe('ServerFactory', () => {
         testError,
         expect.any(Object)
       )
-      expect(response).toBeDefined()
+      expect(response).toBe(mockResponse)
     })
 
-    it.skip('should return 500 when no filter handles exception', async () => {
+    it('should return 500 when no filter handles exception', async () => {
       const testError = new Error('Unhandled error')
       mockController.testMethod.mockRejectedValue(testError)
 
+      const mock500Response = NextResponse.json(
+        { message: 'Internal server error' },
+        { status: 500 }
+      )
+      ;(NextResponse.json as jest.Mock).mockReturnValue(mock500Response)
+
       mockCatchHandler.mockReturnValue({ type: null })
       const mockFilter = {
-        catch: jest.fn().mockResolvedValue(null)
+        catch: jest.fn().mockResolvedValue(null),
+        constructor: { name: 'TestFilter' }
       }
       serverFactory['globalFilters'] = [mockFilter as any]
 
@@ -431,7 +445,11 @@ describe('ServerFactory', () => {
         params: mockParams
       })
 
-      expect(response).toBeDefined()
+      expect(response).toBe(mock500Response)
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        { message: 'Internal server error' },
+        { status: 500 }
+      )
     })
 
     it('should execute interceptors', async () => {
@@ -573,13 +591,12 @@ describe('ServerFactory', () => {
 
     it('should fetch app interceptor', async () => {
       const appInterceptor = { intercept: jest.fn() }
-      mockContainerInstance.isBound.mockReturnValue(true)
-      mockContainerInstance.getAsync.mockResolvedValue(appInterceptor)
+      mockContainerInstance.getAllAsync.mockResolvedValue([appInterceptor])
       mockInterceptorHandler.mockResolvedValue([])
 
       const result = await serverFactory['_fetchInterceptors'](mockController)
 
-      expect(mockContainerInstance.isBound).toHaveBeenCalledWith(
+      expect(mockContainerInstance.getAllAsync).toHaveBeenCalledWith(
         expect.any(Symbol)
       )
       expect(result).toContain(appInterceptor)
@@ -623,14 +640,13 @@ describe('ServerFactory', () => {
 
     it('should fetch app filter', async () => {
       const appFilter = { catch: jest.fn() }
-      mockContainerInstance.isBound.mockReturnValue(true)
-      mockContainerInstance.getAsync.mockResolvedValue(appFilter)
+      mockContainerInstance.getAllAsync.mockResolvedValue([appFilter])
       mockFilterHandler.mockReturnValue([])
 
       const result =
         await serverFactory['_fetchExceptionFilters'](mockController)
 
-      expect(mockContainerInstance.isBound).toHaveBeenCalledWith(
+      expect(mockContainerInstance.getAllAsync).toHaveBeenCalledWith(
         expect.any(Symbol)
       )
       expect(result).toEqual(expect.arrayContaining([expect.any(Object)]))
@@ -754,6 +770,84 @@ describe('ServerFactory', () => {
 
       expect(() => handler()).toThrow('Test error')
       expect(errorMethod).toHaveBeenCalled()
+    })
+  })
+
+  describe('get', () => {
+    beforeEach(() => {
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
+    })
+
+    it('should get service from container synchronously', () => {
+      class TestService {}
+      const mockServiceInstance = new TestService()
+      mockContainerInstance.get.mockReturnValue(mockServiceInstance)
+
+      const result = serverFactory.get(TestService)
+
+      expect(mockContainerInstance.get).toHaveBeenCalledWith(
+        TestService,
+        undefined
+      )
+      expect(result).toBe(mockServiceInstance)
+    })
+
+    it('should get service with options', () => {
+      class TestService {}
+      const mockServiceInstance = new TestService()
+      const options = { optional: true }
+      mockContainerInstance.get.mockReturnValue(mockServiceInstance)
+
+      const result = serverFactory.get(TestService, options)
+
+      expect(mockContainerInstance.get).toHaveBeenCalledWith(
+        TestService,
+        options
+      )
+      expect(result).toBe(mockServiceInstance)
+    })
+  })
+
+  describe('getAsync', () => {
+    beforeEach(() => {
+      serverFactory = new ServerFactory(
+        mockModule,
+        mockContainerInstance,
+        mockRoutes
+      )
+    })
+
+    it('should get service from container asynchronously', async () => {
+      class TestService {}
+      const mockServiceInstance = new TestService()
+      mockContainerInstance.getAsync.mockResolvedValue(mockServiceInstance)
+
+      const result = await serverFactory.getAsync(TestService)
+
+      expect(mockContainerInstance.getAsync).toHaveBeenCalledWith(
+        TestService,
+        undefined
+      )
+      expect(result).toBe(mockServiceInstance)
+    })
+
+    it('should get service with options asynchronously', async () => {
+      class TestService {}
+      const mockServiceInstance = new TestService()
+      const options = { optional: false }
+      mockContainerInstance.getAsync.mockResolvedValue(mockServiceInstance)
+
+      const result = await serverFactory.getAsync(TestService, options)
+
+      expect(mockContainerInstance.getAsync).toHaveBeenCalledWith(
+        TestService,
+        options
+      )
+      expect(result).toBe(mockServiceInstance)
     })
   })
 

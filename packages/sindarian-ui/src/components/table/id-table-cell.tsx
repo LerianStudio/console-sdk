@@ -12,19 +12,22 @@ import {
 import { truncate } from 'lodash'
 import { Copy } from 'lucide-react'
 
-export type IdTableCellProps = {
+export type IdTableCellProps = Omit<
+  React.ComponentProps<typeof TableCell>,
+  'onCopy'
+> & {
   id?: string
   onCopy?: (id: string) => void
 }
 
-export const IdTableCell = ({ id, onCopy }: IdTableCellProps) => {
+export const IdTableCell = ({ id, onCopy, ...others }: IdTableCellProps) => {
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(id!)
     onCopy?.(id!)
   }
 
   return (
-    <TableCell onClick={handleCopyToClipboard}>
+    <TableCell onClick={handleCopyToClipboard} {...others}>
       <TableCellWrapper>
         <TooltipProvider>
           <Tooltip delayDuration={300}>
