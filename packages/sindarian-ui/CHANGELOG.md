@@ -1,3 +1,34 @@
+# Sindarian-ui Changelog
+
+## [1.1.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-ui-v1.1.0)
+
+- **Features:**
+  - Migrated from Radix Toast to Sonner for toast notifications.
+  - Added semantic status variants (error, success, info, alert) to Badge component.
+  - Introduced a design token system with dark mode CSS variables.
+  - Added dark mode toggle to Storybook.
+  - Implemented DatePicker and DateRange fields.
+
+- **Fixes:**
+  - Prevented sheet from closing when interacting with Sonner toasts.
+  - Improved multiple-select robustness and password field form behavior.
+  - Fixed dark mode input styles, autofill, and scrollbar issues.
+  - Corrected ref type in CommandList to prevent scroll propagation.
+  - Resolved hydration errors and LocalStorage undefined issue.
+
+- **Improvements:**
+  - Improved close button styles and aligned ID type with Sonner for toasts.
+  - Enhanced active tab trigger text contrast in light mode.
+  - Improved dark mode contrast and link visibility.
+  - Synced design tokens with Figma export for consistent styling.
+  - Updated dependencies and improved Jest compatibility with Node 22.
+
+Contributors: @arthur.ramos, @arthuramos1, @caio_aletroca, @gabrielcastro.xy, @gui.rodrigues, @scfabricio, @scfabricio15
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0...sindarian-ui-v1.1.0)
+
+---
+
 ## [1.1.0](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0...sindarian-ui-v1.1.0) (2026-04-29)
 
 
@@ -461,3 +492,4 @@ Contributors: Caio Alexandre Troti Caetano, lerian-studio
 
 * prevent Git conflicts in parallel package releases ([abc3ae1](https://github.com/LerianStudio/console-sdk/commit/abc3ae1992fb545d6eb55b5028a126c0910c36c6))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
+
