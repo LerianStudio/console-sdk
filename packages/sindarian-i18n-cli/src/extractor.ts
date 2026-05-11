@@ -140,8 +140,8 @@ export async function extractAll(
   }
 
   const fileSet = new Set<string>()
-  for (const pattern of config.filePatterns) {
-    const matched = await glob(pattern)
+  const allMatches = await Promise.all(config.filePatterns.map((p) => glob(p)))
+  for (const matched of allMatches) {
     for (const fp of matched) fileSet.add(fp)
   }
   const filePaths = [...fileSet]

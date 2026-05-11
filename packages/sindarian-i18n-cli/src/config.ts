@@ -6,7 +6,6 @@ const CONFIG_FILE_NAMES = [
   'sindarian-i18n.config.ts',
   'sindarian-i18n.config.js',
   'sindarian-i18n.config.cjs',
-  'sindarian-i18n.config.mjs',
   'intl.config.ts',
   'intl.config.js'
 ]
@@ -21,9 +20,13 @@ function assertI18nConfig(
 
   const config = obj as Record<string, unknown>
 
-  if (!Array.isArray(config.filePatterns) || config.filePatterns.length === 0) {
+  if (
+    !Array.isArray(config.filePatterns) ||
+    config.filePatterns.length === 0 ||
+    !config.filePatterns.every((p) => typeof p === 'string' && p.length > 0)
+  ) {
     throw new Error(
-      `Config file "${filePath}" must export "filePatterns" as a non-empty string array.`
+      `Config file "${filePath}" must export "filePatterns" as a non-empty array of non-empty strings.`
     )
   }
 
@@ -36,9 +39,19 @@ function assertI18nConfig(
     )
   }
 
-  if (!Array.isArray(config.locales) || config.locales.length === 0) {
+  if (
+    !Array.isArray(config.locales) ||
+    config.locales.length === 0 ||
+    !config.locales.every((l) => typeof l === 'string' && l.length > 0)
+  ) {
     throw new Error(
-      `Config file "${filePath}" must export "locales" as a non-empty string array.`
+      `Config file "${filePath}" must export "locales" as a non-empty array of non-empty strings.`
+    )
+  }
+
+  if (!config.locales.includes(config.defaultLocale as string)) {
+    throw new Error(
+      `Config file "${filePath}": "defaultLocale" ("${config.defaultLocale}") must be included in "locales" ([${(config.locales as string[]).join(', ')}]).`
     )
   }
 

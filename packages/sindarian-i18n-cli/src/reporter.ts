@@ -40,7 +40,8 @@ export function formatValidationReport(
 
   const lines: string[] = []
 
-  for (const [file, issues] of grouped) {
+  for (const file of [...grouped.keys()].sort()) {
+    const issues = grouped.get(file)!
     issues.sort((a, b) => a.line - b.line || a.col - b.col)
 
     lines.push(c(file, 'dim', useColors))
@@ -89,7 +90,8 @@ export function formatExtractionErrors(
 
   const lines: string[] = []
 
-  for (const [file, errs] of grouped) {
+  for (const file of [...grouped.keys()].sort()) {
+    const errs = grouped.get(file)!
     errs.sort((a, b) => a.line - b.line || a.col - b.col)
 
     lines.push(c(file, 'dim', useColors))

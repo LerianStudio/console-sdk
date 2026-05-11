@@ -59,7 +59,7 @@ Inject `LoggerAggregator` into your controllers and services. Call `.info()`, `.
 
 ```typescript
 // user.controller.ts
-import { Controller, Post, Body } from '@lerianstudio/sindarian-server'
+import { Controller, Post, Body, Inject } from '@lerianstudio/sindarian-server'
 import { LoggerAggregator } from '@lerianstudio/sindarian-logs'
 
 @Controller('/users')
@@ -70,10 +70,10 @@ export class UserController {
   async create(@Body() body: any) {
     this.logger.info('UserController.create', 'Creating user', { body })
 
-    const user = await this.userService.create(body)
+    // ... business logic ...
 
-    this.logger.info('UserController.create', 'User created', { userId: user.id })
-    return user
+    this.logger.info('UserController.create', 'User created', { userId: '123' })
+    return { id: '123' }
   }
 }
 ```
