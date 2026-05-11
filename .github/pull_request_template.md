@@ -1,27 +1,40 @@
-# Pull Request Checklist
+## Summary
 
-## Pull Request Type
+<!-- Brief description of what this PR does and why -->
 
-[//]: # 'Check the appropriate box for the type of pull request.'
+## Packages affected
 
 - [ ] Sindarian Server
 - [ ] Sindarian UI
+- [ ] Sindarian Logs
+- [ ] Sindarian i18n CLI
+- [ ] Shared utils / configs
+- [ ] Root / CI / docs
+
+## Type of change
+
+- [ ] New feature
+- [ ] Bug fix
+- [ ] Refactor (no functional change)
+- [ ] Breaking change
+- [ ] Documentation
+- [ ] CI / build / tooling
 
 ## Checklist
 
-Please check each item after it's completed.
+- [ ] I have tested these changes locally
+- [ ] All tests pass (`npm test`)
+- [ ] Linting passes (`npm run lint`)
+- [ ] Changes follow existing code conventions
+- [ ] I have updated documentation accordingly (if applicable)
+- [ ] I have confirmed this code is ready for review
 
-- [ ] I have tested these changes locally.
-- [ ] I have updated the documentation accordingly.
-- [ ] I have added necessary comments to the code, especially in complex areas.
-- [ ] I have ensured that my changes adhere to the project's coding standards.
-- [ ] I have checked for any potential security issues.
-- [ ] I have ensured that all tests pass.
-- [ ] I have updated the version appropriately (if applicable).
-- [ ] I have confirmed this code is ready for review.
+## Test plan
 
-## Additional Notes
+<!-- How was this tested? What should reviewers verify? -->
 
-[//]: # 'Add any additional notes, context, or explanation that could be helpful for reviewers.'
+## Additional notes
 
-## Obs: Please, always remember to target your PR to develop branch instead of main.
+<!-- Add any context or explanation that could be helpful for reviewers -->
+
+> **Reminder:** Always target your PR to the `develop` branch instead of `main`.
