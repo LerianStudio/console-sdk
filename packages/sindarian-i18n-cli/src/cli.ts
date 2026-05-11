@@ -172,9 +172,7 @@ program
     if (diff.added.length > 0 || diff.removed.length > 0) {
       console.error(formatKeyDiffReport(diff))
       if (diff.added.length > 0) {
-        console.error(
-          '\nRun "sindarian-i18n extract" to update locale files.'
-        )
+        console.error('\nRun "sindarian-i18n extract" to update locale files.')
       }
       process.exit(1)
     }

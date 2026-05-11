@@ -1,3 +1,4 @@
+import fs from 'fs'
 import path from 'path'
 import type { I18nConfig } from './types'
 
@@ -41,10 +42,7 @@ function assertI18nConfig(
     )
   }
 
-  if (
-    typeof config.localeDir !== 'string' ||
-    config.localeDir.length === 0
-  ) {
+  if (typeof config.localeDir !== 'string' || config.localeDir.length === 0) {
     throw new Error(
       `Config file "${filePath}" must export "localeDir" as a non-empty string.`
     )
@@ -55,6 +53,7 @@ let tsNodeRegistered = false
 function ensureTsNode(): void {
   if (tsNodeRegistered) return
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('ts-node/register/transpile-only')
     tsNodeRegistered = true
   } catch {
@@ -86,7 +85,6 @@ export function loadConfigFromFile(filePath: string): I18nConfig {
  * Auto-detects a config file in the given directory by searching for known names.
  */
 export function findConfigFile(cwd: string): string | null {
-  const fs = require('fs') as typeof import('fs')
   for (const name of CONFIG_FILE_NAMES) {
     const candidate = path.join(cwd, name)
     if (fs.existsSync(candidate)) {
