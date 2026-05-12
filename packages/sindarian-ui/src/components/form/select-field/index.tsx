@@ -22,11 +22,11 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import React, { PropsWithChildren, ReactNode } from 'react'
-import { Control, FieldValues } from 'react-hook-form'
+import { Control, FieldValues, Path } from 'react-hook-form'
 
 export type SelectFieldProps<T extends FieldValues = FieldValues> =
   PropsWithChildren & {
-    name: string
+    name: Path<T>
     label?: ReactNode
     tooltip?: string
     labelExtra?: React.ReactNode

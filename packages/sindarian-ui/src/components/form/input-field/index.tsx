@@ -10,11 +10,11 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { HTMLInputTypeAttribute, ReactNode } from 'react'
-import { Control, FieldValues } from 'react-hook-form'
+import { Control, FieldValues, Path } from 'react-hook-form'
 
 export type InputFieldProps<T extends FieldValues = FieldValues> = {
   className?: string
-  name: string
+  name: Path<T>
   type?: HTMLInputTypeAttribute
   label?: ReactNode
   tooltip?: string

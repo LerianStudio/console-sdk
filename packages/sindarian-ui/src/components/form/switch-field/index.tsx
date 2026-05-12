@@ -14,11 +14,11 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip'
 import { ReactNode } from 'react'
-import { Control, FieldValues } from 'react-hook-form'
+import { Control, FieldValues, Path } from 'react-hook-form'
 
 export type SwitchFieldProps<T extends FieldValues = FieldValues> = {
   label?: string
-  name: string
+  name: Path<T>
   control: Control<T>
   labelExtra?: ReactNode
   tooltip?: string

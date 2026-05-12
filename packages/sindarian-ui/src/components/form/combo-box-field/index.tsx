@@ -5,7 +5,7 @@ import {
   FormLabel,
   FormMessage
 } from '@/components/ui/form'
-import { Control, FieldValues } from 'react-hook-form'
+import { Control, FieldValues, Path } from 'react-hook-form'
 import {
   Popover,
   PopoverContent,
@@ -24,7 +24,7 @@ import { ChevronsUpDown } from 'lucide-react'
 
 export type ComboBoxFieldProps<T extends FieldValues = FieldValues> =
   React.PropsWithChildren & {
-    name: string
+    name: Path<T>
     label?: string
     placeholder?: string
     emptyMessage?: string

@@ -20,10 +20,10 @@ import { cn } from '@/lib/utils'
 import dayjs from 'dayjs'
 import { CalendarIcon } from 'lucide-react'
 import { ReactNode } from 'react'
-import { Control, FieldValues } from 'react-hook-form'
+import { Control, FieldValues, Path } from 'react-hook-form'
 
 export type DatePickerFieldProps<T extends FieldValues = FieldValues> = {
-  name: string
+  name: Path<T>
   label?: ReactNode
   tooltip?: string
   labelExtra?: ReactNode
