@@ -1,3 +1,10 @@
+## [1.1.1-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.1.1-beta.1...sindarian-ui-v1.1.1-beta.2) (2026-05-12)
+
+
+### Bug Fixes
+
+* Typings ([e9ab899](https://github.com/LerianStudio/console-sdk/commit/e9ab8997966f85cdbb7020bb5239a9f307416a82))
+
 ## [1.1.1-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.1.0...sindarian-ui-v1.1.1-beta.1) (2026-05-12)
 
 
