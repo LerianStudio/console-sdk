@@ -14,12 +14,12 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip'
 import { ReactNode } from 'react'
-import { Control } from 'react-hook-form'
+import { Control, FieldValues } from 'react-hook-form'
 
-export type SwitchFieldProps = {
+export type SwitchFieldProps<T extends FieldValues = FieldValues> = {
   label?: string
   name: string
-  control: Control<any>
+  control: Control<T>
   labelExtra?: ReactNode
   tooltip?: string
   required?: boolean
@@ -28,7 +28,7 @@ export type SwitchFieldProps = {
   'data-testid'?: string
 }
 
-export const SwitchField = ({
+export const SwitchField = <T extends FieldValues = FieldValues>({
   label,
   name,
   control,
@@ -38,7 +38,7 @@ export const SwitchField = ({
   disabled,
   disabledTooltip,
   'data-testid': dataTestId
-}: SwitchFieldProps) => {
+}: SwitchFieldProps<T>) => {
   return (
     <FormField
       name={name}

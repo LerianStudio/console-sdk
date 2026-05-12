@@ -21,9 +21,9 @@ import dayjs from 'dayjs'
 import { CalendarIcon } from 'lucide-react'
 import { ReactNode } from 'react'
 import { type DateRange } from 'react-day-picker'
-import { Control } from 'react-hook-form'
+import { Control, FieldValues } from 'react-hook-form'
 
-export type DateRangeFieldProps = {
+export type DateRangeFieldProps<T extends FieldValues = FieldValues> = {
   name: string
   label?: ReactNode
   tooltip?: string
@@ -32,7 +32,7 @@ export type DateRangeFieldProps = {
   placeholder?: string
   disabled?: boolean
   readOnly?: boolean
-  control: Control<any>
+  control: Control<T>
   required?: boolean
   numberOfMonths?: number
   dateFormat?: string
@@ -40,7 +40,7 @@ export type DateRangeFieldProps = {
   'data-testid'?: string
 }
 
-export const DateRangeField = ({
+export const DateRangeField = <T extends FieldValues = FieldValues>({
   name,
   label,
   tooltip,
@@ -55,7 +55,7 @@ export const DateRangeField = ({
   dateFormat = 'MMM DD, YYYY',
   align = 'start',
   ...others
-}: DateRangeFieldProps) => {
+}: DateRangeFieldProps<T>) => {
   return (
     <FormField
       name={name}
