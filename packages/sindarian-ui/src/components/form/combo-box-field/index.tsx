@@ -5,7 +5,7 @@ import {
   FormLabel,
   FormMessage
 } from '@/components/ui/form'
-import { Control } from 'react-hook-form'
+import { Control, FieldValues } from 'react-hook-form'
 import {
   Popover,
   PopoverContent,
@@ -22,18 +22,19 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { ChevronsUpDown } from 'lucide-react'
 
-export type ComboBoxFieldProps = React.PropsWithChildren & {
-  name: string
-  label?: string
-  placeholder?: string
-  emptyMessage?: string
-  control: Control<any>
-  disabled?: boolean
-  readOnly?: boolean
-  required?: boolean
-}
+export type ComboBoxFieldProps<T extends FieldValues = FieldValues> =
+  React.PropsWithChildren & {
+    name: string
+    label?: string
+    placeholder?: string
+    emptyMessage?: string
+    control: Control<T>
+    disabled?: boolean
+    readOnly?: boolean
+    required?: boolean
+  }
 
-export const ComboBoxField = ({
+export const ComboBoxField = <T extends FieldValues = FieldValues>({
   name,
   label,
   placeholder,
@@ -42,7 +43,7 @@ export const ComboBoxField = ({
   children,
   readOnly,
   ...others
-}: ComboBoxFieldProps) => {
+}: ComboBoxFieldProps<T>) => {
   const [open, setOpen] = React.useState(false)
 
   // with the value and label
