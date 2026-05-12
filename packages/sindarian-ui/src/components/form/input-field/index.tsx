@@ -14,7 +14,7 @@ import { Control, FieldValues, Path } from 'react-hook-form'
 
 export type InputFieldProps<T extends FieldValues = FieldValues> = {
   className?: string
-  name: Path<T>
+  name: string
   type?: HTMLInputTypeAttribute
   label?: ReactNode
   tooltip?: string
@@ -58,6 +58,7 @@ export const InputField = <T extends FieldValues = FieldValues>({
   return (
     <FormField
       {...others}
+      name={others.name as Path<T>}
       render={({ field }) => (
         <FormItem required={required}>
           {label && (

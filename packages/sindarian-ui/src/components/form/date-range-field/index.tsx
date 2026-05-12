@@ -24,7 +24,7 @@ import { type DateRange } from 'react-day-picker'
 import { Control, FieldValues, Path } from 'react-hook-form'
 
 export type DateRangeFieldProps<T extends FieldValues = FieldValues> = {
-  name: Path<T>
+  name: string
   label?: ReactNode
   tooltip?: string
   labelExtra?: ReactNode
@@ -58,7 +58,7 @@ export const DateRangeField = <T extends FieldValues = FieldValues>({
 }: DateRangeFieldProps<T>) => {
   return (
     <FormField
-      name={name}
+      name={name as Path<T>}
       control={control}
       render={({ field }) => {
         const value = field.value as DateRange | undefined

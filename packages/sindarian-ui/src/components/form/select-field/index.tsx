@@ -26,7 +26,7 @@ import { Control, FieldValues, Path } from 'react-hook-form'
 
 export type SelectFieldProps<T extends FieldValues = FieldValues> =
   PropsWithChildren & {
-    name: Path<T>
+    name: string
     label?: ReactNode
     tooltip?: string
     labelExtra?: React.ReactNode
@@ -61,7 +61,7 @@ export const SelectField = <T extends FieldValues = FieldValues>({
 }: SelectFieldProps<T>) => {
   return (
     <FormField
-      name={name}
+      name={name as Path<T>}
       control={control}
       {...others}
       render={({ field }) => {

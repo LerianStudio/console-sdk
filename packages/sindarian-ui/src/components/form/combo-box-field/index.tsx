@@ -24,7 +24,7 @@ import { ChevronsUpDown } from 'lucide-react'
 
 export type ComboBoxFieldProps<T extends FieldValues = FieldValues> =
   React.PropsWithChildren & {
-    name: Path<T>
+    name: string
     label?: string
     placeholder?: string
     emptyMessage?: string
@@ -71,7 +71,7 @@ export const ComboBoxField = <T extends FieldValues = FieldValues>({
 
   return (
     <FormField
-      name={name}
+      name={name as Path<T>}
       {...others}
       render={({ field }) => (
         <FormItem required={required}>

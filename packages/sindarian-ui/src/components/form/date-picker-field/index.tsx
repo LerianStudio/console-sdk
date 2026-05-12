@@ -23,7 +23,7 @@ import { ReactNode } from 'react'
 import { Control, FieldValues, Path } from 'react-hook-form'
 
 export type DatePickerFieldProps<T extends FieldValues = FieldValues> = {
-  name: Path<T>
+  name: string
   label?: ReactNode
   tooltip?: string
   labelExtra?: ReactNode
@@ -57,7 +57,7 @@ export const DatePickerField = <T extends FieldValues = FieldValues>({
 }: DatePickerFieldProps<T>) => {
   return (
     <FormField
-      name={name}
+      name={name as Path<T>}
       control={control}
       render={({ field }) => {
         const convertFieldValueToDate = (

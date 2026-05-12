@@ -18,7 +18,7 @@ import { Control, FieldValues, Path } from 'react-hook-form'
 
 export type SwitchFieldProps<T extends FieldValues = FieldValues> = {
   label?: string
-  name: Path<T>
+  name: string
   control: Control<T>
   labelExtra?: ReactNode
   tooltip?: string
@@ -41,7 +41,7 @@ export const SwitchField = <T extends FieldValues = FieldValues>({
 }: SwitchFieldProps<T>) => {
   return (
     <FormField
-      name={name}
+      name={name as Path<T>}
       control={control}
       render={({ field }) => (
         <FormItem required={required}>
