@@ -1,4 +1,5 @@
 import React from 'react'
+import { FieldValues } from 'react-hook-form'
 import { SelectFieldProps } from '../select-field'
 import { getStateCountry } from '@/utils/country-utils'
 import { ControllerRenderProps, useFormContext } from 'react-hook-form'
@@ -117,13 +118,16 @@ function StateComboBox({
   )
 }
 
-export type StateFieldProps = Omit<SelectFieldProps, 'children'> & {
+export type StateFieldProps<T extends FieldValues = FieldValues> = Omit<
+  SelectFieldProps<T>,
+  'children'
+> & {
   countryName?: string
   emptyMessage?: string
   readOnly?: boolean
 }
 
-export const StateField = ({
+export const StateField = <T extends FieldValues = FieldValues>({
   countryName = 'address.country',
   label,
   placeholder,
@@ -131,7 +135,7 @@ export const StateField = ({
   required,
   readOnly,
   ...others
-}: StateFieldProps) => {
+}: StateFieldProps<T>) => {
   return (
     <FormField
       {...others}
