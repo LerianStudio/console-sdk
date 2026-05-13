@@ -1,5 +1,5 @@
 import React from 'react'
-import { FieldValues } from 'react-hook-form'
+import { FieldValues, Path } from 'react-hook-form'
 import { SelectFieldProps } from '../select-field'
 import { getStateCountry } from '@/utils/country-utils'
 import { ControllerRenderProps, useFormContext } from 'react-hook-form'
@@ -139,6 +139,7 @@ export const StateField = <T extends FieldValues = FieldValues>({
   return (
     <FormField
       {...others}
+      name={others.name as Path<T>}
       render={({ field }) => (
         <FormItem required={required}>
           {label && <FormLabel>{label}</FormLabel>}
