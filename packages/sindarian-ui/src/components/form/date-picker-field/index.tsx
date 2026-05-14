@@ -20,9 +20,9 @@ import { cn } from '@/lib/utils'
 import dayjs from 'dayjs'
 import { CalendarIcon } from 'lucide-react'
 import { ReactNode } from 'react'
-import { Control } from 'react-hook-form'
+import { Control, FieldValues, Path } from 'react-hook-form'
 
-export type DatePickerFieldProps = {
+export type DatePickerFieldProps<T extends FieldValues = FieldValues> = {
   name: string
   label?: ReactNode
   tooltip?: string
@@ -31,7 +31,7 @@ export type DatePickerFieldProps = {
   placeholder?: string
   disabled?: boolean
   readOnly?: boolean
-  control: Control<any>
+  control: Control<T>
   required?: boolean
   dateFormat?: string
   align?: 'start' | 'center' | 'end'
@@ -39,7 +39,7 @@ export type DatePickerFieldProps = {
   valueAsString?: boolean
 }
 
-export const DatePickerField = ({
+export const DatePickerField = <T extends FieldValues = FieldValues>({
   name,
   label,
   tooltip,
@@ -54,10 +54,10 @@ export const DatePickerField = ({
   align = 'start',
   valueAsString,
   ...others
-}: DatePickerFieldProps) => {
+}: DatePickerFieldProps<T>) => {
   return (
     <FormField
-      name={name}
+      name={name as Path<T>}
       control={control}
       render={({ field }) => {
         const convertFieldValueToDate = (
