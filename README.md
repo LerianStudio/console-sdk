@@ -39,6 +39,39 @@ A modern, accessible React component library built on top of Radix UI and ShadCN
 
 ---
 
+### [@lerianstudio/sindarian-logs](./packages/sindarian-logs)
+
+A unified logging and tracing system for Sindarian Server applications. Aggregates all log events within a request into a single structured JSON entry with automatic trace IDs.
+
+**Key Features**:
+
+- 📋 One structured log per HTTP request with event aggregation
+- 🔗 Automatic trace ID generation (UUID) via AsyncLocalStorage
+- ⬆️ Level escalation — final log level = highest severity event
+- 🎯 `@Traceable()` decorator for automatic method-level tracing
+- 🌐 `withTrace()` for non-class code (NextAuth, cron jobs, queues)
+- 🔌 Seamless Sindarian Server integration via `LoggerModule`
+
+[View Documentation →](./packages/sindarian-logs)
+
+---
+
+### [@lerianstudio/sindarian-i18n-cli](./packages/sindarian-i18n-cli)
+
+An i18n message extraction, validation, and key diffing CLI + library for React/TypeScript projects using react-intl.
+
+**Key Features**:
+
+- 🔍 Extract messages from `defineMessages()`, `<FormattedMessage>`, `intl.formatMessage()`, and custom functions
+- ✅ Validate messages for missing IDs, missing text, and duplicate conflicts
+- 🔑 Diff extracted keys against locale files to find new/stale translations
+- 🖥️ Commander-based CLI with `extract`, `check`, and `check-keys` commands
+- 📦 Also usable as a library for programmatic access
+
+[View Documentation →](./packages/sindarian-i18n-cli)
+
+---
+
 ## ✨ Features
 
 - ✅ **Monorepo Structure** - Powered by npm workspaces and Turbo
@@ -92,6 +125,8 @@ Each package contains its own comprehensive documentation:
 
 - [**Sindarian Server Documentation**](./packages/sindarian-server) - Framework API, examples, and guides
 - [**Sindarian UI Documentation**](./packages/sindarian-ui) - Component library with Storybook
+- [**Sindarian Logs Documentation**](./packages/sindarian-logs) - Logging and tracing system
+- [**Sindarian i18n CLI Documentation**](./packages/sindarian-i18n-cli) - i18n extraction and validation
 
 ---
 
@@ -100,11 +135,13 @@ Each package contains its own comprehensive documentation:
 ```
 console-sdk/
 ├── packages/
-│   ├── sindarian-server/    # Next.js server framework
-│   ├── sindarian-ui/         # React component library
-│   └── utils/                # Shared utilities
-├── package.json              # Root workspace configuration
-└── turbo.json               # Turbo build configuration
+│   ├── sindarian-server/       # Next.js server framework
+│   ├── sindarian-ui/           # React component library
+│   ├── sindarian-logs/         # Logging and tracing system
+│   ├── sindarian-i18n-cli/     # i18n extraction and validation CLI
+│   └── utils/                  # Shared utilities and base configs
+├── package.json                # Root workspace configuration
+└── turbo.json                  # Turbo build configuration
 ```
 
 ---
