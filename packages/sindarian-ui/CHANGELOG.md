@@ -1,3 +1,20 @@
+## [1.2.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.1.1-beta.3...sindarian-ui-v1.2.0-beta.1) (2026-05-27)
+
+
+### Features
+
+* Fix workflow ([4dbe4be](https://github.com/LerianStudio/console-sdk/commit/4dbe4be54519c3f807b8f969d4a16295f5c98074))
+* Implemented sindarian-i18n-cli lib ([cc8b135](https://github.com/LerianStudio/console-sdk/commit/cc8b135e14b6c86e9c8fc134db2802857a9b5989))
+* Linted code ([5b2628e](https://github.com/LerianStudio/console-sdk/commit/5b2628e1530645166f6bb0f799f0af649099ce24))
+* Merged develop ([6a7a4a9](https://github.com/LerianStudio/console-sdk/commit/6a7a4a9387deee2e22da438f37ad41e3ed9fce40))
+* New workflow for PRs ([a8dd46d](https://github.com/LerianStudio/console-sdk/commit/a8dd46dae6528acf936bd317312111ce4f866af4))
+* **sindarian-ui:** add purple badge variant ([712946b](https://github.com/LerianStudio/console-sdk/commit/712946bccf826d4529058edf614c6d3352dd8dc8))
+
+
+### Bug Fixes
+
+* Coderabbit issues ([fc0e3d5](https://github.com/LerianStudio/console-sdk/commit/fc0e3d599a90a9761cc562eb5ea5cf4952e2fee8))
+
 ## [1.1.1-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.1.1-beta.2...sindarian-ui-v1.1.1-beta.3) (2026-05-13)
 
 
