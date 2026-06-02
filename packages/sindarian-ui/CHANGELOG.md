@@ -1,3 +1,10 @@
+## [1.2.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.2...sindarian-ui-v1.2.0-beta.3) (2026-06-02)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** auto-dismiss destructive toast ([0124b55](https://github.com/LerianStudio/console-sdk/commit/0124b55bb61ae6a0ae94500136121052a88e8c2e))
+
 ## [1.2.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.1...sindarian-ui-v1.2.0-beta.2) (2026-06-02)
 
 ## [1.2.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.1.1-beta.3...sindarian-ui-v1.2.0-beta.1) (2026-05-27)
