@@ -195,14 +195,14 @@ export function PageHeaderCollapsibleInfo({
                     target="_blank"
                     rel="noopener noreferrer"
                     href={href}
-                    className="text-shadcn-600 dark:text-shadcn-400 font-medium whitespace-nowrap"
+                    className="text-shadcn-600 dark:text-shadcn-400 font-medium"
                   >
                     <span className="underline underline-offset-4">
                       {seeMore}
                     </span>
                     <ExternalLink
                       size={16}
-                      className="ml-1 inline align-text-bottom"
+                      className="ml-1 inline align-middle"
                     />
                   </a>
                 </>
