@@ -63,7 +63,7 @@ describe('useToast', () => {
     })
   })
 
-  it('should call sonner toast.error with Infinity duration for destructive variant', () => {
+  it('should call sonner toast.error with default duration for destructive variant', () => {
     toast({
       title: 'Error',
       description: 'Something went wrong',
@@ -72,7 +72,7 @@ describe('useToast', () => {
 
     expect(sonnerToast.error).toHaveBeenCalledWith('Error', {
       description: 'Something went wrong',
-      duration: Infinity
+      duration: 10000
     })
   })
 
