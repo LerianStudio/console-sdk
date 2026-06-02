@@ -5,7 +5,6 @@ import { toast as sonnerToast } from 'sonner'
 import type { ToastActionElement } from '@/components/ui/toast'
 
 const DEFAULT_DURATION = 10000
-const DESTRUCTIVE_DURATION = Infinity
 
 type ToastVariant = 'default' | 'success' | 'destructive'
 
@@ -34,7 +33,7 @@ function toast({ title, description, variant, ...rest }: Toast) {
       id = sonnerToast.success(message, options)
       break
     case 'destructive':
-      options.duration = DESTRUCTIVE_DURATION
+      options.duration = DEFAULT_DURATION
       id = sonnerToast.error(message, options)
       break
     default:
