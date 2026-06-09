@@ -97,7 +97,7 @@ export const SelectField = <T extends FieldValues = FieldValues>({
                   field.onChange(value)
                   onChange?.(value)
                 }}
-                value={field.value}
+                value={field.value ?? ''}
                 disabled={disabled}
                 open={readOnly ? false : undefined}
                 onOpenChange={readOnly ? () => {} : undefined}
