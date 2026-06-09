@@ -1,3 +1,10 @@
+## [1.2.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.3...sindarian-ui-v1.2.0-beta.4) (2026-06-09)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** keep select field controlled with empty value ([c984539](https://github.com/LerianStudio/console-sdk/commit/c984539adff256042932b59ad9d61654cd85d7f7))
+
 ## [1.2.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.2...sindarian-ui-v1.2.0-beta.3) (2026-06-02)
 
 
