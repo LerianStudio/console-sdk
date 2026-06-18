@@ -2,6 +2,130 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c] - 2026-03-24
+
+### ✨ Features
+- add GitHub App authentication to release workflow
+- Updated main readme
+- Updated packages
+- Adjusted Select
+- Updated packages
+- Changed method access level
+- configure split libs
+- configure split libs
+- Implemented LargeDialog
+- More dialog adjusts
+- Adjusted dialogs
+- Added more cards
+- Added basic card
+- Adjusted Progress
+- Added PaperCollapsible
+- configure split libs
+- configure split libs
+- configure split libs
+- configure split libs
+- configure split libs
+- configure split libs
+- configure split libs
+- configure split libs
+- configure split libs
+- configure split libs
+- configure split libs
+- configure backmerge flow
+- configure backmerge flow
+- Adjusted Tabs
+- Adjusted stepper
+- Adjusted Alert
+- Adjusted breadcrumb
+- Adjusted Input
+- Created IconButton
+- Adjusted button component
+- Implemented Zod support for validation
+- Added page header
+- force change to publish package
+- force change to publish package
+- force change to publish package
+- Adjusted dependencies
+- Added more functionality and unit tests for sindarian-server
+- force change to publish package
+- force change to publish package
+- force change to publish package
+- force change to publish package
+- force change to publish package
+- configure release/build with separate packages
+- configure release/build with separate packages
+- Compacted package.json dependencies
+- Linted code
+- Main sindarian-server implementation
+- configure new release flow
+- configure release outside of release flow
+- Added more testing
+- Implemented exceptions filter system
+- Updated pipeline
+- Updated pipeline
+- Updated pipeline
+- Updated pipeline
+- Updated pipeline
+- Updated pipeline
+- Updated pipeline
+- Added major files at sindarian-server
+- Updated pipeline
+- Updated pipeline
+- Updated pipeline
+- Updated readme
+- First try on the CICD pipeline
+- Better build setup
+- Implemented comprehensive testing
+- Adjusted UI build
+- More components
+- Better jest configuration and more components
+- Updated primitives
+- Added storybook config
+- Updated components
+- Added components
+
+### 🐛 Bug Fixes
+- Toaster import path
+
+### 📚 Documentation
+- : Update CHANGELOG for HEAD
+- : Update CHANGELOG for HEAD
+- : Update CHANGELOG for HEAD
+- : Update CHANGELOG for HEAD
+
+### 🔧 Maintenance
+- release v1.0.0 [skip ci]\n\n## 1.0.0 (2025-11-07)
+- release v1.0.0-beta.8 [skip ci]\n\n## [1.0.0-beta.8](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.7...sindarian-ui-v1.0.0-beta.8) (2025-11-07)
+- release v1.0.0-beta.12 [skip ci]\n\n## [1.0.0-beta.12](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.11...sindarian-server-v1.0.0-beta.12) (2025-11-06)
+- release v1.0.0-beta.11 [skip ci]\n\n## [1.0.0-beta.11](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.10...sindarian-server-v1.0.0-beta.11) (2025-10-29)
+- release v1.0.0-beta.10 [skip ci]\n\n## [1.0.0-beta.10](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.9...sindarian-server-v1.0.0-beta.10) (2025-10-29)
+- release v1.0.0-beta.9 [skip ci]\n\n## [1.0.0-beta.9](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.8...sindarian-server-v1.0.0-beta.9) (2025-10-28)
+- release v1.0.0-beta.7 [skip ci]\n\n## [1.0.0-beta.7](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.6...sindarian-ui-v1.0.0-beta.7) (2025-10-28)
+- release v1.0.0-beta.8 [skip ci]\n\n## [1.0.0-beta.8](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.7...sindarian-server-v1.0.0-beta.8) (2025-09-16)
+- add CHANGELOG.md and change pipeline version
+- release v1.0.0-beta.6 [skip ci]\n\n## [1.0.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.5...sindarian-ui-v1.0.0-beta.6) (2025-09-16)
+- release v1.0.0-beta.7 [skip ci]\n\n## [1.0.0-beta.7](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.6...sindarian-server-v1.0.0-beta.7) (2025-09-16)
+- release v1.0.0-beta.5 [skip ci]\n\n## [1.0.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.4...sindarian-ui-v1.0.0-beta.5) (2025-09-16)
+- remove CHANGELOG.md
+- release v1.0.0-beta.4 [skip ci]\n\n## [1.0.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.3...sindarian-ui-v1.0.0-beta.4) (2025-09-16)
+- cleanup CHANGELOG.md
+- release v1.0.0-beta.6 [skip ci]\n\n## [1.0.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.5...sindarian-server-v1.0.0-beta.6) (2025-09-16)
+- debug pipeline
+- release v1.0.0-beta.3 [skip ci]\n\n## [1.0.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.0.0-beta.2...sindarian-ui-v1.0.0-beta.3) (2025-09-16)
+- release v1.0.0-beta.5 [skip ci]\n\n## [1.0.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.4...sindarian-server-v1.0.0-beta.5) (2025-09-16)
+- debug pipeline
+- release v1.0.0-beta.4 [skip ci]\n\n## [1.0.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.0.0-beta.3...sindarian-server-v1.0.0-beta.4) (2025-09-16)
+- debug pipeline
+- debug pipeline
+- release v1.0.0-beta.2 [skip ci]\n\n## 1.0.0-beta.2 (2025-09-16) (#26, #21, #24, #18, #17, #19, #23, #25, #22, #20)
+- debug pipeline
+- debug pipeline
+- release v1.0.0-beta.3 [skip ci]\n\n## 1.0.0-beta.3 (2025-09-10) (#21, #18, #17, #16, #19, #23, #15, #22, #20)
+- release v1.0.0-beta.1 [skip ci]\n\n## 1.0.0-beta.1 (2025-09-09) (#5, #13, #7, #3, #12, #8, #16, #9, #14, #10, #15, #4, #11, #6)
+- release v1.0.0-beta.2 [skip ci]\n\n## 1.0.0-beta.2 (2025-08-25) (#14)
+- release v1.0.0-beta.1 [skip ci]\n\n## 1.0.0-beta.1 (2025-08-22) (#5, #13, #7, #3, #12, #8, #9, #10, #4, #11, #6)
+
+
 ## [1.1.0] - 2025-11-06
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/7a77d26a6b59155a2c36ebf5fa5ffb7496ba061c...HEAD)
