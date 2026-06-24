@@ -1,3 +1,10 @@
+## [1.2.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.4...sindarian-ui-v1.2.0-beta.5) (2026-06-24)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** use input-border color on combobox fields ([4ecf01b](https://github.com/LerianStudio/console-sdk/commit/4ecf01b927b737a91e890c01b1e6d300c0d6d490))
+
 ## [1.2.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.3...sindarian-ui-v1.2.0-beta.4) (2026-06-09)
 
 
