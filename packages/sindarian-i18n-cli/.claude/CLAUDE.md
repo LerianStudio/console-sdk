@@ -40,7 +40,8 @@ export default {
 - `extractAll()` → batch file processing with configurable concurrency
 - `validate()` → checks missing IDs, empty messages, duplicate ID conflicts
 - `diffKeys()` → compares extracted keys against existing locale JSON
-- Never throws — all errors collected in return values
+
+Error handling is split: `extractAll()`, `extractFile()`, and `validate()` collect errors in return values and never throw. However, `loadConfig()`, `loadConfigFromFile()`, and `diffKeys()` throw on invalid config or malformed locale files.
 
 ### Library API
 

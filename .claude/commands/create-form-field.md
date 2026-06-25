@@ -91,7 +91,7 @@ function BaseComponent(args: Omit<{Name}FieldProps, 'name' | 'control'>) {
   const form = useForm()
   return (
     <Form {...form}>
-      <form className="w-[320px] space-y-4">
+      <form className="w-[320px] space-y-4" onSubmit={(e) => e.preventDefault()}>
         <{Name}Field
           {...args}
           control={form.control}

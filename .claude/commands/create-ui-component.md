@@ -8,7 +8,7 @@ You are creating a new UI primitive component in `packages/sindarian-ui`. The us
 
 - Directory and file slug: kebab-case (e.g., `date-picker`)
 - Component export: PascalCase (e.g., `DatePicker`)
-- Variants const: camelCase + `Variants` suffix (e.g., `datePickerVariants`)
+- Variants const: camelCase + `Variants` suffix (e.g., `datePickerVariants`) — use `{nameCamel}` in templates
 - Data slot: kebab-case matching directory name
 
 ## Files to create
@@ -24,7 +24,7 @@ import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
-const {name}Variants = cva(
+const {nameCamel}Variants = cva(
   '', // base classes
   {
     variants: {
@@ -43,21 +43,21 @@ const {name}Variants = cva(
 )
 
 export type {Name}Props = React.ComponentProps<'div'> &
-  VariantProps<typeof {name}Variants> & {
+  VariantProps<typeof {nameCamel}Variants> & {
     // Add custom props here
   }
 
 function {Name}({ className, variant, size, ...props }: {Name}Props) {
   return (
     <div
-      className={cn({name}Variants({ variant, size }), className)}
+      className={cn({nameCamel}Variants({ variant, size }), className)}
       data-slot="{kebab-name}"
       {...props}
     />
   )
 }
 
-export { {Name}, {name}Variants }
+export { {Name}, {nameCamel}Variants }
 ```
 
 Adapt the base HTML element (`div`, `button`, `input`, etc.) based on what the component represents. If wrapping a Radix UI primitive, import from `@radix-ui/react-*` and forward refs accordingly.
