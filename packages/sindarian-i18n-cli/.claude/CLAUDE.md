@@ -1,6 +1,14 @@
 ## Sindarian i18n CLI
 
-i18n message extraction, validation, and key diffing. Uses `@formatjs/ts-transformer` under the hood.
+i18n message extraction, validation, and key diffing. Uses `@formatjs/ts-transformer` v4 under the hood.
+
+### Build
+
+- **Bundler:** `tsup` (not plain `tsc`) — outputs ESM with type declarations
+- **Module system:** ESM-only (`"type": "module"` in package.json)
+- **Module resolution:** `bundler` — allows clean extensionless imports
+- **Type checking:** `tsc --noEmit` (tsup handles the actual build)
+- **Entry points:** `src/index.ts` (library) and `src/cli.ts` (CLI binary)
 
 ### CLI Commands
 
@@ -49,6 +57,7 @@ All CLI functions exported from `@lerianstudio/sindarian-i18n-cli` for programma
 
 ### Testing
 
-- Jest with `@jest-environment node`
+- Jest with `@jest-environment node` and ESM support (`--experimental-vm-modules`)
+- Config: `jest.config.mjs` (not `.ts`)
 - Test source strings containing `defineMessages()` and `<FormattedMessage>`
 - Validate extraction results, error handling, offset calculations
