@@ -65,7 +65,7 @@ export function SidebarItemCollapsibleTrigger({
   className,
   icon,
   title,
-  children,
+  children: _children,
   ...props
 }: SidebarItemCollapsibleTriggerProps) {
   const { isCollapsed } = useSidebar()

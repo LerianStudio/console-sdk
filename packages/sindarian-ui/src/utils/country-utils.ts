@@ -15,12 +15,10 @@ const getCountries = () => {
   return countriesJson.map((country: any) => ({
     code: country.code2,
     name: country.name,
-    states: country.states.map(
-      (state: StateType): StateType => ({
-        name: state.name,
-        code: state.code
-      })
-    )
+    states: country.states.map((state: StateType): StateType => ({
+      name: state.name,
+      code: state.code
+    }))
   }))
 }
 

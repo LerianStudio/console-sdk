@@ -19,7 +19,7 @@ export type SidebarItemProps = React.ComponentProps<typeof SidebarItemButton> &
 export const SidebarItem = ({
   active,
   href,
-  children,
+  children: _children,
   ...props
 }: SidebarItemProps) => {
   const pathname = usePathname()

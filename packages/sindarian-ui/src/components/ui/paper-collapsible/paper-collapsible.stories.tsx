@@ -3,8 +3,7 @@ import {
   PaperCollapsible,
   PaperCollapsibleBanner,
   PaperCollapsibleContent,
-  PaperCollapsibleProps,
-  PaperCollapsibleTrigger
+  PaperCollapsibleProps
 } from '.'
 
 const meta: Meta<PaperCollapsibleProps> = {

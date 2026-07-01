@@ -33,7 +33,7 @@ export function AccountBalanceCard({
       {...props}
     >
       <AccountBalanceCardContext.Provider value={{ open }}>
-        <Card className="shadow-xs relative gap-2 px-5 py-4">{children}</Card>
+        <Card className="relative gap-2 px-5 py-4 shadow-xs">{children}</Card>
       </AccountBalanceCardContext.Provider>
     </Collapsible>
   )
@@ -86,7 +86,7 @@ export function AccountBalanceCardDeleteButton({
       size="small"
       rounded
       data-slot="account-balance-card-delete-button"
-      className={cn('absolute right-3 top-3', className)}
+      className={cn('absolute top-3 right-3', className)}
       {...props}
     >
       <Trash className="text-muted-foreground h-4 w-4" />
@@ -228,7 +228,7 @@ export function AccountBalanceCardTrigger({
   className,
   openLabel,
   closeLabel,
-  children,
+  children: _children,
   ...props
 }: React.ComponentProps<typeof Button> & {
   openLabel?: string
