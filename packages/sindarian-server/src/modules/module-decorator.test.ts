@@ -1115,17 +1115,13 @@ describe('Provider override support', () => {
     }
 
     @Module({
-      providers: [
-        { provide: Repository, useClass: RealRepository }
-      ]
+      providers: [{ provide: Repository, useClass: RealRepository }]
     })
     class BaseModule {}
 
     @Module({
       imports: [BaseModule],
-      providers: [
-        { provide: Repository, useClass: MockRepository }
-      ]
+      providers: [{ provide: Repository, useClass: MockRepository }]
     })
     class OverrideModule {}
 
@@ -1147,17 +1143,13 @@ describe('Provider override support', () => {
     }
 
     @Module({
-      providers: [
-        { provide: APP_FILTER, useClass: Filter1 }
-      ]
+      providers: [{ provide: APP_FILTER, useClass: Filter1 }]
     })
     class BaseModule {}
 
     @Module({
       imports: [BaseModule],
-      providers: [
-        { provide: APP_FILTER, useClass: Filter2 }
-      ]
+      providers: [{ provide: APP_FILTER, useClass: Filter2 }]
     })
     class ExtendedModule {}
 

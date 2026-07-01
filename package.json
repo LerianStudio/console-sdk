@@ -2,7 +2,7 @@
   "name": "@lerianstudio/console-sdk",
   "version": "0.0.0",
   "description": "Libraries monorepo for Frontend projects",
-  "packageManager": "npm@11.12.1",
+  "packageManager": "npm@11.18.0",
   "files": [
     "dist"
   ],
@@ -31,7 +31,7 @@
   "license": "ISC",
   "devDependencies": {
     "@babel/preset-typescript": "^7.28.5",
-    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.39.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -39,27 +39,27 @@
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.24",
     "@types/node": "^25.6.2",
-    "@typescript-eslint/eslint-plugin": "^8.59.3",
-    "@typescript-eslint/parser": "^8.59.3",
+    "@typescript-eslint/eslint-plugin": "^8.62.1",
+    "@typescript-eslint/parser": "^8.62.1",
     "copyfiles": "^2.4.1",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
-    "globals": "^17.6.0",
+    "eslint-plugin-prettier": "^5.5.6",
+    "globals": "^17.7.0",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "node-git-hooks": "^1.0.7",
-    "prettier": "^3.8.1",
-    "prettier-plugin-tailwindcss": "^0.7.2",
-    "semantic-release": "^25.0.3",
-    "ts-jest": "^29.4.9",
+    "prettier": "^3.9.4",
+    "prettier-plugin-tailwindcss": "^0.8.0",
+    "semantic-release": "^25.0.5",
+    "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.17",
     "tsconfig-paths": "^4.2.0",
-    "turbo": "^2.9.12",
+    "turbo": "^2.10.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@lerianstudio/sindarian-ui": "^1.0.0-beta.2"
+    "@lerianstudio/sindarian-ui": "^1.2.0-beta.5"
   }
 }
