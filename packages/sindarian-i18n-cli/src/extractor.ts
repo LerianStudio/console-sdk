@@ -8,7 +8,7 @@ import type {
   ExtractionError,
   ExtractionResult,
   ResolvedMessage
-} from './types'
+} from './types.js'
 
 const stringify: (obj: unknown, opts?: { space?: number }) => string =
   (stringifyNs as any).default || stringifyNs
@@ -89,14 +89,7 @@ export function extractFile(
       reportDiagnostics: true,
       fileName: filePath,
       transformers: {
-        before: [
-          // Cast needed: @formatjs/ts-transformer bundles its own TS 5.x types
-          // which are structurally identical but nominally incompatible with TS 6
-          transformWithTs(
-            ts as any,
-            transformerOpts
-          ) as unknown as ts.TransformerFactory<ts.SourceFile>
-        ]
+        before: [transformWithTs(ts, transformerOpts)]
       }
     })
 

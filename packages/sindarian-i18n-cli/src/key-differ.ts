@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises'
-import type { KeyDiffResult, ResolvedMessage } from './types'
+import type { KeyDiffResult, ResolvedMessage } from './types.js'
 
 /**
  * Compares extracted message keys against a locale JSON file.

@@ -2,7 +2,7 @@ import type {
   ExtractionError,
   ValidationIssue,
   ValidationResult
-} from './types'
+} from './types.js'
 
 const ANSI = {
   red: '\x1b[31m',
