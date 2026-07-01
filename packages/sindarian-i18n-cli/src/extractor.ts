@@ -89,7 +89,11 @@ export function extractFile(
       reportDiagnostics: true,
       fileName: filePath,
       transformers: {
-        before: [transformWithTs(ts, transformerOpts)]
+        before: [
+          // Cast needed: @formatjs/ts-transformer bundles its own TS 5.x types
+          // which are structurally identical but nominally incompatible with TS 6
+          transformWithTs(ts as any, transformerOpts) as unknown as ts.TransformerFactory<ts.SourceFile>
+        ]
       }
     })
 

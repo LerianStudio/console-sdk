@@ -57,7 +57,7 @@
     "tsc-alias": "^1.8.17",
     "tsconfig-paths": "^4.2.0",
     "turbo": "^2.10.2",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "@lerianstudio/sindarian-ui": "^1.2.0-beta.5"
