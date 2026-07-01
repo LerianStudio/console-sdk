@@ -8,7 +8,7 @@ import type {
   ExtractionError,
   ExtractionResult,
   ResolvedMessage
-} from './types.js'
+} from './types'
 
 const stringify: (obj: unknown, opts?: { space?: number }) => string =
   (stringifyNs as any).default || stringifyNs

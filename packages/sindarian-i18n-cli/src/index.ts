@@ -9,7 +9,7 @@ export type {
   ExtractorConfig,
   IssueSeverity,
   I18nConfig
-} from './types.js'
+} from './types'
 
 // Core extraction
 export {
@@ -17,16 +17,16 @@ export {
   extractFile,
   calculateLineColFromOffset,
   formatSimpleJson
-} from './extractor.js'
+} from './extractor'
 
 // Validation
-export { validate } from './validator.js'
+export { validate } from './validator'
 
 // Key diff
-export { diffKeys, formatKeyDiffReport } from './key-differ.js'
+export { diffKeys, formatKeyDiffReport } from './key-differ'
 
 // Reporter
-export { formatValidationReport, formatExtractionErrors } from './reporter.js'
+export { formatValidationReport, formatExtractionErrors } from './reporter'
 
 // Config
-export { loadConfig, loadConfigFromFile, findConfigFile } from './config.js'
+export { loadConfig, loadConfigFromFile, findConfigFile } from './config'

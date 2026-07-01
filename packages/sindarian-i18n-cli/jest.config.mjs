@@ -32,9 +32,8 @@ const config = {
     ]
   },
 
-  // Remap .js imports to .ts source files for ESM compatibility
+  // Remap path aliases
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@/(.*)$': '<rootDir>/src/$1'
   }
 }

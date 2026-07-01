@@ -2,7 +2,7 @@ import type {
   ExtractionResult,
   ValidationIssue,
   ValidationResult
-} from './types.js'
+} from './types'
 
 /**
  * Validates extracted messages for common i18n issues.

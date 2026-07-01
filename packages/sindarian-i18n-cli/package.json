@@ -23,12 +23,14 @@
     "dist"
   ],
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "build": "tsc && npm run build:paths",
-    "build:paths": "tsc-alias -p tsconfig.json",
+    "build": "tsup",
     "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
     "test:e2e": "exit 0",
     "test:cov": "jest --coverage",
@@ -43,5 +45,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1"
   }
 }

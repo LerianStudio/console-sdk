@@ -4,12 +4,12 @@ import { Command } from 'commander'
 import path from 'path'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import { createRequire } from 'node:module'
-import { loadConfig } from './config.js'
-import { extractAll, formatSimpleJson } from './extractor.js'
-import { validate } from './validator.js'
-import { diffKeys, formatKeyDiffReport } from './key-differ.js'
-import { formatValidationReport, formatExtractionErrors } from './reporter.js'
-import type { I18nConfig } from './types.js'
+import { loadConfig } from './config'
+import { extractAll, formatSimpleJson } from './extractor'
+import { validate } from './validator'
+import { diffKeys, formatKeyDiffReport } from './key-differ'
+import { formatValidationReport, formatExtractionErrors } from './reporter'
+import type { I18nConfig } from './types'
 
 const require = createRequire(import.meta.url)
 const pkg = require('../package.json') as { version: string }

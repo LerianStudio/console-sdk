@@ -2,8 +2,8 @@
   "extends": "../utils/tsconfig.json",
   "compilerOptions": {
     "target": "ES2021",
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,

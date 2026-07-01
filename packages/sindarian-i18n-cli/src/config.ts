@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { createRequire } from 'node:module'
-import type { I18nConfig } from './types.js'
+import type { I18nConfig } from './types'
 
 const CONFIG_FILE_NAMES = [
   'sindarian-i18n.config.ts',
