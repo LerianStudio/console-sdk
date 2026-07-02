@@ -1,3 +1,11 @@
+## [1.2.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.5...sindarian-ui-v1.2.0-beta.6) (2026-07-02)
+
+
+### Bug Fixes
+
+* address review findings in AI harness files ([0a9ea0c](https://github.com/LerianStudio/console-sdk/commit/0a9ea0cdec164beefe1a3c9dc471070baf4f315a))
+* **sindarian-ui:** align dropdown field text styles ([739e7a8](https://github.com/LerianStudio/console-sdk/commit/739e7a86787b92bf59eb509bdd86dd0696b30944))
+
 ## [1.2.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.4...sindarian-ui-v1.2.0-beta.5) (2026-06-24)
 
 
