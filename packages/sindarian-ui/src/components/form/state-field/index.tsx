@@ -81,7 +81,7 @@ function StateComboBox({
           readOnly={readOnly}
           tabIndex={0}
           className={cn(
-            'border-input-border bg-input hover:bg-input h-10 w-full justify-between rounded-md border px-4 py-2 pl-6 text-left text-sm font-normal focus:ring-2 focus:ring-offset-0 focus:outline-none',
+            'border-input-border bg-input hover:bg-input text-foreground h-10 w-full justify-between rounded-md border px-4 py-2 pl-6 text-left text-base font-normal focus:ring-2 focus:ring-offset-0 focus:outline-none',
             !value && 'text-muted-foreground'
           )}
         >
