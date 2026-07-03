@@ -11,13 +11,15 @@ export class MiddlewareHandler {
       return await action()
     }
 
-    const createNext = (i: number): MiddlewareNext => async () => {
-      if (i >= middlewares.length) {
-        return await action()
-      }
+    const createNext =
+      (i: number): MiddlewareNext =>
+      async () => {
+        if (i >= middlewares.length) {
+          return await action()
+        }
 
-      return await middlewares[i].use(request, createNext(i + 1))
-    }
+        return await middlewares[i].use(request, createNext(i + 1))
+      }
 
     return await createNext(0)()
   }

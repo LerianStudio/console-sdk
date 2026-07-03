@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { createRequire } from 'node:module'
 import type { I18nConfig } from './types'
 
 const CONFIG_FILE_NAMES = [
@@ -62,11 +63,12 @@ function assertI18nConfig(
   }
 }
 
+const require = createRequire(import.meta.url)
+
 let tsNodeRegistered = false
 function ensureTsNode(): void {
   if (tsNodeRegistered) return
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('ts-node/register/transpile-only')
     tsNodeRegistered = true
   } catch {
@@ -86,7 +88,6 @@ export function loadConfigFromFile(filePath: string): I18nConfig {
     ensureTsNode()
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const mod = require(resolved)
   const exported = mod.default ?? mod.intlConfig ?? mod
 

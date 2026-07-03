@@ -83,7 +83,7 @@ export function EntityCardAction({
 }: React.ComponentProps<typeof DropdownMenu>) {
   return (
     <DropdownMenu {...props}>
-      <DropdownMenuTrigger className="absolute right-2.5 top-2.5">
+      <DropdownMenuTrigger className="absolute top-2.5 right-2.5">
         <IconButton variant="outline" size="small" rounded>
           <EllipsisVertical />
         </IconButton>

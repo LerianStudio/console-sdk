@@ -308,32 +308,37 @@ MultipleSelectGroup.displayName = 'MultipleSelectGroup'
 export const MultipleSelectItem = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, value, onClick, onSelect, children, ...props }, ref) => {
-  const { handleChange } = useMultipleSelect()
+>(
+  (
+    { className, value, onClick: _onClick, onSelect, children, ...props },
+    ref
+  ) => {
+    const { handleChange } = useMultipleSelect()
 
-  return (
-    <CommandPrimitive.Item
-      ref={ref}
-      value={value}
-      keywords={typeof children === 'string' ? [children] : undefined}
-      className={cn(
-        'data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
-        className
-      )}
-      {...props}
-      onMouseDown={(e) => {
-        e.preventDefault()
-        e.stopPropagation()
-      }}
-      onSelect={(value) => {
-        handleChange(value)
-        onSelect?.(value)
-      }}
-    >
-      {children}
-    </CommandPrimitive.Item>
-  )
-})
+    return (
+      <CommandPrimitive.Item
+        ref={ref}
+        value={value}
+        keywords={typeof children === 'string' ? [children] : undefined}
+        className={cn(
+          'data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+          className
+        )}
+        {...props}
+        onMouseDown={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+        onSelect={(value) => {
+          handleChange(value)
+          onSelect?.(value)
+        }}
+      >
+        {children}
+      </CommandPrimitive.Item>
+    )
+  }
+)
 MultipleSelectItem.displayName = 'MultipleSelectItem'
 
 export type MultipleSelectProps = React.ComponentPropsWithoutRef<

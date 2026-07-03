@@ -1,4 +1,4 @@
-import { Control, FieldValues, Path } from 'react-hook-form'
+import { Control, FieldValues } from 'react-hook-form'
 import { SelectField } from '../select-field'
 import { SelectItem } from '@/components/ui/select'
 
@@ -17,7 +17,7 @@ export const PaginationLimitField = <T extends FieldValues = FieldValues>({
 }: PaginationLimitFieldProps<T>) => {
   return (
     <div className="flex items-center gap-4">
-      <p className="text-muted-foreground whitespace-nowrap text-sm font-medium">
+      <p className="text-muted-foreground text-sm font-medium whitespace-nowrap">
         {label}
       </p>
       <SelectField name="limit" control={control} data-testid={dataTestId}>
