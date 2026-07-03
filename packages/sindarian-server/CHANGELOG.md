@@ -1,3 +1,33 @@
+## [1.2.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.1.0...sindarian-server-v1.2.0-beta.1) (2026-07-03)
+
+
+### Features
+
+* Fix workflow ([4dbe4be](https://github.com/LerianStudio/console-sdk/commit/4dbe4be54519c3f807b8f969d4a16295f5c98074))
+* Implemented sindarian-i18n-cli lib ([cc8b135](https://github.com/LerianStudio/console-sdk/commit/cc8b135e14b6c86e9c8fc134db2802857a9b5989))
+* Linted code ([5b2628e](https://github.com/LerianStudio/console-sdk/commit/5b2628e1530645166f6bb0f799f0af649099ce24))
+* Merged develop ([6a7a4a9](https://github.com/LerianStudio/console-sdk/commit/6a7a4a9387deee2e22da438f37ad41e3ed9fce40))
+* migrate to TypeScript 6 ([ea1e5c9](https://github.com/LerianStudio/console-sdk/commit/ea1e5c9755d224479c279e54e242ad37a7dfff4c))
+* New workflow for PRs ([a8dd46d](https://github.com/LerianStudio/console-sdk/commit/a8dd46dae6528acf936bd317312111ce4f866af4))
+* **sindarian-i18n-cli:** upgrade commander to v15 and @formatjs/ts-transformer to v4 ([aef099b](https://github.com/LerianStudio/console-sdk/commit/aef099b93eebb5a479baa6b3e3594d722531a955))
+* **sindarian-ui:** add purple badge variant ([712946b](https://github.com/LerianStudio/console-sdk/commit/712946bccf826d4529058edf614c6d3352dd8dc8))
+
+
+### Bug Fixes
+
+* address review findings from dependency upgrade ([dc4ae08](https://github.com/LerianStudio/console-sdk/commit/dc4ae08e4121f7254630b1bc51905c341b2af70a))
+* address review findings in AI harness files ([0a9ea0c](https://github.com/LerianStudio/console-sdk/commit/0a9ea0cdec164beefe1a3c9dc471070baf4f315a))
+* Adjusted react-hook-form typings ([f885c11](https://github.com/LerianStudio/console-sdk/commit/f885c11c8cc078dbfb7ceb519db93ae3f3fd905b))
+* Build ([19e236c](https://github.com/LerianStudio/console-sdk/commit/19e236c359260cf6151c5b081726044c16d4d821))
+* Coderabbit issues ([fc0e3d5](https://github.com/LerianStudio/console-sdk/commit/fc0e3d599a90a9761cc562eb5ea5cf4952e2fee8))
+* Even more typings ([2f58119](https://github.com/LerianStudio/console-sdk/commit/2f58119a9e374773af344905e4a0ba7dd1e86040))
+* More typings ([930049c](https://github.com/LerianStudio/console-sdk/commit/930049caa1a3c5be7086671df8a222ebb20b4592))
+* **sindarian-ui:** align dropdown field text styles ([739e7a8](https://github.com/LerianStudio/console-sdk/commit/739e7a86787b92bf59eb509bdd86dd0696b30944))
+* **sindarian-ui:** auto-dismiss destructive toast ([0124b55](https://github.com/LerianStudio/console-sdk/commit/0124b55bb61ae6a0ae94500136121052a88e8c2e))
+* **sindarian-ui:** keep select field controlled with empty value ([c984539](https://github.com/LerianStudio/console-sdk/commit/c984539adff256042932b59ad9d61654cd85d7f7))
+* **sindarian-ui:** use input-border color on combobox fields ([4ecf01b](https://github.com/LerianStudio/console-sdk/commit/4ecf01b927b737a91e890c01b1e6d300c0d6d490))
+* Typings ([e9ab899](https://github.com/LerianStudio/console-sdk/commit/e9ab8997966f85cdbb7020bb5239a9f307416a82))
+
 # Sindarian-server Changelog
 
 ## [1.1.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-server-v1.1.0)
@@ -323,4 +353,3 @@ Contributors: Caio Alexandre Troti Caetano, lerian-studio
 * prevent Git conflicts in parallel package releases ([abc3ae1](https://github.com/LerianStudio/console-sdk/commit/abc3ae1992fb545d6eb55b5028a126c0910c36c6))
 * Route specificity on sindarian-server ([0e91ba5](https://github.com/LerianStudio/console-sdk/commit/0e91ba5cf7acec1cd4b561e2b2cafc232ce377f6))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
-
