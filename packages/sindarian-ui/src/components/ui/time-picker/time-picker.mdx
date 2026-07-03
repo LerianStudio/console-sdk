@@ -1,0 +1,31 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './time-picker.stories'
+
+<Meta of={Story} />
+
+# TimePicker
+
+A scrollable time selection component with two columns for hours (00-23) and minutes (00-59).
+
+### Primary
+
+<Canvas of={Story.Primary} />
+
+### With Value
+
+Pre-selected time value.
+
+<Canvas of={Story.WithValue} />
+
+### Disabled
+
+<Canvas of={Story.Disabled} />
+
+### Custom Labels
+
+Custom column labels for localization.
+
+<Canvas of={Story.CustomLabels} />
+
+<Primary />
+<Controls />
