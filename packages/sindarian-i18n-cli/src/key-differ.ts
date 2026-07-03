@@ -30,11 +30,10 @@ export async function diffKeys(
     try {
       localeKeys = new Set(Object.keys(JSON.parse(content)))
     } catch (err: unknown) {
-      const error = new Error(
-        `Failed to parse locale file "${localeFilePath}": ${err instanceof Error ? err.message : String(err)}`
+      throw new Error(
+        `Failed to parse locale file "${localeFilePath}": ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err }
       )
-      ;(error as any).cause = err
-      throw error
     }
   }
 
