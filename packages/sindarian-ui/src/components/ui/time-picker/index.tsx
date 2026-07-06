@@ -83,7 +83,7 @@ function TimeScrollColumn({
                 className={cn(
                   'flex h-8 w-11 items-center justify-center rounded-md text-sm tabular-nums transition-colors',
                   isSelected
-                    ? 'bg-primary text-primary-foreground font-bold'
+                    ? 'bg-accent text-accent-foreground font-bold'
                     : 'text-muted-foreground hover:bg-muted font-normal',
                   disabled && 'pointer-events-none opacity-50'
                 )}

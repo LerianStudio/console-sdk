@@ -133,15 +133,21 @@ export const DateTimePickerField = <T extends FieldValues = FieldValues>({
                     variant="outline"
                     disabled={disabled}
                     className={cn(
-                      'border-button-border w-full justify-start px-2.5 font-normal',
-                      !validCurrent && 'text-muted-foreground',
+                      'bg-input hover:bg-input border-border text-foreground h-9 w-full justify-start rounded-md px-2.5 font-normal',
                       readOnly && 'pointer-events-none',
-                      open && 'border-primary border-2'
+                      open && 'border-accent border-2'
                     )}
                     data-testid={others['data-testid']}
                     icon={<CalendarIcon className="size-4" />}
                   >
-                    <span className="flex-1 text-left">
+                    <span
+                      className={cn(
+                        'flex-1 text-left',
+                        validCurrent
+                          ? 'text-foreground font-bold'
+                          : 'text-muted-foreground'
+                      )}
+                    >
                       {validCurrent
                         ? validCurrent.format(dateFormat)
                         : placeholder}

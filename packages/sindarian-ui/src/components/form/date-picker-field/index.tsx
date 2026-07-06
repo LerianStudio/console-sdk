@@ -107,17 +107,20 @@ export const DatePickerField = <T extends FieldValues = FieldValues>({
                     variant="outline"
                     disabled={disabled}
                     className={cn(
-                      'border-button-border w-full justify-start px-2.5 font-normal',
-                      !value && 'text-muted-foreground',
+                      'bg-input hover:bg-input border-border text-foreground h-9 w-full justify-start rounded-md px-2.5 font-normal',
                       readOnly && 'pointer-events-none'
                     )}
                     data-testid={others['data-testid']}
                     icon={<CalendarIcon className="size-4" />}
                   >
                     {value ? (
-                      dayjs(value).format(dateFormat)
+                      <span className="text-foreground flex-1 text-left font-bold">
+                        {dayjs(value).format(dateFormat)}
+                      </span>
                     ) : (
-                      <span>{placeholder}</span>
+                      <span className="text-muted-foreground flex-1 text-left">
+                        {placeholder}
+                      </span>
                     )}
                   </Button>
                 </FormControl>
