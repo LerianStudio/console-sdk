@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/nextjs'
+import { useEffect } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
@@ -27,14 +28,16 @@ const preview: Preview = {
 
 export const decorators = [
   (Story, context) => {
-    const background = context.globals?.backgrounds?.value ?? '#f4f4f5'
-    const isDark = background === '#09090b'
+    const background = context.globals?.backgrounds?.value
+    const isDark = background === 'dark' || background === '#09090b'
 
-    return (
-      <div className={isDark ? 'dark' : ''}>
-        <Story />
-      </div>
-    )
+    useEffect(() => {
+      const root = document.documentElement
+      root.classList.toggle('dark', isDark)
+      document.body.style.backgroundColor = isDark ? '#09090b' : '#f4f4f5'
+    }, [isDark])
+
+    return <Story />
   }
 ]
 
