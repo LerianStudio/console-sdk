@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils'
 import dayjs from 'dayjs'
 import { CalendarIcon } from 'lucide-react'
+import * as React from 'react'
 import { ReactNode } from 'react'
 import { type DateRange } from 'react-day-picker'
 import { Control, FieldValues, Path } from 'react-hook-form'
@@ -56,6 +57,8 @@ export const DateRangeField = <T extends FieldValues = FieldValues>({
   align = 'start',
   ...others
 }: DateRangeFieldProps<T>) => {
+  const [open, setOpen] = React.useState(false)
+
   return (
     <FormField
       name={name as Path<T>}
@@ -75,7 +78,7 @@ export const DateRangeField = <T extends FieldValues = FieldValues>({
               </FormLabel>
             )}
 
-            <Popover>
+            <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <FormControl>
                   <Button
@@ -83,7 +86,8 @@ export const DateRangeField = <T extends FieldValues = FieldValues>({
                     disabled={disabled}
                     className={cn(
                       'bg-input hover:bg-input border-border text-foreground h-9 w-full justify-start rounded-md px-2.5 font-normal',
-                      readOnly && 'pointer-events-none'
+                      readOnly && 'pointer-events-none',
+                      open && 'border-accent border-2'
                     )}
                     data-testid={others['data-testid']}
                     icon={<CalendarIcon className="size-4" />}

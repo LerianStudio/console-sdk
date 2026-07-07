@@ -142,10 +142,8 @@ export const DateTimePickerField = <T extends FieldValues = FieldValues>({
                   >
                     <span
                       className={cn(
-                        'flex-1 text-left',
-                        validCurrent
-                          ? 'text-foreground font-bold'
-                          : 'text-muted-foreground'
+                        'text-foreground flex-1 text-left',
+                        validCurrent && 'font-bold'
                       )}
                     >
                       {validCurrent
