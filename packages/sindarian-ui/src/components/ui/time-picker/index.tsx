@@ -66,7 +66,7 @@ function TimeScrollColumn({
       <div
         ref={listRef}
         className="max-h-60 overflow-y-auto"
-        role="listbox"
+        role="group"
         aria-label={label}
       >
         <div className="flex flex-col gap-1 p-1">
@@ -77,8 +77,7 @@ function TimeScrollColumn({
               <button
                 key={item}
                 type="button"
-                role="option"
-                aria-selected={isSelected}
+                aria-pressed={isSelected}
                 disabled={disabled}
                 className={cn(
                   'flex h-8 w-11 items-center justify-center rounded-md text-sm tabular-nums transition-colors',

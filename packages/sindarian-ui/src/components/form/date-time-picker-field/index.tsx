@@ -106,7 +106,7 @@ export const DateTimePickerField = <T extends FieldValues = FieldValues>({
           field.onChange(updated.toISOString())
         }
 
-        const handleClear = (e: React.MouseEvent) => {
+        const handleClear = (e: React.MouseEvent | React.KeyboardEvent) => {
           e.stopPropagation()
           field.onChange('')
           setOpen(false)
@@ -152,10 +152,21 @@ export const DateTimePickerField = <T extends FieldValues = FieldValues>({
                     </span>
 
                     {showClear && (
-                      <XIcon
-                        className="text-muted-foreground hover:text-foreground ml-2 size-4 shrink-0"
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Clear date and time"
+                        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring ml-2 inline-flex shrink-0 rounded-sm outline-none focus-visible:ring-2"
                         onClick={handleClear}
-                      />
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            handleClear(e)
+                          }
+                        }}
+                      >
+                        <XIcon className="size-4" />
+                      </span>
                     )}
                   </Button>
                 </FormControl>
