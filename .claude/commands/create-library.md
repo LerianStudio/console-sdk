@@ -24,6 +24,8 @@ packages/{name}/
 │   └── CLAUDE.md
 ├── package.json
 ├── tsconfig.json
+├── tsconfig.eslint.json
+├── eslint.config.mjs
 ├── jest.config.ts
 ├── .releaserc.cjs
 └── CHANGELOG.md
@@ -46,9 +48,9 @@ packages/{name}/
   "types": "dist/index.d.ts",
   "files": ["dist"],
   "scripts": {
-    "build": "tsc && tsc-alias",
+    "build": "tsc && tsc-alias -p tsconfig.json",
     "check-types": "tsc --noEmit",
-    "lint": "eslint src/",
+    "lint": "eslint . --fix",
     "test": "jest"
   },
   "publishConfig": {
@@ -69,13 +71,32 @@ packages/{name}/
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": ".",
+    "module": "Node16",
+    "moduleResolution": "Node16",
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
 ```
+
+**tsconfig.eslint.json**:
+```json
+{
+  "extends": "../utils/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "noEmit": true,
+    "allowJs": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+**eslint.config.mjs** — Read an existing package's `eslint.config.mjs` (e.g., `packages/sindarian-server/eslint.config.mjs`) and create one with the same structure.
 
 **jest.config.ts**:
 ```typescript

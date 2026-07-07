@@ -51,14 +51,22 @@ When modifying sindarian-server's public API, check sindarian-logs for breakage.
 ### Shared Configuration
 
 Base configs live in `packages/utils/` (not published):
-- `tsconfig.json` — Extended by all packages
-- `eslint.config.mjs` — Base lint rules
+- `tsconfig.json` — Extended by all packages (TypeScript 6, strict mode)
+- `eslint.config.mjs` — Base lint rules (ESLint 10, flat config)
 - `jest.config.ts` — Base test config
+
+### Build Systems
+
+- **Default (most packages):** `tsc` + `tsc-alias` for path resolution
+- **sindarian-i18n-cli:** `tsup` bundler (ESM-only package, `moduleResolution: "bundler"`)
+
+When creating new packages, use `tsc` by default. Use `tsup` only if the package needs ESM-only dependencies.
 
 ### Code Style
 
 - Prettier: 2-space indent, no semicolons, single quotes, Tailwind plugin
-- TypeScript strict mode in all packages
+- TypeScript 6 strict mode in all packages
+- Module resolution: `Node16` (most packages) or `bundler` (tsup-based packages)
 - Path aliases: `@/*` → `./src/*`
 - All public API exported through barrel files (`src/index.ts`)
 

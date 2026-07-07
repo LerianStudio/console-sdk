@@ -18,7 +18,7 @@ type UseConfirmDialog = {
  * @returns {Function} handleDialogOpen - A function to open the dialog with a specific id and optional data.
  * @returns {Object} dialogProps - An object containing the dialog properties and handlers.
  */
-export function useConfirmDialog<TData = {}>({
+export function useConfirmDialog<TData = Record<string, unknown>>({
   onConfirm: onConfirmProp
 }: UseConfirmDialog) {
   const [id, setId] = React.useState('')

@@ -1,3 +1,16 @@
+## [1.2.0-beta.7](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.6...sindarian-ui-v1.2.0-beta.7) (2026-07-03)
+
+
+### Features
+
+* migrate to TypeScript 6 ([ea1e5c9](https://github.com/LerianStudio/console-sdk/commit/ea1e5c9755d224479c279e54e242ad37a7dfff4c))
+* **sindarian-i18n-cli:** upgrade commander to v15 and @formatjs/ts-transformer to v4 ([aef099b](https://github.com/LerianStudio/console-sdk/commit/aef099b93eebb5a479baa6b3e3594d722531a955))
+
+
+### Bug Fixes
+
+* address review findings from dependency upgrade ([dc4ae08](https://github.com/LerianStudio/console-sdk/commit/dc4ae08e4121f7254630b1bc51905c341b2af70a))
+
 ## [1.2.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.5...sindarian-ui-v1.2.0-beta.6) (2026-07-02)
 
 

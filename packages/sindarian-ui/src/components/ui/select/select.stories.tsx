@@ -9,7 +9,6 @@ import {
   SelectItem
 } from '.'
 import { SelectProps } from '@radix-ui/react-select'
-import { User } from 'lucide-react'
 
 const meta: Meta<SelectProps> = {
   title: 'Primitives/Select',

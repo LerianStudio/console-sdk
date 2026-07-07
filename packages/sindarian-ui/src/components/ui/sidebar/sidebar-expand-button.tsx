@@ -26,7 +26,7 @@ export const SidebarExpandButton = ({ tooltip }: SidebarExpandButtonProps) => {
           data-slot="sidebar-expand-button"
           className="border-border bg-card flex w-full"
         >
-          <div className="absolute bottom-4 right-[-20px]">
+          <div className="absolute right-[-20px] bottom-4">
             <IconButton variant="secondary" rounded onClick={toggleSidebar}>
               <PanelLeftClose className="text-shadcn-400" />
             </IconButton>

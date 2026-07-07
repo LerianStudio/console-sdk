@@ -73,7 +73,7 @@ export const SidebarGroupTitle = ({ children }: SidebarGroupTitleProps) => {
 
   return (
     <div data-slot="sidebar-group-title" className="my-2 px-2">
-      <p className="text-body-text text-xs font-semibold uppercase tracking-[1.1px]">
+      <p className="text-body-text text-xs font-semibold tracking-[1.1px] uppercase">
         {children}
       </p>
     </div>

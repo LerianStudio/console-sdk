@@ -1,5 +1,5 @@
 import type * as z3 from 'zod/v3'
-import { $ZodType } from 'zod/v4/core/index.cjs'
+import { $ZodType } from 'zod/v4/core'
 
 export interface UnknownSchema {
   parse(input: unknown): unknown
