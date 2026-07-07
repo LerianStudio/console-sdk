@@ -111,16 +111,16 @@ function Calendar({
           defaultClassNames.day
         ),
         range_start: cn(
-          'rounded-l-(--cell-radius) bg-muted relative after:bg-muted after:absolute after:inset-y-0 after:w-4 after:right-0 -z-0 isolate',
+          'rounded-l-(--cell-radius) bg-accent-mute relative after:bg-accent-mute after:absolute after:inset-y-0 after:w-4 after:right-0 -z-0 isolate',
           defaultClassNames.range_start
         ),
         range_middle: cn('rounded-none', defaultClassNames.range_middle),
         range_end: cn(
-          'rounded-r-(--cell-radius) bg-muted relative after:bg-muted-200 after:absolute after:inset-y-0 after:w-4 after:left-0 -z-0 isolate',
+          'rounded-r-(--cell-radius) bg-accent-mute relative after:bg-accent-mute after:absolute after:inset-y-0 after:w-4 after:left-0 -z-0 isolate',
           defaultClassNames.range_end
         ),
         today: cn(
-          'bg-muted text-foreground rounded-(--cell-radius) data-[selected=true]:rounded-none',
+          'text-foreground rounded-(--cell-radius)',
           defaultClassNames.today
         ),
         outside: cn(
@@ -214,6 +214,7 @@ function CalendarDayButton({
       data-range-start={modifiers.range_start}
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
+      data-today={modifiers.today && !modifiers.range_middle}
       // Enhanced accessibility attributes
       aria-label={`${monthName} ${dayNumber}, ${year}`}
       aria-selected={modifiers.selected}
@@ -222,7 +223,7 @@ function CalendarDayButton({
       role="gridcell"
       tabIndex={modifiers.focused ? 0 : -1}
       className={cn(
-        'data-[selected-single=true]:bg-accent data-[selected-single=true]:text-accent-foreground data-[range-middle=true]:bg-muted data-[range-middle=true]:text-foreground data-[range-start=true]:bg-accent data-[range-start=true]:text-accent-foreground data-[range-end=true]:bg-accent data-[range-end=true]:text-accent-foreground focus-visible:border-accent focus-visible:ring-accent/50 relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 border-0 leading-none font-normal focus-visible:ring-[3px] focus-visible:outline-none data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-r-(--cell-radius) data-[range-end=true]:font-bold data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-l-(--cell-radius) data-[range-start=true]:font-bold data-[selected-single=true]:font-bold [&>span]:text-xs [&>span]:opacity-70',
+        'data-[today=true]:bg-accent data-[today=true]:text-accent-foreground data-[today=true]:font-bold data-[selected-single=true]:bg-accent data-[selected-single=true]:text-accent-foreground data-[range-middle=true]:bg-accent-mute data-[range-middle=true]:text-foreground data-[range-start=true]:bg-accent data-[range-start=true]:text-accent-foreground data-[range-end=true]:bg-accent data-[range-end=true]:text-accent-foreground focus-visible:border-accent focus-visible:ring-accent/50 relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 border-0 leading-none font-normal focus-visible:ring-[3px] focus-visible:outline-none data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-r-(--cell-radius) data-[range-end=true]:font-bold data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-l-(--cell-radius) data-[range-start=true]:font-bold data-[selected-single=true]:font-bold [&>span]:text-xs [&>span]:opacity-70',
         defaultClassNames.day,
         className
       )}
