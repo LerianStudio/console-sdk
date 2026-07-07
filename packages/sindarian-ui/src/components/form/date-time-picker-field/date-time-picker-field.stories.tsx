@@ -100,3 +100,11 @@ export const ReadOnly: StoryObj<DateTimePickerFieldProps> = {
   },
   render: (args) => BaseComponentWithValue(args)
 }
+
+export const WithMinMaxDate: StoryObj<DateTimePickerFieldProps> = {
+  args: {
+    minDate: new Date('2026-04-10T00:00:00.000Z'),
+    maxDate: new Date('2026-04-20T00:00:00.000Z')
+  },
+  render: (args) => BaseComponentWithValue(args)
+}
