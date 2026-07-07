@@ -133,9 +133,9 @@ export const DateTimePickerField = <T extends FieldValues = FieldValues>({
                     variant="outline"
                     disabled={disabled}
                     className={cn(
-                      'bg-input hover:bg-input border-border text-foreground h-9 w-full justify-start rounded-md px-2.5 font-normal',
+                      'bg-input hover:bg-input border-shadcn-400 text-foreground h-10 w-full justify-start rounded-md px-2.5 font-normal',
                       readOnly && 'pointer-events-none',
-                      open && 'border-accent border-2'
+                      open && 'ring-ring ring-2 ring-offset-0'
                     )}
                     data-testid={others['data-testid']}
                     icon={<CalendarIcon className="size-4" />}
