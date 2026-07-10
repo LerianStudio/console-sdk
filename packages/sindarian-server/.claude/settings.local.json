@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(npm run test:*)",
+      "Bash(npx jest:*)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 10s npx jest:*)",
+      "Bash(npm install)",
+      "Bash(timeout 15s npx jest:*)",
+      "Bash(timeout 30s npm run test)",
+      "Bash(timeout 10s npm run test)",
+      "Bash(timeout 10s npx ts-node debug-decorator.ts)",
+      "Bash(timeout 10s npx ts-node debug-manual.ts)",
+      "Bash(timeout 10s npx ts-node debug-source.ts)",
+      "Bash(timeout:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm test)",
+      "Bash(npm run prebuild:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run lint)",
+      "Read(/C:\\Users\\caio_\\Projects\\console-sdk/**)",
+      "Read(/C:\\Users\\caio_\\Projects\\console-sdk\\packages/**)",
+      "Read(/C:\\c\\Users\\caio_\\Projects\\console-sdk\\packages\\sindarian-server/**)",
+      "Read(/C:\\c\\Users\\caio_\\Projects\\console-sdk\\packages\\sindarian-server/**)",
+      "Read(/C:\\c\\Users\\caio_\\Projects\\console-sdk\\packages\\sindarian-server/**)",
+      "Read(/C:\\c\\Users\\caio_\\Projects\\console-sdk\\packages\\sindarian-server/**)",
+      "Read(/C:\\c\\Users\\caio_\\Projects\\console-sdk\\packages\\sindarian-server/**)",
+      "Read(/C:\\c\\Users\\caio_\\Projects\\console-sdk\\packages\\sindarian-server/**)",
+      "Read(/C:\\c\\Users\\caio_\\Projects\\console-sdk\\packages\\sindarian-server/**)",
+      "Read(/C:\\c\\Users\\caio_\\Projects\\console-sdk\\packages\\sindarian-server/**)",
+      "Read(/C:\\c\\Users\\caio_\\Projects\\console-sdk\\packages\\sindarian-server/**)",
+      "Read(/C:\\c\\Users\\caio_\\Projects\\console-sdk\\packages\\sindarian-server/**)",
+      "Bash(npx ts-node:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "C:\\Users\\caio_\\Projects\\console-sdk\\.github\\workflows",
+      "C:\\c\\Users\\caio_\\Projects\\console-sdk\\packages\\sindarian-server"
+    ]
+  }
+}
