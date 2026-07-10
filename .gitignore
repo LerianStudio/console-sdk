@@ -140,6 +140,7 @@ dist
 
 # Claude
 .claude/settings.*
+**/.claude/settings.*
 
 # Ring
 .ring/

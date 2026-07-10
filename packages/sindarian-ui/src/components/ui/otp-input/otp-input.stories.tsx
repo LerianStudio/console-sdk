@@ -11,10 +11,6 @@ const meta: Meta<typeof InputOTP> = {
   title: 'Primitives/InputOTP',
   component: InputOTP,
   argTypes: {
-    maxLength: {
-      type: 'number',
-      description: 'Maximum number of characters'
-    },
     disabled: {
       type: 'boolean',
       description: 'If the input is disabled'
@@ -25,8 +21,8 @@ const meta: Meta<typeof InputOTP> = {
 export default meta
 
 export const Default: StoryObj<typeof InputOTP> = {
-  render: () => (
-    <InputOTP maxLength={6}>
+  render: (args) => (
+    <InputOTP maxLength={6} disabled={args.disabled}>
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
@@ -43,8 +39,8 @@ export const Default: StoryObj<typeof InputOTP> = {
 }
 
 export const Pattern: StoryObj<typeof InputOTP> = {
-  render: () => (
-    <InputOTP maxLength={6} pattern={REGEXP_ONLY_DIGITS}>
+  render: (args) => (
+    <InputOTP maxLength={6} pattern={REGEXP_ONLY_DIGITS} disabled={args.disabled}>
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
@@ -61,8 +57,11 @@ export const Pattern: StoryObj<typeof InputOTP> = {
 }
 
 export const Disabled: StoryObj<typeof InputOTP> = {
-  render: () => (
-    <InputOTP maxLength={6} disabled>
+  args: {
+    disabled: true
+  },
+  render: (args) => (
+    <InputOTP maxLength={6} disabled={args.disabled}>
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
@@ -79,8 +78,8 @@ export const Disabled: StoryObj<typeof InputOTP> = {
 }
 
 export const WithoutSeparator: StoryObj<typeof InputOTP> = {
-  render: () => (
-    <InputOTP maxLength={6}>
+  render: (args) => (
+    <InputOTP maxLength={6} disabled={args.disabled}>
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />

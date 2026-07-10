@@ -93,6 +93,9 @@ export const OtpField = <T extends FieldValues = FieldValues>({
               pattern={pattern}
               value={field.value ?? ''}
               onChange={field.onChange}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              name={field.name}
               disabled={others.disabled}
               data-testid={others['data-testid']}
             >
