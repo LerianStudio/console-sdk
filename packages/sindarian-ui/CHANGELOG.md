@@ -1,3 +1,15 @@
+## [1.2.0-beta.9](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.8...sindarian-ui-v1.2.0-beta.9) (2026-07-10)
+
+
+### Features
+
+* **sindarian-ui:** add InputOTP component and OtpField ([e865aa5](https://github.com/LerianStudio/console-sdk/commit/e865aa5a8c33febafe2d25ccceaf519d6cf7accb))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** review fixes for OTP component ([3d1950a](https://github.com/LerianStudio/console-sdk/commit/3d1950a066f9abc642120524f9a9fc97686d6be0))
+
 ## [1.2.0-beta.8](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.7...sindarian-ui-v1.2.0-beta.8) (2026-07-10)
 
 
