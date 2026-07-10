@@ -40,7 +40,11 @@ export const Default: StoryObj<typeof InputOTP> = {
 
 export const Pattern: StoryObj<typeof InputOTP> = {
   render: (args) => (
-    <InputOTP maxLength={6} pattern={REGEXP_ONLY_DIGITS} disabled={args.disabled}>
+    <InputOTP
+      maxLength={6}
+      pattern={REGEXP_ONLY_DIGITS}
+      disabled={args.disabled}
+    >
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
