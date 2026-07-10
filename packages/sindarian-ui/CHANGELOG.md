@@ -1,3 +1,20 @@
+## [1.2.0-beta.8](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.7...sindarian-ui-v1.2.0-beta.8) (2026-07-10)
+
+
+### Features
+
+* Added new component ([861ceb9](https://github.com/LerianStudio/console-sdk/commit/861ceb9f03fd9684a116a0512aba305223f64f04))
+* **sindarian-ui:** highlight date pickers when popover opens ([1dd77d7](https://github.com/LerianStudio/console-sdk/commit/1dd77d73c33301dccc8e62369493893dab8f9e3e))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** align calendar today/range styles with accent ([e4b6257](https://github.com/LerianStudio/console-sdk/commit/e4b625757558b4244b72cd47018b1ab7138ba25c))
+* **sindarian-ui:** align date picker fields with ring focus styles ([80ecc60](https://github.com/LerianStudio/console-sdk/commit/80ecc60776cf5b5b0ac937b282632b509c19d930))
+* **sindarian-ui:** align date/time picker styles with accent tokens ([1ee55e4](https://github.com/LerianStudio/console-sdk/commit/1ee55e441d47844ffd6409095b0bbc28a6e7687a))
+* **sindarian-ui:** make picker clear button and time options a11y-friendly ([3209065](https://github.com/LerianStudio/console-sdk/commit/32090650c499efbd2723eebf45d0b86f8d4ae7e6))
+* **sindarian-ui:** use cell-size for calendar week number header ([da77108](https://github.com/LerianStudio/console-sdk/commit/da77108a9ec7ca343c86722ad8b3ee0c5779f436))
+
 ## [1.2.0-beta.7](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.6...sindarian-ui-v1.2.0-beta.7) (2026-07-03)
 
 
