@@ -1,0 +1,43 @@
+import {
+  Meta,
+  Controls,
+  Primary,
+  Canvas,
+  Stories
+} from '@storybook/addon-docs/blocks'
+import * as Story from './otp-field.stories'
+
+<Meta of={Story} />
+
+# OtpField
+
+A form-integrated OTP field that wraps InputOTP with react-hook-form support. Provides label, tooltip, description, validation messages, and an optional separator between digit groups.
+
+### Basic
+
+<Canvas of={Story.Primary} />
+
+### With Separator
+
+Splits the digit slots into two groups with a divider in between.
+
+<Canvas of={Story.WithSeparator} />
+
+### Required
+
+<Canvas of={Story.Required} />
+
+### With Tooltip
+
+<Canvas of={Story.WithTooltip} />
+
+### With Description
+
+<Canvas of={Story.WithDescription} />
+
+### Disabled
+
+<Canvas of={Story.Disabled} />
+
+<Primary />
+<Controls />

@@ -483,6 +483,22 @@
   }
 }
 
+@keyframes caret-blink {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  50% {
+    opacity: 0;
+  }
+}
+
+@utility animate-caret-blink {
+  animation: caret-blink 1.25s ease-out infinite;
+}
+
 .ticket {
   mask: radial-gradient(21px 13px at 50% 102%, #0000 98%, #000) 50%
     calc(100% - 16px) / 64px 100% repeat-x;
