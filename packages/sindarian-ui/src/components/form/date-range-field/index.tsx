@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils'
 import dayjs from 'dayjs'
 import { CalendarIcon } from 'lucide-react'
+import * as React from 'react'
 import { ReactNode } from 'react'
 import { type DateRange } from 'react-day-picker'
 import { Control, FieldValues, Path } from 'react-hook-form'
@@ -56,6 +57,8 @@ export const DateRangeField = <T extends FieldValues = FieldValues>({
   align = 'start',
   ...others
 }: DateRangeFieldProps<T>) => {
+  const [open, setOpen] = React.useState(false)
+
   return (
     <FormField
       name={name as Path<T>}
@@ -75,31 +78,35 @@ export const DateRangeField = <T extends FieldValues = FieldValues>({
               </FormLabel>
             )}
 
-            <Popover>
+            <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <FormControl>
                   <Button
                     variant="outline"
                     disabled={disabled}
                     className={cn(
-                      'border-button-border w-full justify-start px-2.5 font-normal',
-                      !value && 'text-muted-foreground',
-                      readOnly && 'pointer-events-none'
+                      'bg-input hover:bg-input border-shadcn-400 text-foreground h-10 w-full justify-start rounded-md px-2.5 font-normal',
+                      readOnly && 'pointer-events-none',
+                      open && 'ring-ring ring-2 ring-offset-0'
                     )}
                     data-testid={others['data-testid']}
                     icon={<CalendarIcon className="size-4" />}
                   >
                     {value?.from ? (
-                      value.to ? (
-                        <>
-                          {dayjs(value.from).format(dateFormat)} -{' '}
-                          {dayjs(value.to).format(dateFormat)}
-                        </>
-                      ) : (
-                        dayjs(value.from).format(dateFormat)
-                      )
+                      <span className="text-foreground flex-1 text-left font-bold">
+                        {value.to ? (
+                          <>
+                            {dayjs(value.from).format(dateFormat)} -{' '}
+                            {dayjs(value.to).format(dateFormat)}
+                          </>
+                        ) : (
+                          dayjs(value.from).format(dateFormat)
+                        )}
+                      </span>
                     ) : (
-                      <span>{placeholder}</span>
+                      <span className="text-muted-foreground flex-1 text-left">
+                        {placeholder}
+                      </span>
                     )}
                   </Button>
                 </FormControl>

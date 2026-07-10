@@ -38,6 +38,7 @@ export * from './components/ui/textarea'
 export * from './components/ui/toast'
 export * from './components/ui/toast/toaster'
 export * from './hooks/use-toast'
+export * from './components/ui/time-picker'
 export * from './components/ui/tooltip'
 export * from './components/ui/form'
 

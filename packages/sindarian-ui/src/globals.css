@@ -298,7 +298,7 @@
     --secondary-foreground: 240 5% 96%; /* base/100 = #F4F4F5 */
 
     /* Shadcn — Accent (Brand Lerian) */
-    --accent: 47 92% 51%; /* sunglow = #F5C211 */
+    --accent: 46 98% 57%; /* sunglow/400 = #FDCB28 */
     --accent-hover: 46 98% 57%; /* sunglow/400 = #FDCB28 - opacity via /70 */
     --accent-mute: 46 98% 57%; /* sunglow/400 = #FDCB28 - opacity via /50 */
 
