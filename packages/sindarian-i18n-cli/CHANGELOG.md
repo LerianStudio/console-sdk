@@ -1,3 +1,27 @@
+## [1.0.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-i18n-cli-v1.0.0-beta.2...sindarian-i18n-cli-v1.0.0-beta.3) (2026-07-16)
+
+
+### Features
+
+* Added new component ([861ceb9](https://github.com/LerianStudio/console-sdk/commit/861ceb9f03fd9684a116a0512aba305223f64f04))
+* **sindarian-ui:** add InputOTP component and OtpField ([e865aa5](https://github.com/LerianStudio/console-sdk/commit/e865aa5a8c33febafe2d25ccceaf519d6cf7accb))
+* **sindarian-ui:** highlight date pickers when popover opens ([1dd77d7](https://github.com/LerianStudio/console-sdk/commit/1dd77d73c33301dccc8e62369493893dab8f9e3e))
+
+
+### Bug Fixes
+
+* **sindarian-i18n-cli:** add input validation and improve test quality ([5e3cbd4](https://github.com/LerianStudio/console-sdk/commit/5e3cbd46304d3c19251f69225e5b208b7289093b))
+* **sindarian-logs:** redact PII in README example and clean changelog ([8df6b75](https://github.com/LerianStudio/console-sdk/commit/8df6b75dda700696f366a610111fd49352039655))
+* **sindarian-logs:** use non-PII identifier in README log example ([511d212](https://github.com/LerianStudio/console-sdk/commit/511d212eb0722f0d7639a068221172f7b03416cd))
+* **sindarian-ui:** align calendar today/range styles with accent ([e4b6257](https://github.com/LerianStudio/console-sdk/commit/e4b625757558b4244b72cd47018b1ab7138ba25c))
+* **sindarian-ui:** align date picker fields with ring focus styles ([80ecc60](https://github.com/LerianStudio/console-sdk/commit/80ecc60776cf5b5b0ac937b282632b509c19d930))
+* **sindarian-ui:** align date/time picker styles with accent tokens ([1ee55e4](https://github.com/LerianStudio/console-sdk/commit/1ee55e441d47844ffd6409095b0bbc28a6e7687a))
+* **sindarian-ui:** ensure form field spread order preserves RHF bindings ([d2ed1fc](https://github.com/LerianStudio/console-sdk/commit/d2ed1fc72999bc1bb49b5ba23dae7543a5c77ac5))
+* **sindarian-ui:** make picker clear button and time options a11y-friendly ([3209065](https://github.com/LerianStudio/console-sdk/commit/32090650c499efbd2723eebf45d0b86f8d4ae7e6))
+* **sindarian-ui:** resolve nested interactive elements and improve component reliability ([a06eb3d](https://github.com/LerianStudio/console-sdk/commit/a06eb3d66ae95161f29ce5a016ffc3e3aa362097))
+* **sindarian-ui:** review fixes for OTP component ([3d1950a](https://github.com/LerianStudio/console-sdk/commit/3d1950a066f9abc642120524f9a9fc97686d6be0))
+* **sindarian-ui:** use cell-size for calendar week number header ([da77108](https://github.com/LerianStudio/console-sdk/commit/da77108a9ec7ca343c86722ad8b3ee0c5779f436))
+
 ## [1.0.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-i18n-cli-v1.0.0-beta.1...sindarian-i18n-cli-v1.0.0-beta.2) (2026-07-03)
 
 
