@@ -1,6 +1,6 @@
 {
   "name": "@lerianstudio/sindarian-i18n-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "i18n message extraction, validation, and key diffing CLI for Sindarian projects",
   "license": "ISC",
   "author": {
