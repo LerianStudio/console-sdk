@@ -99,7 +99,7 @@ describe('GuardHandler.execute', () => {
   it('should handle async guards', async () => {
     class AsyncGuard implements CanActivate {
       async canActivate(): Promise<boolean> {
-        return new Promise((resolve) => setTimeout(() => resolve(true), 10))
+        return new Promise<boolean>((resolve) => setTimeout(resolve, 10, true))
       }
     }
 
