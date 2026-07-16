@@ -1,3 +1,23 @@
+# Sindarian-i18n-cli Changelog
+
+## [1.0.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-i18n-cli-v1.0.0)
+
+- **Features**
+  - Implemented sindarian-i18n-cli library.
+  - Upgraded commander to v15 and @formatjs/ts-transformer to v4.
+
+- **Fixes**
+  - Added input validation and improved test quality.
+
+- **Improvements**
+  - Replaced tsc with tsup bundler.
+
+Contributors: @caio_aletroca
+
+[View all changes](https://github.com/LerianStudio/console-sdk/commits/sindarian-i18n-cli-v1.0.0)
+
+---
+
 ## [1.0.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-i18n-cli-v1.0.0-beta.2...sindarian-i18n-cli-v1.0.0-beta.3) (2026-07-16)
 
 
@@ -222,3 +242,4 @@
 * Typings ([e9ab899](https://github.com/LerianStudio/console-sdk/commit/e9ab8997966f85cdbb7020bb5239a9f307416a82))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
 * update the test mock to match the actual PipeHandler.execute implementation ([fad3447](https://github.com/LerianStudio/console-sdk/commit/fad3447ea4705c81865348c1f1640ad52a7cd053))
+
