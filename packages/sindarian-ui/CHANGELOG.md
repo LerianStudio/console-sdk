@@ -1,3 +1,14 @@
+## [1.2.0-beta.10](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.9...sindarian-ui-v1.2.0-beta.10) (2026-07-16)
+
+
+### Bug Fixes
+
+* **sindarian-i18n-cli:** add input validation and improve test quality ([5e3cbd4](https://github.com/LerianStudio/console-sdk/commit/5e3cbd46304d3c19251f69225e5b208b7289093b))
+* **sindarian-logs:** redact PII in README example and clean changelog ([8df6b75](https://github.com/LerianStudio/console-sdk/commit/8df6b75dda700696f366a610111fd49352039655))
+* **sindarian-logs:** use non-PII identifier in README log example ([511d212](https://github.com/LerianStudio/console-sdk/commit/511d212eb0722f0d7639a068221172f7b03416cd))
+* **sindarian-ui:** ensure form field spread order preserves RHF bindings ([d2ed1fc](https://github.com/LerianStudio/console-sdk/commit/d2ed1fc72999bc1bb49b5ba23dae7543a5c77ac5))
+* **sindarian-ui:** resolve nested interactive elements and improve component reliability ([a06eb3d](https://github.com/LerianStudio/console-sdk/commit/a06eb3d66ae95161f29ce5a016ffc3e3aa362097))
+
 ## [1.2.0-beta.9](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.8...sindarian-ui-v1.2.0-beta.9) (2026-07-10)
 
 
