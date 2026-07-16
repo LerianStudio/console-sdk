@@ -7,6 +7,9 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import type { ResolvedMessage } from './types'
 
+const MALFORMED_JSON_ERROR_PATTERN =
+  /Failed to parse locale file.*malformed\.json/
+
 function makeMessages(ids: string[]): Map<string, ResolvedMessage> {
   const map = new Map<string, ResolvedMessage>()
   for (const id of ids) {
@@ -86,7 +89,7 @@ describe('diffKeys', () => {
 
     const messages = makeMessages(['a.key'])
     await expect(diffKeys(messages, localePath)).rejects.toThrow(
-      /Failed to parse locale file.*malformed\.json/
+      MALFORMED_JSON_ERROR_PATTERN
     )
   })
 })

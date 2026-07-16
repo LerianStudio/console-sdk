@@ -37,6 +37,14 @@ function TimeScrollColumn({
 }) {
   const listRef = React.useRef<HTMLDivElement>(null)
   const hasScrolled = React.useRef(false)
+  const prevSelected = React.useRef(selected)
+
+  React.useEffect(() => {
+    if (prevSelected.current !== selected) {
+      hasScrolled.current = false
+      prevSelected.current = selected
+    }
+  }, [selected])
 
   React.useEffect(() => {
     if (hasScrolled.current) return

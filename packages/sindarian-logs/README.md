@@ -68,7 +68,9 @@ export class UserController {
 
   @Post()
   async create(@Body() body: any) {
-    this.logger.info('UserController.create', 'Creating user', { body })
+    this.logger.info('UserController.create', 'Creating user', {
+      userId: body.id
+    })
 
     // ... business logic ...
 

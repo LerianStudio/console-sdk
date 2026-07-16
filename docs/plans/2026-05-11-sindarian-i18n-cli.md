@@ -12,7 +12,7 @@
 - Environment: Windows 11 or Linux/macOS, Node.js 18+, npm 9+
 - Tools: Verify with commands below
 - Access: No API keys needed
-- State: Work from the `develop` branch in `C:\Users\caio_\Projects\console-sdk`
+- State: Work from the `develop` branch in `<repo-root>`
 
 **Verification before starting:**
 ```bash

@@ -95,12 +95,12 @@ export type TimePickerProps = {
 ```
 
 Structure:
-- Root: `<div data-slot="time-picker" className={cn("flex gap-2 p-3", className)}>`
+- Root: `<div data-slot='time-picker' className={cn('flex gap-2 p-3', className)}>`
 - Two internal scroll columns, each with:
   - Label: `<span>` with `text-xs font-medium text-muted-foreground text-center`
   - 6px spacer (`h-1.5`)
-  - Scrollable container: `<div role="listbox" aria-label={label}>` with `overflow-y-auto` and max-height ~240px
-  - Items: `<button role="option" aria-selected={selected}>` sized 44x32 (`w-11 h-8`), rounded-md
+  - Scrollable container: `<div role='listbox' aria-label={label}>` with `overflow-y-auto` and max-height ~240px
+  - Items: `<button role='option' aria-selected={selected}>` sized 44x32 (`w-11 h-8`), rounded-md
   - Selected item: `bg-primary text-primary-foreground font-bold`
   - Unselected item: `text-muted-foreground hover:bg-muted`
 - Auto-scroll to selected value on mount using `useRef` + `useEffect` + `scrollIntoView({ block: 'nearest' })`
