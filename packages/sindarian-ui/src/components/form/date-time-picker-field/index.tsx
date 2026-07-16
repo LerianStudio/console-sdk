@@ -127,50 +127,53 @@ export const DateTimePickerField = <T extends FieldValues = FieldValues>({
             )}
 
             <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <FormControl>
-                  <Button
-                    variant="outline"
-                    disabled={disabled}
-                    className={cn(
-                      'bg-input hover:bg-input border-shadcn-400 text-foreground h-10 w-full justify-start rounded-md px-2.5 font-normal',
-                      readOnly && 'pointer-events-none',
-                      open && 'ring-ring ring-2 ring-offset-0'
-                    )}
-                    data-testid={others['data-testid']}
-                    icon={<CalendarIcon className="size-4" />}
-                  >
-                    <span
+              <div className="relative w-full">
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      disabled={disabled}
                       className={cn(
-                        'text-foreground flex-1 text-left',
-                        validCurrent && 'font-bold'
+                        'bg-input hover:bg-input border-shadcn-400 text-foreground h-10 w-full justify-start rounded-md px-2.5 font-normal',
+                        readOnly && 'pointer-events-none',
+                        showClear && 'pr-8',
+                        open && 'ring-ring ring-2 ring-offset-0'
                       )}
+                      data-testid={others['data-testid']}
+                      icon={<CalendarIcon className="size-4" />}
                     >
-                      {validCurrent
-                        ? validCurrent.format(dateFormat)
-                        : placeholder}
-                    </span>
-
-                    {showClear && (
                       <span
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Clear date and time"
-                        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring ml-2 inline-flex shrink-0 rounded-sm outline-none focus-visible:ring-2"
-                        onClick={handleClear}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            handleClear(e)
-                          }
-                        }}
+                        className={cn(
+                          'text-foreground flex-1 text-left',
+                          validCurrent && 'font-bold'
+                        )}
                       >
-                        <XIcon className="size-4" />
+                        {validCurrent
+                          ? validCurrent.format(dateFormat)
+                          : placeholder}
                       </span>
-                    )}
-                  </Button>
-                </FormControl>
-              </PopoverTrigger>
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+
+                {showClear && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Clear date and time"
+                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute right-2 top-1/2 z-10 inline-flex -translate-y-1/2 shrink-0 rounded-sm outline-none focus-visible:ring-2"
+                    onClick={handleClear}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleClear(e)
+                      }
+                    }}
+                  >
+                    <XIcon className="size-4" />
+                  </span>
+                )}
+              </div>
 
               <PopoverContent className="w-auto p-0" align={align}>
                 <div className="flex flex-col sm:flex-row sm:items-stretch">

@@ -1,5 +1,5 @@
 import type { Preview } from '@storybook/nextjs'
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
@@ -31,7 +31,7 @@ export const decorators = [
     const background = context.globals?.backgrounds?.value
     const isDark = background === 'dark' || background === '#09090b'
 
-    useEffect(() => {
+    useLayoutEffect(() => {
       const root = document.documentElement
       root.classList.toggle('dark', isDark)
       document.body.style.backgroundColor = isDark ? '#09090b' : '#f4f4f5'

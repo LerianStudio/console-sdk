@@ -58,13 +58,12 @@ export const {Name}Field = <T extends FieldValues = FieldValues>({
     <FormField
       name={name as Path<T>}
       control={control}
-      {...others}
       render={({ field }) => (
         <FormItem required={required}>
           {label && <FormLabel>{label}</FormLabel>}
           <FormControl>
             {/* Replace with actual UI component, passing field props */}
-            {/* <{UiComponent} {...field} disabled={disabled} readOnly={readOnly} placeholder={placeholder} /> */}
+            {/* <{UiComponent} {...field} {...others} disabled={disabled} readOnly={readOnly} placeholder={placeholder} /> */}
           </FormControl>
           <FormMessage />
         </FormItem>

@@ -51,7 +51,7 @@ function {Name}({ className, variant, size, ...props }: {Name}Props) {
   return (
     <div
       className={cn({nameCamel}Variants({ variant, size }), className)}
-      data-slot="{kebab-name}"
+      data-slot="{name}"
       {...props}
     />
   )
