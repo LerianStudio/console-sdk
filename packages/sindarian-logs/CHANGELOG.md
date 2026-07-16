@@ -1,3 +1,20 @@
+# Sindarian-logs Changelog
+
+## [1.1.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-logs-v1.1.0)
+
+- Features:
+  - Migrate to TypeScript 6.
+
+- Fixes:
+  - Use non-PII identifier in README log example.
+  - Redact PII in README example and clean changelog.
+
+Contributors: @caio_aletroca
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v1.0.0...sindarian-logs-v1.1.0)
+
+---
+
 ## [1.1.0](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v1.0.0...sindarian-logs-v1.1.0) (2026-07-16)
 
 
@@ -116,3 +133,4 @@
 Contributors: @caio_aletroca,
 
 [View all changes](https://github.com/LerianStudio/console-sdk/commits/sindarian-logs-v1.0.0)
+
