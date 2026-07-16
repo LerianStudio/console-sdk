@@ -28,7 +28,19 @@ export async function diffKeys(
 
   if (content !== undefined) {
     try {
-      localeKeys = new Set(Object.keys(JSON.parse(content)))
+      const parsed: unknown = JSON.parse(content)
+
+      if (
+        parsed === null ||
+        Array.isArray(parsed) ||
+        typeof parsed !== 'object'
+      ) {
+        throw new TypeError(
+          `Expected a JSON object but got ${parsed === null ? 'null' : Array.isArray(parsed) ? 'array' : typeof parsed}`
+        )
+      }
+
+      localeKeys = new Set(Object.keys(parsed))
     } catch (err: unknown) {
       throw new Error(
         `Failed to parse locale file "${localeFilePath}": ${err instanceof Error ? err.message : String(err)}`,

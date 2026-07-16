@@ -4,6 +4,9 @@
 import { validate } from './validator'
 import type { ExtractionResult, ResolvedMessage } from './types'
 
+const MISSING_ID_RE = /missing id/i
+const MISSING_DEFAULT_MESSAGE_RE = /missing defaultMessage/i
+
 function makeMessage(
   overrides: Partial<ResolvedMessage> & { id: string }
 ): ResolvedMessage {
@@ -45,7 +48,7 @@ describe('validate', () => {
       line: 5,
       col: 3
     })
-    expect(validation.issues[0].message).toMatch(/missing id/i)
+    expect(validation.issues[0].message).toMatch(MISSING_ID_RE)
   })
 
   it('detects missing defaultMessage', () => {
@@ -66,7 +69,7 @@ describe('validate', () => {
 
     const validation = validate(result)
     expect(validation.errorCount).toBe(1)
-    expect(validation.issues[0].message).toMatch(/missing defaultMessage/i)
+    expect(validation.issues[0].message).toMatch(MISSING_DEFAULT_MESSAGE_RE)
   })
 
   it('duplicate ID with same defaultMessage produces no error', () => {
@@ -116,8 +119,8 @@ describe('validate', () => {
     const validation = validate(result)
     expect(validation.errorCount).toBe(1)
     expect(validation.issues[0].message).toContain('dup.key')
-    expect(validation.issues[0].message).toMatch(/a\.ts/)
-    expect(validation.issues[0].message).toMatch(/b\.ts/)
+    expect(validation.issues[0].message).toContain('a.ts')
+    expect(validation.issues[0].message).toContain('b.ts')
   })
 
   it('clean extraction returns errorCount 0', () => {
