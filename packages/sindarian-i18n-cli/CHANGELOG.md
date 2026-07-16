@@ -1,3 +1,5 @@
+## [1.0.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-i18n-cli-v1.0.0-beta.3...sindarian-i18n-cli-v1.0.0-beta.4) (2026-07-16)
+
 ## [1.0.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-i18n-cli-v1.0.0-beta.2...sindarian-i18n-cli-v1.0.0-beta.3) (2026-07-16)
 
 
