@@ -4,18 +4,12 @@
 ### Features
 
 * migrate to TypeScript 6 ([ea1e5c9](https://github.com/LerianStudio/console-sdk/commit/ea1e5c9755d224479c279e54e242ad37a7dfff4c))
-* **sindarian-i18n-cli:** upgrade commander to v15 and @formatjs/ts-transformer to v4 ([aef099b](https://github.com/LerianStudio/console-sdk/commit/aef099b93eebb5a479baa6b3e3594d722531a955))
-* **sindarian-ui:** add purple badge variant ([712946b](https://github.com/LerianStudio/console-sdk/commit/712946bccf826d4529058edf614c6d3352dd8dc8))
 
 
 ### Bug Fixes
 
 * address review findings from dependency upgrade ([dc4ae08](https://github.com/LerianStudio/console-sdk/commit/dc4ae08e4121f7254630b1bc51905c341b2af70a))
 * address review findings in AI harness files ([0a9ea0c](https://github.com/LerianStudio/console-sdk/commit/0a9ea0cdec164beefe1a3c9dc471070baf4f315a))
-* **sindarian-ui:** align dropdown field text styles ([739e7a8](https://github.com/LerianStudio/console-sdk/commit/739e7a86787b92bf59eb509bdd86dd0696b30944))
-* **sindarian-ui:** auto-dismiss destructive toast ([0124b55](https://github.com/LerianStudio/console-sdk/commit/0124b55bb61ae6a0ae94500136121052a88e8c2e))
-* **sindarian-ui:** keep select field controlled with empty value ([c984539](https://github.com/LerianStudio/console-sdk/commit/c984539adff256042932b59ad9d61654cd85d7f7))
-* **sindarian-ui:** use input-border color on combobox fields ([4ecf01b](https://github.com/LerianStudio/console-sdk/commit/4ecf01b927b737a91e890c01b1e6d300c0d6d490))
 
 ## [1.1.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v1.0.0...sindarian-logs-v1.1.0-beta.1) (2026-05-14)
 
