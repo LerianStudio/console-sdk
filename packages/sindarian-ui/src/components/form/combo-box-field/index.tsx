@@ -5,7 +5,7 @@ import {
   FormLabel,
   FormMessage
 } from '@/components/ui/form'
-import { Control } from 'react-hook-form'
+import { Control, FieldValues, Path } from 'react-hook-form'
 import {
   Popover,
   PopoverContent,
@@ -22,18 +22,19 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { ChevronsUpDown } from 'lucide-react'
 
-export type ComboBoxFieldProps = React.PropsWithChildren & {
-  name: string
-  label?: string
-  placeholder?: string
-  emptyMessage?: string
-  control: Control<any>
-  disabled?: boolean
-  readOnly?: boolean
-  required?: boolean
-}
+export type ComboBoxFieldProps<T extends FieldValues = FieldValues> =
+  React.PropsWithChildren & {
+    name: string
+    label?: string
+    placeholder?: string
+    emptyMessage?: string
+    control: Control<T>
+    disabled?: boolean
+    readOnly?: boolean
+    required?: boolean
+  }
 
-export const ComboBoxField = ({
+export const ComboBoxField = <T extends FieldValues = FieldValues>({
   name,
   label,
   placeholder,
@@ -42,7 +43,7 @@ export const ComboBoxField = ({
   children,
   readOnly,
   ...others
-}: ComboBoxFieldProps) => {
+}: ComboBoxFieldProps<T>) => {
   const [open, setOpen] = React.useState(false)
 
   // with the value and label
@@ -70,7 +71,7 @@ export const ComboBoxField = ({
 
   return (
     <FormField
-      name={name}
+      name={name as Path<T>}
       {...others}
       render={({ field }) => (
         <FormItem required={required}>
@@ -88,7 +89,7 @@ export const ComboBoxField = ({
                 readOnly={readOnly}
                 tabIndex={0}
                 className={cn(
-                  'border-border bg-input hover:bg-input h-10 w-full justify-between rounded-md border px-4 py-2 pl-6 text-left text-sm font-normal focus:outline-none focus:ring-2 focus:ring-offset-0',
+                  'border-input-border bg-input hover:bg-input text-foreground h-10 w-full justify-between rounded-md border px-4 py-2 pl-6 text-left text-base font-normal focus:ring-2 focus:ring-offset-0 focus:outline-none',
                   !field.value && 'text-muted-foreground'
                 )}
               >

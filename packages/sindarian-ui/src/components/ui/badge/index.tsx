@@ -25,6 +25,8 @@ const badgeVariants = cva(
         info: 'border-system-info-border bg-system-info-surface text-system-info-text px-[10px] py-1',
         alert:
           'border-system-alert-border bg-system-alert-surface text-system-alert-text px-[10px] py-1',
+        purple:
+          'border-system-purple-border bg-system-purple-surface text-system-purple-text px-[10px] py-1',
         outline: 'text-foreground'
       }
     },

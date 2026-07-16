@@ -133,10 +133,8 @@ export class ServerFactory {
     // Resolve middleware chain: explicit globals + APP_MIDDLEWARE container bindings
     const middlewares = await this._fetchMiddlewares()
 
-    return MiddlewareHandler.execute(
-      request,
-      middlewares,
-      () => this._handleRequest(request, params)
+    return MiddlewareHandler.execute(request, middlewares, () =>
+      this._handleRequest(request, params)
     )
   }
 

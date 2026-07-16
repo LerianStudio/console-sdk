@@ -139,7 +139,8 @@ dist
 .turbo
 
 # Claude
-.claude
+.claude/settings.*
+**/.claude/settings.*
 
 # Ring
 .ring/

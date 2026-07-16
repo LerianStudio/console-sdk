@@ -153,6 +153,11 @@
   --color-system-alert-h1a: hsl(var(--system-alert-h1a));
   --color-system-alert-border: hsl(var(--system-alert-border));
   --color-system-alert-text: hsl(var(--system-alert-text) / 0.7);
+  --color-system-purple: hsl(var(--system-purple));
+  --color-system-purple-surface: hsl(var(--system-purple-surface));
+  --color-system-purple-h1a: hsl(var(--system-purple-h1a));
+  --color-system-purple-border: hsl(var(--system-purple-border));
+  --color-system-purple-text: hsl(var(--system-purple-text) / 0.7);
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
@@ -251,6 +256,11 @@
     --system-alert-h1a: 36 92% 29%; /* yellow/800 = #854D0E */
     --system-alert-border: 48 96% 47% / 0.5; /* #EAB308 50% */
     --system-alert-text: 36 92% 29%; /* #854D0E - opacity via /70 */
+    --system-purple: 271 81% 56%; /* purple/600 = #9333EA */
+    --system-purple-surface: 270 100% 98%; /* purple/50 = #FAF5FF */
+    --system-purple-h1a: 273 67% 39%; /* purple/800 = #6B21A8 */
+    --system-purple-border: 271 81% 56% / 0.5; /* #9333EA 50% */
+    --system-purple-text: 273 67% 39%; /* #6B21A8 - opacity via /70 */
 
     /* Shadow color token for dark mode adaptation */
     --shadow-color: 0 0% 0%;
@@ -288,7 +298,7 @@
     --secondary-foreground: 240 5% 96%; /* base/100 = #F4F4F5 */
 
     /* Shadcn — Accent (Brand Lerian) */
-    --accent: 47 92% 51%; /* sunglow = #F5C211 */
+    --accent: 46 98% 57%; /* sunglow/400 = #FDCB28 */
     --accent-hover: 46 98% 57%; /* sunglow/400 = #FDCB28 - opacity via /70 */
     --accent-mute: 46 98% 57%; /* sunglow/400 = #FDCB28 - opacity via /50 */
 
@@ -319,6 +329,13 @@
     --system-alert-text: 48 97% 77%; /* yellow/300 = #FDE68A - opacity via /70 */
     --system-alert-h1a: 53 98% 77%; /* yellow/200 = #FEF08A */
     --system-alert-border: 48 96% 53% / 0.3; /* #FACC15 30% */
+
+    /* Shadcn — System Purple */
+    --system-purple: 270 95% 75%; /* purple/400 = #C084FC */
+    --system-purple-surface: 266 86% 13%; /* purple/950 = #3B0764 */
+    --system-purple-text: 269 97% 85%; /* purple/300 = #D8B4FE - opacity via /70 */
+    --system-purple-h1a: 269 100% 92%; /* purple/200 = #E9D5FF */
+    --system-purple-border: 270 95% 75% / 0.3; /* #C084FC 30% */
 
     /* Shadow color for dark mode */
     --shadow-color: 0 0% 100%;
@@ -464,6 +481,22 @@
   *::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-shadcn-400);
   }
+}
+
+@keyframes caret-blink {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  50% {
+    opacity: 0;
+  }
+}
+
+@utility animate-caret-blink {
+  animation: caret-blink 1.25s ease-out infinite;
 }
 
 .ticket {

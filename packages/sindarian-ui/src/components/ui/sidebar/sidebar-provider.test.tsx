@@ -94,10 +94,7 @@ describe('SidebarProvider', () => {
     })
 
     it('should return the correct value for existing item', async () => {
-      localStorage.setItem(
-        'sidebar-items',
-        JSON.stringify({ 'my-item': true })
-      )
+      localStorage.setItem('sidebar-items', JSON.stringify({ 'my-item': true }))
 
       const { result } = renderHook(() => useSidebar(), { wrapper })
 
@@ -147,7 +144,10 @@ describe('SidebarProvider', () => {
       const { result } = renderHook(() => useSidebar(), { wrapper })
 
       await waitFor(() => {
-        expect(result.current.items).toEqual({ 'item-1': true, 'item-2': false })
+        expect(result.current.items).toEqual({
+          'item-1': true,
+          'item-2': false
+        })
       })
 
       act(() => {

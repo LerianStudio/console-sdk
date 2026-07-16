@@ -1,0 +1,39 @@
+import {
+  Meta,
+  Controls,
+  Primary,
+  Canvas,
+  Stories
+} from '@storybook/addon-docs/blocks'
+import * as Story from './otp-input.stories'
+
+<Meta of={Story} />
+
+# InputOTP
+
+A one-time password input component built on top of [input-otp](https://github.com/guilhermerodz/input-otp). Renders individual digit slots with automatic focus management, paste support, and browser autofill compatibility.
+
+### Basic
+
+A 6-digit OTP input with two groups separated by a divider.
+
+<Canvas of={Story.Default} />
+
+### Without Separator
+
+All slots rendered in a single group.
+
+<Canvas of={Story.WithoutSeparator} />
+
+### Disabled
+
+<Canvas of={Story.Disabled} />
+
+### Pattern
+
+Restrict input to digits only using `REGEXP_ONLY_DIGITS`.
+
+<Canvas of={Story.Pattern} />
+
+<Primary />
+<Controls />

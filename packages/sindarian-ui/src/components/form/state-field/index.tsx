@@ -1,4 +1,5 @@
 import React from 'react'
+import { FieldValues, Path } from 'react-hook-form'
 import { SelectFieldProps } from '../select-field'
 import { getStateCountry } from '@/utils/country-utils'
 import { ControllerRenderProps, useFormContext } from 'react-hook-form'
@@ -80,7 +81,7 @@ function StateComboBox({
           readOnly={readOnly}
           tabIndex={0}
           className={cn(
-            'border-border bg-input hover:bg-input h-10 w-full justify-between rounded-md border px-4 py-2 pl-6 text-left text-sm font-normal focus:outline-none focus:ring-2 focus:ring-offset-0',
+            'border-input-border bg-input hover:bg-input text-foreground h-10 w-full justify-between rounded-md border px-4 py-2 pl-6 text-left text-base font-normal focus:ring-2 focus:ring-offset-0 focus:outline-none',
             !value && 'text-muted-foreground'
           )}
         >
@@ -117,13 +118,16 @@ function StateComboBox({
   )
 }
 
-export type StateFieldProps = Omit<SelectFieldProps, 'children'> & {
+export type StateFieldProps<T extends FieldValues = FieldValues> = Omit<
+  SelectFieldProps<T>,
+  'children'
+> & {
   countryName?: string
   emptyMessage?: string
   readOnly?: boolean
 }
 
-export const StateField = ({
+export const StateField = <T extends FieldValues = FieldValues>({
   countryName = 'address.country',
   label,
   placeholder,
@@ -131,10 +135,11 @@ export const StateField = ({
   required,
   readOnly,
   ...others
-}: StateFieldProps) => {
+}: StateFieldProps<T>) => {
   return (
     <FormField
       {...others}
+      name={others.name as Path<T>}
       render={({ field }) => (
         <FormItem required={required}>
           {label && <FormLabel>{label}</FormLabel>}

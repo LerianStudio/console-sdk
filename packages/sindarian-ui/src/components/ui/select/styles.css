@@ -11,7 +11,7 @@
 
 @layer components {
   .select-trigger {
-    @apply h-select-h px-select-px py-select-py text-select-foreground border-select-border data-placeholder:text-select-placeholder flex w-full items-center justify-between rounded-md border text-sm font-medium focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden;
+    @apply h-select-h px-select-px py-select-py text-select-foreground border-select-border data-placeholder:text-select-placeholder flex w-full items-center justify-between rounded-md border font-medium focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden;
   }
 
   .select-read-only {

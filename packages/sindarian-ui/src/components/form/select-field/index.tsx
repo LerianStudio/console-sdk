@@ -22,26 +22,27 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import React, { PropsWithChildren, ReactNode } from 'react'
-import { Control } from 'react-hook-form'
+import { Control, FieldValues, Path } from 'react-hook-form'
 
-export type SelectFieldProps = PropsWithChildren & {
-  name: string
-  label?: ReactNode
-  tooltip?: string
-  labelExtra?: React.ReactNode
-  description?: ReactNode
-  placeholder?: string
-  disabled?: boolean
-  readOnly?: boolean
-  control: Control<any>
-  multi?: boolean
-  required?: boolean
-  emptyMessage?: string
-  onChange?: (value: string | string[]) => void
-  'data-testid'?: string
-}
+export type SelectFieldProps<T extends FieldValues = FieldValues> =
+  PropsWithChildren & {
+    name: string
+    label?: ReactNode
+    tooltip?: string
+    labelExtra?: React.ReactNode
+    description?: ReactNode
+    placeholder?: string
+    disabled?: boolean
+    readOnly?: boolean
+    control: Control<T>
+    multi?: boolean
+    required?: boolean
+    emptyMessage?: string
+    onChange?: (value: string | string[]) => void
+    'data-testid'?: string
+  }
 
-export const SelectField = ({
+export const SelectField = <T extends FieldValues = FieldValues>({
   name,
   label,
   tooltip,
@@ -57,10 +58,10 @@ export const SelectField = ({
   emptyMessage = 'No options found.',
   onChange,
   ...others
-}: SelectFieldProps) => {
+}: SelectFieldProps<T>) => {
   return (
     <FormField
-      name={name}
+      name={name as Path<T>}
       control={control}
       {...others}
       render={({ field }) => {
@@ -96,7 +97,7 @@ export const SelectField = ({
                   field.onChange(value)
                   onChange?.(value)
                 }}
-                value={field.value}
+                value={field.value ?? ''}
                 disabled={disabled}
                 open={readOnly ? false : undefined}
                 onOpenChange={readOnly ? () => {} : undefined}

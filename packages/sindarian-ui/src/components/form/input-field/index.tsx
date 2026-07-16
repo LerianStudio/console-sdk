@@ -10,9 +10,9 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { HTMLInputTypeAttribute, ReactNode } from 'react'
-import { Control } from 'react-hook-form'
+import { Control, FieldValues, Path } from 'react-hook-form'
 
-export type InputFieldProps = {
+export type InputFieldProps<T extends FieldValues = FieldValues> = {
   className?: string
   name: string
   type?: HTMLInputTypeAttribute
@@ -23,7 +23,7 @@ export type InputFieldProps = {
   description?: ReactNode
   startAdornment?: ReactNode
   endAdornment?: ReactNode
-  control: Control<any>
+  control: Control<T>
   disabled?: boolean
   readOnly?: boolean
   minHeight?: number
@@ -36,7 +36,7 @@ export type InputFieldProps = {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void
 }
-export const InputField = ({
+export const InputField = <T extends FieldValues = FieldValues>({
   className,
   type,
   label,
@@ -54,10 +54,11 @@ export const InputField = ({
   defaultValue,
   onChange,
   ...others
-}: InputFieldProps) => {
+}: InputFieldProps<T>) => {
   return (
     <FormField
       {...others}
+      name={others.name as Path<T>}
       render={({ field }) => (
         <FormItem required={required}>
           {label && (
