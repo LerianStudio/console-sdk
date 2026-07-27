@@ -1,0 +1,31 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './qr-code.stories'
+
+<Meta of={Story} />
+
+# QRCode
+
+Renders a value as a scannable QR code SVG. Built for `otpauth://totp/...` enrollment URIs, but any string works.
+
+### Populated
+
+<Canvas of={Story.Populated} />
+
+### Empty
+
+An empty or whitespace-only `value` renders nothing, so a partially loaded value never produces a broken code.
+
+<Canvas of={Story.Empty} />
+
+### Center logo
+
+Pass `logoSrc` to render an image in the center of the code. The error-correction level is raised to `H` and the
+modules behind the image are excavated, so the code stays scannable despite the occluded area.
+
+### Accessibility
+
+The SVG carries `role="img"`. Pass `aria-label` with an i18n string describing what to do with the code — the
+default is a generic `QR code`.
+
+<Primary />
+<Controls />
