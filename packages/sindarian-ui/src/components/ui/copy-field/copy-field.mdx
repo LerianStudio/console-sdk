@@ -1,0 +1,48 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './copy-field.stories'
+
+<Meta of={Story} />
+
+# CopyField
+
+Displays a read-only value alongside a copy button. Built for values the user must transfer somewhere else — a
+TOTP manual-entry secret, a recovery code, an API key.
+
+Requires a `Toaster` mounted in the tree: copying raises a toast to confirm the action.
+
+### Default
+
+<Canvas of={Story.Default} />
+
+### With label
+
+The `label` is rendered above the field and associated with the input via `htmlFor`/`id`. Without it, the input
+falls back to the `valueLabel` accessible name.
+
+<Canvas of={Story.WithLabel} />
+
+### Masked
+
+Set `masked` to obscure the displayed value behind native password dots and offer a reveal toggle. Copy always
+uses the raw `value`, even while masked.
+
+<Canvas of={Story.Masked} />
+
+### Custom toast label
+
+Pass `onCopyLabel` with an i18n string to replace the default success message.
+
+<Canvas of={Story.WithCustomToastLabel} />
+
+### Clipboard fallback
+
+When `navigator.clipboard` is unavailable or the write is rejected, the field reveals and selects its text and
+raises a toast prompting the user to copy manually with `Ctrl`/`Cmd`+`C`.
+
+### Localization
+
+`revealLabel`, `hideLabel`, and `valueLabel` default to English. Override all three with i18n strings in
+localized apps.
+
+<Primary />
+<Controls />
