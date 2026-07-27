@@ -12,8 +12,9 @@ const badgeVariants = cva(
         default:
           'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
         active:
-          'bg-system-success-surface text-system-success-h1a border-none py-[2px] px-3',
-        inactive: 'bg-muted text-foreground border-none py-[2px] px-3',
+          'bg-system-success-surface text-system-success-h1a border-system-success-border py-[2px] px-3',
+        inactive:
+          'bg-muted text-foreground border-muted-foreground/40 py-[2px] px-3',
         secondary:
           'border-transparent bg-muted-foreground text-white dark:text-black',
         destructive:
