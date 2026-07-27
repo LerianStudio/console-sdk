@@ -53,6 +53,7 @@
     "dayjs": "^1.11.21",
     "input-otp": "^1.4.2",
     "postcss": "^8.5.16",
+    "qrcode.react": "^4.2.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.2",
