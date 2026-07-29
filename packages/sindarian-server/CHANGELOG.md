@@ -1,3 +1,17 @@
+## [1.2.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.2.0-beta.2...sindarian-server-v1.2.0-beta.3) (2026-07-29)
+
+
+### Features
+
+* **sindarian-ui:** add clipboard auto-clear to CopyField ([e11c064](https://github.com/LerianStudio/console-sdk/commit/e11c064d1e95160fc71499ba0a32bf46cedfb8fc))
+* **sindarian-ui:** add CopyField component ([dcb2b6c](https://github.com/LerianStudio/console-sdk/commit/dcb2b6c783199014ddae690e27ce75d876c2ee99))
+* **sindarian-ui:** add QRCode component ([91f92d1](https://github.com/LerianStudio/console-sdk/commit/91f92d1f267dc49258a680f0ef46d5152ce159b3))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** tighten badge borders and icon button layout ([47f63f4](https://github.com/LerianStudio/console-sdk/commit/47f63f4345721a55ea0b5e281c1bbf1f266ba92a))
+
 ## [1.2.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.2.0-beta.1...sindarian-server-v1.2.0-beta.2) (2026-07-16)
 
 
