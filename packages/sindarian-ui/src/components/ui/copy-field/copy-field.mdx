@@ -28,6 +28,18 @@ uses the raw `value`, even while masked.
 
 <Canvas of={Story.Masked} />
 
+### Auto-clearing the clipboard
+
+Pass `clearClipboardAfter` (milliseconds) so a sensitive value doesn't linger in the clipboard. The clear runs
+only after a confirmed clipboard write, and it reads the clipboard back first — if it no longer holds exactly
+what this field wrote, nothing is touched, so a copy the user made in the meantime is never destroyed.
+
+Best-effort by design: browsers without `navigator.clipboard.readText` (Firefox, Safari) or that deny the read
+can't be verified, so the clipboard is left alone there. Treat it as defence in depth, not a guarantee. The
+pending clear survives unmount, so closing the dialog early still wipes the value.
+
+<Canvas of={Story.AutoClearingClipboard} />
+
 ### Custom toast label
 
 Pass `onCopyLabel` with an i18n string to replace the default success message.

@@ -39,6 +39,15 @@ export const Masked: StoryObj<CopyFieldProps> = {
   }
 }
 
+export const AutoClearingClipboard: StoryObj<CopyFieldProps> = {
+  args: {
+    label: 'Manual entry secret',
+    value: 'JBSWY3DPEHPK3PXP',
+    masked: true,
+    clearClipboardAfter: 30_000
+  }
+}
+
 export const WithCustomToastLabel: StoryObj<CopyFieldProps> = {
   args: {
     label: 'Manual entry secret',

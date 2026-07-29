@@ -12,6 +12,7 @@ const FALLBACK_COPY_LABEL =
   'Copy not available — text selected, press Ctrl/Cmd+C'
 
 const writeText = jest.fn().mockResolvedValue(undefined)
+const readText = jest.fn().mockResolvedValue('')
 
 const setClipboard = (value: unknown) => {
   Object.defineProperty(navigator, 'clipboard', {
@@ -25,7 +26,9 @@ beforeEach(() => {
   mockToast.mockClear()
   writeText.mockClear()
   writeText.mockResolvedValue(undefined)
-  setClipboard({ writeText })
+  readText.mockClear()
+  readText.mockResolvedValue('')
+  setClipboard({ writeText, readText })
 })
 
 describe('CopyField', () => {
@@ -106,13 +109,11 @@ describe('CopyField', () => {
       const toggle = screen.getByRole('button', { name: /show value/i })
       expect(toggle).toHaveAttribute('aria-pressed', 'false')
 
-      // Reveal.
       fireEvent.click(toggle)
       expect(input).toHaveAttribute('type', 'text')
       const hideToggle = screen.getByRole('button', { name: /hide value/i })
       expect(hideToggle).toHaveAttribute('aria-pressed', 'true')
 
-      // Hide back.
       fireEvent.click(hideToggle)
       expect(input).toHaveAttribute('type', 'password')
       expect(
@@ -215,6 +216,178 @@ describe('CopyField', () => {
       expect(input).toHaveAttribute('type', 'text')
       expect(input).toHaveValue('TOTPSECRET')
       selectSpy.mockRestore()
+    })
+  })
+
+  describe('clearClipboardAfter', () => {
+    const CLEAR_AFTER = 30_000
+
+    beforeEach(() => {
+      jest.useFakeTimers()
+    })
+    afterEach(() => {
+      jest.runOnlyPendingTimers()
+      jest.useRealTimers()
+    })
+
+    /** Runs the pending clear timer and drains its await chain. */
+    const runClearTimer = async () => {
+      await act(async () => {
+        jest.advanceTimersByTime(CLEAR_AFTER)
+      })
+      // readText -> comparison -> writeText: two extra microtask turns.
+      await act(async () => {
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+    }
+
+    const copy = async (name: RegExp) => {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name }))
+      })
+    }
+
+    it('wipes the clipboard after the delay when it still holds the copied value', async () => {
+      readText.mockResolvedValue('SECRET123')
+
+      render(
+        <CopyField
+          value="SECRET123"
+          label="Secret"
+          clearClipboardAfter={CLEAR_AFTER}
+        />
+      )
+      await copy(/copy secret/i)
+      expect(writeText).toHaveBeenCalledWith('SECRET123')
+      // Nothing cleared before the delay elapses.
+      expect(writeText).toHaveBeenCalledTimes(1)
+
+      await runClearTimer()
+      expect(readText).toHaveBeenCalled()
+      expect(writeText).toHaveBeenLastCalledWith('')
+    })
+
+    it('leaves the clipboard untouched when it now holds an unrelated value', async () => {
+      readText.mockResolvedValue('something the user copied afterwards')
+
+      render(
+        <CopyField
+          value="SECRET123"
+          label="Secret"
+          clearClipboardAfter={CLEAR_AFTER}
+        />
+      )
+      await copy(/copy secret/i)
+      await runClearTimer()
+
+      expect(readText).toHaveBeenCalled()
+      expect(writeText).toHaveBeenCalledTimes(1)
+      expect(writeText).toHaveBeenLastCalledWith('SECRET123')
+    })
+
+    it('clears against the value copied at click time, not a later prop value', async () => {
+      readText.mockResolvedValue('FIRST')
+
+      const { rerender } = render(
+        <CopyField
+          value="FIRST"
+          label="Secret"
+          clearClipboardAfter={CLEAR_AFTER}
+        />
+      )
+      await copy(/copy secret/i)
+      rerender(
+        <CopyField
+          value="SECOND"
+          label="Secret"
+          clearClipboardAfter={CLEAR_AFTER}
+        />
+      )
+      await runClearTimer()
+
+      expect(writeText).toHaveBeenLastCalledWith('')
+    })
+
+    it('does not clear when the clipboard cannot be read back', async () => {
+      setClipboard({ writeText })
+
+      render(
+        <CopyField
+          value="SECRET123"
+          label="Secret"
+          clearClipboardAfter={CLEAR_AFTER}
+        />
+      )
+      await copy(/copy secret/i)
+      await runClearTimer()
+
+      expect(writeText).toHaveBeenCalledTimes(1)
+      expect(writeText).toHaveBeenLastCalledWith('SECRET123')
+    })
+
+    it('does not clear when readText rejects', async () => {
+      readText.mockRejectedValue(new Error('permission denied'))
+
+      render(
+        <CopyField
+          value="SECRET123"
+          label="Secret"
+          clearClipboardAfter={CLEAR_AFTER}
+        />
+      )
+      await copy(/copy secret/i)
+      await runClearTimer()
+
+      expect(writeText).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not schedule a clear when the copy itself failed', async () => {
+      writeText.mockRejectedValue(new Error('permission denied'))
+
+      render(
+        <CopyField
+          value="SECRET123"
+          label="Secret"
+          clearClipboardAfter={CLEAR_AFTER}
+        />
+      )
+      await copy(/copy secret/i)
+      await runClearTimer()
+
+      expect(readText).not.toHaveBeenCalled()
+    })
+
+    it('never clears when the prop is omitted or non-positive', async () => {
+      const { unmount } = render(<CopyField value="SECRET123" label="Secret" />)
+      await copy(/copy secret/i)
+      await runClearTimer()
+      expect(readText).not.toHaveBeenCalled()
+      unmount()
+
+      render(
+        <CopyField value="SECRET123" label="Secret" clearClipboardAfter={0} />
+      )
+      await copy(/copy secret/i)
+      await runClearTimer()
+      expect(readText).not.toHaveBeenCalled()
+    })
+
+    it('still clears after the field unmounts before the delay elapses', async () => {
+      readText.mockResolvedValue('SECRET123')
+
+      const { unmount } = render(
+        <CopyField
+          value="SECRET123"
+          label="Secret"
+          clearClipboardAfter={CLEAR_AFTER}
+        />
+      )
+      await copy(/copy secret/i)
+      unmount()
+      await runClearTimer()
+
+      expect(writeText).toHaveBeenLastCalledWith('')
     })
   })
 
