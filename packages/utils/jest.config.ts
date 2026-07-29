@@ -31,6 +31,14 @@ const baseConfig: Config = {
   // The test environment that will be used for testing
   testEnvironment: 'jsdom',
 
+  // Never collect tests from build output. A built package leaves compiled
+  // copies of its own test files in dist/, which Jest would run alongside the
+  // real ones — and they fail spuriously, because moduleNameMapper resolves
+  // '@/...' mocks to src/ while the compiled test imports its dist/ sibling.
+  // Overriding this list in a package config replaces it, so re-include these
+  // patterns there (see sindarian-server).
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
   setupFilesAfterEnv: ['@testing-library/jest-dom']
 }

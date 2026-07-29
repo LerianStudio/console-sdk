@@ -21,6 +21,7 @@ type SidebarItemIconButtonProps = React.ComponentProps<typeof Link> & {
 }
 
 export const SidebarItemIconButton = ({
+  className,
   title,
   icon,
   href,
@@ -35,7 +36,8 @@ export const SidebarItemIconButton = ({
     }),
     iconButtonVariants(),
     inactive && 'hover:border-transparent',
-    disabled && 'cursor-default opacity-30'
+    disabled && 'cursor-default opacity-30',
+    className
   )
 
   return (

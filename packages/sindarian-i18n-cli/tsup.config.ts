@@ -7,7 +7,7 @@ export default defineConfig([
     target: 'node18',
     dts: true,
     clean: true,
-    splitting: false,
+    splitting: false
   },
   {
     entry: { cli: 'src/cli.ts' },
@@ -17,7 +17,7 @@ export default defineConfig([
     clean: false,
     splitting: false,
     banner: {
-      js: '#!/usr/bin/env node',
-    },
-  },
+      js: '#!/usr/bin/env node'
+    }
+  }
 ])
