@@ -12,6 +12,7 @@ const config = {
   collectCoverage: true,
   coverageDirectory: 'coverage',
   preset: 'ts-jest',
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
 
   // Package label shown in Jest reports
   displayName: 'sindarian-i18n-cli',
