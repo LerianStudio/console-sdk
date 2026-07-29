@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { useForm } from 'react-hook-form'
 import { Input } from '.'
 import { Form, FormControl, FormField, FormItem, FormLabel } from '../form'
@@ -37,7 +37,15 @@ describe('Input outside a form', () => {
     const onChange = jest.fn()
     render(<Input value="abc" onChange={onChange} aria-label="Search" />)
 
-    expect(screen.getByRole('textbox', { name: 'Search' })).toHaveValue('abc')
+    const input = screen.getByRole('textbox', { name: 'Search' })
+    expect(input).toHaveValue('abc')
+
+    fireEvent.change(input, { target: { value: 'abcd' } })
+
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ target: input })
+    )
   })
 })
 
