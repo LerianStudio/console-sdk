@@ -1,7 +1,6 @@
 import * as React from 'react'
 
 import { cn } from '@/lib/utils'
-import { useFormField } from '@/components/ui/form'
 import { cva, VariantProps } from 'class-variance-authority'
 
 const inputVariants = cva('input-base input-disabled input-read-only', {
@@ -46,7 +45,9 @@ export function Input({
   ref,
   ...props
 }: InputProps) {
-  const { formItemId } = useFormField()
+  // Fallback id so a standalone Input is still labelable. Inside a form,
+  // FormControl injects its own id through `props` below and overrides this.
+  const generatedId = React.useId()
   const [focus, setFocus] = React.useState(false)
   const inputRef = React.useRef<HTMLInputElement>(null)
 
@@ -99,7 +100,7 @@ export function Input({
 
       <input
         ref={inputRef}
-        id={formItemId}
+        id={generatedId}
         data-slot="input"
         className={cn(
           inputVariants({
