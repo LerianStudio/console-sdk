@@ -1,3 +1,11 @@
+## [1.2.0-beta.12](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.11...sindarian-ui-v1.2.0-beta.12) (2026-07-29)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** drop form context from Input ([1c60735](https://github.com/LerianStudio/console-sdk/commit/1c607351f8421f142c0e540587ee09944a1e88b5))
+* **sindarian-ui:** mark Button child as Slottable ([6e728a1](https://github.com/LerianStudio/console-sdk/commit/6e728a1216dd2f8ff3858bbf84a9b392730bea2e))
+
 ## [1.2.0-beta.11](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.10...sindarian-ui-v1.2.0-beta.11) (2026-07-29)
 
 
