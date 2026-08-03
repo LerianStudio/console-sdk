@@ -4,6 +4,7 @@
 import {
   calculateLineColFromOffset,
   extractFile,
+  formatLocaleJson,
   formatSimpleJson
 } from './extractor'
 import type { ExtractorConfig, ResolvedMessage } from './types'
@@ -171,5 +172,77 @@ describe('formatSimpleJson', () => {
   it('returns empty object for empty map', () => {
     const result = formatSimpleJson(new Map())
     expect(JSON.parse(result)).toEqual({})
+  })
+})
+
+describe('formatLocaleJson', () => {
+  it('sorts keys alphabetically regardless of extraction order', () => {
+    const result = formatLocaleJson(['zebra.message', 'alpha.message'], {
+      'zebra.message': 'Zebra',
+      'alpha.message': 'Alpha'
+    })
+
+    expect(Object.keys(JSON.parse(result))).toEqual([
+      'alpha.message',
+      'zebra.message'
+    ])
+    expect(result).toContain('  "alpha.message"')
+  })
+
+  it('produces identical output for any extraction order', () => {
+    const existing = { 'b.key': 'B', 'a.key': 'A', 'c.key': 'C' }
+
+    expect(formatLocaleJson(['c.key', 'a.key', 'b.key'], existing)).toBe(
+      formatLocaleJson(['a.key', 'b.key', 'c.key'], existing)
+    )
+  })
+
+  it('keeps existing translations and empties new keys', () => {
+    const result = formatLocaleJson(['a.key', 'b.key'], { 'a.key': 'Ola' })
+
+    expect(JSON.parse(result)).toEqual({ 'a.key': 'Ola', 'b.key': '' })
+  })
+
+  it('drops keys no longer in the extraction', () => {
+    const result = formatLocaleJson(['a.key'], {
+      'a.key': 'Ola',
+      'stale.key': 'Antigo'
+    })
+
+    expect(JSON.parse(result)).toEqual({ 'a.key': 'Ola' })
+  })
+
+  it('returns empty object when nothing was extracted', () => {
+    expect(JSON.parse(formatLocaleJson([], { 'a.key': 'Ola' }))).toEqual({})
+  })
+
+  it('keeps an existing "__proto__" translation', () => {
+    // JSON.parse defines "__proto__" as an own data property, which is how a
+    // locale file reaches this function.
+    const existing = JSON.parse('{"__proto__":"Prototipo","a.key":"Ola"}')
+
+    const parsed = JSON.parse(
+      formatLocaleJson(['__proto__', 'a.key'], existing)
+    )
+
+    expect(parsed['__proto__']).toBe('Prototipo')
+    expect(parsed['a.key']).toBe('Ola')
+  })
+
+  it('empties a missing "__proto__" translation', () => {
+    const parsed = JSON.parse(
+      formatLocaleJson(['__proto__', 'a.key'], { 'a.key': 'Ola' })
+    )
+
+    expect(parsed['__proto__']).toBe('')
+    expect(Object.keys(parsed)).toEqual(['__proto__', 'a.key'])
+  })
+
+  it('empties ids that collide with inherited Object members', () => {
+    const parsed = JSON.parse(
+      formatLocaleJson(['toString', 'constructor', 'a.key'], { 'a.key': 'Ola' })
+    )
+
+    expect(parsed).toEqual({ toString: '', constructor: '', 'a.key': 'Ola' })
   })
 })

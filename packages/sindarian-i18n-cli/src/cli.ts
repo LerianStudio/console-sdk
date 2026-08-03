@@ -3,7 +3,7 @@ import path from 'path'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import { createRequire } from 'node:module'
 import { loadConfig } from './config'
-import { extractAll, formatSimpleJson } from './extractor'
+import { extractAll, formatLocaleJson, formatSimpleJson } from './extractor'
 import { validate } from './validator'
 import { diffKeys, formatKeyDiffReport } from './key-differ'
 import { formatValidationReport, formatExtractionErrors } from './reporter'
@@ -42,13 +42,12 @@ async function mergeLocale(
     }
   }
 
-  const merged: Record<string, string> = {}
-  for (const key of extractedKeys) {
-    merged[key] = existing[key] ?? ''
-  }
-
   try {
-    await writeFile(localePath, JSON.stringify(merged, null, 2), 'utf-8')
+    await writeFile(
+      localePath,
+      formatLocaleJson(extractedKeys, existing),
+      'utf-8'
+    )
   } catch (e) {
     console.error(
       `Failed to write locale file "${localePath}": ${(e as Error).message}`
