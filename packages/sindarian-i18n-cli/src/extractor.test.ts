@@ -4,6 +4,7 @@
 import {
   calculateLineColFromOffset,
   extractFile,
+  formatLocaleJson,
   formatSimpleJson
 } from './extractor'
 import type { ExtractorConfig, ResolvedMessage } from './types'
@@ -171,5 +172,47 @@ describe('formatSimpleJson', () => {
   it('returns empty object for empty map', () => {
     const result = formatSimpleJson(new Map())
     expect(JSON.parse(result)).toEqual({})
+  })
+})
+
+describe('formatLocaleJson', () => {
+  it('sorts keys alphabetically regardless of extraction order', () => {
+    const result = formatLocaleJson(['zebra.message', 'alpha.message'], {
+      'zebra.message': 'Zebra',
+      'alpha.message': 'Alpha'
+    })
+
+    expect(Object.keys(JSON.parse(result))).toEqual([
+      'alpha.message',
+      'zebra.message'
+    ])
+    expect(result).toContain('  "alpha.message"')
+  })
+
+  it('produces identical output for any extraction order', () => {
+    const existing = { 'b.key': 'B', 'a.key': 'A', 'c.key': 'C' }
+
+    expect(formatLocaleJson(['c.key', 'a.key', 'b.key'], existing)).toBe(
+      formatLocaleJson(['a.key', 'b.key', 'c.key'], existing)
+    )
+  })
+
+  it('keeps existing translations and empties new keys', () => {
+    const result = formatLocaleJson(['a.key', 'b.key'], { 'a.key': 'Ola' })
+
+    expect(JSON.parse(result)).toEqual({ 'a.key': 'Ola', 'b.key': '' })
+  })
+
+  it('drops keys no longer in the extraction', () => {
+    const result = formatLocaleJson(['a.key'], {
+      'a.key': 'Ola',
+      'stale.key': 'Antigo'
+    })
+
+    expect(JSON.parse(result)).toEqual({ 'a.key': 'Ola' })
+  })
+
+  it('returns empty object when nothing was extracted', () => {
+    expect(JSON.parse(formatLocaleJson([], { 'a.key': 'Ola' }))).toEqual({})
   })
 })

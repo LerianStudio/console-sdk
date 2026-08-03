@@ -200,3 +200,22 @@ export function formatSimpleJson(
   }
   return stringify(simple, { space: 2 })
 }
+
+/**
+ * Formats a non-default locale as simple JSON: { [id]: translation }.
+ * Keeps existing translations, emits an empty string for keys that have none,
+ * and drops keys no longer present in the extraction.
+ *
+ * Uses json-stable-stringify for the same alphabetical ordering as
+ * formatSimpleJson, so output does not depend on file traversal order.
+ */
+export function formatLocaleJson(
+  extractedKeys: string[],
+  existing: Record<string, string>
+): string {
+  const merged: Record<string, string> = {}
+  for (const key of extractedKeys) {
+    merged[key] = existing[key] ?? ''
+  }
+  return stringify(merged, { space: 2 })
+}
