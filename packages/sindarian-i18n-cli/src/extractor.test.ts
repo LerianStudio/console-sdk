@@ -215,4 +215,34 @@ describe('formatLocaleJson', () => {
   it('returns empty object when nothing was extracted', () => {
     expect(JSON.parse(formatLocaleJson([], { 'a.key': 'Ola' }))).toEqual({})
   })
+
+  it('keeps an existing "__proto__" translation', () => {
+    // JSON.parse defines "__proto__" as an own data property, which is how a
+    // locale file reaches this function.
+    const existing = JSON.parse('{"__proto__":"Prototipo","a.key":"Ola"}')
+
+    const parsed = JSON.parse(
+      formatLocaleJson(['__proto__', 'a.key'], existing)
+    )
+
+    expect(parsed['__proto__']).toBe('Prototipo')
+    expect(parsed['a.key']).toBe('Ola')
+  })
+
+  it('empties a missing "__proto__" translation', () => {
+    const parsed = JSON.parse(
+      formatLocaleJson(['__proto__', 'a.key'], { 'a.key': 'Ola' })
+    )
+
+    expect(parsed['__proto__']).toBe('')
+    expect(Object.keys(parsed)).toEqual(['__proto__', 'a.key'])
+  })
+
+  it('empties ids that collide with inherited Object members', () => {
+    const parsed = JSON.parse(
+      formatLocaleJson(['toString', 'constructor', 'a.key'], { 'a.key': 'Ola' })
+    )
+
+    expect(parsed).toEqual({ toString: '', constructor: '', 'a.key': 'Ola' })
+  })
 })

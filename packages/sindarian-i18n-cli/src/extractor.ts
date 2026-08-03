@@ -208,14 +208,19 @@ export function formatSimpleJson(
  *
  * Uses json-stable-stringify for the same alphabetical ordering as
  * formatSimpleJson, so output does not depend on file traversal order.
+ *
+ * The accumulator is null-prototype and lookups are own-property-only, so ids
+ * that collide with Object.prototype members ("__proto__", "toString", ...) are
+ * carried through as ordinary keys instead of being silently dropped.
  */
 export function formatLocaleJson(
   extractedKeys: string[],
   existing: Record<string, string>
 ): string {
-  const merged: Record<string, string> = {}
+  const merged: Record<string, string> = Object.create(null)
   for (const key of extractedKeys) {
-    merged[key] = existing[key] ?? ''
+    const translation = Object.hasOwn(existing, key) ? existing[key] : undefined
+    merged[key] = translation ?? ''
   }
   return stringify(merged, { space: 2 })
 }
