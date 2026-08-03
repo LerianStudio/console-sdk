@@ -1,3 +1,13 @@
+## [1.0.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-i18n-cli-v1.0.0-beta.5...sindarian-i18n-cli-v1.0.0-beta.6) (2026-08-03)
+
+
+### Bug Fixes
+
+* **sindarian-i18n-cli:** keep locale ids that collide with Object.prototype ([6d970a4](https://github.com/LerianStudio/console-sdk/commit/6d970a4280561055dc4e8143195c42e101fdf5cf))
+* **sindarian-i18n-cli:** sort non-default locale files ([49b1dcc](https://github.com/LerianStudio/console-sdk/commit/49b1dcc42d55f89475db6e081c7c9b5ab6953e72))
+* **sindarian-ui:** drop form context from Input ([1c60735](https://github.com/LerianStudio/console-sdk/commit/1c607351f8421f142c0e540587ee09944a1e88b5))
+* **sindarian-ui:** mark Button child as Slottable ([6e728a1](https://github.com/LerianStudio/console-sdk/commit/6e728a1216dd2f8ff3858bbf84a9b392730bea2e))
+
 ## [1.0.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-i18n-cli-v1.0.0-beta.4...sindarian-i18n-cli-v1.0.0-beta.5) (2026-07-29)
 
 
