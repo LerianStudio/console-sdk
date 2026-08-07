@@ -228,6 +228,10 @@
     --destructive-foreground: 0 0% 100%; /* white */
     --border: 240 5% 90%; /* base/200 = #E4E4E7 */
     --input: 0 0% 100%; /* base/white */
+    /* One step lighter than --muted-foreground, which is also the label colour:
+       a placeholder that matches its own label has no hierarchy left to give.
+       Still 4.4:1 on the shadcn-100 field, so it stays legible as a hint. */
+    --input-placeholder: 240 4% 46%; /* base/500 = #71717A */
     --ring: 240 5% 65%; /* focus ring */
     --radius: 0.5rem;
 
@@ -292,6 +296,10 @@
     --popover-foreground: 240 5% 96%; /* base/100 = #F4F4F5 */
     --border: 240 5% 34%; /* base/600 = #52525B */
     --input: 240 4% 16%; /* base/800 = #27272A */
+    /* Held at base/400 rather than stepped down with the light theme: on the
+       dark field that is already only 5.8:1, and going lighter here means
+       darker, which would push the hint under the AA floor. */
+    --input-placeholder: 240 5% 65%; /* base/400 = #A1A1AA */
     --primary: 240 5% 96%; /* base/100 = #F4F4F5 */
     --primary-foreground: 240 4% 16%; /* base/800 = #27272A */
     --secondary: 240 4% 16%; /* base/800 = #27272A */
