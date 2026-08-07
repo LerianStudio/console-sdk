@@ -1,3 +1,13 @@
+## [1.2.0-beta.13](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.12...sindarian-ui-v1.2.0-beta.13) (2026-08-07)
+
+
+### Bug Fixes
+
+* **sindarian-i18n-cli:** keep locale ids that collide with Object.prototype ([6d970a4](https://github.com/LerianStudio/console-sdk/commit/6d970a4280561055dc4e8143195c42e101fdf5cf))
+* **sindarian-i18n-cli:** sort non-default locale files ([49b1dcc](https://github.com/LerianStudio/console-sdk/commit/49b1dcc42d55f89475db6e081c7c9b5ab6953e72))
+* **sindarian-ui:** align input placeholder baseline ([1da4446](https://github.com/LerianStudio/console-sdk/commit/1da44465ae3e8d82f0cbe0e28564387fb9cdbea6))
+* **sindarian-ui:** widen dialog content padding ([3f62a5d](https://github.com/LerianStudio/console-sdk/commit/3f62a5d590c1b9939b10b9e7996c1d0e662bd076))
+
 ## [1.2.0-beta.12](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.11...sindarian-ui-v1.2.0-beta.12) (2026-07-29)
 
 
