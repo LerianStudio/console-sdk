@@ -33,12 +33,26 @@ export type TokenSheet = Record<Theme, Readonly<Record<string, string>>>
 export { THEMES, THEME_SELECTORS }
 export type { Theme }
 
+/**
+ * CSS `hsl()` -> the 8-bit sRGB triple a browser paints.
+ *
+ * Hue is normalised modulo 360 and the two percentages are clamped to [0, 100],
+ * both because CSS Color 4 does exactly that before painting. Neither is
+ * cosmetic. JavaScript's `%` keeps the sign of its left operand, so an
+ * unnormalised `hsl(-120 75% 50%)` computed `[223, 32, 223]` — magenta — where
+ * the browser paints `[32, 32, 223]`, blue. An unclamped `hsl(0 150% 50%)`
+ * produced channels of 319 and -64, outside the range luminance is defined
+ * over. In both cases the instrument returned a wrong colour and returned it
+ * silently, which for a gate is the worst failure available: it does not break,
+ * it lies.
+ */
 export function hslToRgb(h: number, s: number, l: number): Rgb {
-  const sat = s / 100
-  const light = l / 100
+  const hue = ((h % 360) + 360) % 360
+  const sat = Math.min(Math.max(s, 0), 100) / 100
+  const light = Math.min(Math.max(l, 0), 100) / 100
   const a = sat * Math.min(light, 1 - light)
   const channel = (n: number) => {
-    const k = (n + h / 30) % 12
+    const k = (n + hue / 30) % 12
     return light - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)))
   }
   return [
@@ -101,7 +115,17 @@ export function parseColor(value: string, context: string): Rgb {
   const raw = value.trim()
   const hsl = HSL.exec(raw)
   if (hsl) {
-    return hslToRgb(Number(hsl[1]), Number(hsl[2]), Number(hsl[3]))
+    const [h, s, l] = [Number(hsl[1]), Number(hsl[2]), Number(hsl[3])]
+    // `[\d.]+` matches `1.2.3`, which `Number` turns into NaN. NaN survives the
+    // whole pipeline — luminance, ratio, comparison — and `NaN < floor` is
+    // false, so a malformed literal would turn the gate green rather than red.
+    if (!Number.isFinite(h) || !Number.isFinite(s) || !Number.isFinite(l)) {
+      throw new Error(
+        `${context}: "${raw}" parses to a non-numeric channel (h=${h}, s=${s}, l=${l}). ` +
+          `A NaN here silences the gate instead of failing it.`
+      )
+    }
+    return hslToRgb(h, s, l)
   }
   if (HEX.test(raw)) {
     return hexToRgb(raw)
@@ -138,8 +162,10 @@ export function parseTokenSheet(css: string): TokenSheet {
     const bucket = found[name]
     if (!bucket) continue
     const declarations: Record<string, string> = {}
+    // CSS makes the final `;` of a block optional; requiring it dropped that
+    // declaration from the sheet entirely.
     for (const [, token = '', value = ''] of body.matchAll(
-      /(--[\w-]+)\s*:\s*([^;]+);/g
+      /(--[\w-]+)\s*:\s*([^;]+?)\s*(?:;|$)/g
     )) {
       declarations[token] = value.trim()
     }
