@@ -5,6 +5,17 @@
 - Improvements:
   - Removed redundant shebang from CLI source.
 
+Contributors: @gabrielcastro.xy,
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-i18n-cli-v1.0.0...sindarian-i18n-cli-v1.0.1)
+
+---
+
+## [1.0.1](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-i18n-cli-v1.0.1)
+
+- Improvements:
+  - Removed redundant shebang from CLI source.
+
 - Contributors: @gabrielcastro.xy
 
 [Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-i18n-cli-v1.0.0...sindarian-i18n-cli-v1.0.1)
