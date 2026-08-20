@@ -1,3 +1,16 @@
+# Sindarian-tokens Changelog
+
+## [1.0.1](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-tokens-v1.0.1)
+
+- Fixes:
+  - Stop the contrast instrument from returning incorrect colors silently.
+
+Contributors: @jeff, @jefferson.comff
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-tokens-v1.0.0...sindarian-tokens-v1.0.1)
+
+---
+
 ## [1.0.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-tokens-v1.0.0...sindarian-tokens-v1.0.1) (2026-08-20)
 
 
@@ -15,3 +28,4 @@
 Contributors: @jefferson.comff
 
 [View all changes](https://github.com/LerianStudio/console-sdk/commits/sindarian-tokens-v1.0.0)
+
