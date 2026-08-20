@@ -34,6 +34,7 @@
 import {
   THEMES,
   contrastRatio,
+  parseColor,
   hexToRgb,
   hslToRgb,
   parseTokenSheet,
@@ -304,6 +305,18 @@ function explainIf(failed: boolean, detail: string): string | null {
   return failed ? detail : null
 }
 
+/**
+ * True unless `ratio` is a real number at or above `floor`.
+ *
+ * Written as the negation rather than `ratio < floor` so the assertion fails
+ * CLOSED: a NaN ratio — what a malformed token literal used to produce — is
+ * neither below nor above the floor, so `ratio < floor` was false and the pair
+ * passed. A gate that goes green when it cannot measure is worse than no gate.
+ */
+function belowFloor(ratio: number, floor: number): boolean {
+  return !(ratio >= floor)
+}
+
 describe('contrast instrument', () => {
   it('reproduces the WCAG reference extremes', () => {
     const black = [0, 0, 0] as const
@@ -325,6 +338,65 @@ describe('contrast instrument', () => {
     expect(hslToRgb(0, 0, 44)).toEqual([112, 112, 112])
     expect(hslToRgb(147, 75, 30)).toEqual([19, 134, 71])
     expect(hslToRgb(37, 95, 49)).toEqual([244, 153, 6])
+  })
+
+  /**
+   * CSS Color 4 normalises <hue> modulo 360 before painting. JavaScript's `%`
+   * keeps the sign of its left operand, so an unnormalised implementation
+   * computed hsl(-120 75% 50%) as [223, 32, 223] (magenta) where a browser
+   * paints [32, 32, 223] (blue) — a measurement instrument returning the wrong
+   * colour without failing. No hue in this palette is outside [0, 360), but
+   * that is luck, not design: nothing stops the next token from being one.
+   */
+  it.each([
+    [-120, 240],
+    [-360, 0],
+    [-1, 359],
+    [480, 120],
+    [720, 0]
+  ])('normalises hue %i to its in-range equivalent %i', (given, equivalent) => {
+    expect(hslToRgb(given, 75, 50)).toEqual(hslToRgb(equivalent, 75, 50))
+  })
+
+  it('paints a negative hue the colour CSS says it is, not its mirror', () => {
+    expect(hslToRgb(-120, 75, 50)).toEqual([32, 32, 223])
+  })
+
+  /**
+   * CSS clamps saturation and lightness to [0, 100] at computed-value time.
+   * Unclamped, hsl(0 150% 50%) produced [319, -64, -64] — channels outside the
+   * range relative luminance is defined over.
+   */
+  it.each([
+    [150, 50, 100, 50],
+    [-20, 50, 0, 50],
+    [75, 150, 75, 100],
+    [75, -20, 75, 0]
+  ])(
+    'clamps s=%i%% l=%i%% to the s=%i%% l=%i%% a browser paints',
+    (givenS, givenL, clampedS, clampedL) => {
+      expect(hslToRgb(0, givenS, givenL)).toEqual(
+        hslToRgb(0, clampedS, clampedL)
+      )
+    }
+  )
+
+  it('never leaves the 8-bit range, for any hue or percentage it is handed', () => {
+    const hues = [-720, -361, -360, -180, -1, 0, 1, 180, 359, 360, 361, 720]
+    const percents = [-50, 0, 1, 33, 50, 99, 100, 150]
+    const offenders: string[] = []
+    for (const h of hues) {
+      for (const s of percents) {
+        for (const l of percents) {
+          for (const channel of hslToRgb(h, s, l)) {
+            if (!Number.isInteger(channel) || channel < 0 || channel > 255) {
+              offenders.push(`hsl(${h} ${s}% ${l}%) -> ${channel}`)
+            }
+          }
+        }
+      }
+    }
+    expect(offenders).toEqual([])
   })
 
   it('converts hex to the same triple', () => {
@@ -357,6 +429,21 @@ describe('contrast instrument', () => {
     expect(resolveToken(sheet, 'dark', 'shadcn-800')).toEqual([250, 250, 250])
   })
 
+  /**
+   * `[\d.]+` in the hsl() pattern matches `1.2.3`, which `Number` turns into
+   * NaN. NaN then survives luminance, ratio and comparison untouched, and
+   * `NaN < floor` is false — so before this guard a malformed literal made the
+   * gate pass rather than fail.
+   */
+  it('refuses a literal that parses to NaN instead of passing the pair', () => {
+    const malformed = parseTokenSheet(
+      ':root { --foreground: hsl(0 1.2.3% 50%); } .dark { --foreground: hsl(0 0% 98%); }'
+    )
+    expect(() => resolveToken(malformed, 'light', 'foreground')).toThrow(
+      /non-numeric channel/
+    )
+  })
+
   it('refuses a colour space it cannot measure instead of skipping the pair', () => {
     const oklch = parseTokenSheet(
       ':root { --foreground: oklch(0.2 0 0); } .dark { --foreground: hsl(0 0% 98%); }'
@@ -373,6 +460,35 @@ describe('contrast instrument', () => {
     expect(() => resolveToken(partial, 'dark', 'foreground')).toThrow(
       /not declared in the dark palette/
     )
+  })
+
+  it.each([
+    ['#ff', 'two digits'],
+    ['#ffff', 'four digits'],
+    ['#fffff', 'five digits'],
+    ['#ffffffff', 'eight digits, i.e. hex with alpha'],
+    ['#gggggg', 'non-hex digits']
+  ])('refuses the hex literal %s (%s)', (bad) => {
+    expect(() => parseColor(bad, 'probe')).toThrow(
+      /expected an hsl\(\) literal or a hex colour/
+    )
+  })
+
+  it.each([
+    'hsl(0.5turn 75% 50%)',
+    'hsl(3.14rad 75% 50%)',
+    'hsl(200grad 75% 50%)',
+    'hsl(0 0% 50% / 0.5)'
+  ])('refuses %s rather than silently misreading it', (bad) => {
+    expect(() => parseColor(bad, 'probe')).toThrow(/expected an hsl\(\)/)
+  })
+
+  it('reads a final declaration whose semicolon CSS makes optional', () => {
+    const sheet = parseTokenSheet(
+      ':root { --a: hsl(0 0% 0%); --b: hsl(0 0% 50%) } .dark { --a: hsl(0 0% 0%); --b: hsl(0 0% 50%) }'
+    )
+    expect(Object.keys(sheet.light)).toEqual(['--a', '--b'])
+    expect(resolveToken(sheet, 'dark', 'b')).toEqual([128, 128, 128])
   })
 
   it('refuses a stylesheet that declares a theme twice', () => {
@@ -461,7 +577,7 @@ describe.each(THEMES)('%s palette contrast', (theme: Theme) => {
       const ratio = tokenContrast(sheet, theme, pair.fg, pair.bg)
       expect(
         explainIf(
-          ratio < floor,
+          belowFloor(ratio, floor),
           `${label} (${theme}) — ${pair.why}. WCAG requires ${floor}:1, measured ` +
             `${ratio.toFixed(2)}:1. Adjust the token in src/palette.css; do not relax the ` +
             `threshold and do not add an exemption list.`
@@ -478,7 +594,7 @@ describe.each(THEMES)('%s decorative boundaries', (theme: Theme) => {
     const ratio = tokenContrast(sheet, theme, pair.fg, pair.bg)
     expect(
       explainIf(
-        ratio < DECORATIVE_VISIBILITY_FLOOR,
+        belowFloor(ratio, DECORATIVE_VISIBILITY_FLOOR),
         `${label} (${theme}) — ${pair.why}. Held to a ${DECORATIVE_VISIBILITY_FLOOR}:1 ` +
           `visibility floor rather than SC 1.4.11's 3:1, because it identifies no component; ` +
           `measured ${ratio.toFixed(2)}:1, which is invisible.`
