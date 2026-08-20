@@ -2,6 +2,20 @@
 
 ## [1.2.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-server-v1.2.0)
 
+- **Features:**
+  - Migrate to TypeScript 6.
+
+- **Improvements:**
+  - Clean changelog and harden CI workflow.
+
+Contributors: @caio_aletroca
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.1.0...sindarian-server-v1.2.0)
+
+---
+
+## [1.2.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-server-v1.2.0)
+
 - **Features**
   - Migrate to TypeScript 6.
 
