@@ -1,0 +1,176 @@
+/*
+ * Lerian internal-console palette — the neutral token ladder shared by every
+ * Lerian admin console (backoffice-console, caradhras).
+ *
+ * SOURCE AND SCOPE
+ *
+ * The values below originate in backoffice-console's app stylesheet
+ * (apps/backoffice/src/app/globals.css), which was the de-facto source of
+ * truth: caradhras carried a hand-made copy of it, so the first palette tweak
+ * on either side diverged silently. This file replaces both copies.
+ *
+ * This is NOT the Lerian-yellow product identity in @lerianstudio/sindarian-ui;
+ * that palette is a separate, deliberately different thing.
+ *
+ * COLOURS ONLY, ONE `:root` AND ONE `.dark`
+ *
+ * Every declaration here is a colour, and both blocks declare exactly the same
+ * token set — the contrast gate asserts both properties, because a token
+ * declared in one theme only falls back to whatever the component library
+ * happens to define, unmeasured. Non-colour tokens (`--radius`) and the
+ * Tailwind `@theme` mapping live in tokens.css.
+ *
+ * VALUES ARE FULL `hsl()` LITERALS, NOT BARE TRIPLETS
+ *
+ * backoffice stored bare triplets (`0 0% 100%`) and wrapped them at every use
+ * site (`hsl(var(--background))`). That contract is implicit and unenforceable:
+ * a consumer that forgets the wrapper gets an invalid colour, and the token is
+ * unusable in `color-mix()` or in plain CSS. Here each token is already a
+ * colour.
+ *
+ * WCAG
+ *
+ * Eight values deviate from the backoffice originals to clear a WCAG 2.2 AA
+ * floor; each deviation is annotated inline with the before/after ratio, and
+ * every pair is re-measured on each test run by tokens.contrast.test.ts.
+ */
+
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 4%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 4%);
+
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 4%);
+
+  --primary: hsl(0 0% 9%);
+  --primary-foreground: hsl(0 0% 98%);
+
+  --secondary: hsl(0 0% 96%);
+  --secondary-foreground: hsl(0 0% 9%);
+
+  --muted: hsl(0 0% 96%);
+  /* SC 1.4.3. Was 0 0% 45%: 4.35:1 on --muted, short of 4.5:1. One point of
+     lightness is the whole fix (4.54:1), and it lifts the same ink on the
+     canvas from 4.74:1 to 4.95:1. */
+  --muted-foreground: hsl(0 0% 44%);
+
+  --accent: hsl(0 0% 96%);
+  --accent-foreground: hsl(0 0% 9%);
+
+  /* SC 1.4.3. Was 0 84% 60% (red-500): near-white ink measured 3.62:1. The ink
+     stays near-white — white-on-red is what a destructive control reads as —
+     so the fill absorbs the change, one step down its own hue to 4.67:1. */
+  --destructive: hsl(0 84% 48%);
+  --destructive-foreground: hsl(0 0% 98%);
+
+  /* SC 1.4.3. Was 147 75% 34%: white ink measured 3.72:1. Four points of
+     lightness reach 4.64:1. */
+  --success: hsl(147 75% 30%);
+  --success-foreground: hsl(0 0% 100%);
+
+  --warning: hsl(37 95% 49%);
+  --warning-foreground: hsl(0 0% 0%);
+
+  /* SC 1.4.3. Was 217 91% 60% (blue-500): white ink measured 3.64:1. Seven
+     points down, near blue-600, reaches 4.58:1. */
+  --info: hsl(217 91% 53%);
+  --info-foreground: hsl(0 0% 100%);
+
+  /* Decorative boundary — card edges, separators, table rules. Deliberately
+     left at 1.25:1 against its surfaces; see the DECORATIVE note in
+     tokens.contrast.test.ts for why SC 1.4.11 does not reach it. */
+  --border: hsl(0 0% 90%);
+  /* SC 1.4.11. Was 0 0% 90%: 1.25:1, so the boundary of a text field was
+     effectively invisible against the page. This token is the field boundary
+     (`border-input` on Input, Textarea, Select, outline Button) and the
+     unchecked Switch track, all of which identify a component or its state.
+     0 0% 55% clears 3:1 against every surface in the palette: background and
+     card 3.36:1, sidebar 3.22:1, muted 3.08:1. */
+  --input: hsl(0 0% 55%);
+  --ring: hsl(0 0% 9%);
+
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(0 0% 4%);
+  --sidebar-accent: hsl(0 0% 96%);
+  --sidebar-accent-foreground: hsl(0 0% 9%);
+  /* Decorative, as --border. */
+  --sidebar-border: hsl(0 0% 90%);
+
+  --shadcn-100: #f4f4f5;
+  --shadcn-200: #e4e4e7;
+  --shadcn-300: #d4d4d8;
+  --shadcn-400: #a1a1aa;
+  --shadcn-500: #71717a;
+  --shadcn-600: #27272a;
+  --shadcn-700: #18181b;
+  --shadcn-800: #09090b;
+}
+
+.dark {
+  --background: hsl(0 0% 4%);
+  --foreground: hsl(0 0% 98%);
+
+  --card: hsl(0 0% 4%);
+  --card-foreground: hsl(0 0% 98%);
+
+  --popover: hsl(0 0% 4%);
+  --popover-foreground: hsl(0 0% 98%);
+
+  --primary: hsl(0 0% 98%);
+  --primary-foreground: hsl(0 0% 9%);
+
+  --secondary: hsl(0 0% 15%);
+  --secondary-foreground: hsl(0 0% 98%);
+
+  --muted: hsl(0 0% 15%);
+  --muted-foreground: hsl(0 0% 64%);
+
+  --accent: hsl(0 0% 15%);
+  --accent-foreground: hsl(0 0% 98%);
+
+  --destructive: hsl(0 63% 31%);
+  --destructive-foreground: hsl(0 0% 98%);
+
+  /* SC 1.4.3. The fill is untouched: green-500 is the dark theme's accent and
+     darkening it to carry white ink (it would need 142 71% 31%) would put a
+     dark badge on a near-black canvas. The ink flips instead, exactly as
+     --warning-foreground already does on the equally light amber. White
+     measured 2.30:1; black measures 9.12:1. */
+  --success: hsl(142 71% 45%);
+  --success-foreground: hsl(0 0% 0%);
+
+  --warning: hsl(37 95% 49%);
+  --warning-foreground: hsl(0 0% 0%);
+
+  /* SC 1.4.3, same reasoning as --success above. White measured 2.52:1 on this
+     blue-400 fill; black measures 8.34:1, and the fill is unchanged. */
+  --info: hsl(213 94% 68%);
+  --info-foreground: hsl(0 0% 0%);
+
+  /* Decorative boundary, as in the light palette. */
+  --border: hsl(0 0% 15%);
+  /* SC 1.4.11. Was 0 0% 15%: 1.31:1 against the canvas and 1.00:1 against a
+     --muted fill — the boundary of a field inside a muted well did not exist.
+     0 0% 44% measures 4.00:1 against background, card, popover and sidebar,
+     and 3.06:1 against muted. */
+  --input: hsl(0 0% 44%);
+  --ring: hsl(0 0% 83%);
+
+  --sidebar: hsl(0 0% 4%);
+  --sidebar-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(0 0% 15%);
+  --sidebar-accent-foreground: hsl(0 0% 98%);
+  --sidebar-border: hsl(0 0% 15%);
+
+  --shadcn-100: #27272a;
+  --shadcn-200: #3f3f46;
+  --shadcn-300: #52525b;
+  --shadcn-400: #a1a1aa;
+  --shadcn-500: #d4d4d8;
+  --shadcn-600: #e4e4e7;
+  --shadcn-700: #f4f4f5;
+  --shadcn-800: #fafafa;
+}
