@@ -24,6 +24,7 @@ on:
           - sindarian-ui
           - sindarian-logs
           - sindarian-i18n-cli
+          - sindarian-tokens
           - all
 
 permissions:
@@ -56,6 +57,7 @@ jobs:
             packages/sindarian-ui
             packages/sindarian-logs
             packages/sindarian-i18n-cli
+            packages/sindarian-tokens
           path-level: '2'
           get-app-name: 'true'
 
@@ -278,6 +280,7 @@ jobs:
         packages/sindarian-ui
         packages/sindarian-logs
         packages/sindarian-i18n-cli
+        packages/sindarian-tokens
       path_level: '2'
       stable_releases_only: true
     secrets: inherit

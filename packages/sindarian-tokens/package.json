@@ -1,0 +1,49 @@
+{
+  "name": "@lerianstudio/sindarian-tokens",
+  "version": "0.0.0",
+  "description": "Shared design tokens for Lerian internal consoles — the neutral colour ladder, WCAG 2.2 AA gated",
+  "license": "ISC",
+  "author": {
+    "name": "Lerian Studio",
+    "email": "contato@lerian.studio",
+    "url": "https://lerian.studio"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LerianStudio/console-sdk.git",
+    "directory": "packages/sindarian-tokens"
+  },
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./tokens.css": "./dist/tokens.css",
+    "./palette.css": "./dist/palette.css"
+  },
+  "scripts": {
+    "build": "tsc && npm run copy:styles && npm run build:paths",
+    "build:paths": "tsc-alias -p tsconfig.json",
+    "copy:styles": "copyfiles -u 1 src/**/*.css dist",
+    "check-types": "tsc --noEmit",
+    "test": "jest",
+    "test:e2e": "exit 0",
+    "test:cov": "jest --coverage",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint ."
+  },
+  "peerDependencies": {
+    "tailwindcss": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "tailwindcss": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
