@@ -1,18 +1,37 @@
 # @lerianstudio/sindarian-tokens
 
-The design tokens every Lerian internal console shares: one neutral colour
-ladder, in light and dark, gated at WCAG 2.2 AA.
+The design tokens Lerian internal consoles are converging on: one neutral
+colour ladder, in light and dark, gated at WCAG 2.2 AA.
 
 ## Why this package exists
 
-The identity used to live as ~40 CSS custom properties inside
+The identity lives as ~40 CSS custom properties inside
 `backoffice-console/apps/backoffice/src/app/globals.css`, with a hand-made copy
 of the same values in `caradhras/ui/src/styles.css`. Two copies and no contract:
-the first palette tweak on either side diverged silently, and nothing measured
-either one. This package is the single source both consoles import.
+a palette tweak on either side diverges silently, and nothing measures either
+one. This package is the intended single source for both — the values here are
+the gated ones, and the contrast suite below is the contract those two copies
+never had.
 
 It is **not** the Lerian-yellow product identity in
 `@lerianstudio/sindarian-ui`, which is a separate palette on purpose.
+
+## Adoption status
+
+The package is complete and published. **Neither console imports it yet.**
+Consumer wiring was deliberately deferred until the package published, so both
+still carry their own copy of the values:
+
+| Console | Where its tokens live today | Imports this package |
+| --- | --- | --- |
+| `backoffice-console` | `apps/backoffice/src/app/globals.css` | no |
+| `caradhras` | `ui/src/styles.css` | no |
+
+Migrating a console means deleting that block and importing `tokens.css` as
+shown under [Use](#use), minding the triplet-to-colour change described in
+[Values are colours, not triplets](#values-are-colours-not-triplets). Until
+that lands, read this README as the target, not as a description of what the
+consoles currently render.
 
 ## Install
 
@@ -39,6 +58,15 @@ own.
 Then use the ordinary Tailwind utilities — `bg-background`, `text-foreground`,
 `text-muted-foreground`, `border-input`, `bg-destructive`, `rounded-lg` — and
 toggle dark mode by putting `class="dark"` on `<html>`.
+
+The `dark` variant is declared as `&:where(.dark, .dark *)`, which is the form
+Tailwind v4 documents for a class-toggled dark mode. It matches both the element
+carrying `.dark` and everything under it, so a `dark:` utility written on `<html>`
+itself resolves — `&:is(.dark *)` matches descendants only and silently drops
+that case. `:where()` also contributes no specificity, which keeps a `dark:`
+utility level with the plain utility it overrides (source order decides, and
+Tailwind emits variants last) instead of letting it outrank other variants such
+as `hover:`.
 
 ### Export surface
 
@@ -84,5 +112,5 @@ the value — the threshold is not the thing to move.
 | --- | --- |
 | `npm run build` | type-check and emit `dist`, copying the stylesheets |
 | `npm run check-types` | type-check without emitting |
-| `npm test` | run the contrast gate |
+| `npm test` | run the contrast gate and the dark-variant check |
 | `npm run lint` | ESLint with `--fix` |

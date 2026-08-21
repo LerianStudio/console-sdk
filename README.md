@@ -74,11 +74,11 @@ An i18n message extraction, validation, and key diffing CLI + library for React/
 
 ### [@lerianstudio/sindarian-tokens](./packages/sindarian-tokens)
 
-The design tokens every Lerian internal console shares: one neutral colour ladder, in light and dark, gated at WCAG 2.2 AA.
+The design tokens Lerian internal consoles are converging on: one neutral colour ladder, in light and dark, gated at WCAG 2.2 AA. Published and complete; console adoption is still pending.
 
 **Key Features**:
 
-- 🎨 Single source of truth for the internal-console identity (backoffice-console, caradhras)
+- 🎨 Intended single source of truth for the internal-console identity (backoffice-console, caradhras) — neither imports it yet; both still carry their own copy
 - 🌗 Light and dark palettes with the same token set, enforced
 - ♿ Every composed pair measured against its WCAG 2.2 AA floor on every test run, with no exemption list
 - 🧩 Tailwind v4 CSS-first entry (`tokens.css`) plus a Tailwind-free values-only entry (`palette.css`)
@@ -143,7 +143,7 @@ Each package contains its own comprehensive documentation:
 - [**Sindarian UI Documentation**](./packages/sindarian-ui) - Component library with Storybook
 - [**Sindarian Logs Documentation**](./packages/sindarian-logs) - Logging and tracing system
 - [**Sindarian i18n CLI Documentation**](./packages/sindarian-i18n-cli) - i18n extraction and validation
-- [**Sindarian Tokens Documentation**](./packages/sindarian-tokens) - Shared, WCAG-gated console design tokens
+- [**Sindarian Tokens Documentation**](./packages/sindarian-tokens) - WCAG-gated console design tokens, pending console adoption
 
 ---
 
