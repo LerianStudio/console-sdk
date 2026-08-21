@@ -9,6 +9,26 @@
 
 - **Fixes:**
   - Resolved nested interactive elements and improved component reliability.
+  - Reviewed and fixed issues in the OTP component.
+  - Made picker clear button and time options accessible.
+  - Aligned date picker fields with ring focus styles.
+  - Used cell-size for calendar week number header.
+
+Contributors: @caio_aletroca, @gabrielcastro.xy
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.1.0...sindarian-ui-v1.2.0)
+
+---
+
+## [1.2.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-ui-v1.2.0)
+
+- **Features:**
+  - Added InputOTP component and OtpField.
+  - Highlight date pickers when popover opens.
+  - Added purple badge variant.
+
+- **Fixes:**
+  - Resolved nested interactive elements and improved component reliability.
   - Reviewed and fixed OTP component issues.
   - Made picker clear button and time options accessibility-friendly.
   - Aligned date picker fields with ring focus styles.
