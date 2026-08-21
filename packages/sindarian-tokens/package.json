@@ -1,6 +1,6 @@
 {
   "name": "@lerianstudio/sindarian-tokens",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Shared design tokens for Lerian internal consoles — the neutral colour ladder, WCAG 2.2 AA gated",
   "license": "ISC",
   "author": {
