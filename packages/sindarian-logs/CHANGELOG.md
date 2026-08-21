@@ -6,6 +6,21 @@
   - Migrated to TypeScript 6.
 
 - **Fixes:**
+  - Used non-PII identifier in README log example.
+  - Redacted PII in README example and cleaned changelog.
+
+Contributors: @caio_aletroca
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v1.0.0...sindarian-logs-v1.1.0)
+
+---
+
+## [1.1.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-logs-v1.1.0)
+
+- **Features:**
+  - Migrated to TypeScript 6.
+
+- **Fixes:**
   - Redacted PII in README example and cleaned changelog.
   - Used non-PII identifier in README log example.
 
