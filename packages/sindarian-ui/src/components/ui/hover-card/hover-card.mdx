@@ -1,0 +1,24 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './hover-card.stories'
+
+<Meta of={Story} />
+
+# HoverCard
+
+Sighted users can preview content behind a link by hovering it. \
+[Docs](https://www.radix-ui.com/primitives/docs/components/hover-card)
+
+Hover-only by design, so it must never carry information the user needs to
+complete a task — keyboard and touch users never see it. For content that must
+be reachable, use `Popover` or `Tooltip`.
+
+### Primary
+
+<Canvas of={Story.Primary} />
+
+### Open
+
+<Canvas of={Story.Open} />
+
+<Primary />
+<Controls />
