@@ -43,10 +43,19 @@ function AlertDialogOverlay({
 
 function AlertDialogContent({
   className,
+  container,
+  forceMount,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Content> &
+  // Content mounts its own portal, so a caller wrapping it in the exported
+  // AlertDialogPortal would have their `container` silently ignored by the
+  // inner one. Surface the portal's props here instead.
+  Pick<
+    React.ComponentProps<typeof AlertDialogPrimitive.Portal>,
+    'container' | 'forceMount'
+  >) {
   return (
-    <AlertDialogPortal>
+    <AlertDialogPortal container={container} forceMount={forceMount}>
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"

@@ -25,11 +25,17 @@ function AccordionItem({
   )
 }
 
+/**
+ * `asChild` is deliberately omitted: the trigger always renders the caller's
+ * children PLUS the chevron, and Radix's Slot cannot merge onto two children —
+ * it throws at runtime. Legacy sindarian-x carried the same two-child shape, so
+ * `asChild` never worked there either; here it is a compile error instead.
+ */
 function AccordionTrigger({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
+}: Omit<React.ComponentProps<typeof AccordionPrimitive.Trigger>, 'asChild'>) {
   return (
     <AccordionPrimitive.Header className="flex">
       <AccordionPrimitive.Trigger

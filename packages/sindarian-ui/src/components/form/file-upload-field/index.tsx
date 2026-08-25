@@ -16,7 +16,7 @@ import { FileUpload, type FileUploadResult } from '@/components/ui/file-upload'
 
 export type FileUploadFieldProps<T extends FieldValues = FieldValues> = {
   control: Control<T>
-  name: string
+  name: Path<T>
   label?: ReactNode
   description?: ReactNode
   tooltip?: string
@@ -62,7 +62,7 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
   return (
     <FormField
       control={control}
-      name={name as Path<T>}
+      name={name}
       render={({ field }) => {
         // Derive the shown chip from the form value: a falsy field.value (after
         // form.reset() or setValue(name, '')) forces the chip empty, so the
@@ -85,14 +85,11 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
               <FileUpload
                 ref={field.ref}
                 name={field.name}
+                onBlur={field.onBlur}
                 accept={accept}
                 maxSizeBytes={maxSizeBytes}
                 disabled={disabled}
-                className={
-                  disabled
-                    ? `opacity-100${className ? ` ${className}` : ''}`
-                    : className
-                }
+                className={className}
                 value={shown}
                 onSelect={(result) => {
                   setLocalValue(result)

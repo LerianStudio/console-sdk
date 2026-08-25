@@ -179,4 +179,139 @@ describe('FileUpload', () => {
 
     expect(container.querySelector('input[type="file"]')).toBeDisabled()
   })
+
+  it('accepts a dropped file through the same validate-and-read path', async () => {
+    const onSelect = jest.fn()
+    const { container } = render(
+      <FileUpload accept=".pem" onSelect={onSelect} />
+    )
+
+    const zone = container.querySelector('input[type="file"]')!
+      .parentElement as HTMLElement
+    await act(async () => {
+      fireEvent.drop(zone, {
+        dataTransfer: {
+          files: [new File(['DROPPED'], 'cert.pem', { type: 'text/plain' })]
+        }
+      })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect((onSelect.mock.calls[0][0] as FileUploadResult).text).toBe('DROPPED')
+  })
+
+  it('rejects a dropped file that fails the accept filter', async () => {
+    const onSelect = jest.fn()
+    const onError = jest.fn()
+    const { container } = render(
+      <FileUpload accept=".pem" onSelect={onSelect} onError={onError} />
+    )
+
+    const zone = container.querySelector('input[type="file"]')!
+      .parentElement as HTMLElement
+    await act(async () => {
+      fireEvent.drop(zone, {
+        dataTransfer: {
+          files: [new File(['x'], 'notes.txt', { type: 'text/plain' })]
+        }
+      })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(onSelect).not.toHaveBeenCalled()
+    expect(onError.mock.calls[0][0].kind).toBe('wrong-type')
+  })
+})
+
+/**
+ * A FileReader whose completion the test fires by hand, so the read-failure and
+ * out-of-order-read paths can be driven deterministically.
+ */
+class ControllableFileReader {
+  static instances: ControllableFileReader[] = []
+  onload: (() => void) | null = null
+  onerror: (() => void) | null = null
+  result: string | null = null
+  aborted = false
+  file?: File
+
+  constructor() {
+    ControllableFileReader.instances.push(this)
+  }
+
+  readAsText(file: File) {
+    this.file = file
+  }
+
+  abort() {
+    this.aborted = true
+  }
+
+  succeed(text: string) {
+    this.result = text
+    act(() => this.onload?.())
+  }
+
+  fail() {
+    act(() => this.onerror?.())
+  }
+}
+
+describe('FileUpload read failures and out-of-order reads', () => {
+  const RealFileReader = global.FileReader
+
+  beforeEach(() => {
+    ControllableFileReader.instances = []
+    global.FileReader = ControllableFileReader as unknown as typeof FileReader
+  })
+
+  afterEach(() => {
+    global.FileReader = RealFileReader
+  })
+
+  function select(container: HTMLElement, file: File) {
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [file] }
+    })
+  }
+
+  it('announces a read failure, reports it, and never selects', () => {
+    const onSelect = jest.fn()
+    const onError = jest.fn()
+    const { container } = render(
+      <FileUpload onSelect={onSelect} onError={onError} />
+    )
+
+    select(container, new File(['x'], 'cert.pem', { type: 'text/plain' }))
+    ControllableFileReader.instances[0].fail()
+
+    expect(onSelect).not.toHaveBeenCalled()
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onError.mock.calls[0][0].kind).toBe('read-failed')
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not read the file.'
+    )
+  })
+
+  it('ignores a stale read that resolves after a newer pick (last resolved wins)', () => {
+    const onSelect = jest.fn()
+    const { container } = render(<FileUpload onSelect={onSelect} />)
+
+    select(container, new File(['x'], 'first.pem', { type: 'text/plain' }))
+    select(container, new File(['x'], 'second.pem', { type: 'text/plain' }))
+
+    const [first, second] = ControllableFileReader.instances
+    expect(first.aborted).toBe(true)
+
+    // The slow first read lands last — it must not overwrite the newer pick.
+    second.succeed('SECOND')
+    first.succeed('FIRST')
+
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect((onSelect.mock.calls[0][0] as FileUploadResult).text).toBe('SECOND')
+    expect((onSelect.mock.calls[0][0] as FileUploadResult).file.name).toBe(
+      'second.pem'
+    )
+  })
 })

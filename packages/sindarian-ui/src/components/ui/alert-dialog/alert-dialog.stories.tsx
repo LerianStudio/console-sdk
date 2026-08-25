@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react'
 import { Meta, StoryObj } from '@storybook/nextjs'
 import {
   AlertDialog,
@@ -12,7 +13,7 @@ import {
 } from '.'
 import { Button } from '@/components/ui/button'
 
-type AlertDialogProps = React.ComponentProps<typeof AlertDialog>
+type AlertDialogProps = ComponentProps<typeof AlertDialog>
 
 const meta: Meta<AlertDialogProps> = {
   title: 'Primitives/AlertDialog',

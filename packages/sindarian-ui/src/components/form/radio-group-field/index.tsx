@@ -23,7 +23,7 @@ export type RadioGroupFieldOption = {
 
 export type RadioGroupFieldProps<T extends FieldValues = FieldValues> = {
   control: Control<T>
-  name: string
+  name: Path<T>
   options: RadioGroupFieldOption[]
   label?: ReactNode
   description?: ReactNode
@@ -42,10 +42,15 @@ export const RadioGroupField = <T extends FieldValues = FieldValues>({
   required,
   disabled
 }: RadioGroupFieldProps<T>) => {
+  // `setFocus(name)` / focus-on-error needs a ref to something focusable. The
+  // RadioGroup root is a plain div, so the ref goes on the first option a user
+  // could actually reach — a disabled radio is not focusable.
+  const focusTargetIndex = options.findIndex((option) => !option.disabled)
+
   return (
     <FormField
       control={control}
-      name={name as Path<T>}
+      name={name}
       render={({ field }) => (
         <FormItem required={required}>
           {label && (
@@ -57,7 +62,6 @@ export const RadioGroupField = <T extends FieldValues = FieldValues>({
           )}
           <FormControl>
             <RadioGroup
-              ref={field.ref}
               name={field.name}
               value={field.value ?? ''}
               onValueChange={field.onChange}
@@ -65,11 +69,12 @@ export const RadioGroupField = <T extends FieldValues = FieldValues>({
               disabled={disabled}
               className="gap-2"
             >
-              {options.map((option) => {
+              {options.map((option, index) => {
                 const id = `${name}-${option.value}`
                 return (
                   <div key={option.value} className="flex items-center gap-2">
                     <RadioGroupItem
+                      ref={index === focusTargetIndex ? field.ref : undefined}
                       value={option.value}
                       id={id}
                       disabled={option.disabled}

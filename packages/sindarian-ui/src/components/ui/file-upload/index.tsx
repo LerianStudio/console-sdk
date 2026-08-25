@@ -68,6 +68,8 @@ export type FileUploadProps = {
   | 'onChange'
   | 'onSelect'
   | 'className'
+  // Single-file by contract: the component only ever reads `files[0]`.
+  | 'multiple'
 >
 
 /**
@@ -174,9 +176,13 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
 
     // Radix Slot OVERWRITES aria-describedby (it does not merge), so merge the
     // primitive's own role=alert error id with the FormControl-injected one so
-    // both associations coexist on the input.
+    // both associations coexist on the input. A plain join, never `cn` —
+    // tailwind-merge treats these as class names and would drop an id that
+    // happens to look like a conflicting utility.
     const describedBy =
-      cn(ariaDescribedby, error ? errorId : undefined) || undefined
+      [ariaDescribedby, error ? errorId : undefined]
+        .filter(Boolean)
+        .join(' ') || undefined
 
     // Last-resolved-wins: a slow read for pick A must not overwrite a newer
     // pick B. Track the active reader and abort any in-flight read first.
@@ -231,9 +237,12 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
       handleFile(event.dataTransfer.files?.[0])
     }
 
-    // Mouse convenience only: clicking the styled zone opens the picker.
-    const openPicker = () => {
-      if (!disabled) internalRef.current?.click()
+    // Mouse convenience only: clicking the styled zone opens the picker. A
+    // click that ORIGINATED on the input already opens it natively and bubbles
+    // up to here — re-firing .click() would open the picker twice, so ignore it.
+    const openPicker = (event: React.MouseEvent<HTMLDivElement>) => {
+      if (disabled || event.target === internalRef.current) return
+      internalRef.current?.click()
     }
 
     const clear = () => {

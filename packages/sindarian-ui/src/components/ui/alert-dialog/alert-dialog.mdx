@@ -8,9 +8,12 @@ import * as Story from './alert-dialog.stories'
 A modal that interrupts the user with important content and expects a response. \
 [Docs](https://www.radix-ui.com/primitives/docs/components/alert-dialog)
 
-Unlike `Dialog`, it cannot be dismissed by clicking outside — the user must pick
-an explicit action. Use it for destructive or irreversible operations. For the
-opinionated, ready-made confirmation flow, prefer `ConfirmationDialog`.
+Unlike `Dialog`, clicking the overlay does not dismiss it, and it renders no
+close button — so the expected way out is one of the explicit actions. Escape
+still closes it, as the WAI-ARIA alertdialog pattern requires; treat cancelling
+as always reachable rather than assuming the user must choose. Use it for
+destructive or irreversible operations. For the opinionated, ready-made
+confirmation flow, prefer `ConfirmationDialog`.
 
 ### Primary
 

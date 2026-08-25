@@ -60,4 +60,59 @@ describe('TextareaField', () => {
 
     expect(await screen.findByText('Notes are required')).toBeInTheDocument()
   })
+
+  it('names the control via aria-label when there is no visible label', () => {
+    function LabelFree() {
+      const form = useForm<{ notes: string }>({ defaultValues: { notes: '' } })
+      return (
+        <Form {...form}>
+          <TextareaField
+            control={form.control}
+            name="notes"
+            aria-label="Operator notes"
+          />
+        </Form>
+      )
+    }
+    render(<LabelFree />)
+
+    expect(
+      screen.getByRole('textbox', { name: 'Operator notes' })
+    ).toBeInTheDocument()
+  })
+
+  it('keeps a disabled field out of the submitted values even when populated', async () => {
+    const onSubmit = jest.fn()
+    function DisabledHarness() {
+      const form = useForm<{ notes: string; rail: string }>({
+        defaultValues: { notes: 'pre-filled', rail: 'pix' }
+      })
+      return (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <TextareaField
+              control={form.control}
+              name="notes"
+              label="Notes"
+              disabled
+            />
+            <button type="submit">Submit</button>
+          </form>
+        </Form>
+      )
+    }
+    render(<DisabledHarness />)
+
+    // Disabled at the controller, not just on the element: react-hook-form
+    // drops the value from the payload rather than submitting stale text.
+    expect(screen.getByRole('textbox', { name: 'Notes' })).toBeDisabled()
+
+    fireEvent.click(screen.getByText('Submit'))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled())
+    expect(onSubmit.mock.calls[0][0]).toEqual({
+      notes: undefined,
+      rail: 'pix'
+    })
+  })
 })

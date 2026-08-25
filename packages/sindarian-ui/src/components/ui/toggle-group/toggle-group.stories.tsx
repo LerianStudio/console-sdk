@@ -1,7 +1,8 @@
+import type { ComponentProps } from 'react'
 import { Meta, StoryObj } from '@storybook/nextjs'
 import { ToggleGroup, ToggleGroupItem } from '.'
 
-type ToggleGroupProps = React.ComponentProps<typeof ToggleGroup>
+type ToggleGroupProps = ComponentProps<typeof ToggleGroup>
 
 const meta: Meta<ToggleGroupProps> = {
   title: 'Primitives/ToggleGroup',

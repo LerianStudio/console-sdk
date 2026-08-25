@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { useForm } from 'react-hook-form'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { useForm, type UseFormReturn } from 'react-hook-form'
 import { Form } from '@/components/ui/form'
 import { RadioGroupField } from '.'
 
@@ -70,5 +70,37 @@ describe('RadioGroupField', () => {
     fireEvent.click(screen.getByText('Fail'))
 
     expect(await screen.findByText('Pick a rail')).toBeInTheDocument()
+  })
+
+  it('setFocus lands on the first selectable option, skipping disabled ones', async () => {
+    let form!: UseFormReturn<{ rail: string }>
+    function FocusHarness() {
+      form = useForm<{ rail: string }>({ defaultValues: { rail: '' } })
+      return (
+        <Form {...form}>
+          <RadioGroupField
+            control={form.control}
+            name="rail"
+            label="Rail"
+            options={[
+              { value: 'siloc', label: 'SILOC', disabled: true },
+              { value: 'pix', label: 'Pix' },
+              { value: 'ted', label: 'TED' }
+            ]}
+          />
+        </Form>
+      )
+    }
+    render(<FocusHarness />)
+
+    // The RadioGroup root is a div; without the ref on a real radio,
+    // setFocus/focus-on-error would have nothing focusable to land on.
+    // react-hook-form defers the actual .focus() into a timer, so let it run.
+    await act(async () => {
+      form.setFocus('rail')
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(screen.getByRole('radio', { name: 'Pix' })).toHaveFocus()
   })
 })

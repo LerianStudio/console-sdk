@@ -21,6 +21,24 @@ describe('ToggleGroup', () => {
     expect(week).toHaveAttribute('data-state', 'on')
   })
 
+  it('keeps a caller style alongside the internal gap variable', () => {
+    const { container } = render(
+      <ToggleGroup
+        type="single"
+        spacing={2}
+        style={{ backgroundColor: 'rgb(1, 2, 3)' }}
+      >
+        <ToggleGroupItem value="day">Day</ToggleGroupItem>
+      </ToggleGroup>
+    )
+
+    const group = container.querySelector<HTMLElement>(
+      '[data-slot="toggle-group"]'
+    )!
+    expect(group.style.backgroundColor).toBe('rgb(1, 2, 3)')
+    expect(group.style.getPropertyValue('--gap')).toBe('2')
+  })
+
   it('passes the group variant and size down to its items', () => {
     render(
       <ToggleGroup type="single" variant="outline" size="sm">

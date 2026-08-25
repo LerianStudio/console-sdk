@@ -27,6 +27,19 @@ describe('Accordion', () => {
     expect(screen.getByText('Body one')).toBeInTheDocument()
   })
 
+  it('always renders the chevron alongside the caller children, so asChild is not offered', () => {
+    render(<Basic />)
+
+    const trigger = screen.getByRole('button', { name: 'Section one' })
+    // Two children (label + chevron) is exactly why Slot cannot be supported.
+    expect(trigger.querySelector('svg')).not.toBeNull()
+    expect(trigger).toHaveTextContent('Section one')
+
+    // @ts-expect-error asChild is omitted from the props on purpose: Radix Slot
+    // throws on multiple children, so this must fail to compile, not at runtime.
+    void (<AccordionTrigger asChild>x</AccordionTrigger>)
+  })
+
   it('marks its parts with data-slot attributes', () => {
     const { container } = render(<Basic />)
 

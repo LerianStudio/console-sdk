@@ -1,7 +1,8 @@
+import type { ComponentProps } from 'react'
 import { Meta, StoryObj } from '@storybook/nextjs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '.'
 
-type AccordionProps = React.ComponentProps<typeof Accordion>
+type AccordionProps = ComponentProps<typeof Accordion>
 
 const meta: Meta<AccordionProps> = {
   title: 'Primitives/Accordion',

@@ -1,8 +1,9 @@
+import type { ComponentProps } from 'react'
 import { Meta, StoryObj } from '@storybook/nextjs'
 import { ScrollArea, ScrollBar } from '.'
 import { Separator } from '@/components/ui/separator'
 
-type ScrollAreaProps = React.ComponentProps<typeof ScrollArea>
+type ScrollAreaProps = ComponentProps<typeof ScrollArea>
 
 const meta: Meta<ScrollAreaProps> = {
   title: 'Primitives/ScrollArea',

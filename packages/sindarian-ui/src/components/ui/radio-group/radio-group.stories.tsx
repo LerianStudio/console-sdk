@@ -1,8 +1,9 @@
+import type { ComponentProps } from 'react'
 import { Meta, StoryObj } from '@storybook/nextjs'
 import { RadioGroup, RadioGroupItem } from '.'
 import { Label } from '@/components/ui/label'
 
-type RadioGroupProps = React.ComponentProps<typeof RadioGroup>
+type RadioGroupProps = ComponentProps<typeof RadioGroup>
 
 const meta: Meta<RadioGroupProps> = {
   title: 'Primitives/RadioGroup',

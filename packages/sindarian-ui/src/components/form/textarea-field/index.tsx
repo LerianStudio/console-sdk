@@ -12,10 +12,9 @@ import {
 } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
 
-export type TextareaFieldProps<T extends FieldValues = FieldValues> = {
+type TextareaFieldOwnProps<T extends FieldValues = FieldValues> = {
   control: Control<T>
-  name: string
-  label?: ReactNode
+  name: Path<T>
   description?: ReactNode
   placeholder?: string
   tooltip?: string
@@ -26,6 +25,18 @@ export type TextareaFieldProps<T extends FieldValues = FieldValues> = {
   className?: string
   'data-testid'?: string
 }
+
+/**
+ * A control with no accessible name is invisible to screen readers, so the type
+ * makes one mandatory: either a visible `label`, or an `aria-label` when the
+ * design calls for a bare textarea.
+ */
+export type TextareaFieldProps<T extends FieldValues = FieldValues> =
+  TextareaFieldOwnProps<T> &
+    (
+      | { label: ReactNode; 'aria-label'?: string }
+      | { label?: never; 'aria-label': string }
+    )
 
 export const TextareaField = <T extends FieldValues = FieldValues>({
   control,
@@ -39,12 +50,16 @@ export const TextareaField = <T extends FieldValues = FieldValues>({
   readOnly,
   rows,
   className,
-  'data-testid': dataTestId
+  'data-testid': dataTestId,
+  'aria-label': ariaLabel
 }: TextareaFieldProps<T>) => {
   return (
     <FormField
       control={control}
-      name={name as Path<T>}
+      name={name}
+      // Controller-level, not just on the element: this is what keeps a
+      // disabled field out of the submitted values.
+      disabled={disabled}
       render={({ field }) => (
         <FormItem required={required}>
           {label && (
@@ -60,11 +75,11 @@ export const TextareaField = <T extends FieldValues = FieldValues>({
                 validation, owns the required check. */}
             <Textarea
               placeholder={placeholder}
-              disabled={disabled}
               readOnly={readOnly}
               rows={rows}
               className={className}
               data-testid={dataTestId}
+              aria-label={ariaLabel}
               {...field}
             />
           </FormControl>

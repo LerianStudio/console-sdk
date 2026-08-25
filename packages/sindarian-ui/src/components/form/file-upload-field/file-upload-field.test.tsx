@@ -107,6 +107,17 @@ describe('FileUploadField', () => {
     expect(screen.getByText('Choose a file')).toBeInTheDocument()
   })
 
+  it('marks the field touched on blur, so onBlur validation modes fire', async () => {
+    let form!: UseFormReturn<{ cert: string }>
+    const { container } = render(<Harness formRef={(f) => (form = f)} />)
+
+    expect(form.formState.touchedFields.cert).toBeUndefined()
+
+    fireEvent.blur(container.querySelector('input[type="file"]')!)
+
+    await waitFor(() => expect(form.formState.touchedFields.cert).toBe(true))
+  })
+
   it('renders the validation message through FormMessage', async () => {
     render(<Harness error="Certificate is required" />)
 

@@ -49,6 +49,7 @@ function ToggleGroup({
   size,
   spacing = 0,
   children,
+  style,
   ...props
 }: React.ComponentProps<typeof ToggleGroupPrimitive.Root> &
   VariantProps<typeof toggleVariants> & {
@@ -60,9 +61,14 @@ function ToggleGroup({
       data-variant={variant}
       data-size={size}
       data-spacing={spacing}
-      style={{ '--gap': spacing } as React.CSSProperties}
+      // Caller style first: `--gap` is ours and must survive, but everything
+      // else the caller passes has to reach the element.
+      style={{ ...style, '--gap': spacing } as React.CSSProperties}
       className={cn(
-        'group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=default]:data-[variant=outline]:shadow-xs',
+        // Legacy carried a `data-[spacing=default]:...:shadow-xs` rule here that
+        // never matched — `data-spacing` is always a number. Removed rather than
+        // activated, so the rendered pixels stay identical to sindarian-x.
+        'group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md',
         className
       )}
       {...props}
