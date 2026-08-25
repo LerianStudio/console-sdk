@@ -86,9 +86,16 @@ function TrendSpark({
   dataKey: string
   color: string
 }) {
-  const points = data
-    .map((row) => Number(row[dataKey]))
-    .filter((n) => Number.isFinite(n))
+  // Drop absent samples BEFORE coercing: Number(null) and Number('') are both
+  // 0, which would draw a phantom dip to the floor where the series simply has
+  // no reading.
+  const points: number[] = []
+  for (const row of data) {
+    const raw = row[dataKey]
+    if (raw === null || raw === undefined || raw === '') continue
+    const n = Number(raw)
+    if (Number.isFinite(n)) points.push(n)
+  }
 
   if (points.length < 2) return null
 

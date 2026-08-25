@@ -85,7 +85,9 @@ export const AppShell = React.forwardRef<HTMLElement, AppShellProps>(
     // lands on it — the same element the legacy provider's className reached.
     return (
       <SidebarProvider>
-        <div className={cn('flex min-h-svh w-full', className)}>
+        {/* h-svh (not min-h-svh): the shell row is exactly one viewport tall, so
+            the content <main> owns scrolling instead of the document. */}
+        <div className={cn('flex h-svh w-full overflow-hidden', className)}>
           {skipToContentLabel ? (
             <a
               href={`#${mainId}`}
@@ -108,7 +110,9 @@ export const AppShell = React.forwardRef<HTMLElement, AppShellProps>(
               id={mainId}
               ref={ref}
               tabIndex={-1}
-              className="flex-1 overflow-y-auto outline-none"
+              // min-h-0 lets this flex child shrink below its content height —
+              // without it `flex-1` keeps min-height:auto and nothing scrolls.
+              className="min-h-0 flex-1 overflow-y-auto outline-none"
             >
               <div
                 className={cn(

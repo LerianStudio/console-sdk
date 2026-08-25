@@ -8,10 +8,12 @@ type Tick = {
   amount: number
 }
 
+// Derived, not random: module-scope Math.random() reshuffles the fixture on
+// every module evaluation, so the story can never be a stable visual baseline.
 const data: Tick[] = Array.from({ length: 20000 }, (_, i) => ({
   seq: i + 1,
   endToEndId: `E1234567820260826${String(i).padStart(11, '0')}`,
-  amount: Math.round(Math.random() * 100000) / 100
+  amount: Math.round((((i * 7919) % 100000) + 1) * 100) / 100
 }))
 
 const columns: ColumnDef<Tick, unknown>[] = [

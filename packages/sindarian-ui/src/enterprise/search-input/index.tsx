@@ -53,8 +53,15 @@ export function SearchInput({
   // programmatic set), the draft follows.
   const [draft, setDraft] = React.useState(value)
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  // The last value this component emitted. The parent echoes it back one render
+  // later, by which time the user may already have typed further — syncing the
+  // draft to that echo would rewind the field and swallow those keystrokes.
+  const lastEmitted = React.useRef(value)
 
   React.useEffect(() => {
+    // Only follow a genuinely EXTERNAL change (reset, programmatic set); ignore
+    // the echo of our own emission.
+    if (value === lastEmitted.current) return
     setDraft(value)
   }, [value])
 
@@ -76,6 +83,7 @@ export function SearchInput({
     clearTimer()
     timer.current = setTimeout(() => {
       timer.current = null
+      lastEmitted.current = next
       onValueChange(next)
     }, debounceMs)
   }
@@ -83,6 +91,7 @@ export function SearchInput({
   const handleClear = () => {
     clearTimer()
     setDraft('')
+    lastEmitted.current = ''
     onValueChange('')
   }
 

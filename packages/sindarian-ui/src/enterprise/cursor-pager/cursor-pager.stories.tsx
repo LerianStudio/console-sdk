@@ -4,6 +4,9 @@ import { CursorPager, CursorPagerProps } from '.'
 const meta: Meta<CursorPagerProps> = {
   title: 'Enterprise/CursorPager',
   component: CursorPager,
+  // `onCursorChange` is required, so every story needs one. Defaulting it here
+  // keeps each story to the props it is actually demonstrating.
+  args: { onCursorChange: () => {} },
   argTypes: {
     disabled: { control: 'boolean' },
     hasMore: { control: 'boolean' }

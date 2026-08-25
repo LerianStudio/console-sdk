@@ -3,10 +3,17 @@ import { useIsMobile } from './use-is-mobile'
 
 type Listener = () => void
 
+/**
+ * `matches` is a LIVE getter, exactly like the real MediaQueryList: the hook
+ * must read it at event time, not capture a snapshot taken when the query was
+ * created.
+ */
 function mockMatchMedia() {
   const listeners = new Set<Listener>()
   window.matchMedia = jest.fn().mockImplementation((query: string) => ({
-    matches: window.innerWidth < 768,
+    get matches() {
+      return window.innerWidth < 768
+    },
     media: query,
     addEventListener: (_: string, cb: Listener) => listeners.add(cb),
     removeEventListener: (_: string, cb: Listener) => listeners.delete(cb)
@@ -53,6 +60,38 @@ describe('useIsMobile', () => {
 
     const { result } = renderHook(() => useIsMobile())
     expect(result.current).toBe(false)
+  })
+
+  it('renders false before the effect runs, even on a narrow viewport', () => {
+    // Hydration safety: the server has no viewport, so the first client render
+    // must match its `false` regardless of how narrow the window actually is.
+    window.innerWidth = 400
+    mockMatchMedia()
+
+    let firstRender: boolean | undefined
+    renderHook(() => {
+      const value = useIsMobile()
+      firstRender ??= value
+      return value
+    })
+
+    expect(firstRender).toBe(false)
+  })
+
+  it('resolves from the media query, not window.innerWidth', () => {
+    // Diverge the two sources: matchMedia says mobile, innerWidth says desktop.
+    // The hook must follow the media query it subscribed to.
+    window.innerWidth = 1280
+    const listeners = new Set<Listener>()
+    window.matchMedia = jest.fn().mockImplementation((query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: (_: string, cb: Listener) => listeners.add(cb),
+      removeEventListener: (_: string, cb: Listener) => listeners.delete(cb)
+    }))
+
+    const { result } = renderHook(() => useIsMobile())
+    expect(result.current).toBe(true)
   })
 
   it('tracks viewport changes', () => {

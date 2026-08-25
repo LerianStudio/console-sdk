@@ -119,6 +119,100 @@ describe('DataTable', () => {
     expect(onRowSelectionChange).toHaveBeenCalled()
   })
 
+  it('marks the header checkbox indeterminate on a partial selection', () => {
+    const { rerender } = render(
+      <DataTable
+        columns={columns}
+        data={rows}
+        getRowId={getRowId}
+        enableRowSelection
+        rowSelection={{ alpha: true }}
+        onRowSelectionChange={jest.fn()}
+      />
+    )
+
+    const header = screen.getByRole('checkbox', {
+      name: 'Select all rows on this page'
+    }) as HTMLInputElement
+    expect(header.indeterminate).toBe(true)
+    expect(header.checked).toBe(false)
+
+    rerender(
+      <DataTable
+        columns={columns}
+        data={rows}
+        getRowId={getRowId}
+        enableRowSelection
+        rowSelection={{ alpha: true, bravo: true }}
+        onRowSelectionChange={jest.fn()}
+      />
+    )
+    const all = screen.getByRole('checkbox', {
+      name: 'Select all rows on this page'
+    }) as HTMLInputElement
+    expect(all.indeterminate).toBe(false)
+    expect(all.checked).toBe(true)
+
+    rerender(
+      <DataTable
+        columns={columns}
+        data={rows}
+        getRowId={getRowId}
+        enableRowSelection
+        rowSelection={{}}
+        onRowSelectionChange={jest.fn()}
+      />
+    )
+    const none = screen.getByRole('checkbox', {
+      name: 'Select all rows on this page'
+    }) as HTMLInputElement
+    expect(none.indeterminate).toBe(false)
+    expect(none.checked).toBe(false)
+  })
+
+  it('drives selection purely from the controlled prop (no internal state)', () => {
+    // The legacy contract is controlled-only: a click reports upward and
+    // changes nothing until the parent feeds a new rowSelection back down.
+    const onRowSelectionChange = jest.fn()
+    render(
+      <DataTable
+        columns={columns}
+        data={rows}
+        getRowId={getRowId}
+        enableRowSelection
+        rowSelection={{}}
+        onRowSelectionChange={onRowSelectionChange}
+      />
+    )
+
+    const bravo = screen.getByRole('checkbox', { name: 'Select row bravo' })
+    fireEvent.click(bravo)
+
+    expect(onRowSelectionChange).toHaveBeenCalledTimes(1)
+    expect(bravo).not.toBeChecked()
+  })
+
+  it('names row checkboxes through getRowSelectionLabel when provided', () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={rows}
+        getRowId={getRowId}
+        enableRowSelection
+        rowSelection={{}}
+        onRowSelectionChange={jest.fn()}
+        getRowSelectionLabel={(row) => `Select settlement ${row.name}`}
+      />
+    )
+
+    expect(
+      screen.getByRole('checkbox', { name: 'Select settlement Alpha' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('checkbox', { name: 'Select row alpha' })
+    ).toBeNull()
+  })
+
   it('adds no keyboard layer without onRowActivate', () => {
     render(<DataTable columns={columns} data={rows} getRowId={getRowId} />)
 

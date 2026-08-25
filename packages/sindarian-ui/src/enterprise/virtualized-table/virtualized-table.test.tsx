@@ -46,12 +46,61 @@ function stubLayout() {
 describe('VirtualizedTable', () => {
   beforeAll(stubLayout)
 
-  it('exposes the full dataset through ARIA', () => {
+  it('exposes the full dataset through ARIA, header row included', () => {
     render(<VirtualizedTable columns={columns} data={data} />)
 
     const table = screen.getByRole('table')
-    expect(table).toHaveAttribute('aria-rowcount', '5000')
+    // 5000 data rows + the header row.
+    expect(table).toHaveAttribute('aria-rowcount', '5001')
     expect(table).toHaveAttribute('aria-colcount', '2')
+  })
+
+  it('indexes the header at row 1 and data rows from row 2', () => {
+    render(
+      <VirtualizedTable
+        columns={columns}
+        data={data}
+        rowHeight={ROW_HEIGHT}
+        maxHeight={VIEWPORT_HEIGHT}
+      />
+    )
+
+    const rows = screen.getAllByRole('row')
+    expect(rows[0]).toHaveAttribute('aria-rowindex', '1')
+    expect(rows[0]).toContainElement(
+      screen.getByRole('columnheader', { name: 'Id' })
+    )
+    expect(rows[1]).toHaveAttribute('aria-rowindex', '2')
+  })
+
+  it('keeps rows as direct accessibility children of their rowgroup', () => {
+    const { container } = render(
+      <VirtualizedTable
+        columns={columns}
+        data={data}
+        rowHeight={ROW_HEIGHT}
+        maxHeight={VIEWPORT_HEIGHT}
+      />
+    )
+
+    // The spacer sits between the rowgroup and its rows in the DOM; it must be
+    // presentational so the accessibility tree still reads rowgroup -> row.
+    const viewport = container.querySelector(
+      '[data-testid="virtualized-table-viewport"]'
+    ) as HTMLElement
+    const spacer = viewport.firstElementChild as HTMLElement
+    expect(spacer).toHaveAttribute('role', 'presentation')
+    expect(spacer.querySelector('[role="row"]')).toBeInTheDocument()
+  })
+
+  it('keeps the header legible at a row height smaller than the header', () => {
+    render(<VirtualizedTable columns={columns} data={data} rowHeight={32} />)
+
+    // The header must not inherit rowHeight — at 32px its padded uppercase
+    // label overflowed its own box.
+    const header = screen.getByRole('columnheader', { name: 'Id' })
+    expect(header.style.height).toBe('')
+    expect(header).toHaveClass('min-h-10')
   })
 
   it('mounts only the visible window plus overscan, never the whole dataset', () => {
@@ -86,7 +135,7 @@ describe('VirtualizedTable', () => {
     )
 
     const spacer = container.querySelector(
-      '[role="rowgroup"]:last-of-type > div'
+      '[data-testid="virtualized-table-viewport"] > div'
     ) as HTMLElement
     expect(spacer).toHaveStyle({ height: `${5000 * ROW_HEIGHT}px` })
   })
@@ -111,7 +160,9 @@ describe('VirtualizedTable', () => {
       <VirtualizedTable columns={columns} data={data} maxHeight={320} />
     )
     const viewport = () =>
-      container.querySelector('[role="rowgroup"]:last-of-type') as HTMLElement
+      container.querySelector(
+        '[data-testid="virtualized-table-viewport"]'
+      ) as HTMLElement
     expect(viewport()).toHaveStyle({ maxHeight: '320px' })
 
     rerender(
@@ -123,8 +174,40 @@ describe('VirtualizedTable', () => {
   it('renders an empty dataset without rows', () => {
     render(<VirtualizedTable columns={columns} data={[]} />)
 
-    expect(screen.getByRole('table')).toHaveAttribute('aria-rowcount', '0')
-    // Only the header row remains.
+    // Zero data rows, but the header row still counts.
+    expect(screen.getByRole('table')).toHaveAttribute('aria-rowcount', '1')
     expect(screen.getAllByRole('row')).toHaveLength(1)
+  })
+
+  it('re-measures when rowHeight changes', () => {
+    const { container, rerender } = render(
+      <VirtualizedTable
+        columns={columns}
+        data={data}
+        rowHeight={ROW_HEIGHT}
+        maxHeight={VIEWPORT_HEIGHT}
+      />
+    )
+
+    const spacer = () =>
+      (
+        container.querySelector(
+          '[data-testid="virtualized-table-viewport"]'
+        ) as HTMLElement
+      ).firstElementChild as HTMLElement
+
+    expect(spacer()).toHaveStyle({ height: `${5000 * ROW_HEIGHT}px` })
+
+    // Without an explicit virtualizer.measure(), the cached per-item sizes keep
+    // the spacer at the old total.
+    rerender(
+      <VirtualizedTable
+        columns={columns}
+        data={data}
+        rowHeight={20}
+        maxHeight={VIEWPORT_HEIGHT}
+      />
+    )
+    expect(spacer()).toHaveStyle({ height: `${5000 * 20}px` })
   })
 })

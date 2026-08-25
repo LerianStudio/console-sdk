@@ -68,21 +68,23 @@ export function AlertBanner({
         className
       )}
     >
-      {icon ? (
+      {/* Presence checks are `!= null`, not truthiness: a numeric 0 or an empty
+          string is legitimate content and must still render its slot. */}
+      {icon != null ? (
         <span className={cn('mt-0.5 shrink-0', TONE_TITLE[tone])} aria-hidden>
           {icon}
         </span>
       ) : null}
       <div className="min-w-0 flex-1 space-y-1">
-        {title ? (
+        {title != null ? (
           <p className={cn('text-sm font-medium', TONE_TITLE[tone])}>{title}</p>
         ) : null}
-        {children ? (
+        {children != null ? (
           <div className="text-foreground text-xs leading-relaxed">
             {children}
           </div>
         ) : null}
-        {detail ? (
+        {detail != null ? (
           <pre className="text-muted-foreground overflow-x-auto font-mono text-xs break-words whitespace-pre-wrap">
             {detail}
           </pre>

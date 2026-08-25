@@ -83,29 +83,40 @@ describe('DateRangePicker', () => {
     expect(onValueChange).toHaveBeenCalledWith({ from: '', to: '' })
   })
 
-  it('disables the clear control when nothing is selected', () => {
+  it('disables the clear control only when both ends are empty', () => {
     setup({ from: '', to: '' })
 
     fireEvent.click(screen.getByLabelText('From'))
     expect(screen.getByRole('button', { name: 'Clear' })).toBeDisabled()
   })
 
-  it('emits the picked day as a local-time YYYY-MM-DD string', () => {
-    const { container, onValueChange } = setup({ from: '2026-03-10', to: '' })
+  it('can clear a value the calendar cannot parse', () => {
+    // Clear is gated on the raw strings, not the parsed dates — otherwise an
+    // unparseable value strands the field with text the user cannot remove.
+    const { onValueChange } = setup({ from: 'not-a-date', to: '' })
 
     fireEvent.click(screen.getByLabelText('From'))
-    // The calendar opens on the `from` month, so the 12th is on screen. The
-    // day cell carries data-day; its inner button is the click target.
-    const cell = document.querySelector('[data-day="2026-03-12"] button')
-    expect(cell).toBeTruthy()
-    fireEvent.click(cell as HTMLElement)
+    const clear = screen.getByRole('button', { name: 'Clear' })
+    expect(clear).toBeEnabled()
+
+    fireEvent.click(clear)
+    expect(onValueChange).toHaveBeenCalledWith({ from: '', to: '' })
+  })
+
+  it('emits the picked day as a local-time YYYY-MM-DD string', () => {
+    const { onValueChange } = setup({ from: '2026-03-10', to: '' })
+
+    fireEvent.click(screen.getByLabelText('From'))
+    // Query the day by the name a screen-reader user would hear, so the test
+    // fails if the calendar ever stops announcing its days. (By label, not by
+    // role+name: the day's <td> inherits the same name from this button.)
+    fireEvent.click(screen.getByLabelText('Thursday, March 12th, 2026'))
 
     expect(onValueChange).toHaveBeenCalledTimes(1)
     const emitted = onValueChange.mock.calls[0][0] as DateRangeValue
     // The local-time round trip must not shift the day (the toISOString trap).
     expect(emitted.from).toBe('2026-03-10')
     expect(emitted.to).toBe('2026-03-12')
-    expect(container).toBeTruthy()
   })
 
   it('renders raw text for an unparseable or impossible day without crashing', () => {

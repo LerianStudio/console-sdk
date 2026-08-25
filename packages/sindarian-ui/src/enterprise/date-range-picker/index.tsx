@@ -19,7 +19,11 @@ import { enUS } from 'react-day-picker/locale'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Label } from '@/components/ui/label'
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover'
 import { SECTION_LABEL_CLASS } from '@/lib/typography'
 import { cn } from '@/lib/utils'
 
@@ -110,7 +114,10 @@ export function DateRangePicker({
   const toDate = parseDay(value.to)
   const selected: DateRange | undefined =
     fromDate || toDate ? { from: fromDate, to: toDate } : undefined
-  const hasValue = Boolean(fromDate ?? toDate)
+  // Derived from the RAW strings, not the parsed dates: a value the calendar
+  // cannot parse still needs to be clearable, and gating Clear on `fromDate`
+  // would strand the field holding text the user can no longer remove.
+  const hasValue = value.from !== '' || value.to !== ''
 
   const onSelect = (range: DateRange | undefined) => {
     onValueChange({
@@ -129,6 +136,10 @@ export function DateRangePicker({
       <Label htmlFor={id} className={SECTION_LABEL_CLASS}>
         {label}
       </Label>
+      {/* No onClick here: the whole segment row is the PopoverTrigger, so Radix
+          owns open/close. A manual `setOpen(true)` would race the outside-click
+          dismissal — pointerdown closes, the click then reopens, and the popover
+          could never be dismissed by clicking its own trigger. */}
       <button
         type="button"
         id={id}
@@ -137,7 +148,6 @@ export function DateRangePicker({
         aria-expanded={open}
         aria-invalid={invalid || undefined}
         aria-describedby={invalid ? errorId : undefined}
-        onClick={() => setOpen(true)}
       >
         <CalendarDays
           className="text-muted-foreground size-4 shrink-0"
@@ -154,12 +164,12 @@ export function DateRangePicker({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverAnchor asChild>
+      <PopoverTrigger asChild>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           {renderTrigger(fromId, fromLabel, value.from)}
           {renderTrigger(toId, toLabel, value.to)}
         </div>
-      </PopoverAnchor>
+      </PopoverTrigger>
       <PopoverContent
         align="start"
         className="w-auto p-0"

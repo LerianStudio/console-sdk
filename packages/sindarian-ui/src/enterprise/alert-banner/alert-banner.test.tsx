@@ -50,6 +50,27 @@ describe('AlertBanner', () => {
     expect(screen.getByTestId('glyph')).toBeInTheDocument()
   })
 
+  it('renders a numeric 0 in every content slot', () => {
+    // 0 is legitimate content — a truthiness check would silently drop it.
+    render(
+      <AlertBanner title={0} detail={0}>
+        {0}
+      </AlertBanner>
+    )
+
+    const alert = screen.getByRole('alert')
+    expect(alert.querySelector('p')).toHaveTextContent('0')
+    expect(alert.querySelector('pre')).toHaveTextContent('0')
+    expect(alert).toHaveTextContent('000')
+  })
+
+  it('omits slots that are genuinely absent', () => {
+    render(<AlertBanner />)
+    const alert = screen.getByRole('alert')
+    expect(alert.querySelector('p')).toBeNull()
+    expect(alert.querySelector('pre')).toBeNull()
+  })
+
   it('forwards className to the container', () => {
     render(<AlertBanner title="Custom" className="probe-class" />)
     expect(screen.getByRole('alert')).toHaveClass('probe-class')

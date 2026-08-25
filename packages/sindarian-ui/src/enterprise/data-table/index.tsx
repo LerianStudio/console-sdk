@@ -71,7 +71,38 @@ declare module '@tanstack/react-table' {
   }
 }
 
-export type DataTableProps<TData> = {
+/**
+ * Row selection is CONTROLLED-ONLY — the contract sindarian-x shipped: the
+ * component holds no selection state and only mirrors `rowSelection` back into
+ * TanStack. Legacy typed all three props as independently optional, so opting
+ * into `enableRowSelection` without wiring the other two compiled fine and then
+ * rendered checkboxes that could never toggle (state pinned to a constant `{}`,
+ * no updater). Same runtime contract here, honest types: enabling selection
+ * requires the controlled pair, and leaving it off forbids them.
+ */
+type RowSelectionProps<TData> =
+  | {
+      enableRowSelection?: false
+      rowSelection?: never
+      onRowSelectionChange?: never
+      getRowSelectionLabel?: never
+    }
+  | {
+      enableRowSelection: true
+      /** Controlled selection state (TanStack `RowSelectionState`, keyed by row id). */
+      rowSelection: RowSelectionState
+      /** Controlled selection updater (TanStack `OnChangeFn`). */
+      onRowSelectionChange: OnChangeFn<RowSelectionState>
+      /**
+       * Accessible name for a row's checkbox. Defaults to `Select row <id>`,
+       * which announces the raw row id (`Select row 0` with the default index
+       * ids) — pass a builder to name the record the way a user recognises it,
+       * e.g. ``(row) => `Select settlement ${row.reference}` ``.
+       */
+      getRowSelectionLabel?: (row: TData) => string
+    }
+
+type DataTableBaseProps<TData> = {
   columns: ColumnDef<TData, unknown>[]
   data: TData[]
   /** Show skeleton rows instead of data/empty state. */
@@ -97,17 +128,6 @@ export type DataTableProps<TData> = {
    */
   density?: 'comfortable' | 'compact'
   /**
-   * Opt into a prepended checkbox column. Selection is controlled: pair with
-   * `rowSelection` + `onRowSelectionChange`, and pass `getRowId` so selected
-   * ids are stable across refetches. Default off — existing consumers render
-   * unchanged.
-   */
-  enableRowSelection?: boolean
-  /** Controlled selection state (TanStack `RowSelectionState`, keyed by row id). */
-  rowSelection?: RowSelectionState
-  /** Controlled selection updater (TanStack `OnChangeFn`). */
-  onRowSelectionChange?: OnChangeFn<RowSelectionState>
-  /**
    * Opt into the roving-focus keyboard layer. Presence of this callback
    * enables row tabIndex/focus/keydown handling; Enter calls it with the
    * focused row's data. DataTable stays router-agnostic — consumers
@@ -126,6 +146,9 @@ export type DataTableProps<TData> = {
   rowHref?: (row: TData) => string
   className?: string
 }
+
+export type DataTableProps<TData> = DataTableBaseProps<TData> &
+  RowSelectionProps<TData>
 
 const SELECTION_COLUMN_ID = '__select__'
 
@@ -172,12 +195,18 @@ function SelectAllCheckbox<TData>({ table }: { table: TanstackTable<TData> }) {
   )
 }
 
-function RowSelectionCheckbox<TData>({ row }: { row: Row<TData> }) {
+function RowSelectionCheckbox<TData>({
+  row,
+  getLabel
+}: {
+  row: Row<TData>
+  getLabel?: (row: TData) => string
+}) {
   return (
     <input
       type="checkbox"
       className={CHECKBOX_CLASS}
-      aria-label={`Select row ${row.id}`}
+      aria-label={getLabel ? getLabel(row.original) : `Select row ${row.id}`}
       checked={row.getIsSelected()}
       disabled={!row.getCanSelect()}
       onChange={row.getToggleSelectedHandler()}
@@ -185,11 +214,13 @@ function RowSelectionCheckbox<TData>({ row }: { row: Row<TData> }) {
   )
 }
 
-function createSelectionColumn<TData>(): ColumnDef<TData, unknown> {
+function createSelectionColumn<TData>(
+  getLabel?: (row: TData) => string
+): ColumnDef<TData, unknown> {
   return {
     id: SELECTION_COLUMN_ID,
     header: ({ table }) => <SelectAllCheckbox table={table} />,
-    cell: ({ row }) => <RowSelectionCheckbox row={row} />
+    cell: ({ row }) => <RowSelectionCheckbox row={row} getLabel={getLabel} />
   }
 }
 
@@ -206,6 +237,7 @@ export function DataTable<TData>({
   enableRowSelection = false,
   rowSelection,
   onRowSelectionChange,
+  getRowSelectionLabel,
   onRowActivate,
   rowHref,
   className
@@ -213,9 +245,9 @@ export function DataTable<TData>({
   const tableColumns = useMemo(
     () =>
       enableRowSelection
-        ? [createSelectionColumn<TData>(), ...columns]
+        ? [createSelectionColumn<TData>(getRowSelectionLabel), ...columns]
         : columns,
-    [columns, enableRowSelection]
+    [columns, enableRowSelection, getRowSelectionLabel]
   )
 
   const table = useReactTable({
@@ -224,6 +256,10 @@ export function DataTable<TData>({
     getCoreRowModel: getCoreRowModel(),
     getRowId,
     enableRowSelection,
+    // Controlled-only, exactly as sindarian-x shipped it: this component holds
+    // no selection state. The `?? {}` is the JS-consumer safety net; the prop
+    // types make the TS path require the controlled pair whenever selection is
+    // enabled, so the dead-checkbox configuration is now unrepresentable.
     onRowSelectionChange: enableRowSelection ? onRowSelectionChange : undefined,
     state: {
       rowSelection: enableRowSelection ? (rowSelection ?? {}) : undefined

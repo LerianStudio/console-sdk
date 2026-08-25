@@ -74,6 +74,38 @@ describe('SearchInput', () => {
     expect(screen.getByRole('searchbox')).toHaveValue('')
   })
 
+  it('keeps keystrokes typed while the parent echoes an earlier emission', () => {
+    // The lost-keystroke race: emit "pi", parent echoes value="pi" one render
+    // later, but the user has already typed "pix". Syncing the draft to that
+    // echo would rewind the field to "pi" and drop the "x".
+    const onValueChange = jest.fn()
+    const { rerender } = render(
+      <SearchInput value="" onValueChange={onValueChange} debounceMs={250} />
+    )
+
+    const input = screen.getByRole('searchbox')
+    fireEvent.change(input, { target: { value: 'pi' } })
+
+    act(() => {
+      jest.advanceTimersByTime(250)
+    })
+    expect(onValueChange).toHaveBeenLastCalledWith('pi')
+
+    // User types on before the parent's re-render lands.
+    fireEvent.change(input, { target: { value: 'pix' } })
+    // Parent now echoes the earlier emission.
+    rerender(
+      <SearchInput value="pi" onValueChange={onValueChange} debounceMs={250} />
+    )
+
+    expect(input).toHaveValue('pix')
+
+    act(() => {
+      jest.advanceTimersByTime(250)
+    })
+    expect(onValueChange).toHaveBeenLastCalledWith('pix')
+  })
+
   it('follows an out-of-band value change from the parent', () => {
     const { rerender } = render(
       <SearchInput value="pix" onValueChange={jest.fn()} />

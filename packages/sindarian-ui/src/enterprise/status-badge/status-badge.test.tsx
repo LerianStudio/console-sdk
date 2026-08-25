@@ -38,6 +38,27 @@ describe('StatusBadge', () => {
     expect(screen.getByText('Critical:')).toBeInTheDocument()
   })
 
+  it.each([
+    ['reconciled', 'RECONCILED'],
+    ['Reconciled', 'RECONCILED'],
+    ['RECONCILED', 'RECONCILED'],
+    ['reconciled', 'reconciled']
+  ])(
+    'matches variantMap key %j against status %j regardless of case',
+    (mapKey, status) => {
+      render(
+        <StatusBadge
+          status={status}
+          variantMap={{ [mapKey]: 'success' }}
+          withIcon
+        />
+      )
+      // Resolving to 'success' proves the key matched; an unmatched key would
+      // fall through to the cue-less 'outline' fallback silently.
+      expect(screen.getByText('OK:')).toBeInTheDocument()
+    }
+  )
+
   it('adds the non-color severity cue only when withIcon is set', () => {
     const { rerender } = render(<StatusBadge status="FAILED" />)
     expect(screen.queryByText('Critical:')).toBeNull()

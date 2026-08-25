@@ -70,6 +70,40 @@ describe('StatCard', () => {
     expect(container.querySelector('svg')).toBeNull()
   })
 
+  it('skips absent trend samples instead of plotting them as zero', () => {
+    const { container } = render(
+      <StatCard
+        label="In flight"
+        value="129"
+        trend={[{ value: 10 }, { value: null }, { value: 20 }]}
+      />
+    )
+
+    // Three samples, one absent -> two plotted points. Coercing null through
+    // Number() would add a third point at 0 and draw a dip to the floor.
+    const points = container
+      .querySelector('polyline')
+      ?.getAttribute('points')
+      ?.split(' ')
+    expect(points).toHaveLength(2)
+    // The floor (y=40) belongs to the minimum real sample, not a phantom zero.
+    expect(points?.[0]).toBe('0.00,40.00')
+    expect(points?.[1]).toBe('100.00,0.00')
+  })
+
+  it('treats an empty-string sample as absent', () => {
+    const { container } = render(
+      <StatCard
+        label="In flight"
+        value="129"
+        trend={[{ value: 10 }, { value: '' }, { value: 20 }]}
+      />
+    )
+    expect(
+      container.querySelector('polyline')?.getAttribute('points')?.split(' ')
+    ).toHaveLength(2)
+  })
+
   it('survives a flat series without dividing by zero', () => {
     const { container } = render(
       <StatCard label="Flat" value="5" trend={[{ value: 5 }, { value: 5 }]} />

@@ -110,6 +110,44 @@ describe('NumberInput', () => {
     expect(onValueChange).toHaveBeenLastCalledWith(9)
   })
 
+  it.each([
+    [0.1, 0.2, 0.30000000000000004, 0.3],
+    [0.7, 0.1, 0.7999999999999999, 0.8],
+    [1.1, 2.2, 3.3000000000000003, 3.3]
+  ])(
+    'snaps float drift when stepping %d by %d',
+    (initial, step, drifted, expected) => {
+      const onValueChange = jest.fn()
+      render(
+        <NumberInput
+          value={initial}
+          onValueChange={onValueChange}
+          step={step}
+        />
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
+      // Guard the premise: raw arithmetic really does drift here.
+      expect(initial + step).toBe(drifted)
+      expect(onValueChange).toHaveBeenLastCalledWith(expected)
+    }
+  )
+
+  it('snaps to precision when precision is wider than the step', () => {
+    const onValueChange = jest.fn()
+    render(
+      <NumberInput
+        value={0.1}
+        onValueChange={onValueChange}
+        step={0.2}
+        precision={4}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(0.3)
+  })
+
   it('disables the steppers at the bounds', () => {
     const { rerender } = render(
       <NumberInput value={0} onValueChange={jest.fn()} min={0} max={10} />

@@ -103,6 +103,13 @@ export function VirtualizedTable<TData>({
   const virtualRows = virtualizer.getVirtualItems()
   const totalSize = virtualizer.getTotalSize()
 
+  // `estimateSize` is read through a closure the virtualizer caches per item, so
+  // changing rowHeight leaves every already-measured row at its old size until
+  // the cache is dropped explicitly.
+  useEffect(() => {
+    virtualizer.measure()
+  }, [rowHeight, virtualizer])
+
   useEffect(() => {
     const viewport = scrollRef.current
     if (!viewport) return
@@ -137,7 +144,13 @@ export function VirtualizedTable<TData>({
         className
       )}
     >
-      <div role="table" aria-rowcount={rows.length} aria-colcount={columnCount}>
+      {/* aria-rowcount counts the header row too — it is a row of this table,
+          so a reader hearing "row 2 of 5001" is being told the truth. */}
+      <div
+        role="table"
+        aria-rowcount={rows.length + 1}
+        aria-colcount={columnCount}
+      >
         {/* Header: a sibling above the scroll region, so it stays put by layout
             (it sits above an overflow box) — not via position: sticky. z-10 and
             bg-card keep it visually layered over the scrolling rows. */}
@@ -146,6 +159,7 @@ export function VirtualizedTable<TData>({
             <div
               key={headerGroup.id}
               role="row"
+              aria-rowindex={1}
               className="border-border flex border-b"
             >
               {headerGroup.headers.map((header, i) => (
@@ -153,8 +167,10 @@ export function VirtualizedTable<TData>({
                   key={header.id}
                   role="columnheader"
                   aria-colindex={i + 1}
-                  className="text-muted-foreground flex-1 px-4 py-2.5 text-left text-xs font-medium tracking-wide uppercase"
-                  style={{ height: rowHeight }}
+                  // Header height is independent of rowHeight: pinning it to a
+                  // small rowHeight (32) clipped the uppercase label against its
+                  // own padding. Padding sizes it; min-h keeps a stable rule.
+                  className="text-muted-foreground min-h-10 flex-1 px-4 py-2.5 text-left text-xs font-medium tracking-wide uppercase"
                 >
                   {header.isPlaceholder
                     ? null
@@ -173,21 +189,30 @@ export function VirtualizedTable<TData>({
         <div
           ref={scrollRef}
           role="rowgroup"
+          data-testid="virtualized-table-viewport"
           aria-label={isScrollable ? scrollAreaLabel : undefined}
           tabIndex={isScrollable ? 0 : undefined}
           className="focus-visible:ring-ring relative overflow-auto focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           style={{ maxHeight: viewportMaxHeight }}
         >
           {/* Spacer sized to the full virtual height so the scrollbar reflects
-              the entire dataset while rows are absolutely positioned. */}
-          <div className="relative w-full" style={{ height: totalSize }}>
+              the entire dataset while rows are absolutely positioned. It is
+              role="presentation" so it drops out of the accessibility tree and
+              the rows stay DIRECT children of the rowgroup — an unlabelled
+              generic between a rowgroup and its rows breaks the table mapping. */}
+          <div
+            role="presentation"
+            className="relative w-full"
+            style={{ height: totalSize }}
+          >
             {virtualRows.map((virtualItem) => {
               const row = rows[virtualItem.index]
               return (
                 <div
                   key={row.id}
                   role="row"
-                  aria-rowindex={virtualItem.index + 1}
+                  // +2, not +1: the header occupies aria-rowindex 1.
+                  aria-rowindex={virtualItem.index + 2}
                   data-index={virtualItem.index}
                   className="border-border absolute left-0 flex w-full items-center border-b text-sm"
                   style={{

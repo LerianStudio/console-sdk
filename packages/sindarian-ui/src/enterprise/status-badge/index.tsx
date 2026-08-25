@@ -86,6 +86,27 @@ const SEVERITY_CUE: Partial<
   secondary: { Icon: Minus, word: 'Neutral' }
 }
 
+/**
+ * Merge a caller's map over the defaults, upper-casing its KEYS.
+ *
+ * Lookup has always upper-cased the incoming `status`, but sindarian-x merged
+ * `variantMap` verbatim — so `{ reconciled: 'success' }` could never match and
+ * fell through to the neutral `outline` badge, silently. That was an unstated
+ * requirement rather than a design choice: lender's own call sites work around
+ * it by hand (`variantMap={{ [reason.toUpperCase()]: 'destructive' }}`).
+ * Normalising here is strictly additive — already-uppercase keys are unchanged.
+ */
+function mergeVariants(
+  variantMap: Record<string, BadgeVariant> | undefined
+): Record<string, BadgeVariant> {
+  if (!variantMap) return DEFAULT_STATUS_VARIANTS
+  const merged: Record<string, BadgeVariant> = { ...DEFAULT_STATUS_VARIANTS }
+  for (const [key, variant] of Object.entries(variantMap)) {
+    merged[key.toUpperCase()] = variant
+  }
+  return merged
+}
+
 function humanize(value: string): string {
   return value
     .toLowerCase()
@@ -131,10 +152,7 @@ export function StatusBadge({
     )
   }
 
-  const map = variantMap
-    ? { ...DEFAULT_STATUS_VARIANTS, ...variantMap }
-    : DEFAULT_STATUS_VARIANTS
-  const variant = map[status.toUpperCase()] ?? 'outline'
+  const variant = mergeVariants(variantMap)[status.toUpperCase()] ?? 'outline'
 
   // The glyph follows the resolved variant; an unknown/non-severity variant has
   // no cue, so the badge gracefully renders label-only even with withIcon set.

@@ -7,23 +7,20 @@ const MOBILE_BREAKPOINT = 768
 /**
  * True while the viewport is narrower than the 768px mobile breakpoint.
  *
- * SSR-safe: falls back to `false` when there is no `window`, then syncs on
- * mount and tracks the matching media query afterwards.
+ * Always false on the FIRST render, server and client alike, so a narrow
+ * viewport can never produce a hydration mismatch; the effect corrects it
+ * before paint. Every reading comes from the media query itself rather than a
+ * mix of `matchMedia` and `window.innerWidth`, so the initial value and the
+ * change events can never disagree at the breakpoint boundary.
  */
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean>(() =>
-    typeof window !== 'undefined'
-      ? window.innerWidth < MOBILE_BREAKPOINT
-      : false
-  )
+  const [isMobile, setIsMobile] = React.useState(false)
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    }
+    const onChange = () => setIsMobile(mql.matches)
+    onChange()
     mql.addEventListener('change', onChange)
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
     return () => mql.removeEventListener('change', onChange)
   }, [])
 

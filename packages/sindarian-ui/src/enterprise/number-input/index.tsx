@@ -49,6 +49,35 @@ function clamp(value: number, min?: number, max?: number): number {
   return next
 }
 
+/** Decimal places in a number's plain-decimal form (0 for exponent notation). */
+function decimalPlaces(value: number): number {
+  const text = String(value)
+  const dot = text.indexOf('.')
+  if (dot === -1 || text.includes('e')) return 0
+  return text.length - dot - 1
+}
+
+/**
+ * Snap a stepped result to the decimals its inputs actually carry, so binary
+ * float drift never escapes to the parent: stepping 0.1 by 0.2 must commit 0.3,
+ * not 0.30000000000000004. Takes the widest of `precision`, the step's decimals
+ * and the base's, so snapping can only remove drift, never real digits. Capped
+ * at 12 places — past that the drift IS the value.
+ */
+function snapToStep(
+  value: number,
+  precision: number | undefined,
+  step: number,
+  base: number
+): number {
+  const decimals = Math.min(
+    12,
+    Math.max(precision ?? 0, decimalPlaces(step), decimalPlaces(base))
+  )
+  const factor = 10 ** decimals
+  return Math.round(value * factor) / factor
+}
+
 /** The locale's decimal and group separators, derived from a known sample. */
 function localeSeparators(locale?: string): { decimal: string; group: string } {
   const parts = new Intl.NumberFormat(locale).formatToParts(11111.1)
@@ -135,7 +164,12 @@ export function NumberInput({
 
   const stepBy = (direction: 1 | -1) => {
     const base = value ?? 0
-    const next = clamp(base + direction * step, min, max)
+    const next = snapToStep(
+      clamp(base + direction * step, min, max),
+      precision,
+      step,
+      base
+    )
     commit(next)
     // Seed the draft via the locale formatter so a stepper press doesn't flip
     // the user's separators (e.g. ',' → '.').
