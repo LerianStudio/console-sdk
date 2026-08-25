@@ -2,7 +2,7 @@ import '@testing-library/jest-dom'
 import { act, render } from '@testing-library/react'
 
 import { getThemeScript } from './get-theme-script'
-import { ThemeProvider } from './theme-provider'
+import { ThemeProvider, type ThemePreference } from './theme-provider'
 
 /**
  * FC-3 fallback contract: the pre-paint script and the hydrated provider must
@@ -30,14 +30,14 @@ function reset(stored: string | null) {
 }
 
 /** Runs the returned IIFE the way a <script> tag in <head> would. */
-function runScript(): boolean {
-  new Function(getThemeScript(STORAGE_KEY))()
+function runScript(defaultTheme?: ThemePreference): boolean {
+  new Function(getThemeScript(STORAGE_KEY, defaultTheme))()
   return document.documentElement.classList.contains('dark')
 }
 
-async function runProvider(): Promise<boolean> {
+async function runProvider(defaultTheme?: ThemePreference): Promise<boolean> {
   const { unmount } = render(
-    <ThemeProvider storageKey={STORAGE_KEY}>
+    <ThemeProvider storageKey={STORAGE_KEY} defaultTheme={defaultTheme}>
       <span>content</span>
     </ThemeProvider>
   )
@@ -58,6 +58,27 @@ describe('getThemeScript', () => {
     expect(getThemeScript('app"weird')).toContain('"app\\"weird"')
   })
 
+  it('escapes < so a pathological key cannot close the script tag', () => {
+    const script = getThemeScript('app</script><img src=x onerror=alert(1)>')
+
+    expect(script).not.toContain('<')
+    expect(script).toContain('\\u003C')
+  })
+
+  it('still matches the escaped key against the real stored value', () => {
+    const key = 'a<b'
+    window.localStorage.clear()
+    window.localStorage.setItem(key, 'dark')
+    document.documentElement.classList.remove('dark')
+    mockSystemPrefersDark(false)
+
+    new Function(getThemeScript(key))()
+
+    // The escape is a JS-source escape only: `<` parses back to `<`, so
+    // the emitted script reads the very key the caller passed.
+    expect(document.documentElement).toHaveClass('dark')
+  })
+
   it('swallows errors so a broken storage never blocks paint', () => {
     const getItem = jest
       .spyOn(Storage.prototype, 'getItem')
@@ -72,75 +93,58 @@ describe('getThemeScript', () => {
 })
 
 describe('pre-paint script and ThemeProvider agree', () => {
-  const cases: Array<{
-    name: string
-    stored: string | null
+  /**
+   * The contract, stated once and independently of either implementation: a
+   * valid stored preference wins, anything else falls back to defaultTheme,
+   * and 'system' then resolves against the OS. The test's value is that two
+   * separate implementations — an emitted JS string and a React component —
+   * both land on it.
+   */
+  function expectedDark(
+    stored: string | null,
+    defaultTheme: ThemePreference,
     prefersDark: boolean
-    expectedDark: boolean
-  }> = [
-    {
-      name: 'stored "dark"',
-      stored: 'dark',
-      prefersDark: false,
-      expectedDark: true
-    },
-    {
-      name: 'stored "light"',
-      stored: 'light',
-      prefersDark: true,
-      expectedDark: false
-    },
-    {
-      name: 'stored "system" with a dark OS',
-      stored: 'system',
-      prefersDark: true,
-      expectedDark: true
-    },
-    {
-      name: 'stored "system" with a light OS',
-      stored: 'system',
-      prefersDark: false,
-      expectedDark: false
-    },
-    {
-      name: 'no stored value with a dark OS',
-      stored: null,
-      prefersDark: true,
-      expectedDark: true
-    },
-    {
-      name: 'no stored value with a light OS',
-      stored: null,
-      prefersDark: false,
-      expectedDark: false
-    },
-    {
-      name: 'a corrupted stored value with a dark OS',
-      stored: 'chartreuse',
-      prefersDark: true,
-      expectedDark: true
-    },
-    {
-      name: 'a corrupted stored value with a light OS',
-      stored: 'chartreuse',
-      prefersDark: false,
-      expectedDark: false
-    }
+  ): boolean {
+    const resolved =
+      stored === 'dark' || stored === 'light' || stored === 'system'
+        ? stored
+        : defaultTheme
+    return resolved === 'dark' || (resolved === 'system' && prefersDark)
+  }
+
+  const storedValues: Array<[label: string, stored: string | null]> = [
+    ['stored "dark"', 'dark'],
+    ['stored "light"', 'light'],
+    ['stored "system"', 'system'],
+    ['no stored value', null],
+    ['a corrupted stored value', 'chartreuse']
   ]
+
+  const cases = (['system', 'dark', 'light'] as const).flatMap((defaultTheme) =>
+    storedValues.flatMap(([label, stored]) =>
+      [true, false].map((prefersDark) => ({
+        name: `${label}, defaultTheme "${defaultTheme}", ${prefersDark ? 'dark' : 'light'} OS`,
+        stored,
+        defaultTheme,
+        prefersDark
+      }))
+    )
+  )
 
   it.each(cases)(
     'resolves $name identically pre-paint and hydrated',
-    async ({ stored, prefersDark, expectedDark }) => {
+    async ({ stored, defaultTheme, prefersDark }) => {
       mockSystemPrefersDark(prefersDark)
+      const expected = expectedDark(stored, defaultTheme, prefersDark)
 
       reset(stored)
-      const scriptDark = runScript()
+      const scriptDark = runScript(defaultTheme)
 
       reset(stored)
-      const providerDark = await runProvider()
+      const providerDark = await runProvider(defaultTheme)
 
-      expect(scriptDark).toBe(expectedDark)
-      expect(providerDark).toBe(expectedDark)
+      expect(scriptDark).toBe(expected)
+      expect(providerDark).toBe(expected)
       expect(scriptDark).toBe(providerDark)
     }
   )

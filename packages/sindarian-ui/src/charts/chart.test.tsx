@@ -102,6 +102,137 @@ describe('ChartContainer', () => {
   })
 })
 
+describe('ChartStyle injection hardening', () => {
+  const BREAKOUT = 'red}</style><img src=x onerror=alert(1)>'
+
+  function expectNoBreakout(container: HTMLElement) {
+    // The <style> element must never be closed early, and no markup smuggled
+    // through it may materialize as real DOM.
+    const css = container.querySelector('style')?.innerHTML ?? ''
+    expect(css).not.toContain('</style')
+    expect(css).not.toContain('<img')
+    expect(container.querySelector('img')).toBeNull()
+    expect(document.querySelector('img')).toBeNull()
+  }
+
+  it('drops a color value carrying markup instead of emitting it', () => {
+    const { container } = render(
+      <ChartContainer config={{ evil: { label: 'Evil', color: BREAKOUT } }}>
+        <div />
+      </ChartContainer>
+    )
+
+    expectNoBreakout(container)
+    expect(container.querySelector('style')?.innerHTML ?? '').not.toContain(
+      '--color-evil'
+    )
+  })
+
+  it('drops a themed color value carrying markup', () => {
+    const { container } = render(
+      <ChartContainer
+        config={{
+          mixed: {
+            label: 'Mixed',
+            theme: { light: 'var(--color-chart-1)', dark: BREAKOUT }
+          }
+        }}
+      >
+        <div />
+      </ChartContainer>
+    )
+
+    expectNoBreakout(container)
+    const css = container.querySelector('style')!.innerHTML
+    // The safe half still lands; only the poisoned one is dropped.
+    expect(css).toContain('--color-mixed: var(--color-chart-1);')
+    expect(css.match(/--color-mixed/g)).toHaveLength(1)
+  })
+
+  it('drops a config key that is not a CSS identifier', () => {
+    const { container } = render(
+      <ChartContainer
+        config={{
+          'evil}</style><img src=x onerror=alert(1)>': { color: 'red' }
+        }}
+      >
+        <div />
+      </ChartContainer>
+    )
+
+    expectNoBreakout(container)
+  })
+
+  it('strips CSS syntax out of a caller-supplied id', () => {
+    const { container } = render(
+      <ChartContainer
+        id={'x]{}</style><img src=x onerror=alert(1)>'}
+        config={{ settled: { color: 'var(--color-chart-1)' } }}
+      >
+        <div />
+      </ChartContainer>
+    )
+
+    expectNoBreakout(container)
+    // Selector and attribute must still agree after stripping, or colors break.
+    const chartId = container
+      .querySelector('[data-chart]')!
+      .getAttribute('data-chart')!
+    expect(chartId).toMatch(/^chart-[\w-]*$/)
+    expect(container.querySelector('style')!.innerHTML).toContain(
+      `[data-chart=${chartId}] {`
+    )
+  })
+
+  it('rejects other CSS-breaking color syntax', () => {
+    const hostile = [
+      'red;color:blue',
+      'red}@import url(//evil.test)',
+      'expression(alert(1))"',
+      "url('x')",
+      'red !important'
+    ]
+
+    hostile.forEach((color) => {
+      const { container, unmount } = render(
+        <ChartContainer config={{ probe: { color } }}>
+          <div />
+        </ChartContainer>
+      )
+      const css = container.querySelector('style')?.innerHTML ?? ''
+      expect(css).not.toContain('--color-probe')
+      unmount()
+    })
+  })
+
+  it('still admits the color forms real charts use', () => {
+    const allowed: Record<string, string> = {
+      token: 'var(--color-chart-1)',
+      hex: '#B91C1C',
+      named: 'rebeccapurple',
+      modern: 'hsl(0 74% 42%)',
+      legacy: 'rgb(185, 28, 28)',
+      alpha: 'hsl(var(--color-chart-1) / 0.5)',
+      fallback: 'var(--color-chart-1, #B91C1C)'
+    }
+
+    const { container } = render(
+      <ChartContainer
+        config={Object.fromEntries(
+          Object.entries(allowed).map(([key, color]) => [key, { color }])
+        )}
+      >
+        <div />
+      </ChartContainer>
+    )
+
+    const css = container.querySelector('style')!.innerHTML
+    Object.entries(allowed).forEach(([key, color]) => {
+      expect(css).toContain(`--color-${key}: ${color};`)
+    })
+  })
+})
+
 describe('useChart', () => {
   it('throws when chart parts are used outside a ChartContainer', () => {
     const consoleError = jest

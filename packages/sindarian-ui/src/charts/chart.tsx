@@ -22,6 +22,26 @@ import { cn } from '@/lib/utils'
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const
 
+/**
+ * ChartStyle writes a stylesheet through `dangerouslySetInnerHTML`, so every
+ * interpolated value is an injection sink: `</style>` inside a config key, id,
+ * or color would close the element and let arbitrary markup follow. Config
+ * often carries server data (series names from an API), so these are validated
+ * rather than trusted.
+ *
+ * CSS_IDENT — custom-property names and the chart id, which also lands in an
+ * attribute selector.
+ * CSS_COLOR — a deliberately conservative character allowlist covering hex,
+ * named, `var(…)`, `rgb()/hsl()/color-mix()` and slash-alpha forms. It admits
+ * no `<`, `>`, `{`, `}`, `;`, `:`, quote, backslash, `@`, `*` or `!`, which is
+ * what rules out tag-closing, rule termination, comments, at-rules and
+ * `!important`. Anything failing either test is dropped, not escaped — a
+ * malformed color is a bug, and rendering a default color beats emitting
+ * attacker-shaped CSS.
+ */
+const CSS_IDENT = /^[A-Za-z_][\w-]*$/
+const CSS_COLOR = /^[\w\s#%.,()/-]+$/
+
 const INITIAL_DIMENSION = { width: 320, height: 200 } as const
 type TooltipNameType = number | string
 
@@ -77,7 +97,9 @@ function ChartContainer({
   }
 }) {
   const uniqueId = React.useId()
-  const chartId = `chart-${id ?? uniqueId.replace(/:/g, '')}`
+  // chartId lands in BOTH a DOM attribute and a CSS attribute selector, so the
+  // two must agree and neither may carry syntax — strip to [\w-] once, here.
+  const chartId = `chart-${(id ?? uniqueId).replace(/[^\w-]/g, '')}`
 
   // Resolve the accessibility contract for the container element:
   // named → expose as an image with that name; false → hide from a11y tree.
@@ -112,8 +134,14 @@ function ChartContainer({
 }
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
+  // An id that cannot be written as a CSS identifier cannot be scoped safely,
+  // and an unscoped rule would leak across every chart on the page.
+  if (!CSS_IDENT.test(id)) {
+    return null
+  }
+
   const colorConfig = Object.entries(config).filter(
-    ([, config]) => config.theme ?? config.color
+    ([key, config]) => CSS_IDENT.test(key) && (config.theme ?? config.color)
   )
 
   if (!colorConfig.length) {
@@ -132,7 +160,7 @@ ${colorConfig
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ??
       itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    return color && CSS_COLOR.test(color) ? `  --color-${key}: ${color};` : null
   })
   .join('\n')}
 }
