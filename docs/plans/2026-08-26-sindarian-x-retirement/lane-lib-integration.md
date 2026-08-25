@@ -140,7 +140,7 @@ NOTA: the develop release workflow currently fails with npm 401 ("Invalid npm to
 - Duplicate-export scan across the FULL merged barrel (FC-4): zero duplicate named exports.
 - Census completeness: every symbol in the four FC-6 port lists (+plan-added) resolves from the built `dist/index.js`/`index.d.ts`.
 - Absence checks: no `sindarian-x` string in package code/manifests/config (docs/plans excluded); no TODO/FIXME/placeholder left by wave-2 lanes in the new directories; every FC-2 token present in built CSS.
-- Scratch consumer: `npm pack` the built package into a tarball; scaffold a throwaway Vite React app in /tmp; install the tarball + peers; compile a file importing EVERY new export; mount ThemeProvider + Toaster + a DataTable + one ChartContainer chart + MoneyText/KeyId; `vite build` green and a headless render smoke (jsdom or vite preview + curl) shows no runtime error.
+- Scratch consumer: `npm pack` the built package into a tarball; scaffold a throwaway Vite React app in /tmp; install the tarball + peers; compile a file importing EVERY new export; mount ThemeProvider + Toaster + a DataTable + one ChartContainer chart + MoneyText/KeyId; `vite build` green AND an EXECUTABLE render smoke — a jsdom-based test inside the scratch app (vitest) that mounts the composed page from the built bundle and asserts rendered output (table rows, chart svg, money text) with zero console errors. `curl` against `vite preview` is only a server-availability check, never the render proof.
 - Record in the report: the exact export count, and that beta publish remains blocked on the npm token (the merge will trigger it once rotated).
 
 **Files:**
