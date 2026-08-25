@@ -112,11 +112,13 @@ function useTheme(): { theme: ThemePreference; setTheme(t: ThemePreference): voi
 function getThemeScript(storageKey?: string): string   // pre-hydration FOUC guard, inline <script> body
 function ModeToggle(props: ModeToggleProps): JSX.Element
 
-// Fallback contract (tested by lane theme-toasts-charts): with no stored value under
-// storageKey, BOTH ThemeProvider and getThemeScript resolve to the system preference,
-// so pre-paint and hydrated themes always match. An app that wants dark-by-default
-// passes defaultTheme="dark" AND keeps a static class="dark" on <html> for pre-paint
-// (app-cockpit's case) — getThemeScript's fallback stays 'system', unchanged from 0.15.0.
+// Fallback contract (tested by lane theme-toasts-charts, 30-case parity matrix):
+// getThemeScript(storageKey?, defaultTheme? = 'system') — the script resolves stored
+// dark/light/system exactly like ThemeProvider, and falls back to defaultTheme for
+// absent/corrupted values. A dark-by-default app (app-cockpit) passes
+// getThemeScript('cockpit.theme', 'dark') + <ThemeProvider defaultTheme="dark">, and
+// REMOVES any static class="dark" from <html> (a static class would wrongly paint dark
+// for a user who explicitly stored "light").
 
 // toast (lane theme-toasts-charts) — module-scoped helpers over sindarian-ui's EXISTING
 // toast machinery (src/hooks/use-toast.ts). The bare `toast` symbol is NOT ported:
@@ -279,7 +281,7 @@ Census erratum: `Action`/`useAction` reported for cockpit were false positives (
 ### Lane: app-cockpit
 
 **Goal:** br-sfn cockpit runs on sindarian-ui; sindarian-x removed; the local theme fork deleted in favor of the lib's ThemeProvider.
-**Scope:** repo br-sfn, `cockpit/**`. Largest lane: 348 files import the lib (141 symbols, 1644 occurrences), 28 more test files mock it. Work: swap dep (pinned exact today, 0.14.1); mass-adapt collided call sites (`Button` 180×, `PageHeader` 84×, `Badge` 70×, `cn` 67×, `DataTable` 57×...); DELETE the forked theme layer (`src/lib/theme/**`, keys `cockpit.theme`) and adopt the lib `ThemeProvider` with `defaultTheme="dark"` — ATENÇÃO: do NOT inject `getThemeScript` here (its no-stored-value fallback is the system preference and would strip the static dark class pre-paint for light-OS users); keep the static `class="dark"` on `<html>`, parity with today's fork; rebuild `ThemeToggle.tsx` on lib pieces while preserving the app-local density feature; keep documented divergences (`SilocMoney`, `SlcStateBadge`, `RecordStatusBadge`) as local wrappers re-pointed to sindarian-ui; update `index.css` imports + `@source`; codemod-first strategy (import rewrites are mechanical; prop adaptations are not).
+**Scope:** repo br-sfn, `cockpit/**`. Largest lane: 348 files import the lib (141 symbols, 1644 occurrences), 28 more test files mock it. Work: swap dep (pinned exact today, 0.14.1); mass-adapt collided call sites (`Button` 180×, `PageHeader` 84×, `Badge` 70×, `cn` 67×, `DataTable` 57×...); DELETE the forked theme layer (`src/lib/theme/**`) and adopt the lib theme: `<ThemeProvider defaultTheme="dark" storageKey="cockpit.theme">` + inject `getThemeScript('cockpit.theme', 'dark')` pre-paint, and REMOVE the static `class="dark"` from `index.html` (the script now handles dark-by-default correctly, including a user-stored "light"); rebuild `ThemeToggle.tsx` on lib pieces while preserving the app-local density feature; keep documented divergences (`SilocMoney`, `SlcStateBadge`, `RecordStatusBadge`) as local wrappers re-pointed to sindarian-ui; update `index.css` imports + `@source`; codemod-first strategy (import rewrites are mechanical; prop adaptations are not).
 **Depends on:** lib-integration
 **Done when:** app builds, full test suite green (~590 test files), no `sindarian-x` reference, visual pass on SPI/SPB/SLC/SILOC/STA surfaces in both themes.
 **Status:** Pending
