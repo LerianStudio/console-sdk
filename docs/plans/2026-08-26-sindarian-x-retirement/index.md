@@ -180,7 +180,7 @@ NOT ported (YAGNI, absent from census): BarChart, LineChart, Donut, Sparkline, c
 **domain (27):** Blotter lm, BlotterRow lm, DelinquencyAging l, FIGURE_CLASS m, Figure klm, FigureSize m T, FigureTone m T, GaugeThresholds m T, KeyId l, LedgerPanel lm, LedgerSheet clm, MoneyText klm, MoneyTextProps lm T, NO_VALUE lm, SectionLabel klm, StatusRail m, StatusRailChip m T, StatusRailItem m T, Dot m, LivePulse m, ThresholdGauge m, formatCount klm, formatPercent klm, gaugeBand m, humanizeDurationMs m, moneyDiff m, toPercentValue m.
 NOT ported (YAGNI, absent from census): public money-math (`toMinor`, `Amount`, …), Comprovante, MatchPair, and every other domain composite not listed — MoneyText's internal money handling ports as internal, unexported code.
 
-Census erratum: `Action`/`useAction` reported for cockpit were false positives (local `@/components/actions/` module, not lib imports). `Dot`/`LivePulse` are StatusRail family → domain.
+Census erratum: `Action`/`useAction` reported for cockpit were false positives (local `@/components/actions/` module, not lib imports). `Dot`/`LivePulse` are StatusRail family → domain. `FigureTone` is a matcher-LOCAL type (its own figure.tsx wrapper), not a lib export — nothing to port; the domain lane ships 26 of the 27 listed symbols.
 
 ## Integration Lane
 
