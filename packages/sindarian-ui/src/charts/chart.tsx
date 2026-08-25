@@ -29,18 +29,32 @@ const THEMES = { light: '', dark: '.dark' } as const
  * often carries server data (series names from an API), so these are validated
  * rather than trusted.
  *
- * CSS_IDENT — custom-property names and the chart id, which also lands in an
- * attribute selector.
- * CSS_COLOR — a deliberately conservative character allowlist covering hex,
- * named, `var(…)`, `rgb()/hsl()/color-mix()` and slash-alpha forms. It admits
- * no `<`, `>`, `{`, `}`, `;`, `:`, quote, backslash, `@`, `*` or `!`, which is
- * what rules out tag-closing, rule termination, comments, at-rules and
- * `!important`. Anything failing either test is dropped, not escaped — a
- * malformed color is a bug, and rendering a default color beats emitting
- * attacker-shaped CSS.
+ * CSS_IDENT — the chart id, which lands in an UNQUOTED attribute selector and
+ * so may not lead with a digit.
+ * CONFIG_KEY — series keys, which become `--color-<key>` custom-property names.
+ * Custom properties DO allow a leading digit, so a numeric series (a year, say)
+ * must pass; only CSS syntax is excluded.
  */
 const CSS_IDENT = /^[A-Za-z_][\w-]*$/
+const CONFIG_KEY = /^[\w-]+$/
+
+/**
+ * A deliberately conservative character allowlist covering hex, named, `var(…)`,
+ * `rgb()/hsl()/color-mix()` and slash-alpha forms. It admits no `<`, `>`, `{`,
+ * `}`, `;`, `:`, quote, backslash, `@`, `*` or `!`, which rules out tag-closing,
+ * rule termination, comments, at-rules and `!important`.
+ *
+ * `url(…)` is rejected separately: the allowlist alone would pass an unquoted
+ * `url(//evil.test/pixel.png)` — no colon or quote required — which the browser
+ * would fetch, leaking the viewer's IP and referrer to a third party. The
+ * whitespace tolerance covers `url (…)` variants.
+ */
 const CSS_COLOR = /^[\w\s#%.,()/-]+$/
+const CSS_URL = /url\s*\(/i
+
+function isSafeColor(color: string): boolean {
+  return CSS_COLOR.test(color) && !CSS_URL.test(color)
+}
 
 const INITIAL_DIMENSION = { width: 320, height: 200 } as const
 type TooltipNameType = number | string
@@ -141,7 +155,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   }
 
   const colorConfig = Object.entries(config).filter(
-    ([key, config]) => CSS_IDENT.test(key) && (config.theme ?? config.color)
+    ([key, config]) => CONFIG_KEY.test(key) && (config.theme ?? config.color)
   )
 
   if (!colorConfig.length) {
@@ -160,7 +174,7 @@ ${colorConfig
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ??
       itemConfig.color
-    return color && CSS_COLOR.test(color) ? `  --color-${key}: ${color};` : null
+    return color && isSafeColor(color) ? `  --color-${key}: ${color};` : null
   })
   .join('\n')}
 }

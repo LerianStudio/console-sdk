@@ -92,26 +92,26 @@ describe('getThemeScript', () => {
   })
 })
 
-describe('pre-paint script and ThemeProvider agree', () => {
-  /**
-   * The contract, stated once and independently of either implementation: a
-   * valid stored preference wins, anything else falls back to defaultTheme,
-   * and 'system' then resolves against the OS. The test's value is that two
-   * separate implementations — an emitted JS string and a React component —
-   * both land on it.
-   */
-  function expectedDark(
-    stored: string | null,
-    defaultTheme: ThemePreference,
-    prefersDark: boolean
-  ): boolean {
-    const resolved =
-      stored === 'dark' || stored === 'light' || stored === 'system'
-        ? stored
-        : defaultTheme
-    return resolved === 'dark' || (resolved === 'system' && prefersDark)
-  }
+/**
+ * The contract, stated once and independently of either implementation: a
+ * valid stored preference wins, anything else falls back to defaultTheme,
+ * and 'system' then resolves against the OS. The test's value is that two
+ * separate implementations — an emitted JS string and a React component —
+ * both land on it.
+ */
+function expectedDark(
+  stored: string | null,
+  defaultTheme: ThemePreference,
+  prefersDark: boolean
+): boolean {
+  const resolved =
+    stored === 'dark' || stored === 'light' || stored === 'system'
+      ? stored
+      : defaultTheme
+  return resolved === 'dark' || (resolved === 'system' && prefersDark)
+}
 
+describe('pre-paint script and ThemeProvider agree', () => {
   const storedValues: Array<[label: string, stored: string | null]> = [
     ['stored "dark"', 'dark'],
     ['stored "light"', 'light'],
@@ -148,4 +148,68 @@ describe('pre-paint script and ThemeProvider agree', () => {
       expect(scriptDark).toBe(providerDark)
     }
   )
+})
+
+describe('storage that throws still gets a theme applied', () => {
+  /**
+   * A browser with site data blocked throws on getItem. Both resolvers must
+   * isolate that failure and still apply defaultTheme's resolution — if the
+   * failure aborts the whole pre-paint script, a dark user flashes light on
+   * every page load and never finds out why.
+   */
+  const cases = (['system', 'dark', 'light'] as const).flatMap((defaultTheme) =>
+    [true, false].map((prefersDark) => ({
+      name: `defaultTheme "${defaultTheme}" on a ${prefersDark ? 'dark' : 'light'} OS`,
+      defaultTheme,
+      prefersDark
+    }))
+  )
+
+  it.each(cases)(
+    'resolves $name identically pre-paint and hydrated',
+    async ({ defaultTheme, prefersDark }) => {
+      mockSystemPrefersDark(prefersDark)
+      // Storage is unreadable, so the stored value can never be observed.
+      const expected = expectedDark(null, defaultTheme, prefersDark)
+
+      const getItem = jest
+        .spyOn(Storage.prototype, 'getItem')
+        .mockImplementation(() => {
+          throw new Error('storage disabled')
+        })
+
+      try {
+        document.documentElement.classList.remove('dark')
+        const scriptDark = runScript(defaultTheme)
+
+        document.documentElement.classList.remove('dark')
+        const providerDark = await runProvider(defaultTheme)
+
+        expect(scriptDark).toBe(expected)
+        expect(providerDark).toBe(expected)
+        expect(scriptDark).toBe(providerDark)
+      } finally {
+        getItem.mockRestore()
+      }
+    }
+  )
+
+  it('applies the class rather than bailing out entirely', () => {
+    mockSystemPrefersDark(false)
+    document.documentElement.classList.remove('dark')
+
+    const getItem = jest
+      .spyOn(Storage.prototype, 'getItem')
+      .mockImplementation(() => {
+        throw new Error('storage disabled')
+      })
+
+    // Pre-seed the wrong class: a script that bails would leave it untouched.
+    document.documentElement.classList.add('dark')
+    runScript('light')
+
+    expect(document.documentElement).not.toHaveClass('dark')
+
+    getItem.mockRestore()
+  })
 })

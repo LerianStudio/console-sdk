@@ -190,7 +190,13 @@ describe('ChartStyle injection hardening', () => {
       'red}@import url(//evil.test)',
       'expression(alert(1))"',
       "url('x')",
-      'red !important'
+      'red !important',
+      // Passes the character allowlist on its own — no colon, no quotes — but
+      // the browser would fetch it, leaking IP and referrer to a third party.
+      'url(//evil.test/pixel.png)',
+      'URL(//evil.test/pixel.png)',
+      'url (//evil.test/pixel.png)',
+      'image-set(url(//evil.test/x) 1x)'
     ]
 
     hostile.forEach((color) => {
@@ -203,6 +209,25 @@ describe('ChartStyle injection hardening', () => {
       expect(css).not.toContain('--color-probe')
       unmount()
     })
+  })
+
+  it('admits a numeric series key, which is a valid custom-property name', () => {
+    // A year-keyed series ("2024") must resolve, or every var(--color-2024)
+    // reference in the chart silently falls back to nothing.
+    const { container } = render(
+      <ChartContainer
+        config={{
+          '2024': { label: '2024', color: 'var(--color-chart-1)' },
+          '2025': { label: '2025', color: 'var(--color-chart-2)' }
+        }}
+      >
+        <div />
+      </ChartContainer>
+    )
+
+    const css = container.querySelector('style')!.innerHTML
+    expect(css).toContain('--color-2024: var(--color-chart-1);')
+    expect(css).toContain('--color-2025: var(--color-chart-2);')
   })
 
   it('still admits the color forms real charts use', () => {

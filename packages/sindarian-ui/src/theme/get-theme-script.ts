@@ -39,5 +39,10 @@ export function getThemeScript(
   storageKey = 'sindarian.theme',
   defaultTheme: ThemePreference = 'system'
 ): string {
-  return `(function(){try{var k=${jsString(storageKey)};var t=localStorage.getItem(k);var r=(t==="dark"||t==="light"||t==="system")?t:${jsString(defaultTheme)};var d=r==="dark"||(r==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d)}catch(e){}})()`
+  // The storage read gets its OWN try/catch, mirroring ThemeProvider, which
+  // isolates the same read. A browser with site data blocked throws on
+  // getItem; if that escaped to the outer catch the class would never be
+  // applied at all and a dark user would flash light before hydration.
+  // Resolution starts from defaultTheme and storage only narrows it.
+  return `(function(){try{var r=${jsString(defaultTheme)};try{var t=localStorage.getItem(${jsString(storageKey)});if(t==="dark"||t==="light"||t==="system")r=t}catch(e){}var d=r==="dark"||(r==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d)}catch(e){}})()`
 }
