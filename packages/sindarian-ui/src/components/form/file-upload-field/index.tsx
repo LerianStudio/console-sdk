@@ -66,9 +66,20 @@ function hasRenderableLabel(label: ReactNode): boolean {
         )
       : true
   }
-  // Arrays and other iterables: renderable only if some child is. Elements are
-  // handled above, so this never recurses into the value it was given.
-  return Children.toArray(label).some((child) => hasRenderableLabel(child))
+  // Portals and any other React-internal node that is not an element: they
+  // render something, and their text is as unknowable as a component's, so they
+  // count. Critically they are NOT decomposable — isValidElement is false for a
+  // portal and Children.toArray hands the identical node straight back, so
+  // recursing on it would never terminate.
+  if (typeof label === 'object' && '$$typeof' in label) return true
+
+  const children = Children.toArray(label)
+  // Belt for anything else toArray cannot break down: if it returns the very
+  // node we passed in, there is no progress left to make, so stop rather than
+  // recurse forever.
+  if (children.length === 1 && children[0] === label) return true
+  // Arrays and other iterables: renderable only if some child is.
+  return children.some((child) => hasRenderableLabel(child))
 }
 
 /**

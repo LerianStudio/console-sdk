@@ -1,8 +1,30 @@
 import '@testing-library/jest-dom'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { type ReactNode } from 'react'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 import { Form } from '@/components/ui/form'
 import { FileUploadField } from '.'
+
+/**
+ * A React portal node, built by hand: `@types/react-dom` is not installed in
+ * this workspace, so `createPortal` cannot be imported type-safely here.
+ *
+ * Shape-identical to the real thing, and verified as such: `Symbol.for` returns
+ * the very symbol `createPortal` stamps, `isValidElement` is false for it, and
+ * `Children.toArray` hands the same object straight back — which is precisely
+ * what makes the recursion guard necessary.
+ */
+function portalLabel(
+  text: string
+): Exclude<ReactNode, null | undefined | boolean> {
+  return {
+    $$typeof: Symbol.for('react.portal'),
+    key: null,
+    children: text,
+    containerInfo: document.body,
+    implementation: null
+  } as unknown as Exclude<ReactNode, null | undefined | boolean>
+}
 
 function Harness({
   onSubmit,
@@ -192,6 +214,36 @@ describe('FileUploadField', () => {
       expect.stringContaining('FileUploadField "cert" has no accessible name')
     )
     spy.mockRestore()
+  })
+
+  it.each([
+    ['without aria-label', undefined],
+    ['with aria-label', 'A1 certificate']
+  ])('renders a portal label %s without recursing forever', (_kind, aria) => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    function WithPortal() {
+      const form = useForm<{ cert: string }>({ defaultValues: { cert: '' } })
+      return (
+        <Form {...form}>
+          <FileUploadField
+            control={form.control}
+            name="cert"
+            label={portalLabel('Certificate')}
+            aria-label={aria}
+          />
+        </Form>
+      )
+    }
+
+    // A portal is not an element and Children.toArray cannot decompose it, so
+    // without a base case this overflows the stack instead of rendering.
+    expect(() => render(<WithPortal />)).not.toThrow()
+    const warned = spy.mock.calls.some((call) =>
+      String(call[0]).includes('no accessible name')
+    )
+    spy.mockRestore()
+    // A portal renders something, so it counts as a label — no warning.
+    expect(warned).toBe(false)
   })
 
   it('warns when a blank-string collection label leaves the input nameless', () => {
