@@ -22,10 +22,7 @@ function InputOTP({
   )
 }
 
-function InputOTPGroup({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) {
+function InputOTPGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="input-otp-group"
@@ -50,7 +47,7 @@ function InputOTPSlot({
       className={cn(
         'border-input-border bg-background text-foreground',
         'relative flex h-14 w-12 items-center justify-center border-y border-r text-2xl font-semibold shadow-xs transition-all outline-none first:rounded-l-md first:border-l last:rounded-r-md',
-        'data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-2 data-[active=true]:ring-ring/50',
+        'data-[active=true]:border-ring data-[active=true]:ring-ring/50 data-[active=true]:z-10 data-[active=true]:ring-2',
         className
       )}
       {...props}
