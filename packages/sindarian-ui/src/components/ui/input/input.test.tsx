@@ -1,7 +1,8 @@
+import * as React from 'react'
 import '@testing-library/jest-dom'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { useForm } from 'react-hook-form'
-import { Input } from '.'
+import { Input, type InputRef } from '.'
 import { Form, FormControl, FormField, FormItem, FormLabel } from '../form'
 
 /**
@@ -78,5 +79,65 @@ describe('Input inside a form', () => {
     expect(input).toHaveValue('ada@example.com')
     // The id must come from FormItem's context, not the standalone fallback.
     expect(input.getAttribute('id')).toMatch(/-form-item$/)
+  })
+})
+
+/**
+ * The imperative handle used to be built with a double arrow —
+ * `focus: () => () => { ... }` — so calling `ref.current.focus()` RETURNED
+ * the focusing function instead of running it. TypeScript never noticed: a
+ * returned function still satisfies `() => void`. Every keyboard shortcut
+ * that focused a sindarian-ui Input through a ref was a silent no-op (lender
+ * lost its "/" hotkey on all seven registers).
+ *
+ * Asserting the return value is undefined is the part that actually pins the
+ * bug: a handle that returns a closure would otherwise focus nothing and
+ * still look plausible.
+ */
+describe('Input imperative handle', () => {
+  function renderWithHandle() {
+    // `InputProps` intersects its own `ref?: Ref<InputRef>` with the one
+    // `ComponentProps<'input'>` already carries, so the ref object has to
+    // satisfy both sides. Only the InputRef half is exercised here.
+    const handle = React.createRef<InputRef & HTMLInputElement>()
+    render(<Input ref={handle} aria-label="Search" />)
+    return { handle, input: screen.getByLabelText('Search') }
+  }
+
+  it('focuses the input and returns nothing', () => {
+    const { handle, input } = renderWithHandle()
+
+    let returned: unknown = 'not called'
+    act(() => {
+      returned = handle.current?.focus()
+    })
+
+    expect(returned).toBeUndefined()
+    expect(document.activeElement).toBe(input)
+    expect(input.closest('[data-slot="input-wrapper"]')).toHaveAttribute(
+      'data-focus',
+      'true'
+    )
+  })
+
+  it('blurs the input and returns nothing', () => {
+    const { handle, input } = renderWithHandle()
+
+    act(() => {
+      handle.current?.focus()
+    })
+    expect(document.activeElement).toBe(input)
+
+    let returned: unknown = 'not called'
+    act(() => {
+      returned = handle.current?.blur()
+    })
+
+    expect(returned).toBeUndefined()
+    expect(document.activeElement).not.toBe(input)
+    expect(input.closest('[data-slot="input-wrapper"]')).toHaveAttribute(
+      'data-focus',
+      'false'
+    )
   })
 })

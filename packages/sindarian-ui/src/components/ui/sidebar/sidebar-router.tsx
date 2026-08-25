@@ -17,6 +17,8 @@
  */
 import * as React from 'react'
 
+import { loadNextRouter } from './next-router.cjs'
+
 /**
  * next/link's own options — every prop it accepts that is NOT a DOM anchor
  * attribute. Mirrored from next 16's `InternalLinkProps` so a Next.js call site
@@ -97,42 +99,14 @@ export function SidebarRouterProvider({
 }
 
 /**
- * Resolve Next's router once, at module load.
+ * Resolve Next's router once, at module load, so the returned object — and
+ * therefore `usePathname`'s identity — is stable across renders.
  *
- * `require` with a literal specifier, wrapped in try/catch, is the one form
- * that behaves correctly in BOTH worlds, which is why it is not a dynamic
- * `import()` or a computed specifier:
- *  - Next (webpack/turbopack) statically sees the literal and bundles
- *    next/link into the client chunk, so navigation stays client-side;
- *  - Vite/rolldown cannot resolve it when `next` is absent, and instead of
- *    failing the build it drops through to the catch — verified against a
- *    consumer build and its browser-side runtime.
- * A dynamic `import()` fails the Vite build outright; a computed specifier
- * hides it from Next too, which would silently downgrade the Console to full
- * page loads.
- *
- * Resolved once so the returned object — and therefore `usePathname`'s
- * identity — is stable across renders.
+ * The resolution itself lives in `next-router.cjs`: it needs a literal
+ * `require`, which exists in the CommonJS output but not in the ESM one. That
+ * file is CommonJS in both builds, so a Next.js consumer keeps client-side
+ * navigation whichever format its bundler picks. See the file for the details.
  */
-function loadNextRouter(): SidebarRouter | null {
-  try {
-    /* eslint-disable @typescript-eslint/no-require-imports */
-    const link: unknown = require('next/link')
-    const navigation: unknown = require('next/navigation')
-    /* eslint-enable @typescript-eslint/no-require-imports */
-
-    const Link = ((link as { default?: unknown })?.default ?? link) as
-      React.ComponentType<SidebarLinkProps> | undefined
-    const usePathname = (navigation as { usePathname?: unknown })
-      ?.usePathname as (() => string) | undefined
-
-    if (!Link || typeof usePathname !== 'function') return null
-    return { Link, usePathname }
-  } catch {
-    return null
-  }
-}
-
 const NEXT_ROUTER = loadNextRouter()
 
 let warned = false

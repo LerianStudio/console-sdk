@@ -55,11 +55,11 @@ export function Input({
     ref,
     () => ({
       ...inputRef.current,
-      focus: () => () => {
+      focus: () => {
         inputRef.current?.focus()
         setFocus(true)
       },
-      blur: () => () => {
+      blur: () => {
         inputRef.current?.blur()
         setFocus(false)
       }

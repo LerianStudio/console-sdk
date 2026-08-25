@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { Separator } from '../separator'
 import { Command as CommandPrimitive, useCommandState } from 'cmdk'
 import { useClickAway } from '@/hooks/use-click-away'
-import { isNil } from 'lodash'
+import isNil from 'lodash/isNil.js'
 
 export type AutocompleteContextType =
   React.HtmlHTMLAttributes<HTMLInputElement> & {
