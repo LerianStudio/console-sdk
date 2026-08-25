@@ -200,6 +200,74 @@ describe('NumberInput', () => {
     }
   )
 
+  it('never steps past max when snapping would round the bound up', () => {
+    // 0.2 + 0.1 drifts to 0.30000000000000004; clamping to max first and
+    // snapping second rounds the BOUND (0.25 -> one digit -> 0.3) and escapes
+    // the maximum.
+    const onValueChange = jest.fn()
+    render(
+      <NumberInput
+        value={0.2}
+        onValueChange={onValueChange}
+        step={0.1}
+        max={0.25}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(0.25)
+  })
+
+  it('never steps below min when snapping would round the bound down', () => {
+    // Mirror case: 0.3 - 0.1 drifts to 0.19999999999999998. Clamping first and
+    // snapping second turned a DECREASE into 0.3 — the value never moved.
+    const onValueChange = jest.fn()
+    render(
+      <NumberInput
+        value={0.3}
+        onValueChange={onValueChange}
+        step={0.1}
+        min={0.25}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(0.25)
+  })
+
+  it('emits a bound exactly as given, without re-snapping it', () => {
+    // A bound carrying more fraction digits than the step must survive intact.
+    const onValueChange = jest.fn()
+    render(
+      <NumberInput
+        value={0.2}
+        onValueChange={onValueChange}
+        step={0.1}
+        max={0.2500000001}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(0.2500000001)
+  })
+
+  it('still snaps drift when the result is inside the bounds', () => {
+    // Reordering must not cost the drift repair on the ordinary path.
+    const onValueChange = jest.fn()
+    render(
+      <NumberInput
+        value={0.1}
+        onValueChange={onValueChange}
+        step={0.2}
+        min={0}
+        max={10}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(0.3)
+  })
+
   it('disables the steppers at the bounds', () => {
     const { rerender } = render(
       <NumberInput value={0} onValueChange={jest.fn()} min={0} max={10} />

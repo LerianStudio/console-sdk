@@ -185,10 +185,16 @@ export function NumberInput({
 
   const stepBy = (direction: 1 | -1) => {
     const base = value ?? 0
-    const next = snapToStep(
-      clamp(base + direction * step, min, max),
-      base,
-      step
+    // Snap FIRST, then clamp — never the other way round. Snapping rounds to
+    // the operands' fraction digits, so snapping a CLAMPED value rounds the
+    // bound itself: stepping 0.2 by 0.1 under max 0.25 clamps to 0.25, which
+    // then snaps to one digit as 0.3 and escapes the maximum. Clamping last
+    // makes the bound the final word, and `clamp` returns it verbatim, so a
+    // bound is emitted exactly as the caller gave it.
+    const next = clamp(
+      snapToStep(base + direction * step, base, step),
+      min,
+      max
     )
     commit(next)
     // Seed the draft via the locale formatter so a stepper press doesn't flip
