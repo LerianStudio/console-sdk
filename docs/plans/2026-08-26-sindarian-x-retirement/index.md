@@ -47,7 +47,7 @@ The orchestrator session owns this column. Lanes never write to this file.
 
 | Lane | Owns (exclusive) |
 |------|-------------------|
-| primitives | `packages/sindarian-ui/src/components/ui/{accordion,alert-dialog,radio-group,scroll-area,toggle-group,hover-card,file-upload}/**` AND `packages/sindarian-ui/src/index.tsx` |
+| primitives | `packages/sindarian-ui/src/components/ui/{accordion,alert-dialog,radio-group,scroll-area,toggle-group,hover-card,file-upload}/**`, `packages/sindarian-ui/src/components/form/{textarea-field,radio-group-field,file-upload-field}/**`, AND `packages/sindarian-ui/src/index.tsx` |
 | enterprise | `packages/sindarian-ui/src/enterprise/**` |
 | theme-toasts-charts | `packages/sindarian-ui/src/theme/**`, `packages/sindarian-ui/src/toast/**`, `packages/sindarian-ui/src/charts/**` |
 | domain | `packages/sindarian-ui/src/domain/**` |
@@ -128,6 +128,8 @@ function warningToast(title: string, description?: string, opts?: Partial<ToastO
 
 A symbol name already exported by `@lerianstudio/sindarian-ui@1.2.0` is NEVER ported, renamed, aliased, or shadowed. The migrating apps adapt their call sites to sindarian-ui's existing API. Known collisions from the sweep (apps must adapt to the sindarian-ui version): `Button`, `Badge`, `Card*`, `Dialog*`, `Sheet*`, `Tabs*`, `Input`, `Label`, `Textarea`, `Select*`, `Checkbox`, `Command*`, `Popover*`, `Tooltip*`, `Separator`, `Skeleton`, `Calendar`, `Collapsible`, `Progress`, `Switch`, `Avatar`, `Alert`, `Breadcrumb*`, `Sidebar*`, `Form*`, `Table*`, `Stepper*`, `PageHeader`, `EntityBox*`, `Toaster`, `useToast`, `toast`, `InputField`, `SelectField`, `SwitchField`, `DatePickerField`, `DateRangeField`, and `ConfirmDialog` → sindarian-ui's `ConfirmationDialog`. Porting lanes MUST check every candidate export against the sindarian-ui barrel before creating it; the integration lane re-verifies no duplicate export names exist.
 
+**Family rule (added after the FC-6 census):** when a component FAMILY partially collides (some subpart names exist in sindarian-ui, others do not), the WHOLE family follows sindarian-ui and NONE of its subparts is ported — a barrel where `SidebarContent` resolves to one sidebar system and `SidebarMenu` to another is incoherent. Applies to: `Sidebar*` (incl. `SidebarMenu*`, `SidebarTrigger`, `SidebarInset`, `useSidebar`), `EntityBox*`, `Stepper*`, and the Radix `Toast*` primitives (`ToastClose/Description/Provider/Title/Viewport` — matcher adapts to sindarian-ui's toast system). Apps adapt these families wholesale. `AppShell` IS ported (novel name) but REBUILT internally on sindarian-ui's sidebar family — FC-3 byte-compatibility applies to its outer props only.
+
 ### FC-5 — Dependencies (written by foundation; frozen for wave 2)
 
 Foundation adds to `packages/sindarian-ui/package.json` `dependencies` — wave-2 lanes rely on exactly these and add nothing:
@@ -157,6 +159,23 @@ and never re-resolve or edit dependency versions.
 ```
 
 Each porting lane computes the census slice for its category as its first task and ports ONLY that union (plus internal dependencies). Symbols outside the union are not ported.
+
+### FC-6 census — EXECUTED 2026-08-26 (frozen port scope)
+
+Union across the four apps: 216 distinct symbols; 107 are FC-4 collisions (apps adapt); 3 utils already landed in foundation. The frozen per-lane port lists (`T` = type-only; letters = apps c/m/l/k):
+
+**primitives (25):** Accordion m, AccordionContent m, AccordionItem m, AccordionTrigger m, AlertDialog km, AlertDialogAction km, AlertDialogCancel k, AlertDialogContent km, AlertDialogDescription km, AlertDialogFooter km, AlertDialogHeader km, AlertDialogTitle km, HoverCard k, HoverCardContent k, HoverCardTrigger k, RadioGroup k, RadioGroupItem k, ScrollArea klm (+ScrollBar as internal dep), ToggleGroup k, ToggleGroupItem k, FileUpload k, FileUploadResult k T, validateFile l, FileUploadField c, RadioGroupField l, TextareaField l.
+
+**enterprise (19):** AlertBanner cklm, AlertBannerTone cm T, AppShell clm (rebuilt on sindarian-ui sidebar, family rule), CursorPager lm, DataTable klm, DataTableProps km T, DateRangePicker km, DateRangeValue km T, DetailPanel lm, EmptyState cklm, EmptyStateProps m T, NumberInput m, SearchInput l, StatCard cl, StatCardTone c T, StatusBadge cklm, DEFAULT_STATUS_VARIANTS m, VirtualizedTable m, useIsMobile k.
+NOT ported (family rule): every `Sidebar*`/`useSidebar`, `EntityBox*` subpart, `Stepper*` subpart, Radix `Toast*`. NOT ported (FC-4): ConfirmDialog (apps adapt to `ConfirmationDialog`).
+
+**theme-toasts-charts (13):** ThemeProvider clm, useTheme (internal dep, exported), getThemeScript lm, ModeToggle clm (+ModeToggleLabels/ModeToggleProps types), successToast ckl, errorToast cl, warningToast k, ChartConfig k T, ChartContainer k, ChartLegend k, ChartLegendContent k, ChartTooltip k, ChartTooltipContent k (+ChartStyle as internal dep).
+NOT ported (YAGNI, absent from census): BarChart, LineChart, Donut, Sparkline, chart presets. NOT ported (collision): bare `toast`.
+
+**domain (27):** Blotter lm, BlotterRow lm, DelinquencyAging l, FIGURE_CLASS m, Figure klm, FigureSize m T, FigureTone m T, GaugeThresholds m T, KeyId l, LedgerPanel lm, LedgerSheet clm, MoneyText klm, MoneyTextProps lm T, NO_VALUE lm, SectionLabel klm, StatusRail m, StatusRailChip m T, StatusRailItem m T, Dot m, LivePulse m, ThresholdGauge m, formatCount klm, formatPercent klm, gaugeBand m, humanizeDurationMs m, moneyDiff m, toPercentValue m.
+NOT ported (YAGNI, absent from census): public money-math (`toMinor`, `Amount`, …), Comprovante, MatchPair, and every other domain composite not listed — MoneyText's internal money handling ports as internal, unexported code.
+
+Census erratum: `Action`/`useAction` reported for cockpit were false positives (local `@/components/actions/` module, not lib imports). `Dot`/`LivePulse` are StatusRail family → domain.
 
 ## Integration Lane
 
@@ -190,7 +209,7 @@ Each porting lane computes the census slice for its category as its first task a
 
 ### Lane: enterprise
 
-**Goal:** The composed enterprise layer exists under `src/enterprise/`, restyled to sindarian-ui tokens, API per FC-3: `AlertBanner`, `StatCard`, `EmptyState`, `StatusBadge` (+`DEFAULT_STATUS_VARIANTS`), `DetailPanel`, `AppShell`, `DataTable`, `VirtualizedTable`, `CursorPager`, `FilterBar`/`SearchInput`/`FilterChip`, `NumberInput`, `MoneyInput`, `DateRangePicker`/`DateRangeValue`, `Combobox`/`MultiSelectCombobox` (names collide with nothing — verify per FC-4), plus census stragglers in this category.
+**Goal:** The composed enterprise layer exists under `src/enterprise/`, restyled to sindarian-ui tokens, API per FC-3 — exactly the 19 symbols in the FC-6 census enterprise list (AlertBanner, AppShell, CursorPager, DataTable, DateRangePicker, DetailPanel, EmptyState, NumberInput, SearchInput, StatCard, StatusBadge, VirtualizedTable, useIsMobile, plus their frozen types). FilterBar/FilterChip, MoneyInput, Combobox/MultiSelectCombobox are NOT in the census union and are not ported.
 **Scope:** `packages/sindarian-ui/src/enterprise/**` only. Internally consumes sindarian-ui primitives (senior) — e.g. DataTable renders sindarian-ui `Table`.
 **Depends on:** foundation
 **Done when:** census union for this category exported from `src/enterprise/index.ts`; tests + stories; no FC-4 collision.
@@ -198,7 +217,7 @@ Each porting lane computes the census slice for its category as its first task a
 
 ### Lane: theme-toasts-charts
 
-**Goal:** Theme, toast helpers, and charts exist per FC-3 signatures: `ThemeProvider`/`useTheme`/`getThemeScript`/`ModeToggle` (`src/theme/`); `successToast`/`errorToast`/`warningToast` layered over sindarian-ui's existing toast machinery (`src/toast/`; bare `toast` is an FC-4 collision and is NOT ported); `ChartContainer`/`ChartTooltip*`/`ChartLegend*`/`ChartStyle`/`ChartConfig`, `BarChart`, `LineChart`, `Donut`, `Sparkline`, chart presets (`src/charts/`), colored by the FC-2 `--chart-1..8` tokens.
+**Goal:** Theme, toast helpers, and the chart wrapper exist per FC-3 signatures: `ThemeProvider`/`useTheme`/`getThemeScript`/`ModeToggle` (`src/theme/`); `successToast`/`errorToast`/`warningToast` layered over sindarian-ui's existing toast machinery (`src/toast/`; bare `toast` is an FC-4 collision and is NOT ported); the shadcn Recharts wrapper family `ChartContainer`/`ChartTooltip`/`ChartTooltipContent`/`ChartLegend`/`ChartLegendContent`/`ChartConfig` (`src/charts/`), colored by the FC-2 tokens via `var(--color-chart-N)`. BarChart/LineChart/Donut/Sparkline/presets are NOT in the census union and are not ported.
 **Scope:** `packages/sindarian-ui/src/{theme,toast,charts}/**` only.
 **Depends on:** foundation
 **Done when:** FC-3 theme/toast signatures compile against app-like usage samples; charts render in both themes; toasts route through sindarian-ui's Toaster without touching its existing API.
@@ -206,7 +225,7 @@ Each porting lane computes the census slice for its category as its first task a
 
 ### Lane: domain
 
-**Goal:** The finance domain grammar the apps use exists under `src/domain/`: `money-math` (BigInt minor-unit arithmetic — port EXACTLY, correctness is non-negotiable, keep its test suite), `format` helpers (`NO_VALUE`, `formatPercent`, `formatCount`, …), `MoneyText`, `Figure`, `KeyId`, `SectionLabel` (+ voice class constants if census demands beyond foundation's), `Blotter`/`BlotterRow`, `LedgerSheet`/`LedgerPanel`, `StatusRail` family, and the census-listed composites (known so far: `DelinquencyAging` for lender, `ThresholdGauge`/`gaugeBand` and `moneyDiff` for matcher; cockpit slice computed at elaboration).
+**Goal:** The finance domain grammar the apps use exists under `src/domain/` — exactly the 27 symbols in the FC-6 census domain list: format helpers (`NO_VALUE`, `formatPercent`, `formatCount`, `humanizeDurationMs`, `toPercentValue`), `MoneyText`, `Figure` (+`FIGURE_CLASS`/tones), `KeyId`, `SectionLabel`, `Blotter`/`BlotterRow`, `LedgerSheet`/`LedgerPanel`, `StatusRail`/`Dot`/`LivePulse` (+types), `ThresholdGauge`/`gaugeBand`/`GaugeThresholds`, `DelinquencyAging`, `moneyDiff`. Money-handling internals port as unexported code with their tests (correctness is non-negotiable); the public money-math API is not in the census and is not exported.
 **Scope:** `packages/sindarian-ui/src/domain/**` only.
 **Depends on:** foundation
 **Done when:** census union for this category exported from `src/domain/index.ts`; money-math test suite ported and green; pt-BR strings in composites preserved as-is (apps that need other locales adapt at app level, as today).
