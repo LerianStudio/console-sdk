@@ -13,15 +13,34 @@
     "url": "https://github.com/LerianStudio/console-sdk.git",
     "directory": "packages/sindarian-ui"
   },
+  "type": "commonjs",
   "main": "dist/index.js",
+  "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/esm/index.d.ts",
+        "require": "./dist/index.d.ts"
+      },
+      "import": "./dist/esm/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
   "files": [
     "dist"
   ],
   "scripts": {
     "check-types": "tsc --noEmit && tsc -p tsconfig.storybook.json",
-    "build": "tsc && npm run copy:assets && npm run copy:styles && npm run build:paths",
-    "build:paths": "tsc-alias -p tsconfig.json",
+    "build": "npm run build:cjs && npm run build:esm && npm run copy:assets && npm run copy:styles",
+    "build:cjs": "tsc && tsc-alias -p tsconfig.json && copyfiles -u 1 \"src/**/*.cjs\" \"src/**/*.d.cts\" \"src/**/*.json\" dist",
+    "build:esm": "tsc -p tsconfig.esm.json && tsc-alias -p tsconfig.esm.json --resolve-full-paths && copyfiles -u 1 \"src/**/*.cjs\" \"src/**/*.d.cts\" \"src/**/*.json\" dist/esm && node -e \"require('fs').writeFileSync('dist/esm/package.json',JSON.stringify({type:'module'}))\" && node scripts/check-esm-output.mjs",
     "copy:assets": "copyfiles -f src/public/**/* dist/public",
     "copy:styles": "copyfiles -u 1 src/**/*.css dist",
     "lint": "eslint . --fix",
