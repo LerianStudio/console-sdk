@@ -148,6 +148,47 @@ describe('NumberInput', () => {
     expect(onValueChange).toHaveBeenLastCalledWith(0.3)
   })
 
+  it.each([1e-7, 1e-10, 1e-15])(
+    'steps by a very fine step (%p) without snapping it away',
+    (step) => {
+      const onValueChange = jest.fn()
+      const { rerender } = render(
+        <NumberInput value={0} onValueChange={onValueChange} step={step} />
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
+      expect(onValueChange).toHaveBeenLastCalledWith(step)
+
+      // And it keeps accumulating rather than collapsing back to zero.
+      rerender(
+        <NumberInput value={step} onValueChange={onValueChange} step={step} />
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
+      expect(onValueChange).toHaveBeenLastCalledWith(step * 2)
+    }
+  )
+
+  it('snaps drift out of a fine-step accumulation', () => {
+    const onValueChange = jest.fn()
+    // 2e-7 + 1e-7 drifts to 3.0000000000000004e-7 in raw float arithmetic.
+    render(
+      <NumberInput value={2e-7} onValueChange={onValueChange} step={1e-7} />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(3e-7)
+  })
+
+  it('preserves magnitude at the large end', () => {
+    const onValueChange = jest.fn()
+    render(
+      <NumberInput value={1e12} onValueChange={onValueChange} step={0.5} />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(1000000000000.5)
+  })
+
   it('disables the steppers at the bounds', () => {
     const { rerender } = render(
       <NumberInput value={0} onValueChange={jest.fn()} min={0} max={10} />

@@ -20,6 +20,12 @@ import { IconButton } from '@/components/ui/icon-button'
 import { Input, InputAdornment } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
+/**
+ * Marks "no emission of ours is awaiting its echo". A unique object, not a
+ * string: any string sentinel is a value a parent could legitimately pass.
+ */
+const NO_PENDING_ECHO = Symbol('no pending echo')
+
 export type SearchInputProps = {
   /** Controlled value. The visible field mirrors this between keystrokes. */
   value: string
@@ -53,15 +59,23 @@ export function SearchInput({
   // programmatic set), the draft follows.
   const [draft, setDraft] = React.useState(value)
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
-  // The last value this component emitted. The parent echoes it back one render
-  // later, by which time the user may already have typed further — syncing the
-  // draft to that echo would rewind the field and swallow those keystrokes.
-  const lastEmitted = React.useRef(value)
+  // The value this component last emitted and has not yet seen echoed back. The
+  // parent echoes it one render later, by which time the user may already have
+  // typed further — syncing the draft to that echo would rewind the field and
+  // swallow those keystrokes. Starts as the sentinel rather than `value`, so the
+  // initial value is never mistaken for an echo of something we sent.
+  const lastEmitted = React.useRef<string | typeof NO_PENDING_ECHO>(
+    NO_PENDING_ECHO
+  )
 
   React.useEffect(() => {
-    // Only follow a genuinely EXTERNAL change (reset, programmatic set); ignore
-    // the echo of our own emission.
-    if (value === lastEmitted.current) return
+    if (lastEmitted.current === value) {
+      // This is the echo of our own emission. Consume the token: a LATER
+      // external change back to this same text (foo -> bar -> foo) is a real
+      // change and must reach the draft.
+      lastEmitted.current = NO_PENDING_ECHO
+      return
+    }
     setDraft(value)
   }, [value])
 

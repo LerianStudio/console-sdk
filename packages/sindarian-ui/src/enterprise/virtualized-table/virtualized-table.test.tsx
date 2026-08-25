@@ -14,6 +14,18 @@ const data: Tick[] = Array.from({ length: 5000 }, (_, i) => ({
   label: `row-${i}`
 }))
 
+/** Two header depths: a spanning group over the two leaf columns. */
+const groupedColumns: ColumnDef<Tick, unknown>[] = [
+  {
+    id: 'identity',
+    header: 'Identity',
+    columns: [
+      { accessorKey: 'id', header: 'Id' },
+      { accessorKey: 'label', header: 'Label' }
+    ]
+  }
+]
+
 const VIEWPORT_HEIGHT = 480
 const ROW_HEIGHT = 40
 
@@ -71,6 +83,33 @@ describe('VirtualizedTable', () => {
       screen.getByRole('columnheader', { name: 'Id' })
     )
     expect(rows[1]).toHaveAttribute('aria-rowindex', '2')
+  })
+
+  it('counts and indexes every header row when columns are grouped', () => {
+    render(
+      <VirtualizedTable
+        columns={groupedColumns}
+        data={data}
+        rowHeight={ROW_HEIGHT}
+        maxHeight={VIEWPORT_HEIGHT}
+      />
+    )
+
+    // Two header depths: the spanning "Identity" row and the leaf row.
+    expect(screen.getByRole('table')).toHaveAttribute('aria-rowcount', '5002')
+
+    const rows = screen.getAllByRole('row')
+    expect(rows[0]).toHaveAttribute('aria-rowindex', '1')
+    expect(rows[0]).toContainElement(
+      screen.getByRole('columnheader', { name: 'Identity' })
+    )
+    expect(rows[1]).toHaveAttribute('aria-rowindex', '2')
+    expect(rows[1]).toContainElement(
+      screen.getByRole('columnheader', { name: 'Id' })
+    )
+    // Data rows start after BOTH header rows.
+    expect(rows[2]).toHaveAttribute('aria-rowindex', '3')
+    expect(rows[2]).toHaveTextContent('row-0')
   })
 
   it('keeps rows as direct accessibility children of their rowgroup', () => {

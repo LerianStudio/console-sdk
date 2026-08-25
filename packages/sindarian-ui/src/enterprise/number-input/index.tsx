@@ -49,33 +49,28 @@ function clamp(value: number, min?: number, max?: number): number {
   return next
 }
 
-/** Decimal places in a number's plain-decimal form (0 for exponent notation). */
-function decimalPlaces(value: number): number {
-  const text = String(value)
-  const dot = text.indexOf('.')
-  if (dot === -1 || text.includes('e')) return 0
-  return text.length - dot - 1
-}
+/**
+ * Significant digits kept when snapping. float64 carries 15-17 significant
+ * decimal digits; addition drift always lands past the 15th, so re-rounding
+ * there erases the drift and nothing else.
+ */
+const SIGNIFICANT_DIGITS = 15
 
 /**
- * Snap a stepped result to the decimals its inputs actually carry, so binary
- * float drift never escapes to the parent: stepping 0.1 by 0.2 must commit 0.3,
- * not 0.30000000000000004. Takes the widest of `precision`, the step's decimals
- * and the base's, so snapping can only remove drift, never real digits. Capped
- * at 12 places — past that the drift IS the value.
+ * Snap a stepped result so binary float drift never escapes to the parent:
+ * stepping 0.1 by 0.2 must commit 0.3, not 0.30000000000000004.
+ *
+ * Rounds by SIGNIFICANT digits rather than decimal places, which makes the
+ * operation scale-free — there is no decimal cap to truncate a legitimate step,
+ * so 1e-7 and 1e-15 step exactly as well as 0.5 does. Deriving a decimal-place
+ * count instead would need a cap, and any cap high enough to preserve a very
+ * fine step (say 17) overflows the `value * 10 ** decimals` intermediate past
+ * Number.MAX_SAFE_INTEGER — at which point the rounding silently returns the
+ * drift it was meant to remove.
  */
-function snapToStep(
-  value: number,
-  precision: number | undefined,
-  step: number,
-  base: number
-): number {
-  const decimals = Math.min(
-    12,
-    Math.max(precision ?? 0, decimalPlaces(step), decimalPlaces(base))
-  )
-  const factor = 10 ** decimals
-  return Math.round(value * factor) / factor
+function snapToStep(value: number): number {
+  if (!Number.isFinite(value)) return value
+  return Number(value.toPrecision(SIGNIFICANT_DIGITS))
 }
 
 /** The locale's decimal and group separators, derived from a known sample. */
@@ -164,12 +159,7 @@ export function NumberInput({
 
   const stepBy = (direction: 1 | -1) => {
     const base = value ?? 0
-    const next = snapToStep(
-      clamp(base + direction * step, min, max),
-      precision,
-      step,
-      base
-    )
+    const next = snapToStep(clamp(base + direction * step, min, max))
     commit(next)
     // Seed the draft via the locale formatter so a stepper press doesn't flip
     // the user's separators (e.g. ',' → '.').

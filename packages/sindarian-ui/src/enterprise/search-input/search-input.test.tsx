@@ -106,6 +106,47 @@ describe('SearchInput', () => {
     expect(onValueChange).toHaveBeenLastCalledWith('pix')
   })
 
+  it('restores the draft when the parent cycles back to the initial value', () => {
+    // foo -> bar -> foo. Seeding the echo token with the INITIAL value would
+    // make the return to "foo" look like an echo and strand the draft on "bar".
+    const { rerender } = render(
+      <SearchInput value="foo" onValueChange={jest.fn()} />
+    )
+    expect(screen.getByRole('searchbox')).toHaveValue('foo')
+
+    rerender(<SearchInput value="bar" onValueChange={jest.fn()} />)
+    expect(screen.getByRole('searchbox')).toHaveValue('bar')
+
+    rerender(<SearchInput value="foo" onValueChange={jest.fn()} />)
+    expect(screen.getByRole('searchbox')).toHaveValue('foo')
+  })
+
+  it('consumes the echo token so a later external change to the same text lands', () => {
+    const onValueChange = jest.fn()
+    const { rerender } = render(
+      <SearchInput value="" onValueChange={onValueChange} />
+    )
+
+    const input = screen.getByRole('searchbox')
+    fireEvent.change(input, { target: { value: 'pix' } })
+    act(() => {
+      jest.advanceTimersByTime(250)
+    })
+    expect(onValueChange).toHaveBeenLastCalledWith('pix')
+
+    // Parent echoes our emission — draft must not be disturbed.
+    rerender(<SearchInput value="pix" onValueChange={onValueChange} />)
+    expect(input).toHaveValue('pix')
+
+    // Parent resets, then externally sets the SAME text again. That second
+    // "pix" is a genuine external change, not a stale echo.
+    rerender(<SearchInput value="" onValueChange={onValueChange} />)
+    expect(input).toHaveValue('')
+
+    rerender(<SearchInput value="pix" onValueChange={onValueChange} />)
+    expect(input).toHaveValue('pix')
+  })
+
   it('follows an out-of-band value change from the parent', () => {
     const { rerender } = render(
       <SearchInput value="pix" onValueChange={jest.fn()} />

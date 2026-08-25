@@ -10,10 +10,12 @@ type Tick = {
 
 // Derived, not random: module-scope Math.random() reshuffles the fixture on
 // every module evaluation, so the story can never be a stable visual baseline.
+// The spread is generated in CENTS and divided once, so the amounts actually
+// carry decimals (`* 100 / 100` would cancel and yield whole units).
 const data: Tick[] = Array.from({ length: 20000 }, (_, i) => ({
   seq: i + 1,
   endToEndId: `E1234567820260826${String(i).padStart(11, '0')}`,
-  amount: Math.round((((i * 7919) % 100000) + 1) * 100) / 100
+  amount: (((i * 7919) % 100000) + 1) / 100
 }))
 
 const columns: ColumnDef<Tick, unknown>[] = [

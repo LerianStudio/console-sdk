@@ -92,6 +92,10 @@ export function VirtualizedTable<TData>({
   })
 
   const rows = table.getRowModel().rows
+  // Grouped columns (a ColumnDef with nested `columns`) render one header row
+  // per depth level, so the header is not always a single row.
+  const headerGroups = table.getHeaderGroups()
+  const headerRowCount = headerGroups.length
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -144,22 +148,23 @@ export function VirtualizedTable<TData>({
         className
       )}
     >
-      {/* aria-rowcount counts the header row too — it is a row of this table,
-          so a reader hearing "row 2 of 5001" is being told the truth. */}
+      {/* aria-rowcount counts the header rows too — they are rows of this
+          table, so a reader hearing "row 3 of 5002" is being told the truth. */}
       <div
         role="table"
-        aria-rowcount={rows.length + 1}
+        aria-rowcount={rows.length + headerRowCount}
         aria-colcount={columnCount}
       >
         {/* Header: a sibling above the scroll region, so it stays put by layout
             (it sits above an overflow box) — not via position: sticky. z-10 and
             bg-card keep it visually layered over the scrolling rows. */}
         <div role="rowgroup" className="bg-card z-10">
-          {table.getHeaderGroups().map((headerGroup) => (
+          {headerGroups.map((headerGroup, groupIndex) => (
             <div
               key={headerGroup.id}
               role="row"
-              aria-rowindex={1}
+              // Positional: with grouped columns the header spans several rows.
+              aria-rowindex={groupIndex + 1}
               className="border-border flex border-b"
             >
               {headerGroup.headers.map((header, i) => (
@@ -211,8 +216,9 @@ export function VirtualizedTable<TData>({
                 <div
                   key={row.id}
                   role="row"
-                  // +2, not +1: the header occupies aria-rowindex 1.
-                  aria-rowindex={virtualItem.index + 2}
+                  // Offset past the header rows, which occupy indices
+                  // 1..headerRowCount.
+                  aria-rowindex={virtualItem.index + headerRowCount + 1}
                   data-index={virtualItem.index}
                   className="border-border absolute left-0 flex w-full items-center border-b text-sm"
                   style={{
