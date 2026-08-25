@@ -39,8 +39,15 @@ const baseConfig: Config = {
   // patterns there (see sindarian-server).
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
 
-  // A list of paths to modules that run some code to configure or set up the testing framework before each test
-  setupFilesAfterEnv: ['@testing-library/jest-dom']
+  // A list of paths to modules that run some code to configure or set up the
+  // testing framework before each test. `jest.setup.ts` lives next to this file
+  // and is addressed through <rootDir> so every package resolves it from its own
+  // directory. Overriding this list in a package config replaces it — re-include
+  // both entries there.
+  setupFilesAfterEnv: [
+    '@testing-library/jest-dom',
+    '<rootDir>/../utils/jest.setup.ts'
+  ]
 }
 
 export default baseConfig

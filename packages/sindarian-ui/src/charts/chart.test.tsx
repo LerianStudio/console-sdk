@@ -20,6 +20,34 @@ const config: ChartConfig = {
 }
 
 /**
+ * Recharts' ResponsiveContainer measures its box with getBoundingClientRect the
+ * moment a ResizeObserver exists, and jsdom reports every box as 0x0 — which
+ * collapses the chart to nothing and takes its children with it. Give the
+ * container a real size so these assertions are about the wrapper, not about
+ * jsdom's missing layout engine. (ResizeObserver itself comes from the shared
+ * jest setup in packages/utils; in a browser it is always present, so this is
+ * the faithful path, not a workaround.)
+ */
+const BOX = { width: 320, height: 200 }
+
+beforeAll(() => {
+  jest.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+    ...BOX,
+    x: 0,
+    y: 0,
+    top: 0,
+    left: 0,
+    right: BOX.width,
+    bottom: BOX.height,
+    toJSON: () => BOX
+  })
+})
+
+afterAll(() => {
+  jest.restoreAllMocks()
+})
+
+/**
  * ChartContainer feeds its child through Recharts' ResponsiveContainer, which
  * clones it with measured dimensions. A plain element is enough to put the
  * subject inside the chart context without simulating layout or hover.

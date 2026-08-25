@@ -15,7 +15,7 @@
  * collapses to a single column. When a panel self-hides, pass the reduced
  * `cols` so the remaining panels stretch (e.g. 3 → 2 when a panel returns null).
  */
-import type { ReactNode } from 'react'
+import type { ComponentPropsWithoutRef, ReactNode } from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -60,20 +60,28 @@ export type LedgerPanelProps = {
   className?: string
   /** Render element. Defaults to `section` (a labeled console panel). */
   as?: 'section' | 'div'
-}
+} & Omit<ComponentPropsWithoutRef<'section'>, 'children' | 'className'>
 
 /**
  * One cell of a ledger sheet. Flush — no own border or shadow — with `bg-card`,
  * internal `p-5` padding and `flex h-full flex-col gap-4` so panels stretch to
  * equal height. Start each panel with a `<SectionLabel>` as its heading.
+ *
+ * Remaining props land on the rendered element, so a composed panel can carry
+ * its own `data-*` hooks (StatCard's `data-tone`, for one) without wrapping the
+ * cell in an extra div that would break the hairline seams.
  */
 export function LedgerPanel({
   children,
   className,
-  as: Tag = 'section'
+  as: Tag = 'section',
+  ...rest
 }: LedgerPanelProps) {
   return (
-    <Tag className={cn('bg-card flex h-full flex-col gap-4 p-5', className)}>
+    <Tag
+      className={cn('bg-card flex h-full flex-col gap-4 p-5', className)}
+      {...rest}
+    >
       {children}
     </Tag>
   )

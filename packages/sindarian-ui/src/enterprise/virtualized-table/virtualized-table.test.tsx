@@ -40,17 +40,12 @@ const VIEWPORT_HEIGHT = 480
 const ROW_HEIGHT = 40
 
 /**
- * jsdom has no layout engine and no ResizeObserver, so a virtualizer measures a
- * 0px viewport and renders zero rows. Give the scroll container a real height so
- * the windowing assertions below are about the component, not about jsdom.
+ * jsdom has no layout engine, so a virtualizer measures a 0px viewport and
+ * renders zero rows. Give the scroll container a real height so the windowing
+ * assertions below are about the component, not about jsdom. (ResizeObserver
+ * itself comes from the shared jest setup in packages/utils.)
  */
 function stubLayout() {
-  global.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver
-
   // The virtualizer sizes its viewport from offsetWidth/offsetHeight, both of
   // which are hard-coded to 0 in jsdom.
   Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {

@@ -1,25 +1,27 @@
 /**
  * StatCard — a single headline-figure cell of the console.
  *
- * A flush `bg-card` panel holding a recessive uppercase label, the dominant
- * mono figure, an optional delta line, an optional inline trend sparkline, and
- * optional secondary key/value rows.
+ * A `LedgerPanel` holding a recessive `SectionLabel`, the dominant mono
+ * `Figure`, an optional delta line, an optional inline trend, and optional
+ * secondary `BlotterRow` key/value rows. Drop StatCards into a `LedgerSheet` so
+ * they read as connected hairline-seamed panels rather than floating cards.
  *
  *   <StatCard label="Match rate" value="98.4%" delta="+0.6 pts" tone="success" />
  *   <StatCard label="In flight" value="R$ 129,004" trend={series} trendKey="v" />
  *
  * The `tone` escalates the value + delta color to a semantic theme token.
  *
- * NOTE (sindarian-x port): the legacy StatCard composed LedgerPanel /
- * SectionLabel / Figure / Blotter / Sparkline. Those live in sindarian-ui's
- * `domain` and `charts` surfaces, which are owned by sibling lanes; the panel,
- * label, figure and key/value grammars are therefore inlined here (they are the
- * same class strings the domain lane ports) and the trend renders as a
- * dependency-free inline SVG rather than the recharts-backed Sparkline.
+ * NOTE (sindarian-x port): the legacy StatCard drew its trend with the
+ * recharts-backed Sparkline. That component is outside the port census, so the
+ * trend here is a dependency-free inline SVG; everything else composes the same
+ * ledger grammar the legacy card did.
  */
 import type { ReactNode } from 'react'
 
-import { LABEL_VOICE_CLASS } from '@/lib/typography'
+import { Blotter, BlotterRow } from '@/domain/blotter'
+import { Figure } from '@/domain/figure'
+import { LedgerPanel } from '@/domain/ledger-sheet'
+import { SectionLabel } from '@/domain/section-label'
 import { cn } from '@/lib/utils'
 
 export type StatCardTone = 'default' | 'success' | 'warning' | 'destructive'
@@ -41,10 +43,6 @@ const TONE_TREND: Record<StatCardTone, string> = {
   warning: 'var(--color-system-alert)',
   destructive: 'var(--color-destructive)'
 }
-
-/** The canonical hero figure class — mirrors the ledger `Figure size="hero"`. */
-const HERO_FIGURE_CLASS =
-  'font-mono text-4xl font-semibold tracking-tight tabular-nums lg:text-5xl'
 
 export type StatCardRow = {
   label: ReactNode
@@ -153,16 +151,13 @@ export function StatCard({
   const hasRows = rows !== undefined && rows.length > 0
 
   return (
-    <section
-      data-tone={tone}
-      className={cn('bg-card flex h-full flex-col gap-4 p-5', className)}
-    >
-      <h2 className={LABEL_VOICE_CLASS}>{label}</h2>
+    <LedgerPanel data-tone={tone} className={className}>
+      <SectionLabel>{label}</SectionLabel>
 
       <div className="space-y-1">
-        <span className={cn(HERO_FIGURE_CLASS, 'block', TONE_VALUE[tone])}>
+        <Figure size="hero" className={cn('block', TONE_VALUE[tone])}>
           {value}
-        </span>
+        </Figure>
         {delta !== undefined ? (
           <p className={cn('font-mono text-xs tabular-nums', TONE_VALUE[tone])}>
             {delta}
@@ -175,20 +170,12 @@ export function StatCard({
       ) : null}
 
       {hasRows ? (
-        <dl className="divide-border mt-auto divide-y">
+        <Blotter className="mt-auto">
           {rows.map((row, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between gap-3 px-2 py-2"
-            >
-              <dt className={LABEL_VOICE_CLASS}>{row.label}</dt>
-              <dd className="font-mono text-sm font-medium tabular-nums">
-                {row.value}
-              </dd>
-            </div>
+            <BlotterRow key={i} label={row.label} value={row.value} />
           ))}
-        </dl>
+        </Blotter>
       ) : null}
-    </section>
+    </LedgerPanel>
   )
 }

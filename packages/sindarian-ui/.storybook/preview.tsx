@@ -1,4 +1,4 @@
-import type { Preview } from '@storybook/nextjs'
+import type { Decorator, Preview } from '@storybook/nextjs'
 import { useLayoutEffect } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -26,7 +26,7 @@ const preview: Preview = {
   }
 }
 
-export const decorators = [
+export const decorators: Decorator[] = [
   (Story, context) => {
     const background = context.globals?.backgrounds?.value
     const isDark = background === 'dark' || background === '#09090b'

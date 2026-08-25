@@ -1,11 +1,11 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import { buttonVariants, iconVariants } from '../../ui/button'
 import { cn } from '@/lib/utils'
+import { useSidebarRouter, type SidebarLinkProps } from './sidebar-router'
 
-export type SidebarItemButtonProps = React.ComponentProps<typeof Link> & {
+export type SidebarItemButtonProps = SidebarLinkProps & {
   className?: string
   title: string
   icon?: React.ReactNode
@@ -24,6 +24,8 @@ export function SidebarItemButton({
   disabled = false,
   ...props
 }: SidebarItemButtonProps) {
+  const { Link } = useSidebarRouter()
+
   const sharedClassName = cn(
     buttonVariants({
       variant: active ? 'tertiary' : 'outline',

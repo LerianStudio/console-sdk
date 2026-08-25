@@ -29,7 +29,10 @@
     "node_modules",
     "test",
     "**/*.spec.ts",
+    "**/*.spec.tsx",
     "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.stories.ts",
     "**/*.stories.tsx"
   ]
 }

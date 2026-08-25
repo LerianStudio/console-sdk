@@ -1,12 +1,18 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    // The build config pins rootDir to src/ so dist mirrors the source tree.
+    // This config also type-checks .storybook/, which sits outside src/ — with
+    // the inherited rootDir every file there is a TS6059 error, and tsc bails
+    // before checking a single story. Nothing is emitted here, so rootDir has
+    // no job to do: widen it to the package root.
+    "rootDir": ".",
+    "noEmit": true,
+    // A separate program needs its own build info, or the two configs
+    // invalidate each other's incremental cache on every alternating run.
+    "tsBuildInfoFile": ".cache/tsconfig.storybook.tsbuildinfo"
   },
-  "include": [
-    "src/**/*",
-    "src/**/*.stories.tsx",
-    ".storybook/**/*"
-  ],
+  "include": ["src/**/*", "src/**/*.stories.tsx", ".storybook/**/*"],
   "exclude": ["node_modules"]
 }

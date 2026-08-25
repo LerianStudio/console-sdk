@@ -1,39 +1,9 @@
 import '@testing-library/jest-dom'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 import { Form } from '@/components/ui/form'
 import { RadioGroupField } from '.'
-
-/**
- * A React portal node, built by hand: `@types/react-dom` is not installed in
- * this workspace, so `createPortal` cannot be imported type-safely here.
- *
- * Shape-identical to the real thing, and verified as such: `Symbol.for` returns
- * the very symbol `createPortal` stamps, `isValidElement` is false for it, and
- * `Children.toArray` hands the same object straight back — which is precisely
- * what makes the recursion guard necessary.
- */
-function portalLabel(
-  text: string
-): Exclude<ReactNode, null | undefined | boolean> {
-  return {
-    $$typeof: Symbol.for('react.portal'),
-    key: null,
-    children: text,
-    containerInfo: document.body,
-    implementation: null
-  } as unknown as Exclude<ReactNode, null | undefined | boolean>
-}
-
-// Radix measures the indicator with ResizeObserver, which jsdom does not ship.
-beforeAll(() => {
-  global.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver
-})
 
 function Harness({
   onSubmit,
@@ -192,7 +162,7 @@ describe('RadioGroupField', () => {
   it.each([
     ['without aria-label', undefined],
     ['with aria-label', 'Settlement rail']
-  ])('renders a portal label %s without recursing forever', (_kind, aria) => {
+  ])('treats a portal label as absent (%s)', (_kind, aria) => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
     function WithPortal() {
       const form = useForm<{ rail: string }>({ defaultValues: { rail: '' } })
@@ -201,7 +171,7 @@ describe('RadioGroupField', () => {
           <RadioGroupField
             control={form.control}
             name="rail"
-            label={portalLabel('Rail')}
+            label={createPortal('Rail', document.body)}
             aria-label={aria}
             options={[{ value: 'pix', label: 'Pix' }]}
           />
@@ -209,15 +179,18 @@ describe('RadioGroupField', () => {
       )
     }
 
-    // A portal is not an element and Children.toArray cannot decompose it, so
-    // without a base case this overflows the stack instead of rendering.
+    // Must still not crash: a portal is not an element and Children.toArray
+    // hands it straight back, so a missing base case overflows the stack.
     expect(() => render(<WithPortal />)).not.toThrow()
     const warned = spy.mock.calls.some((call) =>
       String(call[0]).includes('no accessible name')
     )
     spy.mockRestore()
-    // A portal renders something, so it counts as a label — no warning.
-    expect(warned).toBe(false)
+    // The portal renders its text into document.body — OUTSIDE the label — so
+    // the label element is empty and names nothing. It looks labelled on screen
+    // and is silent to a screen reader, which is the whole point of the guard.
+    // Only the aria-label rescues it.
+    expect(warned).toBe(aria === undefined)
   })
 
   it('warns when an empty fragment label leaves the group nameless', () => {
