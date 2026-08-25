@@ -198,7 +198,7 @@ describe('FileUploadField', () => {
   it.each([
     ['without aria-label', undefined],
     ['with aria-label', 'A1 certificate']
-  ])('renders a portal label %s without recursing forever', (_kind, aria) => {
+  ])('treats a portal label as absent (%s)', (_kind, aria) => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
     function WithPortal() {
       const form = useForm<{ cert: string }>({ defaultValues: { cert: '' } })
@@ -214,15 +214,18 @@ describe('FileUploadField', () => {
       )
     }
 
-    // A portal is not an element and Children.toArray cannot decompose it, so
-    // without a base case this overflows the stack instead of rendering.
+    // Must still not crash: a portal is not an element and Children.toArray
+    // hands it straight back, so a missing base case overflows the stack.
     expect(() => render(<WithPortal />)).not.toThrow()
     const warned = spy.mock.calls.some((call) =>
       String(call[0]).includes('no accessible name')
     )
     spy.mockRestore()
-    // A portal renders something, so it counts as a label — no warning.
-    expect(warned).toBe(false)
+    // The portal renders its text into document.body — OUTSIDE the label — so
+    // the label element is empty and names nothing. It looks labelled on screen
+    // and is silent to a screen reader, which is the whole point of the guard.
+    // Only the aria-label rescues it.
+    expect(warned).toBe(aria === undefined)
   })
 
   it('warns when a blank-string collection label leaves the input nameless', () => {

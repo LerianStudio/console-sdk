@@ -2,7 +2,7 @@ import { Meta, StoryObj } from '@storybook/nextjs'
 import { BasicCard, BasicCardAction, BasicCardContent, BasicCardTitle } from '.'
 import { Button } from '../../ui/button'
 
-const meta: Meta = {
+const meta = {
   title: 'Components/Cards/BasicCard',
   component: BasicCard,
   parameters: {
@@ -11,11 +11,11 @@ const meta: Meta = {
     }
   },
   argTypes: {}
-}
+} satisfies Meta<typeof BasicCard>
 
 export default meta
 
-export const Primary: StoryObj = {
+export const Primary: StoryObj<typeof meta> = {
   render: (args) => (
     <div className="grid grid-cols-3 gap-4">
       <BasicCard {...args}>

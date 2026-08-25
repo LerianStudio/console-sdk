@@ -7,7 +7,7 @@ import {
 } from '.'
 import { Users } from 'lucide-react'
 
-const meta: Meta = {
+const meta = {
   title: 'Components/Cards/DashboardCard',
   component: DashboardCard,
   parameters: {
@@ -16,11 +16,11 @@ const meta: Meta = {
     }
   },
   argTypes: {}
-}
+} satisfies Meta<typeof DashboardCard>
 
 export default meta
 
-export const Primary: StoryObj = {
+export const Primary: StoryObj<typeof meta> = {
   render: (args) => (
     <div className="grid grid-cols-3 gap-4">
       <DashboardCard {...args}>
