@@ -1,0 +1,49 @@
+import {
+  Meta,
+  Controls,
+  Primary,
+  Canvas
+} from '@storybook/addon-docs/blocks'
+import * as Story from './textarea-field.stories'
+
+<Meta of={Story} />
+
+# TextareaField
+
+A multi-line text field wired to react-hook-form, for free-form input.
+
+`required` drives the label asterisk and `aria-required`, not the native
+`required` attribute — the resolver owns validation, same as `InputField`. For
+a single-line control use `InputField`; for one that grows with its content,
+`InputField` with `textArea`.
+
+### Basic
+
+<Canvas of={Story.Primary} />
+
+### Required
+
+<Canvas of={Story.Required} />
+
+### With Description
+
+<Canvas of={Story.WithDescription} />
+
+### With Tooltip
+
+<Canvas of={Story.WithTooltip} />
+
+### Rows
+
+<Canvas of={Story.Rows} />
+
+### Read Only
+
+<Canvas of={Story.ReadOnly} />
+
+### Disabled
+
+<Canvas of={Story.Disabled} />
+
+<Primary />
+<Controls />

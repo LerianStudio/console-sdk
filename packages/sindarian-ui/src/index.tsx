@@ -65,6 +65,18 @@ export * from './toast'
 export * from './charts'
 export * from './domain'
 
+// Primitives absorbed from sindarian-x (see docs/plans/2026-08-26-sindarian-x-retirement/)
+export * from './components/ui/accordion'
+export * from './components/ui/alert-dialog'
+export * from './components/ui/file-upload'
+export * from './components/ui/hover-card'
+export * from './components/ui/radio-group'
+export * from './components/ui/scroll-area'
+export * from './components/ui/toggle-group'
+export * from './components/form/file-upload-field'
+export * from './components/form/radio-group-field'
+export * from './components/form/textarea-field'
+
 // Utilities
 export { cn } from './lib/utils'
 export * from './lib/typography'

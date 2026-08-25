@@ -1,0 +1,28 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './accordion.stories'
+
+<Meta of={Story} />
+
+# Accordion
+
+A vertically stacked set of interactive headings that each reveal a section of content. \
+[Docs](https://www.radix-ui.com/primitives/docs/components/accordion)
+
+### Primary
+
+One panel open at a time, collapsible.
+
+<Canvas of={Story.Primary} />
+
+### Multiple
+
+Several panels open at once.
+
+<Canvas of={Story.Multiple} />
+
+### Disabled Item
+
+<Canvas of={Story.Disabled} />
+
+<Primary />
+<Controls />

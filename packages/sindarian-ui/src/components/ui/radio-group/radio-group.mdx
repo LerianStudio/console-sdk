@@ -1,0 +1,28 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './radio-group.stories'
+
+<Meta of={Story} />
+
+# RadioGroup
+
+A set of checkable buttons where no more than one can be checked at a time. \
+[Docs](https://www.radix-ui.com/primitives/docs/components/radio-group)
+
+Each `RadioGroupItem` needs a `Label` pointing at its `id`; the item renders only
+the control. Inside a form, prefer `RadioGroupField`, which wires the label,
+description, and validation message for you.
+
+### Primary
+
+<Canvas of={Story.Primary} />
+
+### Horizontal
+
+<Canvas of={Story.Horizontal} />
+
+### Disabled
+
+<Canvas of={Story.Disabled} />
+
+<Primary />
+<Controls />
