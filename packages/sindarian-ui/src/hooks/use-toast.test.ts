@@ -8,12 +8,14 @@ jest.mock('sonner', () => {
 
   const mockToast: jest.Mock & {
     success: jest.Mock
+    warning: jest.Mock
     error: jest.Mock
     dismiss: jest.Mock
   } = Object.assign(
     jest.fn(() => ++idCounter),
     {
       success: jest.fn(() => ++idCounter),
+      warning: jest.fn(() => ++idCounter),
       error: jest.fn(() => ++idCounter),
       dismiss
     }
@@ -61,6 +63,20 @@ describe('useToast', () => {
       description: 'Operation completed',
       duration: 10000
     })
+  })
+
+  it('should call sonner toast.warning for warning variant', () => {
+    toast({
+      title: 'Heads up',
+      description: 'Partially applied',
+      variant: 'warning'
+    })
+
+    expect(sonnerToast.warning).toHaveBeenCalledWith('Heads up', {
+      description: 'Partially applied',
+      duration: 10000
+    })
+    expect(sonnerToast.error).not.toHaveBeenCalled()
   })
 
   it('should call sonner toast.error with default duration for destructive variant', () => {

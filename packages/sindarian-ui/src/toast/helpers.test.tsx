@@ -11,7 +11,7 @@ import { errorToast, successToast, warningToast } from './helpers'
  * routing through `@/hooks/use-toast` would render nothing here.
  *
  * `data-type` is Sonner's own severity attribute, so asserting it pins the
- * variant mapping (success → success, error/warning → error).
+ * variant mapping (success → success, error → error, warning → warning).
  */
 // Sonner's Toaster reads prefers-reduced-motion on mount; jsdom has no matchMedia.
 beforeEach(() => {
@@ -33,7 +33,7 @@ describe('toast helpers', () => {
   it.each([
     ['successToast', successToast, 'success'],
     ['errorToast', errorToast, 'error'],
-    ['warningToast', warningToast, 'error']
+    ['warningToast', warningToast, 'warning']
   ] as const)(
     '%s renders its title and description through the Toaster',
     async (name, helper, expectedType) => {

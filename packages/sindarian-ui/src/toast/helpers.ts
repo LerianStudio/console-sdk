@@ -9,14 +9,11 @@
  * Call `toast({ title, description, variant })` directly when a helper does not
  * fit.
  *
- * Variant mapping — sindarian-ui's toast has three variants
- * ('default' | 'success' | 'destructive'):
+ * Variant mapping — one helper per severity, onto sindarian-ui's own variants:
  *
- *   successToast → 'success'
- *   errorToast   → 'destructive'
- *   warningToast → 'destructive'  (no 'warning' variant exists; 'destructive'
- *                                  keeps the "this did not succeed" signal that
- *                                  'default' would drop)
+ *   successToast → 'success'      (green)
+ *   errorToast   → 'destructive'  (red)
+ *   warningToast → 'warning'      (amber)
  */
 import { toast } from '@/hooks/use-toast'
 import type { ToastActionElement } from '@/components/ui/toast'
@@ -34,7 +31,7 @@ export interface ToastOptions {
 }
 
 function raise(
-  variant: 'success' | 'destructive',
+  variant: 'success' | 'warning' | 'destructive',
   title: string,
   description?: string,
   opts?: Partial<ToastOptions>
@@ -63,5 +60,5 @@ export function warningToast(
   description?: string,
   opts?: Partial<ToastOptions>
 ): void {
-  raise('destructive', title, description, opts)
+  raise('warning', title, description, opts)
 }
