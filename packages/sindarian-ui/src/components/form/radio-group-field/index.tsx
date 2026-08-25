@@ -32,6 +32,26 @@ type RadioGroupFieldOwnProps<T extends FieldValues = FieldValues> = {
 }
 
 /**
+ * A label that actually renders an element. `null`, `undefined` and booleans
+ * are valid ReactNode but produce nothing, so a control typed on bare ReactNode
+ * can satisfy the union below and still end up nameless.
+ *
+ * The empty string cannot be excluded here — `Exclude<string, ''>` is still
+ * `string` — so `label=""` is caught at runtime by `hasRenderableLabel` instead.
+ */
+type RenderableLabel = Exclude<ReactNode, null | undefined | boolean>
+
+/** Does this label produce a real element a screen reader can read? */
+function hasRenderableLabel(label: ReactNode): boolean {
+  return (
+    label !== null &&
+    label !== undefined &&
+    typeof label !== 'boolean' &&
+    label !== ''
+  )
+}
+
+/**
  * A control with no accessible name is invisible to screen readers, so the type
  * makes one mandatory: either a visible `label`, or an `aria-label` when the
  * design calls for a bare radio group.
@@ -39,7 +59,7 @@ type RadioGroupFieldOwnProps<T extends FieldValues = FieldValues> = {
 export type RadioGroupFieldProps<T extends FieldValues = FieldValues> =
   RadioGroupFieldOwnProps<T> &
     (
-      | { label: ReactNode; 'aria-label'?: string }
+      | { label: RenderableLabel; 'aria-label'?: string }
       | { label?: never; 'aria-label': string }
     )
 
@@ -52,8 +72,21 @@ export const RadioGroupField = <T extends FieldValues = FieldValues>({
   tooltip,
   required,
   disabled,
-  'aria-label': ariaLabel
+  'aria-label': ariaLabelProp
 }: RadioGroupFieldProps<T>) => {
+  const showLabel = hasRenderableLabel(label)
+  // An empty aria-label is worse than none: it names the control "". Drop it so
+  // the attribute never reaches the DOM.
+  const ariaLabel = ariaLabelProp === '' ? undefined : ariaLabelProp
+
+  // The type cannot rule out `label=""`, so this is the only signal a developer
+  // gets that the control shipped nameless.
+  if (process.env.NODE_ENV !== 'production' && !showLabel && !ariaLabel) {
+    console.error(
+      `RadioGroupField "${name}" has no accessible name: pass a non-empty label or aria-label.`
+    )
+  }
+
   // `setFocus(name)` / focus-on-error needs a ref to something focusable. The
   // RadioGroup root is a plain div, so the ref goes on the first option a user
   // could actually reach — a disabled radio is not focusable.
@@ -65,7 +98,7 @@ export const RadioGroupField = <T extends FieldValues = FieldValues>({
       name={name}
       render={({ field }) => (
         <FormItem required={required}>
-          {label && (
+          {showLabel && (
             <FormLabel
               extra={tooltip ? <FormTooltip>{tooltip}</FormTooltip> : undefined}
             >

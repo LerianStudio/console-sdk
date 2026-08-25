@@ -96,6 +96,66 @@ describe('RadioGroupField', () => {
     ).toBeInTheDocument()
   })
 
+  describe.each([[null], [false], ['']])(
+    'falsy label %p',
+    (falsyLabel: unknown) => {
+      it('renders no stray group label and still names the group via aria-label', () => {
+        function FalsyLabel() {
+          const form = useForm<{ rail: string }>({
+            defaultValues: { rail: '' }
+          })
+          return (
+            <Form {...form}>
+              <RadioGroupField
+                control={form.control}
+                name="rail"
+                // @ts-expect-error null/false are compile errors; '' is only
+                // catchable at runtime. Both must still leave the group named.
+                label={falsyLabel}
+                aria-label="Settlement rail"
+                options={[{ value: 'pix', label: 'Pix' }]}
+              />
+            </Form>
+          )
+        }
+        render(<FalsyLabel />)
+
+        expect(
+          screen.getByRole('radiogroup', { name: 'Settlement rail' })
+        ).toBeInTheDocument()
+        // The only <label> left is the option's own, never an empty group label.
+        expect(screen.getAllByText('Pix')).toHaveLength(1)
+      })
+    }
+  )
+
+  it('drops an empty aria-label instead of naming the group ""', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    function Nameless() {
+      const form = useForm<{ rail: string }>({ defaultValues: { rail: '' } })
+      return (
+        <Form {...form}>
+          {/* This COMPILES: `''` cannot be excluded from `string`, so the union
+              accepts it. The runtime guard is the only thing standing here. */}
+          <RadioGroupField
+            control={form.control}
+            name="rail"
+            label=""
+            aria-label=""
+            options={[{ value: 'pix', label: 'Pix' }]}
+          />
+        </Form>
+      )
+    }
+    render(<Nameless />)
+
+    expect(screen.getByRole('radiogroup')).not.toHaveAttribute('aria-label')
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining('RadioGroupField "rail" has no accessible name')
+    )
+    spy.mockRestore()
+  })
+
   it('setFocus lands on the first selectable option, skipping disabled ones', async () => {
     let form!: UseFormReturn<{ rail: string }>
     function FocusHarness() {

@@ -27,6 +27,26 @@ type TextareaFieldOwnProps<T extends FieldValues = FieldValues> = {
 }
 
 /**
+ * A label that actually renders an element. `null`, `undefined` and booleans
+ * are valid ReactNode but produce nothing, so a control typed on bare ReactNode
+ * can satisfy the union below and still end up nameless.
+ *
+ * The empty string cannot be excluded here — `Exclude<string, ''>` is still
+ * `string` — so `label=""` is caught at runtime by `hasRenderableLabel` instead.
+ */
+type RenderableLabel = Exclude<ReactNode, null | undefined | boolean>
+
+/** Does this label produce a real element a screen reader can read? */
+function hasRenderableLabel(label: ReactNode): boolean {
+  return (
+    label !== null &&
+    label !== undefined &&
+    typeof label !== 'boolean' &&
+    label !== ''
+  )
+}
+
+/**
  * A control with no accessible name is invisible to screen readers, so the type
  * makes one mandatory: either a visible `label`, or an `aria-label` when the
  * design calls for a bare textarea.
@@ -34,7 +54,7 @@ type TextareaFieldOwnProps<T extends FieldValues = FieldValues> = {
 export type TextareaFieldProps<T extends FieldValues = FieldValues> =
   TextareaFieldOwnProps<T> &
     (
-      | { label: ReactNode; 'aria-label'?: string }
+      | { label: RenderableLabel; 'aria-label'?: string }
       | { label?: never; 'aria-label': string }
     )
 
@@ -51,8 +71,21 @@ export const TextareaField = <T extends FieldValues = FieldValues>({
   rows,
   className,
   'data-testid': dataTestId,
-  'aria-label': ariaLabel
+  'aria-label': ariaLabelProp
 }: TextareaFieldProps<T>) => {
+  const showLabel = hasRenderableLabel(label)
+  // An empty aria-label is worse than none: it names the control "". Drop it so
+  // the attribute never reaches the DOM.
+  const ariaLabel = ariaLabelProp === '' ? undefined : ariaLabelProp
+
+  // The type cannot rule out `label=""`, so this is the only signal a developer
+  // gets that the control shipped nameless.
+  if (process.env.NODE_ENV !== 'production' && !showLabel && !ariaLabel) {
+    console.error(
+      `TextareaField "${name}" has no accessible name: pass a non-empty label or aria-label.`
+    )
+  }
+
   return (
     <FormField
       control={control}
@@ -62,7 +95,7 @@ export const TextareaField = <T extends FieldValues = FieldValues>({
       disabled={disabled}
       render={({ field }) => (
         <FormItem required={required}>
-          {label && (
+          {showLabel && (
             <FormLabel
               extra={tooltip ? <FormTooltip>{tooltip}</FormTooltip> : undefined}
             >

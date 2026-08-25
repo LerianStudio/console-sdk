@@ -1,7 +1,7 @@
 'use client'
 
 import { ReactNode, useState } from 'react'
-import { Control, FieldValues, Path } from 'react-hook-form'
+import { Control, FieldPathByValue, FieldValues } from 'react-hook-form'
 
 import {
   FormControl,
@@ -16,7 +16,12 @@ import { FileUpload, type FileUploadResult } from '@/components/ui/file-upload'
 
 type FileUploadFieldOwnProps<T extends FieldValues = FieldValues> = {
   control: Control<T>
-  name: Path<T>
+  /**
+   * Must point at a string-valued field: the adapter writes the file's text, or
+   * `''` when cleared, never a File and never null. `string | undefined` also
+   * matches plain `string` fields, so optional ones are covered by the same type.
+   */
+  name: FieldPathByValue<T, string | undefined>
   description?: ReactNode
   tooltip?: string
   required?: boolean
@@ -29,6 +34,26 @@ type FileUploadFieldOwnProps<T extends FieldValues = FieldValues> = {
 }
 
 /**
+ * A label that actually renders an element. `null`, `undefined` and booleans
+ * are valid ReactNode but produce nothing, so a control typed on bare ReactNode
+ * can satisfy the union below and still end up nameless.
+ *
+ * The empty string cannot be excluded here — `Exclude<string, ''>` is still
+ * `string` — so `label=""` is caught at runtime by `hasRenderableLabel` instead.
+ */
+type RenderableLabel = Exclude<ReactNode, null | undefined | boolean>
+
+/** Does this label produce a real element a screen reader can read? */
+function hasRenderableLabel(label: ReactNode): boolean {
+  return (
+    label !== null &&
+    label !== undefined &&
+    typeof label !== 'boolean' &&
+    label !== ''
+  )
+}
+
+/**
  * A control with no accessible name is invisible to screen readers, so the type
  * makes one mandatory: either a visible `label`, or an `aria-label` when the
  * design calls for a bare file picker.
@@ -36,7 +61,7 @@ type FileUploadFieldOwnProps<T extends FieldValues = FieldValues> = {
 export type FileUploadFieldProps<T extends FieldValues = FieldValues> =
   FileUploadFieldOwnProps<T> &
     (
-      | { label: ReactNode; 'aria-label'?: string }
+      | { label: RenderableLabel; 'aria-label'?: string }
       | { label?: never; 'aria-label': string }
     )
 
@@ -67,9 +92,21 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
   disabled,
   className,
   onSelect,
-  'aria-label': ariaLabel
+  'aria-label': ariaLabelProp
 }: FileUploadFieldProps<T>) => {
   const [localValue, setLocalValue] = useState<FileUploadResult | null>(null)
+  const showLabel = hasRenderableLabel(label)
+  // An empty aria-label is worse than none: it names the control "". Drop it so
+  // the attribute never reaches the DOM.
+  const ariaLabel = ariaLabelProp === '' ? undefined : ariaLabelProp
+
+  // The type cannot rule out `label=""`, so this is the only signal a developer
+  // gets that the control shipped nameless.
+  if (process.env.NODE_ENV !== 'production' && !showLabel && !ariaLabel) {
+    console.error(
+      `FileUploadField "${name}" has no accessible name: pass a non-empty label or aria-label.`
+    )
+  }
 
   return (
     <FormField
@@ -84,7 +121,7 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
         const shown = field.value ? localValue : null
         return (
           <FormItem required={required}>
-            {label && (
+            {showLabel && (
               <FormLabel
                 extra={
                   tooltip ? <FormTooltip>{tooltip}</FormTooltip> : undefined

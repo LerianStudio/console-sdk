@@ -128,6 +128,66 @@ describe('FileUploadField', () => {
     )
   })
 
+  describe.each([[null], [false], ['']])(
+    'falsy label %p',
+    (falsyLabel: unknown) => {
+      it('renders no stray label element and still names the input via aria-label', () => {
+        function FalsyLabel() {
+          const form = useForm<{ cert: string }>({
+            defaultValues: { cert: '' }
+          })
+          return (
+            <Form {...form}>
+              <FileUploadField
+                control={form.control}
+                name="cert"
+                // @ts-expect-error null/false are compile errors; '' is only
+                // catchable at runtime. Both must still leave the input named.
+                label={falsyLabel}
+                aria-label="A1 certificate"
+              />
+            </Form>
+          )
+        }
+        const { container } = render(<FalsyLabel />)
+
+        expect(container.querySelector('label')).toBeNull()
+        expect(screen.getByLabelText('A1 certificate')).toHaveAttribute(
+          'type',
+          'file'
+        )
+      })
+    }
+  )
+
+  it('drops an empty aria-label instead of naming the input ""', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    function Nameless() {
+      const form = useForm<{ cert: string }>({ defaultValues: { cert: '' } })
+      return (
+        <Form {...form}>
+          {/* This COMPILES: `''` cannot be excluded from `string`, so the union
+              accepts it. The runtime guard is the only thing standing here. */}
+          <FileUploadField
+            control={form.control}
+            name="cert"
+            label=""
+            aria-label=""
+          />
+        </Form>
+      )
+    }
+    const { container } = render(<Nameless />)
+
+    expect(container.querySelector('input[type="file"]')).not.toHaveAttribute(
+      'aria-label'
+    )
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining('FileUploadField "cert" has no accessible name')
+    )
+    spy.mockRestore()
+  })
+
   it('marks the field touched on blur, so onBlur validation modes fire', async () => {
     let form!: UseFormReturn<{ cert: string }>
     const { container } = render(<Harness formRef={(f) => (form = f)} />)
