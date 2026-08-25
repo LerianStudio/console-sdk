@@ -16,7 +16,7 @@
 
 | Lane | Delivers | Depends on | Wave | Worktree / Branch | Plan | Status |
 |------|----------|-----------|------|-------------------|------|--------|
-| foundation | sub-barrel scaffold, deps, additive tokens, `cn`/typography exports in sindarian-ui | none | 1 | `/srv/worktrees/sindarian-foundation` / `feat/sindarian-enterprise-foundation` | lane-foundation.md | Pending |
+| foundation | sub-barrel scaffold, deps, additive tokens, `cn`/typography exports in sindarian-ui | none | 1 | `/srv/worktrees/sindarian-foundation` / `feat/sindarian-enterprise-foundation` | lane-foundation.md | Merged (PR #131) |
 | primitives | missing shadcn primitives (Accordion, AlertDialog, RadioGroup, ScrollArea, ToggleGroup, HoverCard, FileUpload) | foundation | 2 | `/srv/worktrees/sindarian-primitives` / `feat/sindarian-missing-primitives` | lane-primitives.md (deferred) | Pending |
 | enterprise | composed enterprise components (AlertBanner, StatCard, DataTable, AppShell, …) restyled to sindarian-ui tokens | foundation | 2 | `/srv/worktrees/sindarian-enterprise` / `feat/sindarian-enterprise-components` | lane-enterprise.md (deferred) | Pending |
 | theme-toasts-charts | ThemeProvider/getThemeScript/ModeToggle, toast helper API, chart layer | foundation | 2 | `/srv/worktrees/sindarian-theme` / `feat/sindarian-theme-toasts-charts` | lane-theme-toasts-charts.md (deferred) | Pending |
