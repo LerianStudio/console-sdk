@@ -1,0 +1,243 @@
+# Sindarian-X Retirement — Lane Plan Index
+
+> **For implementers:** this index is not executable. Every lane below has its own
+> plan document, run from its own worktree by ring-default:executing-plans,
+> ring-default:dispatching-workflows, or ring-dev-team:running-dev-cycle. One lane per session.
+> Read `## Frozen Contracts` before writing any code — a lane MUST NOT change one.
+
+**Goal:** Retire `@lerianstudio/sindarian-x` (repo `lib-sindarian-ui`) completely: absorb its used surface into `@lerianstudio/sindarian-ui` additively, then migrate lender, matcher, br-consignado-gw, and the br-sfn cockpit onto sindarian-ui and its design tokens.
+
+**Architecture:** sindarian-ui is SENIOR (decided by Fred, 2026-08-26): existing sindarian-ui consumers change absolutely nothing — every lib change is additive (new exports, new tokens; no existing export, prop, or token value changes). On any name collision, sindarian-ui's API wins and the migrating apps adapt. The four apps abandon the sindarian-x per-app `--brand` knob and adopt sindarian-ui's visual identity. Port scope is the UNION OF SYMBOLS THE FOUR APPS ACTUALLY USE (census method below), plus internal dependencies of those symbols — the rest of sindarian-x dies with the repo. `@lerianstudio/sindarian-tokens` stays OUT of this migration (wiring it into sindarian-ui would change existing consumers' pixels, violating the senior rule).
+
+**Tech Stack:** TypeScript, React 19, Tailwind v4 (CSS-first), Radix UI/ShadCN, tsc + tsc-alias, Turbo, semantic-release (develop → beta prereleases). Consumers: Vite + TanStack Router SPAs.
+
+## Lane Overview
+
+| Lane | Delivers | Depends on | Wave | Worktree / Branch | Plan | Status |
+|------|----------|-----------|------|-------------------|------|--------|
+| foundation | sub-barrel scaffold, deps, additive tokens, `cn`/typography exports in sindarian-ui | none | 1 | `/srv/worktrees/sindarian-foundation` / `feat/sindarian-enterprise-foundation` | lane-foundation.md | Pending |
+| primitives | missing shadcn primitives (Accordion, AlertDialog, RadioGroup, ScrollArea, ToggleGroup, HoverCard, FileUpload) | foundation | 2 | `/srv/worktrees/sindarian-primitives` / `feat/sindarian-missing-primitives` | lane-primitives.md (deferred) | Pending |
+| enterprise | composed enterprise components (AlertBanner, StatCard, DataTable, AppShell, …) restyled to sindarian-ui tokens | foundation | 2 | `/srv/worktrees/sindarian-enterprise` / `feat/sindarian-enterprise-components` | lane-enterprise.md (deferred) | Pending |
+| theme-toasts-charts | ThemeProvider/getThemeScript/ModeToggle, toast helper API, chart layer | foundation | 2 | `/srv/worktrees/sindarian-theme` / `feat/sindarian-theme-toasts-charts` | lane-theme-toasts-charts.md (deferred) | Pending |
+| domain | finance domain grammar (money-math, MoneyText, KeyId, Blotter, LedgerSheet, format, used composites) | foundation | 2 | `/srv/worktrees/sindarian-domain` / `feat/sindarian-domain-grammar` | lane-domain.md (deferred) | Pending |
+| lib-integration | integration lane: combined verification, absence checks, beta release, scratch-app smoke test | primitives, enterprise, theme-toasts-charts, domain | 3 | `/srv/worktrees/sindarian-integration` / `test/sindarian-enterprise-integration` | lane-lib-integration.md (deferred) | Pending |
+| app-consignado | br-consignado-gw UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-consignado` (repo br-consignado-gw) / `feat/migrate-to-sindarian-ui` | lane-app-consignado.md (deferred) | Pending |
+| app-matcher | matcher UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-matcher` (repo matcher) / `feat/migrate-to-sindarian-ui` | lane-app-matcher.md (deferred) | Pending |
+| app-lender | lender UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-lender` (repo lender) / `feat/migrate-to-sindarian-ui` | lane-app-lender.md (deferred) | Pending |
+| app-cockpit | br-sfn cockpit on sindarian-ui, sindarian-x removed, local theme fork deleted | lib-integration | 4 | `/srv/worktrees/sindarian-app-cockpit` (repo br-sfn) / `feat/migrate-to-sindarian-ui` | lane-app-cockpit.md (deferred) | Pending |
+| retirement | npm deprecation of sindarian-x, repo archive, cross-repo absence verification | app-consignado, app-matcher, app-lender, app-cockpit | 5 | `/srv/worktrees/sindarian-retirement-final` / `chore/retire-sindarian-x` | lane-retirement.md (deferred) | Pending |
+
+`Status` lifecycle: Pending → In flight → In review → Merged | Failed.
+The orchestrator session owns this column. Lanes never write to this file.
+
+**Mordor note:** worktrees are created with `agent new <repo> <slug>` (never edit the durable clones under `~/repos/lerianstudio/`). The `agent` command starts on an `agent/<slug>` branch; each lane MUST create its real branch (the one in its row above) off the correct base before committing — `agent/*` branches are never pushed. App-lane plan documents live in this directory and are SEEDED (copied) into the app-repo worktree at dispatch time.
+
+**Base branches:** console-sdk lanes branch from and PR to `develop` (semantic-release publishes beta prereleases from it). App lanes use each repo's default PR base (verify per repo at elaboration; Lerian default is `develop`).
+
+## Waves
+
+- Wave 1 — `foundation` alone. It owns the three files every other console-sdk lane would otherwise fight over (`package.json`, `globals.css`, `src/index.tsx`).
+- Wave 2 — `primitives`, `enterprise`, `theme-toasts-charts`, `domain` start together after foundation merges. File-disjoint by construction (see File Ownership).
+- Wave 3 — `lib-integration` opens after all wave-2 lanes merge. Its merge triggers the beta release apps will consume.
+- Wave 4 — `app-consignado`, `app-matcher`, `app-lender`, `app-cockpit` start together after the beta from wave 3 is published. Different repos, trivially disjoint. API gaps found by any app lane feed patch PRs to console-sdk `develop` (orchestrator coordinates; app lanes do not edit console-sdk).
+- Wave 5 — `retirement` opens after all four app lanes merge.
+
+## File Ownership (wave 2, console-sdk)
+
+| Lane | Owns (exclusive) |
+|------|-------------------|
+| primitives | `packages/sindarian-ui/src/components/ui/{accordion,alert-dialog,radio-group,scroll-area,toggle-group,hover-card,file-upload}/**` AND `packages/sindarian-ui/src/index.tsx` |
+| enterprise | `packages/sindarian-ui/src/enterprise/**` |
+| theme-toasts-charts | `packages/sindarian-ui/src/theme/**`, `packages/sindarian-ui/src/toast/**`, `packages/sindarian-ui/src/charts/**` |
+| domain | `packages/sindarian-ui/src/domain/**` |
+
+`primitives` is the ONLY wave-2 lane allowed to touch `src/index.tsx` (its new primitives export from the main barrel). The other three lanes export exclusively through their sub-barrels, which foundation wired into the main barrel in wave 1. NO wave-2 lane touches `package.json` or `globals.css` — foundation owns both; a missing dep or token means stop and report to the orchestrator, never a local edit.
+
+## Frozen Contracts
+
+### FC-1 — Main barrel wiring (written by foundation, then owned by primitives)
+
+Appended verbatim at the end of `packages/sindarian-ui/src/index.tsx`:
+
+```ts
+// Enterprise surface (sindarian-x absorption — see docs/plans/2026-08-26-sindarian-x-retirement/)
+export * from './enterprise'
+export * from './theme'
+export * from './toast'
+export * from './charts'
+export * from './domain'
+```
+
+### FC-2 — New design tokens (names frozen; values chosen by foundation from the sindarian-ui palette)
+
+Added to `packages/sindarian-ui/src/globals.css` in `:root` AND `.dark`, each with a matching `--color-*` entry in the `@theme inline` block:
+
+```css
+--credit
+--credit-foreground
+--matched-surface
+--unmatched-surface
+--chart-1  --chart-2  --chart-3  --chart-4
+--chart-5  --chart-6  --chart-7  --chart-8
+```
+
+Semantic-state tokens are NOT duplicated: ported components map sindarian-x's `success`/`warning`/`info`/`destructive` usages onto sindarian-ui's existing `system-success` / `system-alert` / `system-info` / `system-error` / `destructive` tokens. No existing sindarian-ui token changes name or value — ever (senior rule).
+
+### FC-3 — Legacy-API compatibility (freeze-by-reference)
+
+Every symbol ported from sindarian-x keeps the public TypeScript API published in `@lerianstudio/sindarian-x@0.15.0` (`dist/**/*.d.ts` — an immutable npm artifact): same export name, same props/signature, same generics. Only two deviations are allowed: (a) styling re-based on sindarian-ui tokens, (b) internal imports re-pointed at sindarian-ui primitives. A porting lane that cannot keep an API byte-compatible stops and reports — it does not improvise a new API.
+
+Key signatures reproduced for cross-lane reliance (theme + toast, consumed by app lanes and by enterprise components):
+
+```ts
+// theme (lane theme-toasts-charts)
+type ThemePreference = 'light' | 'dark' | 'system'
+function ThemeProvider(props: {
+  children: React.ReactNode
+  defaultTheme?: ThemePreference
+  storageKey?: string          // default 'sindarian.theme'
+}): JSX.Element
+function useTheme(): { theme: ThemePreference; setTheme(t: ThemePreference): void; resolvedTheme: 'light' | 'dark' }
+function getThemeScript(storageKey?: string): string   // pre-hydration FOUC guard, inline <script> body
+function ModeToggle(props: ModeToggleProps): JSX.Element
+
+// toast (lane theme-toasts-charts) — module-scoped helpers over sindarian-ui's existing <Toaster/>
+function toast(opts: ToastOptions): void
+function successToast(title: string, description?: string, opts?: Partial<ToastOptions>): void
+function errorToast(title: string, description?: string, opts?: Partial<ToastOptions>): void
+function warningToast(title: string, description?: string, opts?: Partial<ToastOptions>): void
+```
+
+(Exact `ModeToggleProps`/`ToastOptions` shapes: byte-compatible with sindarian-x@0.15.0 `dist` types.)
+
+### FC-4 — Collision rule (sindarian-ui senior)
+
+A symbol name already exported by `@lerianstudio/sindarian-ui@1.2.0` is NEVER ported, renamed, aliased, or shadowed. The migrating apps adapt their call sites to sindarian-ui's existing API. Known collisions from the sweep (apps must adapt to the sindarian-ui version): `Button`, `Badge`, `Card*`, `Dialog*`, `Sheet*`, `Tabs*`, `Input`, `Label`, `Textarea`, `Select*`, `Checkbox`, `Command*`, `Popover*`, `Tooltip*`, `Separator`, `Skeleton`, `Calendar`, `Collapsible`, `Progress`, `Switch`, `Avatar`, `Alert`, `Breadcrumb*`, `Sidebar*`, `Form*`, `Table*`, `Stepper*`, `PageHeader`, `EntityBox*`, `Toaster`, `useToast`, `InputField`, `SelectField`, `SwitchField`, `DatePickerField`, `DateRangeField`, and `ConfirmDialog` → sindarian-ui's `ConfirmationDialog`. Porting lanes MUST check every candidate export against the sindarian-ui barrel before creating it; the integration lane re-verifies no duplicate export names exist.
+
+### FC-5 — Dependencies (written by foundation; frozen for wave 2)
+
+Foundation adds to `packages/sindarian-ui/package.json` `dependencies` — wave-2 lanes rely on exactly these and add nothing:
+
+```
+recharts ^3.8.0
+@tanstack/react-table ^8.21.3
+@tanstack/react-virtual ^3.14.3
+@radix-ui/react-accordion, @radix-ui/react-alert-dialog, @radix-ui/react-radio-group,
+@radix-ui/react-scroll-area, @radix-ui/react-toggle-group, @radix-ui/react-hover-card
+(radix pins: caret versions consistent with the existing @radix-ui/* entries)
+```
+
+### FC-6 — Port-scope census (method frozen)
+
+"Used symbol" = any identifier named in an import from `@lerianstudio/sindarian-x` OR from a local shim file that re-exports it (`export * from '@lerianstudio/sindarian-x'` — matcher has 35 shims, br-consignado-gw has 19), across the four app source trees (read-only, in the durable clones):
+
+```
+~/repos/lerianstudio/br-consignado-gw/ui/src
+~/repos/lerianstudio/matcher/ui/src
+~/repos/lerianstudio/lender/ui/src
+~/repos/lerianstudio/br-sfn/cockpit/src
+```
+
+Each porting lane computes the census slice for its category as its first task and ports ONLY that union (plus internal dependencies). Symbols outside the union are not ported.
+
+## Integration Lane
+
+`lib-integration` (wave 3) is the required integration lane — four lanes touch the same package:
+
+- Full monorepo verification: `npx turbo build lint check-types test`.
+- Duplicate-export check across the merged barrel (FC-4 re-verification).
+- Absence checks deferred under lane-cut rule 4: no `sindarian-x` string, no TODO/placeholder left by porting lanes, every FC-2 token present in built CSS.
+- Scratch Vite consumer: install the fresh beta, compile a file importing every new export, mount ThemeProvider + Toaster + one chart + DataTable, render smoke-test.
+- Confirms semantic-release published the beta from `develop` and records the exact version the app lanes must pin.
+
+## Merge Order
+
+1. `foundation` → console-sdk `develop`.
+2. Wave-2 lanes in any order; after each merge, still-open wave-2 lanes rebase onto updated `develop`.
+3. `lib-integration` → `develop` → beta `@lerianstudio/sindarian-ui@1.3.0-beta.x` published; orchestrator records the version in this index.
+4. App lanes in any order, each to its own repo's base branch. A lib gap found here becomes a patch PR to console-sdk `develop` (new beta), never an app-side fork of lib code.
+5. `retirement` last. Promoting console-sdk `develop` → `main` (stable 1.3.0) happens here, before the npm deprecation of sindarian-x.
+
+---
+
+## Lane blocks (later waves — plans authored when their blockers merge)
+
+### Lane: primitives
+
+**Goal:** The shadcn primitives sindarian-ui lacks and the apps use exist in sindarian-ui: `Accordion*`, `AlertDialog*`, `RadioGroup*`, `ScrollArea`/`ScrollBar`, `ToggleGroup*`, `HoverCard*`, `FileUpload` + `validateFile` + its types.
+**Scope:** `packages/sindarian-ui/src/components/ui/{accordion,alert-dialog,radio-group,scroll-area,toggle-group,hover-card,file-upload}/**`, `packages/sindarian-ui/src/index.tsx`. Each component: sindarian-x API (FC-3), sindarian-ui styling conventions (cva, data-slot, tokens), test + Storybook story per repo convention.
+**Depends on:** foundation
+**Done when:** census-listed primitive symbols exported from the main barrel; build/lint/test green; stories render in both themes.
+**Status:** Pending
+
+### Lane: enterprise
+
+**Goal:** The composed enterprise layer exists under `src/enterprise/`, restyled to sindarian-ui tokens, API per FC-3: `AlertBanner`, `StatCard`, `EmptyState`, `StatusBadge` (+`DEFAULT_STATUS_VARIANTS`), `DetailPanel`, `AppShell`, `DataTable`, `VirtualizedTable`, `CursorPager`, `FilterBar`/`SearchInput`/`FilterChip`, `NumberInput`, `MoneyInput`, `DateRangePicker`/`DateRangeValue`, `Combobox`/`MultiSelectCombobox` (names collide with nothing — verify per FC-4), plus census stragglers in this category.
+**Scope:** `packages/sindarian-ui/src/enterprise/**` only. Internally consumes sindarian-ui primitives (senior) — e.g. DataTable renders sindarian-ui `Table`.
+**Depends on:** foundation
+**Done when:** census union for this category exported from `src/enterprise/index.ts`; tests + stories; no FC-4 collision.
+**Status:** Pending
+
+### Lane: theme-toasts-charts
+
+**Goal:** Theme, toast helpers, and charts exist per FC-3 signatures: `ThemeProvider`/`useTheme`/`getThemeScript`/`ModeToggle` (`src/theme/`); `toast`/`successToast`/`errorToast`/`warningToast` layered over sindarian-ui's existing Toaster (`src/toast/`); `ChartContainer`/`ChartTooltip*`/`ChartLegend*`/`ChartStyle`/`ChartConfig`, `BarChart`, `LineChart`, `Donut`, `Sparkline`, chart presets (`src/charts/`), colored by the FC-2 `--chart-1..8` tokens.
+**Scope:** `packages/sindarian-ui/src/{theme,toast,charts}/**` only.
+**Depends on:** foundation
+**Done when:** FC-3 theme/toast signatures compile against app-like usage samples; charts render in both themes; toasts route through sindarian-ui's Toaster without touching its existing API.
+**Status:** Pending
+
+### Lane: domain
+
+**Goal:** The finance domain grammar the apps use exists under `src/domain/`: `money-math` (BigInt minor-unit arithmetic — port EXACTLY, correctness is non-negotiable, keep its test suite), `format` helpers (`NO_VALUE`, `formatPercent`, `formatCount`, …), `MoneyText`, `Figure`, `KeyId`, `SectionLabel` (+ voice class constants if census demands beyond foundation's), `Blotter`/`BlotterRow`, `LedgerSheet`/`LedgerPanel`, `StatusRail` family, and the census-listed composites (known so far: `DelinquencyAging` for lender, `ThresholdGauge`/`gaugeBand` and `moneyDiff` for matcher; cockpit slice computed at elaboration).
+**Scope:** `packages/sindarian-ui/src/domain/**` only.
+**Depends on:** foundation
+**Done when:** census union for this category exported from `src/domain/index.ts`; money-math test suite ported and green; pt-BR strings in composites preserved as-is (apps that need other locales adapt at app level, as today).
+**Status:** Pending
+
+### Lane: lib-integration
+
+**Goal:** The merged sindarian-ui verifies end to end and a consumable beta exists.
+**Scope:** integration checks (see Integration Lane above), scratch consumer app (throwaway, not committed to the monorepo), release confirmation.
+**Depends on:** primitives, enterprise, theme-toasts-charts, domain
+**Done when:** turbo green across the monorepo; absence + duplicate-export checks pass; beta version published and recorded in this index.
+**Status:** Pending
+
+### Lane: app-consignado
+
+**Goal:** br-consignado-gw UI runs on `@lerianstudio/sindarian-ui` (pinned beta); `@lerianstudio/sindarian-x` removed from package.json.
+**Scope:** repo br-consignado-gw, `ui/**`. Smallest app (36 files touch the lib, 19 are 4-line shims, 21 named symbols). Work: swap dep; delete shims and import directly from sindarian-ui; adapt collided call sites (FC-4 — e.g. InputField, PageHeader props); keep `ThemeProvider storageKey="consignado.theme"` (FC-3 API is compatible); delete the `--brand` override in `ui/src/styles.css` and re-point CSS imports to sindarian-ui's stylesheet; update the `@source` scan path; fix tests (7 files mock the lib by name).
+**Depends on:** lib-integration
+**Done when:** app builds, tests green, no `sindarian-x` reference in the repo, visual pass on the 7 pages in both themes.
+**Status:** Pending
+
+### Lane: app-matcher
+
+**Goal:** matcher UI runs on sindarian-ui; sindarian-x removed.
+**Scope:** repo matcher, `ui/**`. 87 import files + 35 shims, 44 symbols (`LABEL_VOICE_CLASS` in 29 files). Work: swap dep; delete/repoint shims; adapt collided call sites; keep the deliberate local forks that extend lib components (`money-text.tsx` tone, `figure.tsx` tone, local `status-badge.tsx`, local `mini-balance-bar.tsx`) by re-pointing their base imports; replace `getThemeScript` FOUC plugin import in `vite.config.ts`; keep `storageKey="matcher.theme"`; delete the `--brand` override; re-point `--color-matched-surface`/`--color-unmatched-surface` usages to the FC-2 tokens; update stale `DESIGN.md`.
+**Depends on:** lib-integration
+**Done when:** app builds, tests green, no `sindarian-x` reference, visual pass on key flows in both themes.
+**Status:** Pending
+
+### Lane: app-lender
+
+**Goal:** lender UI runs on sindarian-ui; sindarian-x removed.
+**Scope:** repo lender, `ui/**`. 79 files, ~90 symbols, heavy on `Table*` (ledger variant), `Button`, `AlertBanner`, `KeyId`, form fields, `Blotter`/`Figure`/`SectionLabel`. Work: swap dep; adapt collided call sites (form fields and Table are the big ones — sindarian-ui's `Table` has no `variant="ledger"`; the lane resolves the ledger-table treatment app-side or via a lib patch PR, orchestrator decides on first evidence); re-point the ~10 local wrappers (7 status badges, `key-id-link.tsx`, 2 `loose-control.ts`, `format.tsx` MoneyText wrapper); keep `storageKey="lender.theme"` + FOUC plugin swap in `vite.config.ts`; delete `--brand`/`--brand-resolved` overrides; update `DESIGN.md`.
+**Depends on:** lib-integration
+**Done when:** app builds, tests green (58 test files), no `sindarian-x` reference, visual pass in both themes.
+**Status:** Pending
+
+### Lane: app-cockpit
+
+**Goal:** br-sfn cockpit runs on sindarian-ui; sindarian-x removed; the local theme fork deleted in favor of the lib's ThemeProvider.
+**Scope:** repo br-sfn, `cockpit/**`. Largest lane: 348 files import the lib (141 symbols, 1644 occurrences), 28 more test files mock it. Work: swap dep (pinned exact today, 0.14.1); mass-adapt collided call sites (`Button` 180×, `PageHeader` 84×, `Badge` 70×, `cn` 67×, `DataTable` 57×...); DELETE the forked theme layer (`src/lib/theme/**`, keys `cockpit.theme`) and adopt the lib `ThemeProvider` + `getThemeScript` (FC-3), keeping dark-by-default; rebuild `ThemeToggle.tsx` on lib pieces while preserving the app-local density feature; keep documented divergences (`SilocMoney`, `SlcStateBadge`, `RecordStatusBadge`) as local wrappers re-pointed to sindarian-ui; update `index.css` imports + `@source`; codemod-first strategy (import rewrites are mechanical; prop adaptations are not).
+**Depends on:** lib-integration
+**Done when:** app builds, full test suite green (~590 test files), no `sindarian-x` reference, visual pass on SPI/SPB/SLC/SILOC/STA surfaces in both themes.
+**Status:** Pending
+
+### Lane: retirement
+
+**Goal:** sindarian-x is dead: npm package deprecated, repo archived, no live consumer.
+**Scope:** cross-repo verification (read-only grep for `sindarian-x` across the four app repos and console-sdk); promote console-sdk `develop` → `main` (stable release) so apps can move off the beta pin; `npm deprecate @lerianstudio/sindarian-x` (all versions, message pointing to `@lerianstudio/sindarian-ui`); archive `LerianStudio/lib-sindarian-ui` on GitHub. NOTE: npm deprecate and GitHub archive need owner/admin rights — surfaced to Fred as explicit actions if the lane's credentials cannot perform them.
+**Depends on:** app-consignado, app-matcher, app-lender, app-cockpit
+**Done when:** deprecation live on npm, repo archived, absence checks pass, apps pin a stable (non-beta) sindarian-ui.
+**Status:** Pending
