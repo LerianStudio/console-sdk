@@ -179,15 +179,26 @@ describe('NumberInput', () => {
     expect(onValueChange).toHaveBeenLastCalledWith(3e-7)
   })
 
-  it('preserves magnitude at the large end', () => {
-    const onValueChange = jest.fn()
-    render(
-      <NumberInput value={1e12} onValueChange={onValueChange} step={0.5} />
-    )
+  it.each([
+    [1e12, 0.5, 1000000000000.5],
+    [1e15, 0.5, 1000000000000000.5],
+    [1e15, 0.125, 1000000000000000.125]
+  ])(
+    'keeps a representable fractional result at magnitude %p',
+    (value, step, expected) => {
+      // Snapping to a fixed count of SIGNIFICANT digits would round these back
+      // to the whole number and freeze the stepper; the fraction digits here
+      // come from the operands, so they survive.
+      const onValueChange = jest.fn()
+      render(
+        <NumberInput value={value} onValueChange={onValueChange} step={step} />
+      )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
-    expect(onValueChange).toHaveBeenLastCalledWith(1000000000000.5)
-  })
+      fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
+      expect(onValueChange).toHaveBeenLastCalledWith(expected)
+      expect(onValueChange).not.toHaveBeenLastCalledWith(value)
+    }
+  )
 
   it('disables the steppers at the bounds', () => {
     const { rerender } = render(

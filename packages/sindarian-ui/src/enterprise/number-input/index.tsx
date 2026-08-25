@@ -50,27 +50,53 @@ function clamp(value: number, min?: number, max?: number): number {
 }
 
 /**
- * Significant digits kept when snapping. float64 carries 15-17 significant
- * decimal digits; addition drift always lands past the 15th, so re-rounding
- * there erases the drift and nothing else.
+ * `Number.prototype.toFixed` rejects more than 100 fraction digits. Denormals
+ * genuinely need more (`decimalPlaces(5e-324)` is 324), so this is a RangeError
+ * guard, not a precision policy — no step a person types comes close.
  */
-const SIGNIFICANT_DIGITS = 15
+const MAX_FIXED_DIGITS = 100
 
 /**
- * Snap a stepped result so binary float drift never escapes to the parent:
- * stepping 0.1 by 0.2 must commit 0.3, not 0.30000000000000004.
+ * Fraction digits a number carries, reading exponent notation correctly.
+ * `String(1e-7)` is `'1e-7'`, which has no '.' at all, so counting characters
+ * after a decimal point reports 0 and silently kills any step below 1e-6.
+ * `toExponential()` gives a canonical mantissa/exponent pair instead:
+ * 1e-7 -> mantissa '1', exponent -7 -> 7 fraction digits.
+ */
+function decimalPlaces(value: number): number {
+  if (!Number.isFinite(value) || Number.isInteger(value)) return 0
+  const [mantissa, exponent] = value.toExponential().split('e')
+  const mantissaDigits = (mantissa.split('.')[1] ?? '').length
+  return Math.max(0, mantissaDigits - Number(exponent))
+}
+
+/**
+ * Snap a stepped result to the fraction digits its own operands carry, so
+ * binary float drift never escapes to the parent: stepping 0.1 by 0.2 must
+ * commit 0.3, not 0.30000000000000004.
  *
- * Rounds by SIGNIFICANT digits rather than decimal places, which makes the
- * operation scale-free — there is no decimal cap to truncate a legitimate step,
- * so 1e-7 and 1e-15 step exactly as well as 0.5 does. Deriving a decimal-place
- * count instead would need a cap, and any cap high enough to preserve a very
- * fine step (say 17) overflows the `value * 10 ** decimals` intermediate past
- * Number.MAX_SAFE_INTEGER — at which point the rounding silently returns the
+ * Anchoring on the OPERANDS is what makes this safe at both ends of the range.
+ * Rounding to a fixed number of significant digits cannot work: at 1e15 the
+ * 15th significant digit is the units place, so 1e15 + 0.5 would snap straight
+ * back to 1e15 and the stepper would die. Nor can a "is this change small
+ * enough to be noise?" tolerance decide it — 1e15 + 0.125 is exactly
+ * representable and must be kept, yet its relative distance from the rounded
+ * form (1.25e-16) is SMALLER than genuine drift in 0.1 + 0.2 (1.85e-16), so no
+ * threshold separates the two cases. The operands do: `1e15` and `0.5` need one
+ * fraction digit between them, `0.1` and `0.2` also one, and rounding each
+ * result to its own digit count keeps the first and repairs the second.
+ *
+ * `toFixed` (not `value * 10 ** digits`) does the rounding: the multiply
+ * overflows Number.MAX_SAFE_INTEGER for large values and hands back the very
  * drift it was meant to remove.
  */
-function snapToStep(value: number): number {
+function snapToStep(value: number, base: number, step: number): number {
   if (!Number.isFinite(value)) return value
-  return Number(value.toPrecision(SIGNIFICANT_DIGITS))
+  const digits = Math.min(
+    MAX_FIXED_DIGITS,
+    Math.max(decimalPlaces(base), decimalPlaces(step))
+  )
+  return Number(value.toFixed(digits))
 }
 
 /** The locale's decimal and group separators, derived from a known sample. */
@@ -159,7 +185,11 @@ export function NumberInput({
 
   const stepBy = (direction: 1 | -1) => {
     const base = value ?? 0
-    const next = snapToStep(clamp(base + direction * step, min, max))
+    const next = snapToStep(
+      clamp(base + direction * step, min, max),
+      base,
+      step
+    )
     commit(next)
     // Seed the draft via the locale formatter so a stepper press doesn't flip
     // the user's separators (e.g. ',' → '.').

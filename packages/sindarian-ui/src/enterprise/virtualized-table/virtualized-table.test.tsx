@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { VirtualizedTable } from '.'
 
-type Tick = { id: number; label: string }
+type Tick = { id: number; label: string; note: string }
 
 const columns: ColumnDef<Tick, unknown>[] = [
   { accessorKey: 'id', header: 'Id' },
@@ -11,10 +11,15 @@ const columns: ColumnDef<Tick, unknown>[] = [
 
 const data: Tick[] = Array.from({ length: 5000 }, (_, i) => ({
   id: i,
-  label: `row-${i}`
+  label: `row-${i}`,
+  note: `note-${i}`
 }))
 
-/** Two header depths: a spanning group over the two leaf columns. */
+/**
+ * Two header depths and two sibling groups of UNEQUAL width: "Identity" spans
+ * two leaf columns, "Meta" spans one. Anything that counts top-level defs or
+ * sibling positions instead of leaf columns gets the geometry wrong here.
+ */
 const groupedColumns: ColumnDef<Tick, unknown>[] = [
   {
     id: 'identity',
@@ -23,6 +28,11 @@ const groupedColumns: ColumnDef<Tick, unknown>[] = [
       { accessorKey: 'id', header: 'Id' },
       { accessorKey: 'label', header: 'Label' }
     ]
+  },
+  {
+    id: 'meta',
+    header: 'Meta',
+    columns: [{ accessorKey: 'note', header: 'Note' }]
   }
 ]
 
@@ -95,7 +105,7 @@ describe('VirtualizedTable', () => {
       />
     )
 
-    // Two header depths: the spanning "Identity" row and the leaf row.
+    // Two header depths: the spanning group row and the leaf row.
     expect(screen.getByRole('table')).toHaveAttribute('aria-rowcount', '5002')
 
     const rows = screen.getAllByRole('row')
@@ -110,6 +120,87 @@ describe('VirtualizedTable', () => {
     // Data rows start after BOTH header rows.
     expect(rows[2]).toHaveAttribute('aria-rowindex', '3')
     expect(rows[2]).toHaveTextContent('row-0')
+  })
+
+  it('counts LEAF columns, not top-level column defs', () => {
+    render(
+      <VirtualizedTable
+        columns={groupedColumns}
+        data={data}
+        rowHeight={ROW_HEIGHT}
+        maxHeight={VIEWPORT_HEIGHT}
+      />
+    )
+
+    // Two grouped defs, but three real columns: Id, Label, Note.
+    expect(screen.getByRole('table')).toHaveAttribute('aria-colcount', '3')
+  })
+
+  it('positions spanning headers by their first leaf column', () => {
+    render(
+      <VirtualizedTable
+        columns={groupedColumns}
+        data={data}
+        rowHeight={ROW_HEIGHT}
+        maxHeight={VIEWPORT_HEIGHT}
+      />
+    )
+
+    const identity = screen.getByRole('columnheader', { name: 'Identity' })
+    const meta = screen.getByRole('columnheader', { name: 'Meta' })
+
+    expect(identity).toHaveAttribute('aria-colindex', '1')
+    expect(identity).toHaveAttribute('aria-colspan', '2')
+    // "Meta" is the SECOND sibling but starts at the THIRD column — indexing by
+    // sibling position would report 2 here.
+    expect(meta).toHaveAttribute('aria-colindex', '3')
+    expect(meta).not.toHaveAttribute('aria-colspan')
+
+    // The leaf row tiles the same three positions.
+    expect(screen.getByRole('columnheader', { name: 'Id' })).toHaveAttribute(
+      'aria-colindex',
+      '1'
+    )
+    expect(screen.getByRole('columnheader', { name: 'Label' })).toHaveAttribute(
+      'aria-colindex',
+      '2'
+    )
+    expect(screen.getByRole('columnheader', { name: 'Note' })).toHaveAttribute(
+      'aria-colindex',
+      '3'
+    )
+  })
+
+  it('sizes a spanning header to cover its leaf columns', () => {
+    render(
+      <VirtualizedTable
+        columns={groupedColumns}
+        data={data}
+        rowHeight={ROW_HEIGHT}
+        maxHeight={VIEWPORT_HEIGHT}
+      />
+    )
+
+    // Two shares for the two-leaf group, one for the single-leaf group, so the
+    // header rule lines up with the cells beneath it.
+    expect(screen.getByRole('columnheader', { name: 'Identity' })).toHaveStyle({
+      flex: '2 1 0%'
+    })
+    expect(screen.getByRole('columnheader', { name: 'Meta' })).toHaveStyle({
+      flex: '1 1 0%'
+    })
+    expect(screen.getByRole('columnheader', { name: 'Id' })).toHaveStyle({
+      flex: '1 1 0%'
+    })
+  })
+
+  it('keeps flat columns at one column each', () => {
+    render(<VirtualizedTable columns={columns} data={data.slice(0, 3)} />)
+
+    expect(screen.getByRole('table')).toHaveAttribute('aria-colcount', '2')
+    const id = screen.getByRole('columnheader', { name: 'Id' })
+    expect(id).toHaveAttribute('aria-colindex', '1')
+    expect(id).not.toHaveAttribute('aria-colspan')
   })
 
   it('keeps rows as direct accessibility children of their rowgroup', () => {

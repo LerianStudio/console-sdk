@@ -77,10 +77,6 @@ export function VirtualizedTable<TData>({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [isScrollable, setIsScrollable] = useState(false)
 
-  // Column count for the div-table's ARIA so screen readers can report
-  // "column X of Y"; derived from the columns prop.
-  const columnCount = columns.length
-
   // A number is px; a string is used verbatim (e.g. '60vh').
   const viewportMaxHeight =
     typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight
@@ -96,6 +92,13 @@ export function VirtualizedTable<TData>({
   // per depth level, so the header is not always a single row.
   const headerGroups = table.getHeaderGroups()
   const headerRowCount = headerGroups.length
+
+  // The table's real column geometry is its LEAF columns: a grouped ColumnDef
+  // contributes one spanning header cell but no column of its own, so counting
+  // top-level defs both under-reports aria-colcount and misplaces every
+  // aria-colindex to its right.
+  const leafColumns = table.getVisibleLeafColumns()
+  const leafPosition = new Map(leafColumns.map((column, i) => [column.id, i]))
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -153,7 +156,7 @@ export function VirtualizedTable<TData>({
       <div
         role="table"
         aria-rowcount={rows.length + headerRowCount}
-        aria-colcount={columnCount}
+        aria-colcount={leafColumns.length}
       >
         {/* Header: a sibling above the scroll region, so it stays put by layout
             (it sits above an overflow box) — not via position: sticky. z-10 and
@@ -167,24 +170,40 @@ export function VirtualizedTable<TData>({
               aria-rowindex={groupIndex + 1}
               className="border-border flex border-b"
             >
-              {headerGroup.headers.map((header, i) => (
-                <div
-                  key={header.id}
-                  role="columnheader"
-                  aria-colindex={i + 1}
-                  // Header height is independent of rowHeight: pinning it to a
-                  // small rowHeight (32) clipped the uppercase label against its
-                  // own padding. Padding sizes it; min-h keeps a stable rule.
-                  className="text-muted-foreground min-h-10 flex-1 px-4 py-2.5 text-left text-xs font-medium tracking-wide uppercase"
-                >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </div>
-              ))}
+              {headerGroup.headers.map((header) => {
+                // Anchor the cell on its leftmost leaf column, so a spanning
+                // group reports the column it actually starts at rather than
+                // its position among its siblings.
+                const firstLeaf = header.column.getLeafColumns()[0]
+                const start = leafPosition.get(
+                  firstLeaf?.id ?? header.column.id
+                )
+                return (
+                  <div
+                    key={header.id}
+                    role="columnheader"
+                    aria-colindex={(start ?? 0) + 1}
+                    // A group cell covers colSpan leaf columns — announce it,
+                    // and give it that many shares of the row so it lines up
+                    // with the leaf cells beneath it.
+                    aria-colspan={
+                      header.colSpan > 1 ? header.colSpan : undefined
+                    }
+                    style={{ flex: `${header.colSpan} 1 0%` }}
+                    // Header height is independent of rowHeight: pinning it to a
+                    // small rowHeight (32) clipped the uppercase label against its
+                    // own padding. Padding sizes it; min-h keeps a stable rule.
+                    className="text-muted-foreground min-h-10 px-4 py-2.5 text-left text-xs font-medium tracking-wide uppercase"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </div>
+                )
+              })}
             </div>
           ))}
         </div>
