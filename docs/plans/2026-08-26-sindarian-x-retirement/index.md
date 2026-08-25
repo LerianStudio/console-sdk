@@ -1,7 +1,8 @@
 # Sindarian-X Retirement — Lane Plan Index
 
-> **For implementers:** this index is not executable. Every lane below has its own
-> plan document, run from its own worktree by ring-default:executing-plans,
+> **For implementers:** this index is not executable. Every lane below has (or will
+> have, when its wave is elaborated) its own plan document, run from its own
+> worktree by ring-default:executing-plans,
 > ring-default:dispatching-workflows, or ring-dev-team:running-dev-cycle. One lane per session.
 > Read `## Frozen Contracts` before writing any code — a lane MUST NOT change one.
 
@@ -94,15 +95,23 @@ Key signatures reproduced for cross-lane reliance (theme + toast, consumed by ap
 type ThemePreference = 'light' | 'dark' | 'system'
 function ThemeProvider(props: {
   children: React.ReactNode
-  defaultTheme?: ThemePreference
-  storageKey?: string          // default 'sindarian.theme'
+  defaultTheme?: ThemePreference   // default 'system' (byte-compatible with sindarian-x@0.15.0)
+  storageKey?: string              // default 'sindarian.theme'
 }): JSX.Element
 function useTheme(): { theme: ThemePreference; setTheme(t: ThemePreference): void; resolvedTheme: 'light' | 'dark' }
 function getThemeScript(storageKey?: string): string   // pre-hydration FOUC guard, inline <script> body
 function ModeToggle(props: ModeToggleProps): JSX.Element
 
-// toast (lane theme-toasts-charts) — module-scoped helpers over sindarian-ui's existing <Toaster/>
-function toast(opts: ToastOptions): void
+// Fallback contract (tested by lane theme-toasts-charts): with no stored value under
+// storageKey, BOTH ThemeProvider and getThemeScript resolve to the system preference,
+// so pre-paint and hydrated themes always match. An app that wants dark-by-default
+// passes defaultTheme="dark" AND keeps a static class="dark" on <html> for pre-paint
+// (app-cockpit's case) — getThemeScript's fallback stays 'system', unchanged from 0.15.0.
+
+// toast (lane theme-toasts-charts) — module-scoped helpers over sindarian-ui's EXISTING
+// toast machinery (src/hooks/use-toast.ts). The bare `toast` symbol is NOT ported:
+// sindarian-ui already exports `toast` from the barrel (FC-4 collision) — apps adapt
+// their bare toast(...) call sites to sindarian-ui's toast({ title, description, variant }).
 function successToast(title: string, description?: string, opts?: Partial<ToastOptions>): void
 function errorToast(title: string, description?: string, opts?: Partial<ToastOptions>): void
 function warningToast(title: string, description?: string, opts?: Partial<ToastOptions>): void
@@ -112,7 +121,7 @@ function warningToast(title: string, description?: string, opts?: Partial<ToastO
 
 ### FC-4 — Collision rule (sindarian-ui senior)
 
-A symbol name already exported by `@lerianstudio/sindarian-ui@1.2.0` is NEVER ported, renamed, aliased, or shadowed. The migrating apps adapt their call sites to sindarian-ui's existing API. Known collisions from the sweep (apps must adapt to the sindarian-ui version): `Button`, `Badge`, `Card*`, `Dialog*`, `Sheet*`, `Tabs*`, `Input`, `Label`, `Textarea`, `Select*`, `Checkbox`, `Command*`, `Popover*`, `Tooltip*`, `Separator`, `Skeleton`, `Calendar`, `Collapsible`, `Progress`, `Switch`, `Avatar`, `Alert`, `Breadcrumb*`, `Sidebar*`, `Form*`, `Table*`, `Stepper*`, `PageHeader`, `EntityBox*`, `Toaster`, `useToast`, `InputField`, `SelectField`, `SwitchField`, `DatePickerField`, `DateRangeField`, and `ConfirmDialog` → sindarian-ui's `ConfirmationDialog`. Porting lanes MUST check every candidate export against the sindarian-ui barrel before creating it; the integration lane re-verifies no duplicate export names exist.
+A symbol name already exported by `@lerianstudio/sindarian-ui@1.2.0` is NEVER ported, renamed, aliased, or shadowed. The migrating apps adapt their call sites to sindarian-ui's existing API. Known collisions from the sweep (apps must adapt to the sindarian-ui version): `Button`, `Badge`, `Card*`, `Dialog*`, `Sheet*`, `Tabs*`, `Input`, `Label`, `Textarea`, `Select*`, `Checkbox`, `Command*`, `Popover*`, `Tooltip*`, `Separator`, `Skeleton`, `Calendar`, `Collapsible`, `Progress`, `Switch`, `Avatar`, `Alert`, `Breadcrumb*`, `Sidebar*`, `Form*`, `Table*`, `Stepper*`, `PageHeader`, `EntityBox*`, `Toaster`, `useToast`, `toast`, `InputField`, `SelectField`, `SwitchField`, `DatePickerField`, `DateRangeField`, and `ConfirmDialog` → sindarian-ui's `ConfirmationDialog`. Porting lanes MUST check every candidate export against the sindarian-ui barrel before creating it; the integration lane re-verifies no duplicate export names exist.
 
 ### FC-5 — Dependencies (written by foundation; frozen for wave 2)
 
@@ -127,15 +136,19 @@ recharts ^3.8.0
 (radix pins: caret versions consistent with the existing @radix-ui/* entries)
 ```
 
+Determinism: the exact ranges foundation records in the merged `package.json` (and the
+lockfile) ARE the frozen values from that point on — wave-2 lanes consume the lockfile
+and never re-resolve or edit dependency versions.
+
 ### FC-6 — Port-scope census (method frozen)
 
-"Used symbol" = any identifier named in an import from `@lerianstudio/sindarian-x` OR from a local shim file that re-exports it (`export * from '@lerianstudio/sindarian-x'` — matcher has 35 shims, br-consignado-gw has 19), across the four app source trees (read-only, in the durable clones):
+"Used symbol" = any identifier named in an import from `@lerianstudio/sindarian-x` OR from a local shim file that re-exports it (`export * from '@lerianstudio/sindarian-x'` — matcher has 35 shims, br-consignado-gw has 19), across the four app source trees AND their root-level configuration files (`vite.config.ts` and siblings import `getThemeScript` in lender and matcher). Read-only, in the durable clones:
 
 ```
-~/repos/lerianstudio/br-consignado-gw/ui/src
-~/repos/lerianstudio/matcher/ui/src
-~/repos/lerianstudio/lender/ui/src
-~/repos/lerianstudio/br-sfn/cockpit/src
+~/repos/lerianstudio/br-consignado-gw/ui/{src,*.ts,*.tsx,*.mjs}
+~/repos/lerianstudio/matcher/ui/{src,*.ts,*.tsx,*.mjs}
+~/repos/lerianstudio/lender/ui/{src,*.ts,*.tsx,*.mjs}
+~/repos/lerianstudio/br-sfn/cockpit/{src,e2e,scripts,*.ts,*.tsx,*.mjs}
 ```
 
 Each porting lane computes the census slice for its category as its first task and ports ONLY that union (plus internal dependencies). Symbols outside the union are not ported.
@@ -146,7 +159,7 @@ Each porting lane computes the census slice for its category as its first task a
 
 - Full monorepo verification: `npx turbo build lint check-types test`.
 - Duplicate-export check across the merged barrel (FC-4 re-verification).
-- Absence checks deferred under lane-cut rule 4: no `sindarian-x` string, no TODO/placeholder left by porting lanes, every FC-2 token present in built CSS.
+- Absence checks deferred under lane-cut rule 4: no `sindarian-x` string in package code, manifests, or config (planning documents under `docs/plans/` are excluded — they reference the name intentionally), no TODO/placeholder left by porting lanes, every FC-2 token present in built CSS.
 - Scratch Vite consumer: install the fresh beta, compile a file importing every new export, mount ThemeProvider + Toaster + one chart + DataTable, render smoke-test.
 - Confirms semantic-release published the beta from `develop` and records the exact version the app lanes must pin.
 
@@ -180,7 +193,7 @@ Each porting lane computes the census slice for its category as its first task a
 
 ### Lane: theme-toasts-charts
 
-**Goal:** Theme, toast helpers, and charts exist per FC-3 signatures: `ThemeProvider`/`useTheme`/`getThemeScript`/`ModeToggle` (`src/theme/`); `toast`/`successToast`/`errorToast`/`warningToast` layered over sindarian-ui's existing Toaster (`src/toast/`); `ChartContainer`/`ChartTooltip*`/`ChartLegend*`/`ChartStyle`/`ChartConfig`, `BarChart`, `LineChart`, `Donut`, `Sparkline`, chart presets (`src/charts/`), colored by the FC-2 `--chart-1..8` tokens.
+**Goal:** Theme, toast helpers, and charts exist per FC-3 signatures: `ThemeProvider`/`useTheme`/`getThemeScript`/`ModeToggle` (`src/theme/`); `successToast`/`errorToast`/`warningToast` layered over sindarian-ui's existing toast machinery (`src/toast/`; bare `toast` is an FC-4 collision and is NOT ported); `ChartContainer`/`ChartTooltip*`/`ChartLegend*`/`ChartStyle`/`ChartConfig`, `BarChart`, `LineChart`, `Donut`, `Sparkline`, chart presets (`src/charts/`), colored by the FC-2 `--chart-1..8` tokens.
 **Scope:** `packages/sindarian-ui/src/{theme,toast,charts}/**` only.
 **Depends on:** foundation
 **Done when:** FC-3 theme/toast signatures compile against app-like usage samples; charts render in both themes; toasts route through sindarian-ui's Toaster without touching its existing API.
@@ -237,7 +250,7 @@ Each porting lane computes the census slice for its category as its first task a
 ### Lane: retirement
 
 **Goal:** sindarian-x is dead: npm package deprecated, repo archived, no live consumer.
-**Scope:** cross-repo verification (read-only grep for `sindarian-x` across the four app repos and console-sdk); promote console-sdk `develop` → `main` (stable release) so apps can move off the beta pin; `npm deprecate @lerianstudio/sindarian-x` (all versions, message pointing to `@lerianstudio/sindarian-ui`); archive `LerianStudio/lib-sindarian-ui` on GitHub. NOTE: npm deprecate and GitHub archive need owner/admin rights — surfaced to Fred as explicit actions if the lane's credentials cannot perform them.
+**Scope:** cross-repo verification (read-only grep for `sindarian-x` across the four app repos and console-sdk — manifests, lockfiles, source, config, and tests; planning documents under `docs/plans/` are excluded since they reference the name intentionally); promote console-sdk `develop` → `main` (stable release) so apps can move off the beta pin; `npm deprecate @lerianstudio/sindarian-x` (all versions, message pointing to `@lerianstudio/sindarian-ui`); archive `LerianStudio/lib-sindarian-ui` on GitHub. NOTE: npm deprecate and GitHub archive need owner/admin rights — surfaced to Fred as explicit actions if the lane's credentials cannot perform them.
 **Depends on:** app-consignado, app-matcher, app-lender, app-cockpit
 **Done when:** deprecation live on npm, repo archived, absence checks pass, apps pin a stable (non-beta) sindarian-ui.
 **Status:** Pending

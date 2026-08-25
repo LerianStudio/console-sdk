@@ -42,7 +42,7 @@
 
 **Context:** The public barrel is `packages/sindarian-ui/src/index.tsx` (~58 lines, sections for ui primitives, application components, hooks). No `enterprise/`, `theme/`, `toast/`, `charts/`, or `domain/` directory exists under `packages/sindarian-ui/src/`. Wave-2 lanes will fill these directories; each exports only through its own `index.ts` (index.md § File Ownership).
 
-**Implementation vision:** Create each directory with an `index.ts` containing only `export {}` and a one-line comment naming the owning lane (e.g. `// Owned by lane enterprise — see docs/plans/2026-08-26-sindarian-x-retirement/`). Append the FC-1 block verbatim at the end of `src/index.tsx` — five `export * from` lines, exact order and comment from index.md § FC-1. Do not reorder, regroup, or reformat any existing export line. `export * from` an empty module is valid TS and emits nothing, so the published surface is unchanged until wave 2 lands.
+**Implementation vision:** Create each directory with an `index.ts` containing only `export {}` and a one-line comment naming the owning lane (e.g. `// Owned by lane enterprise — see docs/plans/2026-08-26-sindarian-x-retirement/`). Append the FC-1 block verbatim to `src/index.tsx` — five `export * from` lines as ONE CONTIGUOUS BLOCK in the exact frozen order (later work may append further exports after the block; the block itself is never split or reordered). Do not reorder, regroup, or reformat any existing export line. `export * from` an empty module is valid TS and emits nothing, so the published surface is unchanged until wave 2 lands.
 
 **Files:**
 - Create: `packages/sindarian-ui/src/enterprise/index.ts`
@@ -54,7 +54,7 @@
 
 **Verification:** `npx turbo build --filter=@lerianstudio/sindarian-ui` green; `ls packages/sindarian-ui/dist/{enterprise,theme,toast,charts,domain}` shows compiled stubs.
 
-**Done when:** build green; `git diff` on `src/index.tsx` shows only the appended FC-1 block.
+**Done when:** build green; `git diff` on `src/index.tsx` shows only additions, with the FC-1 block contiguous and in frozen order.
 
 #### Task 1.1.2: Add the frozen wave-2 dependencies
 
@@ -62,7 +62,7 @@
 
 **Context:** `packages/sindarian-ui/package.json` carries 14 `@radix-ui/react-*` entries in `dependencies` (bundled, not peer) plus cva/clsx/tailwind-merge. Wave-2 lanes are forbidden from touching this file (index.md § File Ownership), so every dependency they need lands now, per FC-5.
 
-**Implementation vision:** Add to `dependencies`, following the existing caret-version convention: `recharts ^3.8.0`, `@tanstack/react-table ^8.21.3`, `@tanstack/react-virtual ^3.14.3`, and the six radix packages for the missing primitives — `@radix-ui/react-accordion`, `@radix-ui/react-alert-dialog`, `@radix-ui/react-radio-group`, `@radix-ui/react-scroll-area`, `@radix-ui/react-toggle-group`, `@radix-ui/react-hover-card` — at the latest versions compatible with the repo's existing `@radix-ui/*` pins (check the installed majors; do not bump any existing entry). No peerDependencies changes: the sindarian-x peers the ported code needs (`react-hook-form`, `lucide-react`, `react-day-picker`) are already sindarian-ui peers.
+**Implementation vision:** Add to `dependencies`, following the existing caret-version convention: `recharts ^3.8.0`, `@tanstack/react-table ^8.21.3`, `@tanstack/react-virtual ^3.14.3`, and the six radix packages for the missing primitives — `@radix-ui/react-accordion`, `@radix-ui/react-alert-dialog`, `@radix-ui/react-radio-group`, `@radix-ui/react-scroll-area`, `@radix-ui/react-toggle-group`, `@radix-ui/react-hover-card` — at the latest versions compatible with the repo's existing `@radix-ui/*` pins (check the installed majors; do not bump any existing entry). The exact ranges this task records in `package.json` become the frozen FC-5 values on merge — wave-2 lanes consume the lockfile and never re-resolve. No peerDependencies changes: the sindarian-x peers the ported code needs (`react-hook-form`, `lucide-react`, `react-day-picker`) are already sindarian-ui peers.
 
 **Files:**
 - Modify: `packages/sindarian-ui/package.json`
