@@ -81,37 +81,43 @@ describe('TextareaField', () => {
     ).toBeInTheDocument()
   })
 
-  describe.each([[null], [false], [''], ['   '], ['\t\n']])(
-    'unrenderable label %p',
-    (falsyLabel: unknown) => {
-      it('renders no stray label element and still names the control via aria-label', () => {
-        function FalsyLabel() {
-          const form = useForm<{ notes: string }>({
-            defaultValues: { notes: '' }
-          })
-          return (
-            <Form {...form}>
-              <TextareaField
-                control={form.control}
-                name="notes"
-                // @ts-expect-error null/false are compile errors; blank and
-                // whitespace-only strings are only catchable at runtime. Every
-                // one of them must still leave the control named.
-                label={falsyLabel}
-                aria-label="Operator notes"
-              />
-            </Form>
-          )
-        }
-        const { container } = render(<FalsyLabel />)
+  describe.each([
+    [null],
+    [false],
+    [''],
+    ['   '],
+    ['\t\n'],
+    [[]],
+    [<></>],
+    [['', '  ']]
+  ])('unrenderable label %p', (falsyLabel: unknown) => {
+    it('renders no stray label element and still names the control via aria-label', () => {
+      function FalsyLabel() {
+        const form = useForm<{ notes: string }>({
+          defaultValues: { notes: '' }
+        })
+        return (
+          <Form {...form}>
+            <TextareaField
+              control={form.control}
+              name="notes"
+              // @ts-expect-error null/false are compile errors; blank and
+              // whitespace-only strings are only catchable at runtime. Every
+              // one of them must still leave the control named.
+              label={falsyLabel}
+              aria-label="Operator notes"
+            />
+          </Form>
+        )
+      }
+      const { container } = render(<FalsyLabel />)
 
-        expect(container.querySelector('label')).toBeNull()
-        expect(
-          screen.getByRole('textbox', { name: 'Operator notes' })
-        ).toBeInTheDocument()
-      })
-    }
-  )
+      expect(container.querySelector('label')).toBeNull()
+      expect(
+        screen.getByRole('textbox', { name: 'Operator notes' })
+      ).toBeInTheDocument()
+    })
+  })
 
   it.each([
     ['empty', ''],
@@ -151,6 +157,27 @@ describe('TextareaField', () => {
       spy.mockRestore()
     }
   )
+
+  it('warns when an empty collection label leaves the control nameless', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    function Nameless() {
+      const form = useForm<{ notes: string }>({ defaultValues: { notes: '' } })
+      return (
+        <Form {...form}>
+          {/* Compiles: an empty array is a valid ReactNode, so the union accepts
+              it with no aria-label. Only the runtime guard catches this. */}
+          <TextareaField control={form.control} name="notes" label={[]} />
+        </Form>
+      )
+    }
+    const { container } = render(<Nameless />)
+
+    expect(container.querySelector('label')).toBeNull()
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining('TextareaField "notes" has no accessible name')
+    )
+    spy.mockRestore()
+  })
 
   it('keeps a disabled field out of the submitted values even when populated', async () => {
     const onSubmit = jest.fn()

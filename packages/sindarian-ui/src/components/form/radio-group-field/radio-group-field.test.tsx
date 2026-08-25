@@ -96,39 +96,45 @@ describe('RadioGroupField', () => {
     ).toBeInTheDocument()
   })
 
-  describe.each([[null], [false], [''], ['   '], ['\t\n']])(
-    'unrenderable label %p',
-    (falsyLabel: unknown) => {
-      it('renders no stray group label and still names the group via aria-label', () => {
-        function FalsyLabel() {
-          const form = useForm<{ rail: string }>({
-            defaultValues: { rail: '' }
-          })
-          return (
-            <Form {...form}>
-              <RadioGroupField
-                control={form.control}
-                name="rail"
-                // @ts-expect-error null/false are compile errors; blank and
-                // whitespace-only strings are only catchable at runtime. Every
-                // one of them must still leave the group named.
-                label={falsyLabel}
-                aria-label="Settlement rail"
-                options={[{ value: 'pix', label: 'Pix' }]}
-              />
-            </Form>
-          )
-        }
-        render(<FalsyLabel />)
+  describe.each([
+    [null],
+    [false],
+    [''],
+    ['   '],
+    ['\t\n'],
+    [[]],
+    [<></>],
+    [['', '  ']]
+  ])('unrenderable label %p', (falsyLabel: unknown) => {
+    it('renders no stray group label and still names the group via aria-label', () => {
+      function FalsyLabel() {
+        const form = useForm<{ rail: string }>({
+          defaultValues: { rail: '' }
+        })
+        return (
+          <Form {...form}>
+            <RadioGroupField
+              control={form.control}
+              name="rail"
+              // @ts-expect-error null/false are compile errors; blank and
+              // whitespace-only strings are only catchable at runtime. Every
+              // one of them must still leave the group named.
+              label={falsyLabel}
+              aria-label="Settlement rail"
+              options={[{ value: 'pix', label: 'Pix' }]}
+            />
+          </Form>
+        )
+      }
+      render(<FalsyLabel />)
 
-        expect(
-          screen.getByRole('radiogroup', { name: 'Settlement rail' })
-        ).toBeInTheDocument()
-        // The only <label> left is the option's own, never an empty group label.
-        expect(screen.getAllByText('Pix')).toHaveLength(1)
-      })
-    }
-  )
+      expect(
+        screen.getByRole('radiogroup', { name: 'Settlement rail' })
+      ).toBeInTheDocument()
+      // The only <label> left is the option's own, never an empty group label.
+      expect(screen.getAllByText('Pix')).toHaveLength(1)
+    })
+  })
 
   it.each([
     ['empty', ''],
@@ -147,6 +153,32 @@ describe('RadioGroupField', () => {
             name="rail"
             label={blank}
             aria-label={blank}
+            options={[{ value: 'pix', label: 'Pix' }]}
+          />
+        </Form>
+      )
+    }
+    render(<Nameless />)
+
+    expect(screen.getByRole('radiogroup')).not.toHaveAttribute('aria-label')
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining('RadioGroupField "rail" has no accessible name')
+    )
+    spy.mockRestore()
+  })
+
+  it('warns when an empty fragment label leaves the group nameless', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    function Nameless() {
+      const form = useForm<{ rail: string }>({ defaultValues: { rail: '' } })
+      return (
+        <Form {...form}>
+          {/* Compiles: an empty fragment is a valid ReactNode, so the union
+              accepts it with no aria-label. Only the runtime guard catches it. */}
+          <RadioGroupField
+            control={form.control}
+            name="rail"
+            label={<></>}
             options={[{ value: 'pix', label: 'Pix' }]}
           />
         </Form>

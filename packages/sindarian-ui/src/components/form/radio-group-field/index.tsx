@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { Children, Fragment, isValidElement, ReactNode } from 'react'
 import { Control, FieldValues, Path } from 'react-hook-form'
 
 import {
@@ -41,14 +41,32 @@ type RadioGroupFieldOwnProps<T extends FieldValues = FieldValues> = {
  */
 type RenderableLabel = Exclude<ReactNode, null | undefined | boolean>
 
-/** Does this label produce a real element a screen reader can read? */
+/**
+ * Does this label produce a real element a screen reader can read?
+ *
+ * Ceiling, on purpose: a non-fragment element always counts, even an empty one.
+ * We cannot render a component to find out whether it emits text, so
+ * `label={<EmptyThing />}` is accepted. Fragments ARE unwrapped, since they add
+ * no markup of their own and `<></>` is a plausible way to say "no label".
+ */
 function hasRenderableLabel(label: ReactNode): boolean {
   if (label === null || label === undefined || typeof label === 'boolean') {
     return false
   }
   // Empty AND whitespace-only strings render a label box with nothing to
   // announce, so both count as absent. A number (`0`) is a real label.
-  return typeof label === 'string' ? label.trim() !== '' : true
+  if (typeof label === 'string') return label.trim() !== ''
+  if (typeof label === 'number' || typeof label === 'bigint') return true
+  if (isValidElement(label)) {
+    return label.type === Fragment
+      ? hasRenderableLabel(
+          (label.props as { children?: ReactNode })?.children ?? null
+        )
+      : true
+  }
+  // Arrays and other iterables: renderable only if some child is. Elements are
+  // handled above, so this never recurses into the value it was given.
+  return Children.toArray(label).some((child) => hasRenderableLabel(child))
 }
 
 /**
