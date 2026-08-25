@@ -38,21 +38,21 @@ function BaseComponent(args: ToggleGroupStoryArgs) {
   )
 }
 
-export const Primary: StoryObj<ToggleGroupProps> = {
+export const Primary: StoryObj<ToggleGroupStoryArgs> = {
   render: (args) => BaseComponent(args)
 }
 
-export const Outline: StoryObj<ToggleGroupProps> = {
+export const Outline: StoryObj<ToggleGroupStoryArgs> = {
   args: { variant: 'outline' },
   render: (args) => BaseComponent(args)
 }
 
-export const Spaced: StoryObj<ToggleGroupProps> = {
+export const Spaced: StoryObj<ToggleGroupStoryArgs> = {
   args: { variant: 'outline', spacing: 2 },
   render: (args) => BaseComponent(args)
 }
 
-export const Multiple: StoryObj<ToggleGroupProps> = {
+export const Multiple: StoryObj<ToggleGroupStoryArgs> = {
   render: () => (
     <ToggleGroup type="multiple" defaultValue={['day', 'month']}>
       {ranges.map((range) => (

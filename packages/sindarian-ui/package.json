@@ -19,7 +19,7 @@
     "dist"
   ],
   "scripts": {
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc --noEmit && tsc -p tsconfig.storybook.json",
     "build": "tsc && npm run copy:assets && npm run copy:styles && npm run build:paths",
     "build:paths": "tsc-alias -p tsconfig.json",
     "copy:assets": "copyfiles -f src/public/**/* dist/public",

@@ -17,11 +17,21 @@ const options = [
   { value: 'siloc', label: 'SILOC' }
 ]
 
-function BaseComponent(
-  args: Omit<RadioGroupFieldProps, 'name' | 'control' | 'options'> & {
-    options?: RadioGroupFieldProps['options']
-  }
-) {
+/**
+ * `RadioGroupFieldProps` is a union (visible label OR aria-label), and a union
+ * hands `StoryObj` a union of render signatures — which stops contextually
+ * typing `args` and makes it implicitly `any`. Omitting the props the story
+ * supplies itself collapses the union to a single object type, which types the
+ * render argument again.
+ */
+type RadioGroupFieldStoryArgs = Omit<
+  RadioGroupFieldProps,
+  'name' | 'control' | 'options'
+> & {
+  options?: RadioGroupFieldProps['options']
+}
+
+function BaseComponent(args: RadioGroupFieldStoryArgs) {
   const form = useForm({ defaultValues: { rail: 'pix' } })
 
   return (
@@ -39,26 +49,26 @@ function BaseComponent(
   )
 }
 
-export const Primary: StoryObj<RadioGroupFieldProps> = {
+export const Primary: StoryObj<RadioGroupFieldStoryArgs> = {
   render: (args) => BaseComponent(args)
 }
 
-export const Required: StoryObj<RadioGroupFieldProps> = {
+export const Required: StoryObj<RadioGroupFieldStoryArgs> = {
   args: { required: true },
   render: (args) => BaseComponent(args)
 }
 
-export const WithDescription: StoryObj<RadioGroupFieldProps> = {
+export const WithDescription: StoryObj<RadioGroupFieldStoryArgs> = {
   args: { description: 'Determines settlement window and cut-off.' },
   render: (args) => BaseComponent(args)
 }
 
-export const WithTooltip: StoryObj<RadioGroupFieldProps> = {
+export const WithTooltip: StoryObj<RadioGroupFieldStoryArgs> = {
   args: { tooltip: 'Pix settles 24/7; TED only in business hours.' },
   render: (args) => BaseComponent(args)
 }
 
-export const WithDisabledOption: StoryObj<RadioGroupFieldProps> = {
+export const WithDisabledOption: StoryObj<RadioGroupFieldStoryArgs> = {
   args: {
     options: [
       ...options.slice(0, 2),
@@ -68,7 +78,7 @@ export const WithDisabledOption: StoryObj<RadioGroupFieldProps> = {
   render: (args) => BaseComponent(args)
 }
 
-export const Disabled: StoryObj<RadioGroupFieldProps> = {
+export const Disabled: StoryObj<RadioGroupFieldStoryArgs> = {
   args: { disabled: true },
   render: (args) => BaseComponent(args)
 }

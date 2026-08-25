@@ -11,7 +11,16 @@ const meta: Meta<TextareaFieldProps> = {
 
 export default meta
 
-function BaseComponent(args: Omit<TextareaFieldProps, 'name' | 'control'>) {
+/**
+ * `TextareaFieldProps` is a union (visible label OR aria-label), and a union
+ * hands `StoryObj` a union of render signatures — which stops contextually
+ * typing `args` and makes it implicitly `any`. Omitting the props the story
+ * supplies itself collapses the union to a single object type, which types the
+ * render argument again.
+ */
+type TextareaFieldStoryArgs = Omit<TextareaFieldProps, 'name' | 'control'>
+
+function BaseComponent(args: TextareaFieldStoryArgs) {
   const form = useForm()
 
   return (
@@ -29,36 +38,36 @@ function BaseComponent(args: Omit<TextareaFieldProps, 'name' | 'control'>) {
   )
 }
 
-export const Primary: StoryObj<TextareaFieldProps> = {
+export const Primary: StoryObj<TextareaFieldStoryArgs> = {
   render: (args) => BaseComponent(args)
 }
 
-export const Required: StoryObj<TextareaFieldProps> = {
+export const Required: StoryObj<TextareaFieldStoryArgs> = {
   args: { required: true },
   render: (args) => BaseComponent(args)
 }
 
-export const WithDescription: StoryObj<TextareaFieldProps> = {
+export const WithDescription: StoryObj<TextareaFieldStoryArgs> = {
   args: { description: 'Visible to the operations team only.' },
   render: (args) => BaseComponent(args)
 }
 
-export const WithTooltip: StoryObj<TextareaFieldProps> = {
+export const WithTooltip: StoryObj<TextareaFieldStoryArgs> = {
   args: { tooltip: 'Free-form context attached to the transaction.' },
   render: (args) => BaseComponent(args)
 }
 
-export const Rows: StoryObj<TextareaFieldProps> = {
+export const Rows: StoryObj<TextareaFieldStoryArgs> = {
   args: { rows: 8 },
   render: (args) => BaseComponent(args)
 }
 
-export const ReadOnly: StoryObj<TextareaFieldProps> = {
+export const ReadOnly: StoryObj<TextareaFieldStoryArgs> = {
   args: { readOnly: true },
   render: (args) => BaseComponent(args)
 }
 
-export const Disabled: StoryObj<TextareaFieldProps> = {
+export const Disabled: StoryObj<TextareaFieldStoryArgs> = {
   args: { disabled: true },
   render: (args) => BaseComponent(args)
 }

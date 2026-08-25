@@ -1,4 +1,4 @@
-import { Meta } from '@storybook/nextjs'
+import { Meta, StoryObj } from '@storybook/nextjs'
 import {
   DashboardCard,
   DashboardCardContent,
@@ -20,7 +20,7 @@ const meta: Meta = {
 
 export default meta
 
-export const Primary = {
+export const Primary: StoryObj = {
   render: (args) => (
     <div className="grid grid-cols-3 gap-4">
       <DashboardCard {...args}>
