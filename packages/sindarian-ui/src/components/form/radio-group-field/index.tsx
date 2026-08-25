@@ -21,16 +21,27 @@ export type RadioGroupFieldOption = {
   disabled?: boolean
 }
 
-export type RadioGroupFieldProps<T extends FieldValues = FieldValues> = {
+type RadioGroupFieldOwnProps<T extends FieldValues = FieldValues> = {
   control: Control<T>
   name: Path<T>
   options: RadioGroupFieldOption[]
-  label?: ReactNode
   description?: ReactNode
   tooltip?: string
   required?: boolean
   disabled?: boolean
 }
+
+/**
+ * A control with no accessible name is invisible to screen readers, so the type
+ * makes one mandatory: either a visible `label`, or an `aria-label` when the
+ * design calls for a bare radio group.
+ */
+export type RadioGroupFieldProps<T extends FieldValues = FieldValues> =
+  RadioGroupFieldOwnProps<T> &
+    (
+      | { label: ReactNode; 'aria-label'?: string }
+      | { label?: never; 'aria-label': string }
+    )
 
 export const RadioGroupField = <T extends FieldValues = FieldValues>({
   control,
@@ -40,7 +51,8 @@ export const RadioGroupField = <T extends FieldValues = FieldValues>({
   description,
   tooltip,
   required,
-  disabled
+  disabled,
+  'aria-label': ariaLabel
 }: RadioGroupFieldProps<T>) => {
   // `setFocus(name)` / focus-on-error needs a ref to something focusable. The
   // RadioGroup root is a plain div, so the ref goes on the first option a user
@@ -67,6 +79,7 @@ export const RadioGroupField = <T extends FieldValues = FieldValues>({
               onValueChange={field.onChange}
               onBlur={field.onBlur}
               disabled={disabled}
+              aria-label={ariaLabel}
               className="gap-2"
             >
               {options.map((option, index) => {

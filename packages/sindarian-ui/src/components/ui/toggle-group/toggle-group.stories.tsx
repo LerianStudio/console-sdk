@@ -18,7 +18,15 @@ const ranges = [
   { value: 'month', label: 'Month' }
 ]
 
-function BaseComponent(args: Partial<ToggleGroupProps>) {
+// Only the styling knobs, never the single/multiple discriminant: spreading a
+// Partial of that union would widen `type` and the props would stop resolving
+// to either variant.
+type ToggleGroupStoryArgs = Pick<
+  ToggleGroupProps,
+  'variant' | 'size' | 'spacing'
+>
+
+function BaseComponent(args: ToggleGroupStoryArgs) {
   return (
     <ToggleGroup type="single" defaultValue="week" {...args}>
       {ranges.map((range) => (

@@ -72,6 +72,30 @@ describe('RadioGroupField', () => {
     expect(await screen.findByText('Pick a rail')).toBeInTheDocument()
   })
 
+  it('names the group via aria-label when there is no visible label', () => {
+    function LabelFree() {
+      const form = useForm<{ rail: string }>({ defaultValues: { rail: '' } })
+      return (
+        <Form {...form}>
+          <RadioGroupField
+            control={form.control}
+            name="rail"
+            aria-label="Settlement rail"
+            options={[
+              { value: 'pix', label: 'Pix' },
+              { value: 'ted', label: 'TED' }
+            ]}
+          />
+        </Form>
+      )
+    }
+    render(<LabelFree />)
+
+    expect(
+      screen.getByRole('radiogroup', { name: 'Settlement rail' })
+    ).toBeInTheDocument()
+  })
+
   it('setFocus lands on the first selectable option, skipping disabled ones', async () => {
     let form!: UseFormReturn<{ rail: string }>
     function FocusHarness() {

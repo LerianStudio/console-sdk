@@ -107,6 +107,27 @@ describe('FileUploadField', () => {
     expect(screen.getByText('Choose a file')).toBeInTheDocument()
   })
 
+  it('names the file input via aria-label when there is no visible label', () => {
+    function LabelFree() {
+      const form = useForm<{ cert: string }>({ defaultValues: { cert: '' } })
+      return (
+        <Form {...form}>
+          <FileUploadField
+            control={form.control}
+            name="cert"
+            aria-label="A1 certificate"
+          />
+        </Form>
+      )
+    }
+    render(<LabelFree />)
+
+    expect(screen.getByLabelText('A1 certificate')).toHaveAttribute(
+      'type',
+      'file'
+    )
+  })
+
   it('marks the field touched on blur, so onBlur validation modes fire', async () => {
     let form!: UseFormReturn<{ cert: string }>
     const { container } = render(<Harness formRef={(f) => (form = f)} />)

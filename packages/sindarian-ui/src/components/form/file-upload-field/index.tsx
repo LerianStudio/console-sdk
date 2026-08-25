@@ -14,10 +14,9 @@ import {
 } from '@/components/ui/form'
 import { FileUpload, type FileUploadResult } from '@/components/ui/file-upload'
 
-export type FileUploadFieldProps<T extends FieldValues = FieldValues> = {
+type FileUploadFieldOwnProps<T extends FieldValues = FieldValues> = {
   control: Control<T>
   name: Path<T>
-  label?: ReactNode
   description?: ReactNode
   tooltip?: string
   required?: boolean
@@ -28,6 +27,18 @@ export type FileUploadFieldProps<T extends FieldValues = FieldValues> = {
   /** Optional escape hatch to also observe the picked File/clear alongside the form's text value. */
   onSelect?: (result: FileUploadResult | null) => void
 }
+
+/**
+ * A control with no accessible name is invisible to screen readers, so the type
+ * makes one mandatory: either a visible `label`, or an `aria-label` when the
+ * design calls for a bare file picker.
+ */
+export type FileUploadFieldProps<T extends FieldValues = FieldValues> =
+  FileUploadFieldOwnProps<T> &
+    (
+      | { label: ReactNode; 'aria-label'?: string }
+      | { label?: never; 'aria-label': string }
+    )
 
 /**
  * FileUploadField — the react-hook-form field for FileUpload.
@@ -55,7 +66,8 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
   maxSizeBytes,
   disabled,
   className,
-  onSelect
+  onSelect,
+  'aria-label': ariaLabel
 }: FileUploadFieldProps<T>) => {
   const [localValue, setLocalValue] = useState<FileUploadResult | null>(null)
 
@@ -86,6 +98,7 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
                 ref={field.ref}
                 name={field.name}
                 onBlur={field.onBlur}
+                aria-label={ariaLabel}
                 accept={accept}
                 maxSizeBytes={maxSizeBytes}
                 disabled={disabled}
