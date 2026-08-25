@@ -1,0 +1,50 @@
+/**
+ * moneyDiff — the signed difference between two reconciliation sides, computed
+ * on integer minor units and never on floats.
+ *
+ * THIRD RAIL (money): `left − right` runs through `toMinor` on both operands →
+ * BigInt subtraction → `minorToDecimal`, and the tolerance breach test compares
+ * MAGNITUDES in minor units. A float subtraction of two decimals would drift by
+ * a cent at reconciliation scale, which is the difference between a matched and
+ * an unmatched pair.
+ *
+ * A null `decimal` means an unparseable operand — surfaced, never coerced to
+ * zero, so a caller renders the no-value placeholder rather than a fabricated
+ * tie.
+ */
+import { minorDigitsOf, minorToDecimal, toMinor } from './money-math'
+import type { Amount } from './money-math'
+
+/** The money-comparison contract: two sides, a currency, an optional tolerance. */
+type MoneyDiffInput = {
+  /** Left amount (canonical decimal string preferred for lossless math). */
+  left: Amount
+  /** Right amount. The difference is left − right. */
+  right: Amount
+  /** ISO 4217 currency code, e.g. "BRL". Drives the minor-unit scale. */
+  currency: string
+  /** Override the currency-derived minor-unit scale. When omitted, the scale
+   *  derives from the currency (2 for an unknown one), never a hardcoded 2. */
+  minorDigits?: number
+  /** Absolute tolerance in MAJOR units. `|left − right| > tolerance` is a breach. */
+  tolerance?: Amount
+  /** BCP 47 locale for the money figure. */
+  locale?: string
+}
+
+export function moneyDiff(money: MoneyDiffInput): {
+  decimal: string | null
+  breach: boolean
+} {
+  const scale = money.minorDigits ?? minorDigitsOf(money.currency)
+  const l = toMinor(money.left, scale)
+  const r = toMinor(money.right, scale)
+  if (l === null || r === null) return { decimal: null, breach: false }
+  const diff = l - r
+  const tol = money.tolerance == null ? null : toMinor(money.tolerance, scale)
+  const abs = diff < 0n ? -diff : diff
+  // A breach is a magnitude STRICTLY beyond the band; no tolerance → no band, so
+  // any nonzero difference is itself the breach.
+  const breach = tol === null ? diff !== 0n : abs > tol
+  return { decimal: minorToDecimal(diff, scale), breach }
+}

@@ -1,0 +1,187 @@
+/**
+ * THIRD RAIL: the delinquency rate is a ratio of two EXACT integer minor-unit
+ * totals (overdueMinor / totalMinor), never a float sum of decimals. Ported from
+ * sindarian-x@0.15.0's `src/components/credit/delinquency-aging.test.ts`, plus
+ * the bucket-band and grand-total math the composite delegates to.
+ */
+import '@testing-library/jest-dom'
+import { render } from '@testing-library/react'
+
+import { DelinquencyAging, delinquencyRate } from '.'
+import { bucketBand, sumBucketTotals } from './aging-buckets'
+
+const buckets = (...rows: Array<[string, boolean]>) =>
+  rows.map(([total, overdue], i) => ({
+    label: `b${i}`,
+    count: 1,
+    total,
+    overdue
+  }))
+
+describe('delinquencyRate', () => {
+  it('is overdue total / portfolio total as a 0..1 ratio', () => {
+    // overdue 250.00 of 1000.00 portfolio → 0.25 exactly.
+    const r = delinquencyRate(buckets(['750.00', false], ['250.00', true]), 2)
+    expect(r.rate).toBe(0.25)
+    expect(r.overdueMinor).toBe(25000n)
+    expect(r.totalMinor).toBe(100000n)
+    expect(r.indeterminate).toBe(false)
+  })
+
+  it('sums multiple overdue buckets through minor units, not float decimals', () => {
+    // 0.1 + 0.2 in float is 0.30000000000000004; in minor units it is exactly
+    // 30 cents. The NUMERATOR is exact BigInt.
+    const r = delinquencyRate(
+      buckets(['0.70', false], ['0.10', true], ['0.20', true]),
+      2
+    )
+    expect(r.overdueMinor).toBe(30n)
+    expect(r.totalMinor).toBe(100n)
+    expect(r.rate).toBeCloseTo(0.3, 12)
+  })
+
+  it('returns rate null (no NaN) for a zero portfolio', () => {
+    const r = delinquencyRate(buckets(['0.00', false], ['0.00', true]), 2)
+    expect(r.totalMinor).toBe(0n)
+    expect(r.rate).toBeNull()
+    expect(r.indeterminate).toBe(false)
+  })
+
+  it('returns rate null for an empty bucket list', () => {
+    const r = delinquencyRate([], 2)
+    expect(r.totalMinor).toBe(0n)
+    expect(r.rate).toBeNull()
+  })
+
+  it('is indeterminate when any bucket total is unparseable', () => {
+    const r = delinquencyRate(buckets(['750.00', false], ['garbage', true]), 2)
+    expect(r.indeterminate).toBe(true)
+    expect(r.rate).toBeNull()
+    expect(r.overdueMinor).toBeNull()
+    expect(r.totalMinor).toBeNull()
+  })
+
+  it('handles a fully-overdue portfolio (rate 1.0)', () => {
+    expect(
+      delinquencyRate(buckets(['500.00', true], ['500.00', true]), 2).rate
+    ).toBe(1)
+  })
+
+  it('handles zero-decimal currencies via scale (JPY scale 0)', () => {
+    // No fractional minor unit: 250 of 1000 → 0.25.
+    const r = delinquencyRate(buckets(['750', false], ['250', true]), 0)
+    expect(r.overdueMinor).toBe(250n)
+    expect(r.totalMinor).toBe(1000n)
+    expect(r.rate).toBe(0.25)
+  })
+})
+
+describe('bucketBand', () => {
+  it('reads a single bucket as current (no escalation to show)', () => {
+    expect(bucketBand(0, 1)).toBe('current')
+  })
+  it('bands by ordinal position: first current, last overdue', () => {
+    expect(bucketBand(0, 5)).toBe('current')
+    expect(bucketBand(1, 5)).toBe('recent')
+    expect(bucketBand(2, 5)).toBe('recent')
+    expect(bucketBand(3, 5)).toBe('aging')
+    expect(bucketBand(4, 5)).toBe('overdue')
+  })
+})
+
+describe('sumBucketTotals', () => {
+  it('sums the grand total through minor units', () => {
+    expect(
+      sumBucketTotals(
+        [
+          { label: 'a', count: 1, total: '0.10' },
+          { label: 'b', count: 1, total: '0.20' }
+        ],
+        2
+      )
+    ).toBe('0.30')
+  })
+  it('poisons the total to null when one bucket is unparseable', () => {
+    expect(
+      sumBucketTotals(
+        [
+          { label: 'a', count: 1, total: '1.00' },
+          { label: 'b', count: 1, total: 'oops' }
+        ],
+        2
+      )
+    ).toBeNull()
+  })
+})
+
+describe('DelinquencyAging', () => {
+  const PORTFOLIO = [
+    { label: 'A vencer', count: 312, total: '900.00', overdue: false },
+    { label: '90+', count: 4, total: '100.00', overdue: true }
+  ]
+
+  it('states the rate and names the band with an sr-only word', () => {
+    const { container } = render(
+      <DelinquencyAging buckets={PORTFOLIO} currency="BRL" locale="en-US" />
+    )
+    // 100.00 of 1000.00 = 10.0%, exactly on the default breach edge (0.1), so
+    // the strict-edge rule keeps it in the calmer band.
+    expect(container.textContent).toContain('10.0%')
+    expect(container.textContent).toContain('Elevada')
+  })
+
+  it('announces a distressed rate as an alert', () => {
+    const { container } = render(
+      <DelinquencyAging
+        buckets={[
+          { label: 'A vencer', count: 1, total: '500.00', overdue: false },
+          { label: '90+', count: 1, total: '500.00', overdue: true }
+        ]}
+        currency="BRL"
+        locale="en-US"
+      />
+    )
+    expect(container.querySelector('[role="alert"]')).not.toBeNull()
+    expect(container.textContent).toContain('Em estresse')
+  })
+
+  it('renders an explicit empty readout for a zero portfolio, never NaN%', () => {
+    const { container } = render(
+      <DelinquencyAging
+        buckets={[
+          { label: 'A vencer', count: 0, total: '0.00', overdue: false }
+        ]}
+        currency="BRL"
+        locale="en-US"
+      />
+    )
+    expect(container.textContent).toContain('sem carteira')
+    expect(container.textContent).not.toContain('NaN')
+  })
+
+  it('reads an unparseable total as indeterminate', () => {
+    const { container } = render(
+      <DelinquencyAging
+        buckets={[
+          { label: 'A vencer', count: 1, total: 'oops', overdue: false }
+        ]}
+        currency="BRL"
+        locale="en-US"
+      />
+    )
+    expect(container.textContent).toContain('indeterminada')
+  })
+
+  it('renders the money-math-exact grand total when showTotal is set', () => {
+    const { container } = render(
+      <DelinquencyAging
+        buckets={PORTFOLIO}
+        currency="BRL"
+        locale="en-US"
+        showTotal
+      />
+    )
+    expect(container.textContent).toContain('Total geral')
+    expect(container.textContent).toContain('1,000.00')
+  })
+})
