@@ -20,7 +20,7 @@
  */
 import { cn } from '@/lib/utils'
 
-import { NO_VALUE } from '../format'
+import { NO_VALUE, isValidDigitCount } from '../format'
 
 export type MoneyTextProps = {
   amount: string | number | null | undefined
@@ -70,9 +70,23 @@ export function formatMoneyParts(
   // Reject non-finite numeric inputs (NaN / ±Infinity) before they reach Intl,
   // which would otherwise render literal "NaN" / "∞".
   if (typeof amount === 'number' && !Number.isFinite(amount)) return null
+  // A caller-supplied digit count reaches Intl directly; an out-of-range one
+  // would throw a RangeError and blank the amount instead of degrading to
+  // NO_VALUE.
+  if (!isValidDigitCount(fractionDigits)) return null
 
   const normalized = normalizeAmount(amount)
   if (normalized === null) return null
+
+  // DELIBERATE DIVERGENCE from sindarian-x@0.15.0: an exact zero written with a
+  // sign ('-0', '-0.00', '(0)') formatted as "-0.00" and reported negative:true,
+  // which painted a zero balance in the destructive sign color. Zero is neither
+  // positive nor negative — a signed-zero ledger cell is a rendering artifact of
+  // the input notation, never a fact about the money. The sign is dropped for an
+  // EXACT zero only; '-0.004' still rounds to "-0.00" and stays negative,
+  // because that one really is below zero.
+  const exactZero = /\d/.test(normalized) && /^-?0*(\.0*)?$/.test(normalized)
+  const forFormat = exactZero ? normalized.replace(/^-/, '') : normalized
 
   const formatter = new Intl.NumberFormat(locale, {
     minimumFractionDigits: fractionDigits,
@@ -83,7 +97,13 @@ export function formatMoneyParts(
   // The bundled lib types only model a `number | bigint` overload; the ES2020
   // string overload (which preserves precision) is unmodelled, so the
   // normalized amount is cast at the boundary.
-  const parts = formatter.formatToParts(normalized as unknown as number)
+  //
+  // RUNTIME FLOOR: this relies on a V8 with exact decimal-STRING Intl support
+  // (Node >= 20, evergreen browsers) — the whole point is that a 20-digit amount
+  // never round-trips through an IEEE-754 double. There is deliberately NO
+  // Number-coercion fallback for older runtimes: that fallback would silently
+  // reintroduce the precision loss this function exists to prevent.
+  const parts = formatter.formatToParts(forFormat as unknown as number)
 
   // Intl emits a literal "nan"/"∞" part for non-finite values; treat those as
   // no-value rather than rendering them.

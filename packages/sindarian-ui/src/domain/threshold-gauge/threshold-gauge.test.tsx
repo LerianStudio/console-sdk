@@ -6,7 +6,7 @@
  * band word (the only NON-chromatic band cue, WCAG 1.4.1) and the readout.
  */
 import '@testing-library/jest-dom'
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 
 import { ThresholdGauge, gaugeBand } from '.'
 import type { ThresholdGaugeProps } from '.'
@@ -203,6 +203,92 @@ describe('ThresholdGauge render', () => {
     expect(html).toMatch(/Próximo do limite/)
     expect(html).not.toMatch(/Limite ultrapassado/)
     expect(html).toMatch(/>200</)
+  })
+
+  // CodeRabbit #9: aria-label was `label`, so a gauge rendered without a visible
+  // caption produced a meter with NO accessible name — announced as a bare
+  // number with no indication of what it measures.
+  describe('accessible name', () => {
+    it('names the meter from the visible label', () => {
+      render(
+        <ThresholdGauge
+          value={62}
+          max={100}
+          warn={80}
+          breach={90}
+          direction="higher-is-worse"
+          format="count"
+          locale="en-US"
+          label="Utilização do limite"
+        />
+      )
+      expect(
+        screen.getByRole('meter', { name: 'Utilização do limite' })
+      ).toBeInTheDocument()
+    })
+
+    it('still names the meter when no visible label is rendered', () => {
+      render(
+        <ThresholdGauge
+          value={95}
+          max={100}
+          warn={80}
+          breach={90}
+          direction="higher-is-worse"
+          format="count"
+          locale="en-US"
+        />
+      )
+      // Falls back to the band word, which is always present and meaningful.
+      expect(
+        screen.getByRole('meter', { name: 'Limite ultrapassado' })
+      ).toBeInTheDocument()
+    })
+
+    it('lets ariaLabel override the visible caption for the meter', () => {
+      render(
+        <ThresholdGauge
+          value={62}
+          max={100}
+          warn={80}
+          breach={90}
+          direction="higher-is-worse"
+          format="count"
+          locale="en-US"
+          label="Utilização"
+          ariaLabel="Utilização do limite de crédito rotativo"
+        />
+      )
+      expect(
+        screen.getByRole('meter', {
+          name: 'Utilização do limite de crédito rotativo'
+        })
+      ).toBeInTheDocument()
+    })
+
+    it('never renders a meter without an accessible name', () => {
+      for (const props of [
+        { label: 'Caption' },
+        { ariaLabel: 'Aria only' },
+        {} // neither → band word
+      ]) {
+        const { unmount } = render(
+          <ThresholdGauge
+            value={62}
+            max={100}
+            warn={80}
+            breach={90}
+            direction="higher-is-worse"
+            format="count"
+            locale="en-US"
+            {...props}
+          />
+        )
+        const meter = screen.getByRole('meter')
+        expect(meter.getAttribute('aria-label')).toBeTruthy()
+        unmount()
+      }
+    })
   })
 
   it('routes format="money" through MoneyText', () => {

@@ -41,6 +41,35 @@ describe('formatMoneyParts', () => {
     expect(formatMoneyParts('   ', 2, 'en-US')).toBeNull()
   })
 
+  // CodeRabbit #6 — DELIBERATE DIVERGENCE from sindarian-x@0.15.0, which
+  // reported these as { formatted: '-0.00', negative: true }, painting a zero
+  // balance in the destructive sign color.
+  it('normalizes an exact signed zero to unsigned', () => {
+    for (const zero of ['-0', '-0.00', '(0)', '(0.00)', '−0.00']) {
+      expect(formatMoneyParts(zero, 2, 'en-US')).toEqual({
+        formatted: '0.00',
+        negative: false
+      })
+    }
+  })
+
+  // The divergence is narrow on purpose: a value BELOW zero that merely rounds
+  // to zero at this scale is still negative, and must keep its sign.
+  it('keeps the sign on a value that only rounds to zero', () => {
+    expect(formatMoneyParts('-0.004', 2, 'en-US')).toEqual({
+      formatted: '-0.00',
+      negative: true
+    })
+  })
+
+  // CodeRabbit #7: fractionDigits is caller-supplied and reached Intl raw.
+  it('returns null for an out-of-range fractionDigits instead of throwing', () => {
+    for (const digits of [-1, 1.5, 101, NaN, Infinity]) {
+      expect(() => formatMoneyParts('1.00', digits, 'en-US')).not.toThrow()
+      expect(formatMoneyParts('1.00', digits, 'en-US')).toBeNull()
+    }
+  })
+
   it('preserves 20+ significant digits', () => {
     expect(
       formatMoneyParts('12345678901234567890.12', 2, 'en-US')?.formatted
@@ -102,11 +131,20 @@ describe('MoneyText', () => {
     expect(container.firstElementChild).not.toHaveClass('text-destructive')
   })
 
-  // Numeric -0 is the zero Intl renders, not a negative — no sign color.
-  it('does not color numeric -0', () => {
-    const { container } = render(<MoneyText amount={-0} locale="en-US" />)
-    expect(container.textContent).toBe('0.00')
-    expect(container.firstElementChild).not.toHaveClass('text-destructive')
+  // Zero is neither positive nor negative, however the caller wrote it.
+  it('renders an exact signed zero unsigned and uncolored', () => {
+    for (const zero of [-0, '-0', '-0.00', '(0)'] as const) {
+      const { container } = render(<MoneyText amount={zero} locale="en-US" />)
+      expect(container.textContent).toBe('0.00')
+      expect(container.firstElementChild).not.toHaveClass('text-destructive')
+    }
+  })
+
+  it('degrades to the no-value placeholder on an out-of-range fractionDigits', () => {
+    const { container } = render(
+      <MoneyText amount="1250.00" fractionDigits={-1} locale="en-US" />
+    )
+    expect(container.textContent).toBe(NO_VALUE)
   })
 
   it('renders the no-value placeholder for null/undefined/empty', () => {

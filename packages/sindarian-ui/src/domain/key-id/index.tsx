@@ -83,24 +83,40 @@ function truncateMiddle(value: string, head = 6, tail = 4): string {
   return `${value.slice(0, head)}…${value.slice(-tail)}`
 }
 
+/**
+ * The fallback for a PII value that is MALFORMED for its kind. It must not be
+ * `truncateMiddle`: a short malformed value (a CPF missing a digit, a hand-typed
+ * document, a name-shaped email that failed the `@` check) is returned WHOLE by
+ * truncation, so the "masked" render leaks the very PII the mask exists to hide.
+ * A fixed-width dot run reveals nothing — not the content, not even the length.
+ *
+ * DELIBERATE DIVERGENCE from sindarian-x@0.15.0, which truncated instead. It
+ * costs the operator the ability to eyeball a malformed document against a log;
+ * that is the correct trade, because the alternative is a screenshot with a real
+ * CPF in it. An operator who needs the value passes `mask={false}` explicitly.
+ */
+function redactPii(): string {
+  return DOT.repeat(6)
+}
+
 /** Mask all but the central block of a digit string, then re-punctuate it. */
 function maskCpf(value: string): string {
   const d = digitsOf(value)
-  if (d.length !== 11) return truncateMiddle(value)
+  if (d.length !== 11) return redactPii()
   // Reveal the middle two blocks (456.789), dot the leading block and check digits.
   return `${DOT.repeat(3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${DOT.repeat(2)}`
 }
 
 function maskCnpj(value: string): string {
   const d = digitsOf(value)
-  if (d.length !== 14) return truncateMiddle(value)
+  if (d.length !== 14) return redactPii()
   // Reveal the central registration blocks, dot the head and the check digits.
   return `${DOT.repeat(2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${DOT.repeat(2)}`
 }
 
 function maskEmail(value: string): string {
   const at = value.indexOf('@')
-  if (at <= 0 || at === value.length - 1) return truncateMiddle(value)
+  if (at <= 0 || at === value.length - 1) return redactPii()
   const first = value.slice(0, 1)
   const domain = value.slice(at + 1)
   return `${first}${DOT.repeat(3)}@${domain}`
@@ -109,7 +125,7 @@ function maskEmail(value: string): string {
 function maskPhone(value: string): string {
   const d = digitsOf(value)
   // Expect a BR mobile in E.164-ish form: 55 + 2-digit area + 9 subscriber digits.
-  if (d.length !== 13 || !d.startsWith('55')) return truncateMiddle(value)
+  if (d.length !== 13 || !d.startsWith('55')) return redactPii()
   const area = d.slice(2, 4)
   const last2 = d.slice(-2)
   // Keep country + area, reveal the last two, dot the rest of the subscriber run.
@@ -118,10 +134,11 @@ function maskPhone(value: string): string {
 
 /**
  * Mask a key for display. PII kinds get a structured mask that reveals a
- * non-identifying middle and dots the rest; a value malformed for its kind
- * falls back to a middle-truncation rather than throwing. Id-shaped kinds are
- * always middle-truncated (long, not secret). The copy path never uses this —
- * it always sends the raw value.
+ * non-identifying middle and dots the rest; a value MALFORMED for its kind is
+ * redacted outright (see `redactPii`) rather than truncated, so a mask can never
+ * fall through to the raw secret. Id-shaped kinds are always middle-truncated
+ * (long, not secret). The copy path never uses this — it always sends the raw
+ * value.
  *
  * Internal: exported for its unit tests, never from `src/domain/index.ts`.
  */
@@ -182,11 +199,21 @@ function CopyValue({ value }: { value: string }) {
     // ceiling is silent failure in an insecure context (clipboard unavailable);
     // upgrade path is to lift a result up via an onCopy callback when a caller
     // needs to react.
-    void navigator.clipboard?.writeText(value).then(() => {
-      setCopied(true)
-      const reset = setTimeout(() => setCopied(false), 1500)
-      return () => clearTimeout(reset)
-    })
+    //
+    // The rejection handler is NOT optional: `writeText` rejects on a denied
+    // permission or a non-secure context, and an unhandled rejection in a render
+    // tree is a console error at best and a crashed handler at worst. On failure
+    // the button simply does not flip to the copied state, so the operator sees
+    // that nothing was copied rather than a false confirmation.
+    void navigator.clipboard
+      ?.writeText(value)
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
+      })
+      .catch(() => {
+        setCopied(false)
+      })
   }
 
   return (

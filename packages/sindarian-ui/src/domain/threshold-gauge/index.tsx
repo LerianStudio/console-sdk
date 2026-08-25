@@ -104,6 +104,12 @@ export interface ThresholdGaugeProps {
   locale?: string
   /** Quiet caption above the gauge (e.g. "Utilização do limite"). */
   label?: string
+  /** Accessible name for the meter when no visible `label` is rendered, or when
+   *  the meter needs a fuller name than the caption. A meter with no name is
+   *  announced as a bare number, so this resolves `ariaLabel ?? label ?? the
+   *  band word`, which is never empty. Additive — existing call sites that pass
+   *  only `label` are unaffected. */
+  ariaLabel?: string
   /** Override the accessible band word, per band, in the consumer's own locale.
    *  Shallow-merged over the pt-BR defaults, so `{ breach: 'Limit exceeded' }`
    *  leaves low/warn untouched. The band word is the ONLY non-chromatic carrier
@@ -224,6 +230,7 @@ export function ThresholdGauge({
   currency,
   locale,
   label,
+  ariaLabel,
   bandLabels,
   className
 }: ThresholdGaugeProps) {
@@ -232,6 +239,10 @@ export function ThresholdGauge({
   // The sr-only word is the band's only non-chromatic cue, so it is also the
   // string a trilingual consumer has to translate. pt-BR default, override wins.
   const word = bandLabels?.[band] ?? BAND[band].word
+  // A `role="meter"` with no accessible name is announced as a naked number.
+  // The band word is always present and always meaningful, so the meter is named
+  // even when a consumer renders the gauge without a visible caption.
+  const meterName = ariaLabel ?? label ?? word
 
   const valuePct = trackFraction(value, min, max) * 100
   const warnPct = trackFraction(warn, min, max) * 100
@@ -267,7 +278,7 @@ export function ThresholdGauge({
         aria-valuenow={value}
         aria-valuemin={min}
         aria-valuemax={max}
-        aria-label={label}
+        aria-label={meterName}
         className="border-border bg-muted relative h-2 w-full overflow-hidden rounded-full border"
       >
         <div

@@ -55,6 +55,11 @@ import type { GaugeBand } from '../threshold-gauge'
 import { AgingBuckets } from './aging-buckets'
 import type { AgingBucket } from './aging-buckets'
 
+/** Fixed-point scale for the rate division: 1e12 keeps twelve decimal places of
+ *  a 0..1 ratio, and both it and any in-range scaled quotient stay well inside
+ *  the exact-integer range of a double (2^53), so the conversion is lossless. */
+const RATE_PRECISION = 1_000_000_000_000n
+
 /** A bucket in the aging schedule, plus the flag that marks it past due. The
  *  `overdue` flag is what the rate's NUMERATOR sums — the caller declares which
  *  bands count as delinquent (typically every band after "current"). */
@@ -108,8 +113,24 @@ export function delinquencyRate(
   }
 
   // A zero portfolio has no rate to report — null, never overdueMinor/0 (NaN).
-  const rate =
-    totalMinor === 0n ? null : Number(overdueMinor) / Number(totalMinor)
+  if (totalMinor === 0n) {
+    return { rate: null, overdueMinor, totalMinor, indeterminate: false }
+  }
+
+  // The division is done as a BOUNDED BigInt ratio first, then converted once.
+  // Converting the two totals to Number separately overflowed on a large
+  // portfolio: past ~1.8e308 each side becomes Infinity and Infinity/Infinity is
+  // NaN — a portfolio big enough to matter reported no rate at all. Scaling the
+  // numerator by RATE_PRECISION keeps the quotient the size of a ratio (not the
+  // size of the money), so the single Number() sees a value it can hold exactly.
+  const scaled = (overdueMinor * RATE_PRECISION) / totalMinor
+  const rate = Number(scaled) / Number(RATE_PRECISION)
+
+  // A ratio that still cannot be represented is no rate at all — the readout
+  // shows the no-value placeholder rather than a NaN/Infinity artifact.
+  if (!Number.isFinite(rate)) {
+    return { rate: null, overdueMinor, totalMinor, indeterminate: false }
+  }
   return { rate, overdueMinor, totalMinor, indeterminate: false }
 }
 

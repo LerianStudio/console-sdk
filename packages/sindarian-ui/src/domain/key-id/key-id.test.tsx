@@ -56,18 +56,55 @@ describe('maskKeyId', () => {
     expect(maskKeyId('abc123', 'generic')).toBe('abc123')
   })
 
-  // --- malformed-for-kind falls back to truncate-middle, never throws -------
-  it('falls back to truncate-middle for a malformed CPF', () => {
-    expect(maskKeyId('not-a-cpf-at-all', 'pix-cpf')).toBe('not-a-…-all')
+  // --- malformed-for-kind REDACTS, never falls through to the raw value -----
+  // CodeRabbit #4 — DELIBERATE DIVERGENCE from sindarian-x@0.15.0, which fell
+  // back to `truncateMiddle`. Truncation returns any value of 11 characters or
+  // fewer WHOLE, so a malformed-but-real document (a CPF missing a digit, a
+  // short phone) rendered in full from the "masked" path — the exact leak the
+  // mask exists to prevent. Malformed PII is now redacted outright.
+  const REDACTED = '••••••'
+
+  it('redacts a malformed CPF rather than truncating it', () => {
+    expect(maskKeyId('not-a-cpf-at-all', 'pix-cpf')).toBe(REDACTED)
   })
-  it('falls back for a wrong-length CNPJ', () => {
-    expect(maskKeyId('123', 'pix-cnpj')).toBe('123')
+  it('redacts a wrong-length CNPJ', () => {
+    expect(maskKeyId('123', 'pix-cnpj')).toBe(REDACTED)
   })
-  it('falls back for an email with no domain', () => {
-    expect(maskKeyId('no-at-sign-here', 'pix-email')).toBe('no-at-…here')
+  it('redacts an email with no domain', () => {
+    expect(maskKeyId('no-at-sign-here', 'pix-email')).toBe(REDACTED)
   })
-  it('falls back for a non-BR / wrong-length phone', () => {
-    expect(maskKeyId('+1 415 555 0100', 'pix-phone')).toBe('+1 415…0100')
+  it('redacts a non-BR / wrong-length phone', () => {
+    expect(maskKeyId('+1 415 555 0100', 'pix-phone')).toBe(REDACTED)
+  })
+
+  // The regression that motivated the change: a SHORT malformed PII value was
+  // returned verbatim, because truncateMiddle leaves anything <= 11 chars whole.
+  it('never returns a short malformed PII value verbatim', () => {
+    for (const [value, kind] of [
+      ['5299822472', 'pix-cpf'], // CPF one digit short
+      ['1122233300', 'pix-cnpj'], // CNPJ four digits short
+      ['fred', 'pix-email'], // no @ at all
+      ['11912345', 'pix-phone'] // local-format phone
+    ] as const) {
+      const out = maskKeyId(value, kind)
+      expect(out).not.toBe(value)
+      expect(out).not.toContain(value)
+      expect(out).toBe(REDACTED)
+    }
+  })
+
+  // Redaction must not leak the length either — every malformed PII value of
+  // every kind produces the same fixed-width run.
+  it('redacts to a fixed width, leaking no length information', () => {
+    const short = maskKeyId('1', 'pix-cpf')
+    const long = maskKeyId('1'.repeat(200), 'pix-cpf')
+    expect(short).toBe(long)
+  })
+
+  // Id-shaped kinds are long but NOT secret: they keep truncation, unchanged.
+  it('leaves the id-shaped kinds on truncation, not redaction', () => {
+    expect(maskKeyId(E2E, 'e2e')).toBe('E32074…c3d4')
+    expect(maskKeyId('abc123', 'generic')).toBe('abc123')
   })
 
   // --- the load-bearing invariant: a PII mask never echoes the raw secret ----
@@ -154,6 +191,45 @@ describe('KeyId', () => {
         })
       ).toBeInTheDocument()
     )
+  })
+
+  // CodeRabbit #8: writeText rejects on a denied permission or a non-secure
+  // context. Unhandled, that is a console error in the render tree; worse, a
+  // confirmation would be a lie about what reached the clipboard.
+  it('survives a rejected clipboard write without confirming the copy', async () => {
+    const writeText = jest.fn().mockRejectedValue(new Error('denied'))
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+      writable: true
+    })
+
+    render(<KeyId value={CPF} kind="pix-cpf" copyable />)
+    const button = screen.getByRole('button', { name: 'Copiar valor' })
+    expect(() => fireEvent.click(button)).not.toThrow()
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(CPF))
+    // The button must NOT flip to the copied state — nothing was copied.
+    expect(
+      screen.getByRole('button', { name: 'Copiar valor' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', {
+        name: 'Copiado para a área de transferência'
+      })
+    ).toBeNull()
+  })
+
+  it('does not throw when the clipboard API is unavailable', () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: undefined,
+      configurable: true,
+      writable: true
+    })
+    render(<KeyId value={CPF} kind="pix-cpf" copyable />)
+    expect(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Copiar valor' }))
+    ).not.toThrow()
   })
 
   it('renders no copy affordance unless copyable is set', () => {

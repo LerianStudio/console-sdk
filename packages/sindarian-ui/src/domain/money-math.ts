@@ -13,6 +13,8 @@
  * (fine for display-scale magnitudes, exact for strings).
  */
 
+import { isValidDigitCount } from './format'
+
 export type Amount = string | number | null | undefined
 
 // Round half-away-from-zero on the first dropped fraction digit.
@@ -27,8 +29,17 @@ function canonical(raw: string): string {
   return s
 }
 
-/** Amount -> integer minor units at `scale`, or null if unparseable. */
+/**
+ * Amount -> integer minor units at `scale`, or null if unparseable.
+ *
+ * `scale` is validated before it reaches `toFixed`/`repeat`: an out-of-range
+ * scale (a caller passing `minorDigits: -1`) would throw a RangeError mid-render
+ * rather than degrade. It is the single choke point every money path in this
+ * layer routes through (`sumMinor`, `moneyDiff`, `delinquencyRate`,
+ * `sumBucketTotals`), so guarding it here guards all of them.
+ */
 export function toMinor(value: Amount, scale: number): bigint | null {
+  if (!isValidDigitCount(scale)) return null
   if (value === null || value === undefined || value === '') return null
   let s =
     typeof value === 'number'
@@ -41,6 +52,13 @@ export function toMinor(value: Amount, scale: number): bigint | null {
   const neg = s.startsWith('-')
   if (neg) s = s.slice(1)
   const [intPart = '', fracPart = ''] = s.split('.')
+  // DELIBERATE DIVERGENCE from sindarian-x@0.15.0: the legacy regex admits a
+  // digitless token ('-.', and '.' once the sign is stripped) and coerced it to
+  // an exact 0n. A fabricated exact zero is the worst possible answer in
+  // reconciliation — it reads as a perfect tie and hides the bad input — so a
+  // digitless amount is now indeterminate (null), like every other garbage
+  // token. This mirrors the guard the legacy `rateFraction` already had.
+  if (intPart === '' && fracPart === '') return null
   const frac = (fracPart + '0'.repeat(scale)).slice(0, scale)
   let minor = BigInt((intPart || '0') + frac)
   if (roundsUp(fracPart, scale)) minor += 1n

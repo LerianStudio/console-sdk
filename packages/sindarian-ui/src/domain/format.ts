@@ -8,6 +8,20 @@
  * stays narrow enough not to disturb tabular alignment. */
 export const NO_VALUE = '·'
 
+/**
+ * Whether a digit count is one `Intl.NumberFormat` (and `Number#toFixed`, and
+ * `String#repeat`) will actually accept: a finite integer in 0..100. Anything
+ * else — a negative, a fraction, NaN, Infinity — makes those constructors throw
+ * a RangeError, which on a money surface means a blank screen instead of a
+ * number. Every caller turns an invalid count into the no-value path instead.
+ *
+ * Internal: shared by `format`, `money-text` and `money-math` so the three
+ * cannot drift on what "valid" means. Never exported from `src/domain/index.ts`.
+ */
+export function isValidDigitCount(digits: number): boolean {
+  return Number.isInteger(digits) && digits >= 0 && digits <= 100
+}
+
 /** Whether an input rate is a 0..1 ratio or an already-scaled 0..100 percent.
  * Defaults to 'ratio' — no guessing from magnitude. */
 export type PercentUnit = 'ratio' | 'percent'
@@ -37,6 +51,9 @@ export function formatPercent(
   if (value === null || value === undefined || !Number.isFinite(value))
     return NO_VALUE
   const { digits = 1, unit = 'ratio', locale } = options
+  // A caller-supplied digit count reaches Intl directly; an out-of-range one
+  // would throw a RangeError and take the whole surface down with it.
+  if (!isValidDigitCount(digits)) return NO_VALUE
   const ratio = unit === 'percent' ? value / 100 : value
   return new Intl.NumberFormat(locale, {
     style: 'percent',

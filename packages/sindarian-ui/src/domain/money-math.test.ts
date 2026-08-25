@@ -62,6 +62,33 @@ describe('toMinor', () => {
   it('stays exact past 2^53', () => {
     expect(toMinor('90071992547409.93', 2)).toBe(9007199254740993n)
   })
+
+  // CodeRabbit #2 — DELIBERATE DIVERGENCE from sindarian-x@0.15.0, which
+  // coerced these digitless tokens to an exact 0n (the legacy regex admits a
+  // sign and a point with no digits between them). In reconciliation a
+  // fabricated zero reads as a perfect tie and hides the bad input, so it is the
+  // one wrong answer worse than "unknown".
+  it('returns null (never 0n) for a digitless token', () => {
+    for (const bad of ['-.', ' -. ', '(.)', '−.']) {
+      expect(toMinor(bad, 2)).toBeNull()
+    }
+  })
+
+  // CodeRabbit #3: scale reaches toFixed / '0'.repeat / BigInt directly.
+  it('returns null on an out-of-range scale instead of throwing RangeError', () => {
+    for (const scale of [-1, 1.5, 101, NaN, Infinity, -Infinity]) {
+      expect(() => toMinor('1.00', scale)).not.toThrow()
+      expect(toMinor('1.00', scale)).toBeNull()
+      // the numeric path reaches toFixed, which throws on the same inputs
+      expect(() => toMinor(1, scale)).not.toThrow()
+      expect(toMinor(1, scale)).toBeNull()
+    }
+  })
+
+  it('still accepts the legitimate scale range', () => {
+    expect(toMinor('1', 0)).toBe(1n)
+    expect(toMinor('1', 100)).toBe(BigInt('1' + '0'.repeat(100)))
+  })
 })
 
 describe('sumMinor', () => {

@@ -12,6 +12,11 @@
  * input corpus, then pasted here verbatim. A failure means the port drifted
  * from the artifact the apps are migrating off — never that the expectation
  * needs updating.
+ *
+ * DELIBERATE DIVERGENCES are the one exception, and each is marked inline at its
+ * corpus entry with the reason. They exist where the legacy output was itself a
+ * defect that a review round decided not to carry forward. There are two here,
+ * both about signed zero; the rest of the corpus is byte-identical to 0.15.0.
  */
 import {
   NO_VALUE,
@@ -110,17 +115,24 @@ const MONEY: Array<[string | number, number, MoneyParts, MoneyParts]> = [
     { formatted: '0.00', negative: false },
     { formatted: '0,00', negative: false }
   ],
+  // DELIBERATE DIVERGENCE (CodeRabbit #6) — the next two rows only.
+  // Legacy produced { formatted: '-0.00', negative: true } for both, which
+  // painted a zero balance in the destructive sign color. Zero is neither
+  // positive nor negative: the sign here is an artifact of the input notation,
+  // not a fact about the money. An EXACT zero now normalizes to unsigned. A
+  // value that merely ROUNDS to zero ('-0.004') keeps its sign — pinned in the
+  // money-text suite so the narrowness of this divergence stays enforced.
   [
     '-0',
     2,
-    { formatted: '-0.00', negative: true },
-    { formatted: '-0,00', negative: true }
+    { formatted: '0.00', negative: false },
+    { formatted: '0,00', negative: false }
   ],
   [
     '(0)',
     2,
-    { formatted: '-0.00', negative: true },
-    { formatted: '-0,00', negative: true }
+    { formatted: '0.00', negative: false },
+    { formatted: '0,00', negative: false }
   ],
   [
     '1250.00',

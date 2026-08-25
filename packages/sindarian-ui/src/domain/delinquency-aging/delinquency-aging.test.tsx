@@ -67,6 +67,40 @@ describe('delinquencyRate', () => {
     ).toBe(1)
   })
 
+  // CodeRabbit #5: converting each total to Number separately overflowed on a
+  // large portfolio — past ~1.8e308 each side becomes Infinity and
+  // Infinity/Infinity is NaN, so the biggest portfolios reported no rate at all.
+  it('computes a correct rate for totals far beyond Number range', () => {
+    const huge = '1' + '0'.repeat(320) + '.00' // 1e320, well past Number.MAX_VALUE
+    const quarter = '25' + '0'.repeat(318) + '.00' // 2.5e319, exactly a quarter of it
+    const r = delinquencyRate(
+      [
+        { label: 'current', count: 1, total: huge, overdue: false },
+        { label: '90+', count: 1, total: quarter, overdue: true }
+      ],
+      2
+    )
+    expect(r.indeterminate).toBe(false)
+    expect(r.rate).not.toBeNull()
+    expect(Number.isFinite(r.rate as number)).toBe(true)
+    // 0.25 of 1.25 total = 0.2 exactly
+    expect(r.rate).toBeCloseTo(0.2, 10)
+  })
+
+  it('never returns NaN or Infinity as a rate', () => {
+    const portfolios = [
+      [['1' + '0'.repeat(400) + '.00', true] as [string, boolean]],
+      [
+        ['0.01', false],
+        ['1' + '0'.repeat(400) + '.00', true]
+      ] as Array<[string, boolean]>
+    ]
+    for (const rows of portfolios) {
+      const r = delinquencyRate(buckets(...rows), 2)
+      if (r.rate !== null) expect(Number.isFinite(r.rate)).toBe(true)
+    }
+  })
+
   it('handles zero-decimal currencies via scale (JPY scale 0)', () => {
     // No fractional minor unit: 250 of 1000 → 0.25.
     const r = delinquencyRate(buckets(['750', false], ['250', true]), 0)

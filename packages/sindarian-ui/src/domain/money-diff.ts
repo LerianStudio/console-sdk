@@ -41,7 +41,15 @@ export function moneyDiff(money: MoneyDiffInput): {
   const r = toMinor(money.right, scale)
   if (l === null || r === null) return { decimal: null, breach: false }
   const diff = l - r
-  const tol = money.tolerance == null ? null : toMinor(money.tolerance, scale)
+  const rawTol =
+    money.tolerance == null ? null : toMinor(money.tolerance, scale)
+  // A tolerance is a BAND WIDTH, so only its magnitude is meaningful. Taken
+  // signed, a negative tolerance made `|diff| > tol` true for every value
+  // including an exact tie (0n > -5n), flagging perfectly reconciled pairs as
+  // breaches. Normalizing to the magnitude means `-0.05` and `0.05` describe the
+  // same band, which is the only reading of a negative tolerance that is not a
+  // silent false alarm.
+  const tol = rawTol === null ? null : rawTol < 0n ? -rawTol : rawTol
   const abs = diff < 0n ? -diff : diff
   // A breach is a magnitude STRICTLY beyond the band; no tolerance → no band, so
   // any nonzero difference is itself the breach.

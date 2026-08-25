@@ -121,6 +121,92 @@ describe('moneyDiff', () => {
     })
   })
 
+  // CodeRabbit #1: a tolerance is a BAND WIDTH, so only its magnitude means
+  // anything. Taken signed, `|diff| > tol` was true for every value including an
+  // exact tie (0n > -5n), so a negative tolerance flagged perfectly reconciled
+  // pairs as breaches — the worst direction for a false alarm to point.
+  describe('negative tolerance', () => {
+    it('keeps an exact tie calm', () => {
+      expect(
+        moneyDiff({
+          left: '1250.00',
+          right: '1250.00',
+          currency: 'BRL',
+          tolerance: '-0.05'
+        })
+      ).toEqual({ decimal: '0.00', breach: false })
+    })
+
+    it('describes the same band as its positive counterpart', () => {
+      for (const tolerance of ['-0.05', '0.05']) {
+        // within the band → calm
+        expect(
+          moneyDiff({
+            left: '1250.00',
+            right: '1249.97',
+            currency: 'BRL',
+            tolerance
+          }).breach
+        ).toBe(false)
+        // exactly on the band edge → calm (strict edge)
+        expect(
+          moneyDiff({
+            left: '1250.05',
+            right: '1250.00',
+            currency: 'BRL',
+            tolerance
+          }).breach
+        ).toBe(false)
+        // strictly beyond → breach
+        expect(
+          moneyDiff({
+            left: '1250.00',
+            right: '1246.88',
+            currency: 'BRL',
+            tolerance
+          }).breach
+        ).toBe(true)
+      }
+    })
+  })
+
+  // CodeRabbit #2: a digitless token must never become an exact zero — a
+  // fabricated tie is the most dangerous possible answer in reconciliation.
+  it('treats a digitless operand as indeterminate, never an exact tie', () => {
+    expect(moneyDiff({ left: '-.', right: '100.00', currency: 'BRL' })).toEqual(
+      {
+        decimal: null,
+        breach: false
+      }
+    )
+    expect(moneyDiff({ left: '-.', right: '-.', currency: 'BRL' })).toEqual({
+      decimal: null,
+      breach: false
+    })
+  })
+
+  // CodeRabbit #3: minorDigits is caller-supplied and reached toFixed/repeat raw.
+  it('degrades to indeterminate on an out-of-range minorDigits, never throws', () => {
+    for (const minorDigits of [-1, 1.5, 101, NaN, Infinity]) {
+      expect(() =>
+        moneyDiff({
+          left: '100.00',
+          right: '99.00',
+          currency: 'BRL',
+          minorDigits
+        })
+      ).not.toThrow()
+      expect(
+        moneyDiff({
+          left: '100.00',
+          right: '99.00',
+          currency: 'BRL',
+          minorDigits
+        })
+      ).toEqual({ decimal: null, breach: false })
+    }
+  })
+
   it('lets minorDigits override the scale of the diff', () => {
     // JPY-style zero-scale: a sub-unit difference rounds to the integer scale.
     expect(

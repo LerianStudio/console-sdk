@@ -48,6 +48,24 @@ describe('formatPercent', () => {
     expect(formatPercent(null)).toBe(NO_VALUE)
     expect(formatPercent(undefined)).toBe(NO_VALUE)
   })
+
+  // CodeRabbit #7: `digits` is caller-supplied and reached Intl raw, where an
+  // out-of-range count throws a RangeError — a blanked surface, not a number.
+  it('returns NO_VALUE for an out-of-range digit count instead of throwing', () => {
+    for (const digits of [-1, 1.5, 101, NaN, Infinity]) {
+      expect(() =>
+        formatPercent(0.5, { digits, locale: 'en-US' })
+      ).not.toThrow()
+      expect(formatPercent(0.5, { digits, locale: 'en-US' })).toBe(NO_VALUE)
+    }
+  })
+
+  it('still accepts the legitimate digit range', () => {
+    expect(formatPercent(0.5, { digits: 0, locale: 'en-US' })).toBe('50%')
+    expect(formatPercent(0.5, { digits: 100, locale: 'en-US' })).toContain(
+      '50.'
+    )
+  })
 })
 
 // --- toPercentValue: explicit unit ------------------------------------------
