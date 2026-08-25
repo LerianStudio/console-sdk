@@ -21,11 +21,11 @@
 | enterprise | composed enterprise components (AlertBanner, StatCard, DataTable, AppShell, …) restyled to sindarian-ui tokens | foundation | 2 | `/srv/worktrees/sindarian-enterprise` / `feat/sindarian-enterprise-components` | lane-enterprise.md | Merged (PR #136) |
 | theme-toasts-charts | ThemeProvider/getThemeScript/ModeToggle, toast helper API, chart layer | foundation | 2 | `/srv/worktrees/sindarian-theme` / `feat/sindarian-theme-toasts-charts` | lane-theme-toasts-charts.md | Merged (PR #133) |
 | domain | finance domain grammar (money-math, MoneyText, KeyId, Blotter, LedgerSheet, format, used composites) | foundation | 2 | `/srv/worktrees/sindarian-domain` / `feat/sindarian-domain-grammar` | lane-domain.md | Merged (PR #135) |
-| lib-integration | integration lane: combined verification, absence checks, beta release, scratch-app smoke test | primitives, enterprise, theme-toasts-charts, domain | 3 | `/srv/worktrees/sindarian-integration` / `test/sindarian-enterprise-integration` | lane-lib-integration.md | In review (PR #138) |
-| app-consignado | br-consignado-gw UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-consignado` (repo br-consignado-gw) / `feat/migrate-to-sindarian-ui` | lane-app-consignado.md (deferred) | Pending |
-| app-matcher | matcher UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-matcher` (repo matcher) / `feat/migrate-to-sindarian-ui` | lane-app-matcher.md (deferred) | Pending |
-| app-lender | lender UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-lender` (repo lender) / `feat/migrate-to-sindarian-ui` | lane-app-lender.md (deferred) | Pending |
-| app-cockpit | br-sfn cockpit on sindarian-ui, sindarian-x removed, local theme fork deleted | lib-integration | 4 | `/srv/worktrees/sindarian-app-cockpit` (repo br-sfn) / `feat/migrate-to-sindarian-ui` | lane-app-cockpit.md (deferred) | Pending |
+| lib-integration | integration lane: combined verification, absence checks, beta release, scratch-app smoke test | primitives, enterprise, theme-toasts-charts, domain | 3 | `/srv/worktrees/sindarian-integration` / `test/sindarian-enterprise-integration` | lane-lib-integration.md | Merged (PR #138) |
+| app-consignado | br-consignado-gw UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-consignado` (repo br-consignado-gw) / `feat/migrate-to-sindarian-ui` | lane-app-consignado.md (authored by lane) | In flight |
+| app-matcher | matcher UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-matcher` (repo matcher) / `feat/migrate-to-sindarian-ui` | lane-app-matcher.md (authored by lane) | In flight |
+| app-lender | lender UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-lender` (repo lender) / `feat/migrate-to-sindarian-ui` | lane-app-lender.md (authored by lane) | In flight |
+| app-cockpit | br-sfn cockpit on sindarian-ui, sindarian-x removed, local theme fork deleted | lib-integration | 4 | `/srv/worktrees/sindarian-app-cockpit` (repo br-sfn) / `feat/migrate-to-sindarian-ui` | lane-app-cockpit.md (authored by lane) | In flight |
 | retirement | npm deprecation of sindarian-x, repo archive, cross-repo absence verification | app-consignado, app-matcher, app-lender, app-cockpit | 5 | `/srv/worktrees/sindarian-retirement-final` / `chore/retire-sindarian-x` | lane-retirement.md (deferred) | Pending |
 
 `Status` lifecycle: Pending → In flight → In review → Merged | Failed.
@@ -172,13 +172,14 @@ Each porting lane computes the census slice for its category as its first task a
 The sidebar resolves its router via context; the default is Next-aware (guarded literal require) and Vite apps MUST mount the provider. Frozen API:
 
 ```ts
+// RouterOnlyLinkProps (internal, not exported): next/link's non-DOM options, all optional
+// and ignorable by other routers — as, replace, scroll, shallow, passHref,
+// prefetch?: boolean | 'auto' | null, unstable_dynamicOnHover, locale, legacyBehavior,
+// onNavigate?: (e: { preventDefault(): void }) => void, transitionTypes?: string[].
 export type SidebarLinkProps = Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & {
   href: string
   children?: React.ReactNode
-  prefetch?: boolean | null
-  replace?: boolean
-  scroll?: boolean
-}
+} & RouterOnlyLinkProps
 export type SidebarRouter = {
   Link: React.ComponentType<SidebarLinkProps>
   usePathname: () => string   // must re-render on navigation
@@ -197,6 +198,8 @@ const appRouter: SidebarRouter = {
 ```
 
 Wave-4 start protocol while the npm beta is blocked (invalid org NPM_TOKEN): app lanes MAY develop against a local `npm pack` tarball of the merged develop build, but the lane's PR MUST pin the published beta version before merge — never a `file:` path. App lanes also add `vite/client` types if missing (needed for the CSS side-effect import).
+
+Two behavior notes binding on app lanes (landed in PR #138 round 2): (a) a React PORTAL passed as a form-field `label` counts as ABSENT (it mounts outside the label subtree) — such call sites need an explicit `aria-label`; grep for portal labels rather than assume none. (b) `warningToast` renders the real `warning` variant now.
 
 ### FC-6 census — EXECUTED 2026-08-26 (frozen port scope)
 
