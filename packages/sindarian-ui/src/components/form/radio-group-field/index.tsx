@@ -43,12 +43,12 @@ type RenderableLabel = Exclude<ReactNode, null | undefined | boolean>
 
 /** Does this label produce a real element a screen reader can read? */
 function hasRenderableLabel(label: ReactNode): boolean {
-  return (
-    label !== null &&
-    label !== undefined &&
-    typeof label !== 'boolean' &&
-    label !== ''
-  )
+  if (label === null || label === undefined || typeof label === 'boolean') {
+    return false
+  }
+  // Empty AND whitespace-only strings render a label box with nothing to
+  // announce, so both count as absent. A number (`0`) is a real label.
+  return typeof label === 'string' ? label.trim() !== '' : true
 }
 
 /**
@@ -75,9 +75,9 @@ export const RadioGroupField = <T extends FieldValues = FieldValues>({
   'aria-label': ariaLabelProp
 }: RadioGroupFieldProps<T>) => {
   const showLabel = hasRenderableLabel(label)
-  // An empty aria-label is worse than none: it names the control "". Drop it so
-  // the attribute never reaches the DOM.
-  const ariaLabel = ariaLabelProp === '' ? undefined : ariaLabelProp
+  // An empty or whitespace-only aria-label is worse than none: it names the
+  // control "". Drop it so the attribute never reaches the DOM.
+  const ariaLabel = ariaLabelProp?.trim() ? ariaLabelProp : undefined
 
   // The type cannot rule out `label=""`, so this is the only signal a developer
   // gets that the control shipped nameless.

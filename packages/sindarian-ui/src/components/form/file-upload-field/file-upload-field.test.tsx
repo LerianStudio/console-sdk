@@ -39,16 +39,14 @@ function Harness({
 }
 
 /**
- * Pick a file and let FileReader settle. The read resolves on a macrotask, so
- * the yield has to happen inside `act` or React reports the resulting state
- * update as unwrapped.
+ * Pick a file. The FileReader read settles asynchronously and on a loaded
+ * machine can take more than one macrotask tick, so callers must wait on the
+ * outcome (`findBy*` / `waitFor`) — never a fixed delay, which turns into a
+ * flaky race under parallel test workers.
  */
-async function pick(container: HTMLElement, file: File) {
-  await act(async () => {
-    fireEvent.change(container.querySelector('input[type="file"]')!, {
-      target: { files: [file] }
-    })
-    await new Promise((resolve) => setTimeout(resolve, 0))
+function pick(container: HTMLElement, file: File) {
+  fireEvent.change(container.querySelector('input[type="file"]')!, {
+    target: { files: [file] }
   })
 }
 
@@ -60,10 +58,7 @@ describe('FileUploadField', () => {
     expect(screen.getByText('Certificate')).toBeInTheDocument()
     expect(screen.getByText('PEM only')).toBeInTheDocument()
 
-    await pick(
-      container,
-      new File(['PEM BODY'], 'cert.pem', { type: 'text/plain' })
-    )
+    pick(container, new File(['PEM BODY'], 'cert.pem', { type: 'text/plain' }))
 
     expect(await screen.findByText('cert.pem')).toBeInTheDocument()
 
@@ -77,10 +72,10 @@ describe('FileUploadField', () => {
     const onSubmit = jest.fn()
     const { container } = render(<Harness onSubmit={onSubmit} />)
 
-    await pick(container, new File(['PEM'], 'cert.pem', { type: 'text/plain' }))
+    pick(container, new File(['PEM'], 'cert.pem', { type: 'text/plain' }))
     expect(await screen.findByText('cert.pem')).toBeInTheDocument()
 
-    await pick(container, new File(['x'], 'notes.txt', { type: 'text/plain' }))
+    pick(container, new File(['x'], 'notes.txt', { type: 'text/plain' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'File type not allowed'
@@ -93,7 +88,7 @@ describe('FileUploadField', () => {
     let form!: UseFormReturn<{ cert: string }>
     const { container } = render(<Harness formRef={(f) => (form = f)} />)
 
-    await pick(container, new File(['PEM'], 'cert.pem', { type: 'text/plain' }))
+    pick(container, new File(['PEM'], 'cert.pem', { type: 'text/plain' }))
     expect(await screen.findByText('cert.pem')).toBeInTheDocument()
 
     fireEvent.click(screen.getByText('Submit'))
@@ -128,8 +123,8 @@ describe('FileUploadField', () => {
     )
   })
 
-  describe.each([[null], [false], ['']])(
-    'falsy label %p',
+  describe.each([[null], [false], [''], ['   '], ['\t\n']])(
+    'unrenderable label %p',
     (falsyLabel: unknown) => {
       it('renders no stray label element and still names the input via aria-label', () => {
         function FalsyLabel() {
@@ -141,8 +136,9 @@ describe('FileUploadField', () => {
               <FileUploadField
                 control={form.control}
                 name="cert"
-                // @ts-expect-error null/false are compile errors; '' is only
-                // catchable at runtime. Both must still leave the input named.
+                // @ts-expect-error null/false are compile errors; blank and
+                // whitespace-only strings are only catchable at runtime. Every
+                // one of them must still leave the input named.
                 label={falsyLabel}
                 aria-label="A1 certificate"
               />
@@ -160,19 +156,23 @@ describe('FileUploadField', () => {
     }
   )
 
-  it('drops an empty aria-label instead of naming the input ""', () => {
+  it.each([
+    ['empty', ''],
+    ['whitespace-only', '   ']
+  ])('drops a %s aria-label instead of naming the input ""', (_kind, blank) => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
     function Nameless() {
       const form = useForm<{ cert: string }>({ defaultValues: { cert: '' } })
       return (
         <Form {...form}>
-          {/* This COMPILES: `''` cannot be excluded from `string`, so the union
-              accepts it. The runtime guard is the only thing standing here. */}
+          {/* This COMPILES: a blank string cannot be excluded from `string`, so
+              the union accepts it. The runtime guard is all that stands between
+              this and a nameless control. */}
           <FileUploadField
             control={form.control}
             name="cert"
-            label=""
-            aria-label=""
+            label={blank}
+            aria-label={blank}
           />
         </Form>
       )

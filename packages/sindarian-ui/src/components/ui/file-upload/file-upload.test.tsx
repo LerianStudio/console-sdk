@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { FileUpload, validateFile, type FileUploadResult } from '.'
 
 /** Construct a File with a controlled `.size` for the byte-cap path. */
@@ -10,16 +10,14 @@ function fakeFile(name: string, type: string, size: number): File {
 }
 
 /**
- * Pick a file and let FileReader settle. The read resolves on a macrotask, so
- * the yield has to happen inside `act` or React reports the resulting state
- * update as unwrapped.
+ * Pick a file. The FileReader read settles asynchronously and on a loaded
+ * machine can take more than one macrotask tick, so callers must `waitFor` the
+ * outcome — never a fixed delay, which turns into a flaky race under parallel
+ * test workers.
  */
-async function pick(container: HTMLElement, file: File) {
-  await act(async () => {
-    fireEvent.change(container.querySelector('input[type="file"]')!, {
-      target: { files: [file] }
-    })
-    await new Promise((resolve) => setTimeout(resolve, 0))
+function pick(container: HTMLElement, file: File) {
+  fireEvent.change(container.querySelector('input[type="file"]')!, {
+    target: { files: [file] }
   })
 }
 
@@ -123,12 +121,9 @@ describe('FileUpload', () => {
       <FileUpload accept=".pem" onSelect={onSelect} />
     )
 
-    await pick(
-      container,
-      new File(['PEM BODY'], 'cert.pem', { type: 'text/plain' })
-    )
+    pick(container, new File(['PEM BODY'], 'cert.pem', { type: 'text/plain' }))
 
-    expect(onSelect).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(onSelect).toHaveBeenCalledTimes(1))
     const result = onSelect.mock.calls[0][0] as FileUploadResult
     expect(result.file.name).toBe('cert.pem')
     expect(result.text).toBe('PEM BODY')
@@ -141,9 +136,9 @@ describe('FileUpload', () => {
       <FileUpload accept=".pem" onSelect={onSelect} onError={onError} />
     )
 
-    await pick(container, new File(['x'], 'notes.txt', { type: 'text/plain' }))
+    pick(container, new File(['x'], 'notes.txt', { type: 'text/plain' }))
 
-    expect(onError).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1))
     expect(onError.mock.calls[0][0].kind).toBe('wrong-type')
     expect(onSelect).not.toHaveBeenCalled()
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -188,16 +183,13 @@ describe('FileUpload', () => {
 
     const zone = container.querySelector('input[type="file"]')!
       .parentElement as HTMLElement
-    await act(async () => {
-      fireEvent.drop(zone, {
-        dataTransfer: {
-          files: [new File(['DROPPED'], 'cert.pem', { type: 'text/plain' })]
-        }
-      })
-      await new Promise((resolve) => setTimeout(resolve, 0))
+    fireEvent.drop(zone, {
+      dataTransfer: {
+        files: [new File(['DROPPED'], 'cert.pem', { type: 'text/plain' })]
+      }
     })
 
-    expect(onSelect).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(onSelect).toHaveBeenCalledTimes(1))
     expect((onSelect.mock.calls[0][0] as FileUploadResult).text).toBe('DROPPED')
   })
 
@@ -210,17 +202,17 @@ describe('FileUpload', () => {
 
     const zone = container.querySelector('input[type="file"]')!
       .parentElement as HTMLElement
-    await act(async () => {
-      fireEvent.drop(zone, {
-        dataTransfer: {
-          files: [new File(['x'], 'notes.txt', { type: 'text/plain' })]
-        }
-      })
-      await new Promise((resolve) => setTimeout(resolve, 0))
+    fireEvent.drop(zone, {
+      dataTransfer: {
+        files: [new File(['x'], 'notes.txt', { type: 'text/plain' })]
+      }
     })
 
-    expect(onSelect).not.toHaveBeenCalled()
+    // Wait on the positive signal first — asserting the negative alone would
+    // pass instantly, before the read even had a chance to run.
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1))
     expect(onError.mock.calls[0][0].kind).toBe('wrong-type')
+    expect(onSelect).not.toHaveBeenCalled()
   })
 })
 

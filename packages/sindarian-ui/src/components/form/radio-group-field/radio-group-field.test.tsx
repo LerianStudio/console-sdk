@@ -96,8 +96,8 @@ describe('RadioGroupField', () => {
     ).toBeInTheDocument()
   })
 
-  describe.each([[null], [false], ['']])(
-    'falsy label %p',
+  describe.each([[null], [false], [''], ['   '], ['\t\n']])(
+    'unrenderable label %p',
     (falsyLabel: unknown) => {
       it('renders no stray group label and still names the group via aria-label', () => {
         function FalsyLabel() {
@@ -109,8 +109,9 @@ describe('RadioGroupField', () => {
               <RadioGroupField
                 control={form.control}
                 name="rail"
-                // @ts-expect-error null/false are compile errors; '' is only
-                // catchable at runtime. Both must still leave the group named.
+                // @ts-expect-error null/false are compile errors; blank and
+                // whitespace-only strings are only catchable at runtime. Every
+                // one of them must still leave the group named.
                 label={falsyLabel}
                 aria-label="Settlement rail"
                 options={[{ value: 'pix', label: 'Pix' }]}
@@ -129,19 +130,23 @@ describe('RadioGroupField', () => {
     }
   )
 
-  it('drops an empty aria-label instead of naming the group ""', () => {
+  it.each([
+    ['empty', ''],
+    ['whitespace-only', '   ']
+  ])('drops a %s aria-label instead of naming the group ""', (_kind, blank) => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
     function Nameless() {
       const form = useForm<{ rail: string }>({ defaultValues: { rail: '' } })
       return (
         <Form {...form}>
-          {/* This COMPILES: `''` cannot be excluded from `string`, so the union
-              accepts it. The runtime guard is the only thing standing here. */}
+          {/* This COMPILES: a blank string cannot be excluded from `string`, so
+              the union accepts it. The runtime guard is all that stands between
+              this and a nameless control. */}
           <RadioGroupField
             control={form.control}
             name="rail"
-            label=""
-            aria-label=""
+            label={blank}
+            aria-label={blank}
             options={[{ value: 'pix', label: 'Pix' }]}
           />
         </Form>

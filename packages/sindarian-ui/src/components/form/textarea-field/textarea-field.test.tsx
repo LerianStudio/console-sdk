@@ -81,8 +81,8 @@ describe('TextareaField', () => {
     ).toBeInTheDocument()
   })
 
-  describe.each([[null], [false], ['']])(
-    'falsy label %p',
+  describe.each([[null], [false], [''], ['   '], ['\t\n']])(
+    'unrenderable label %p',
     (falsyLabel: unknown) => {
       it('renders no stray label element and still names the control via aria-label', () => {
         function FalsyLabel() {
@@ -94,8 +94,9 @@ describe('TextareaField', () => {
               <TextareaField
                 control={form.control}
                 name="notes"
-                // @ts-expect-error null/false are compile errors; '' is only
-                // catchable at runtime. Both must still leave the control named.
+                // @ts-expect-error null/false are compile errors; blank and
+                // whitespace-only strings are only catchable at runtime. Every
+                // one of them must still leave the control named.
                 label={falsyLabel}
                 aria-label="Operator notes"
               />
@@ -112,35 +113,44 @@ describe('TextareaField', () => {
     }
   )
 
-  it('drops an empty aria-label instead of naming the control ""', () => {
-    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-    function Nameless() {
-      const form = useForm<{ notes: string }>({ defaultValues: { notes: '' } })
-      return (
-        <Form {...form}>
-          {/* This COMPILES: `''` cannot be excluded from `string`, so the union
-              accepts it. The runtime guard is the only thing standing here. */}
-          <TextareaField
-            control={form.control}
-            name="notes"
-            label=""
-            aria-label=""
-          />
-        </Form>
-      )
-    }
-    const { container } = render(<Nameless />)
+  it.each([
+    ['empty', ''],
+    ['whitespace-only', '   ']
+  ])(
+    'drops a %s aria-label instead of naming the control ""',
+    (_kind, blank) => {
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      function Nameless() {
+        const form = useForm<{ notes: string }>({
+          defaultValues: { notes: '' }
+        })
+        return (
+          <Form {...form}>
+            {/* This COMPILES: a blank string cannot be excluded from `string`,
+                so the union accepts it. The runtime guard is all that stands
+                between this and a nameless control. */}
+            <TextareaField
+              control={form.control}
+              name="notes"
+              label={blank}
+              aria-label={blank}
+            />
+          </Form>
+        )
+      }
+      const { container } = render(<Nameless />)
 
-    // An empty aria-label is worse than none — it must not reach the DOM.
-    expect(container.querySelector('textarea')).not.toHaveAttribute(
-      'aria-label'
-    )
-    // ...and the developer gets told, since the type cannot catch label="".
-    expect(spy).toHaveBeenCalledWith(
-      expect.stringContaining('TextareaField "notes" has no accessible name')
-    )
-    spy.mockRestore()
-  })
+      // A blank aria-label is worse than none — it must not reach the DOM.
+      expect(container.querySelector('textarea')).not.toHaveAttribute(
+        'aria-label'
+      )
+      // ...and the developer gets told, since the type cannot catch a blank string.
+      expect(spy).toHaveBeenCalledWith(
+        expect.stringContaining('TextareaField "notes" has no accessible name')
+      )
+      spy.mockRestore()
+    }
+  )
 
   it('keeps a disabled field out of the submitted values even when populated', async () => {
     const onSubmit = jest.fn()
