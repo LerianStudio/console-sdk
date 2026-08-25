@@ -79,7 +79,7 @@
 
 **Context:** Legacy signatures: `~/repos/lerianstudio/lib-sindarian-ui/src/hooks/use-toast.ts:160-188` — `successToast(title, description?, opts?)` etc. Target machinery: sindarian-ui's `src/hooks/use-toast.ts` (exports `toast({ title, description, variant })` and `ToastVariant`). Consumers: consignado (successToast/errorToast, also `vi.mock`ed in 7 test files), lender, cockpit (warningToast 50×, successToast).
 
-**Implementation vision:** Each helper is a thin call into sindarian-ui's `toast()` with the mapped variant (check sindarian-ui's ToastVariant values; map success/error/warning onto them — if a warning variant does not exist, use the closest existing variant and record the mapping in the lane report; do NOT add a variant to the existing hook, that file is outside this lane). Signature byte-compatible with legacy (FC-3). `opts` fields that sindarian-ui's toast cannot express are accepted and ignored, documented in the report.
+**Implementation vision:** Each helper is a thin call into sindarian-ui's `toast()` with the mapped variant (check sindarian-ui's ToastVariant values; map success/error/warning onto them — if a warning variant does not exist, use the closest existing variant and record the mapping in the lane report; do NOT add a variant to the existing hook, that file is outside this lane). Signature byte-compatible with legacy (FC-3, exception #2): every legacy `ToastOptions` field is either mapped or covered by an explicit exception test that documents the drop — no silent ignores.
 
 **Files:**
 - Create: `packages/sindarian-ui/src/toast/helpers.ts` + test

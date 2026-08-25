@@ -17,9 +17,9 @@
 | Lane | Delivers | Depends on | Wave | Worktree / Branch | Plan | Status |
 |------|----------|-----------|------|-------------------|------|--------|
 | foundation | sub-barrel scaffold, deps, additive tokens, `cn`/typography exports in sindarian-ui | none | 1 | `/srv/worktrees/sindarian-foundation` / `feat/sindarian-enterprise-foundation` | lane-foundation.md | Merged (PR #131) |
-| primitives | missing shadcn primitives (Accordion, AlertDialog, RadioGroup, ScrollArea, ToggleGroup, HoverCard, FileUpload) | foundation | 2 | `/srv/worktrees/sindarian-primitives` / `feat/sindarian-missing-primitives` | lane-primitives.md | In flight |
+| primitives | missing shadcn primitives (Accordion, AlertDialog, RadioGroup, ScrollArea, ToggleGroup, HoverCard, FileUpload) | foundation | 2 | `/srv/worktrees/sindarian-primitives` / `feat/sindarian-missing-primitives` | lane-primitives.md | In review (PR #134) |
 | enterprise | composed enterprise components (AlertBanner, StatCard, DataTable, AppShell, …) restyled to sindarian-ui tokens | foundation | 2 | `/srv/worktrees/sindarian-enterprise` / `feat/sindarian-enterprise-components` | lane-enterprise.md | In flight |
-| theme-toasts-charts | ThemeProvider/getThemeScript/ModeToggle, toast helper API, chart layer | foundation | 2 | `/srv/worktrees/sindarian-theme` / `feat/sindarian-theme-toasts-charts` | lane-theme-toasts-charts.md | In flight |
+| theme-toasts-charts | ThemeProvider/getThemeScript/ModeToggle, toast helper API, chart layer | foundation | 2 | `/srv/worktrees/sindarian-theme` / `feat/sindarian-theme-toasts-charts` | lane-theme-toasts-charts.md | In review (PR #133) |
 | domain | finance domain grammar (money-math, MoneyText, KeyId, Blotter, LedgerSheet, format, used composites) | foundation | 2 | `/srv/worktrees/sindarian-domain` / `feat/sindarian-domain-grammar` | lane-domain.md | In flight |
 | lib-integration | integration lane: combined verification, absence checks, beta release, scratch-app smoke test | primitives, enterprise, theme-toasts-charts, domain | 3 | `/srv/worktrees/sindarian-integration` / `test/sindarian-enterprise-integration` | lane-lib-integration.md (deferred) | Pending |
 | app-consignado | br-consignado-gw UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-consignado` (repo br-consignado-gw) / `feat/migrate-to-sindarian-ui` | lane-app-consignado.md (deferred) | Pending |
@@ -93,6 +93,11 @@ Landed by foundation (PR #131) — binding on porting lanes:
 
 Every symbol ported from sindarian-x keeps the public TypeScript API published in `@lerianstudio/sindarian-x@0.15.0` (`dist/**/*.d.ts` — an immutable npm artifact): same export name, same props/signature, same generics. Only two deviations are allowed: (a) styling re-based on sindarian-ui tokens, (b) internal imports re-pointed at sindarian-ui primitives. A porting lane that cannot keep an API byte-compatible stops and reports — it does not improvise a new API.
 
+**FC-3 explicit exceptions** (amended by the orchestrator, 2026-08-26 — these three, and ONLY these, deviate from byte-compatibility):
+1. The three net-new form fields (`TextareaField`, `RadioGroupField`, `FileUploadField`) follow sindarian-ui's OWN field-family conventions (mirror its `InputField`), NOT the legacy props — one coherent field family beats two prop dialects. The primitives lane publishes a legacy→new prop-mapping table in its report; app lanes adapt the ~17 affected call sites (lender ~16, consignado 1).
+2. Toast helpers: every legacy `ToastOptions` field is either mapped onto sindarian-ui's toast or covered by an explicit exception test that documents the drop — no silent ignores. The warning mapping (legacy `warningToast` → a concrete sindarian-ui variant) is chosen by the lane from sindarian-ui's actual `ToastVariant` values and frozen in its report.
+3. `AppShell` is byte-compatible on OUTER props only; internals are sindarian-ui's sidebar (family rule).
+
 Key signatures reproduced for cross-lane reliance (theme + toast, consumed by app lanes and by enterprise components):
 
 ```ts
@@ -162,14 +167,14 @@ Each porting lane computes the census slice for its category as its first task a
 
 ### FC-6 census — EXECUTED 2026-08-26 (frozen port scope)
 
-Union across the four apps: 216 distinct symbols; 107 are FC-4 collisions (apps adapt); 3 utils already landed in foundation. The frozen per-lane port lists (`T` = type-only; letters = apps c/m/l/k):
+Union across the four apps: 216 distinct symbols; 107 are FC-4 collisions (apps adapt); 3 utils already landed in foundation. Counting rule: type-only exports COUNT as symbols (consistent throughout). Reconciliation of the 109 non-collision symbols: 84 port from the census lists below + 20 become app-side adaptations under the family rule (`Sidebar*` 11, `EntityBox*` 3, Radix `Toast*` 5, `ConfirmDialog` 1) + 2 were census false positives (`Action`/`useAction`) + 3 utils = 109. The port lists additionally export 3 plan-added internal-dependency symbols not in the raw census (`useTheme`, `ModeToggleLabels`, `ModeToggleProps`), so total new exports = 87. The frozen per-lane port lists (`T` = type-only; letters = apps c/m/l/k):
 
-**primitives (25):** Accordion m, AccordionContent m, AccordionItem m, AccordionTrigger m, AlertDialog km, AlertDialogAction km, AlertDialogCancel k, AlertDialogContent km, AlertDialogDescription km, AlertDialogFooter km, AlertDialogHeader km, AlertDialogTitle km, HoverCard k, HoverCardContent k, HoverCardTrigger k, RadioGroup k, RadioGroupItem k, ScrollArea klm (+ScrollBar as internal dep), ToggleGroup k, ToggleGroupItem k, FileUpload k, FileUploadResult k T, validateFile l, FileUploadField c, RadioGroupField l, TextareaField l.
+**primitives (26):** Accordion m, AccordionContent m, AccordionItem m, AccordionTrigger m, AlertDialog km, AlertDialogAction km, AlertDialogCancel k, AlertDialogContent km, AlertDialogDescription km, AlertDialogFooter km, AlertDialogHeader km, AlertDialogTitle km, HoverCard k, HoverCardContent k, HoverCardTrigger k, RadioGroup k, RadioGroupItem k, ScrollArea klm (+ScrollBar as internal dep), ToggleGroup k, ToggleGroupItem k, FileUpload k, FileUploadResult k T, validateFile l, FileUploadField c, RadioGroupField l, TextareaField l.
 
 **enterprise (19):** AlertBanner cklm, AlertBannerTone cm T, AppShell clm (rebuilt on sindarian-ui sidebar, family rule), CursorPager lm, DataTable klm, DataTableProps km T, DateRangePicker km, DateRangeValue km T, DetailPanel lm, EmptyState cklm, EmptyStateProps m T, NumberInput m, SearchInput l, StatCard cl, StatCardTone c T, StatusBadge cklm, DEFAULT_STATUS_VARIANTS m, VirtualizedTable m, useIsMobile k.
 NOT ported (family rule): every `Sidebar*`/`useSidebar`, `EntityBox*` subpart, `Stepper*` subpart, Radix `Toast*`. NOT ported (FC-4): ConfirmDialog (apps adapt to `ConfirmationDialog`).
 
-**theme-toasts-charts (13):** ThemeProvider clm, useTheme (internal dep, exported), getThemeScript lm, ModeToggle clm (+ModeToggleLabels/ModeToggleProps types), successToast ckl, errorToast cl, warningToast k, ChartConfig k T, ChartContainer k, ChartLegend k, ChartLegendContent k, ChartTooltip k, ChartTooltipContent k (+ChartStyle as internal dep).
+**theme-toasts-charts (15):** ThemeProvider clm, useTheme (plan-added, exported), getThemeScript lm, ModeToggle clm, ModeToggleLabels + ModeToggleProps T (plan-added), successToast ckl, errorToast cl, warningToast k, ChartConfig k T, ChartContainer k, ChartLegend k, ChartLegendContent k, ChartTooltip k, ChartTooltipContent k (+ChartStyle as internal dep).
 NOT ported (YAGNI, absent from census): BarChart, LineChart, Donut, Sparkline, chart presets. NOT ported (collision): bare `toast`.
 
 **domain (27):** Blotter lm, BlotterRow lm, DelinquencyAging l, FIGURE_CLASS m, Figure klm, FigureSize m T, FigureTone m T, GaugeThresholds m T, KeyId l, LedgerPanel lm, LedgerSheet clm, MoneyText klm, MoneyTextProps lm T, NO_VALUE lm, SectionLabel klm, StatusRail m, StatusRailChip m T, StatusRailItem m T, Dot m, LivePulse m, ThresholdGauge m, formatCount klm, formatPercent klm, gaugeBand m, humanizeDurationMs m, moneyDiff m, toPercentValue m.
@@ -186,6 +191,7 @@ Census erratum: `Action`/`useAction` reported for cockpit were false positives (
 - Absence checks deferred under lane-cut rule 4: no `sindarian-x` string in package code, manifests, or config (planning documents under `docs/plans/` are excluded — they reference the name intentionally), no TODO/placeholder left by porting lanes, every FC-2 token present in built CSS.
 - Scratch Vite consumer: install the fresh beta, compile a file importing every new export, mount ThemeProvider + Toaster + one chart + DataTable, render smoke-test.
 - Confirms semantic-release published the beta from `develop` and records the exact version the app lanes must pin.
+- Follow-ups inherited from wave 2 (single-owner window, so these edits are safe here): (a) add a `warning` variant ADDITIVELY to `src/hooks/use-toast.ts` + Toaster style map, and remap `warningToast` → `warning` in `src/toast/helpers.ts` (217 cockpit call sites deserve a real warning tone); (b) fix the pre-existing tsconfig quirk where `**/*.test.tsx` (unlike `.test.ts`) compiles into `dist` and ships; (c) move the three new form-field exports into `src/components/form/index.ts` per package convention; (d) hoist the per-file `ResizeObserver` jsdom stub into the shared jest setup.
 
 ## Merge Order
 
@@ -266,7 +272,7 @@ Census erratum: `Action`/`useAction` reported for cockpit were false positives (
 ### Lane: app-cockpit
 
 **Goal:** br-sfn cockpit runs on sindarian-ui; sindarian-x removed; the local theme fork deleted in favor of the lib's ThemeProvider.
-**Scope:** repo br-sfn, `cockpit/**`. Largest lane: 348 files import the lib (141 symbols, 1644 occurrences), 28 more test files mock it. Work: swap dep (pinned exact today, 0.14.1); mass-adapt collided call sites (`Button` 180×, `PageHeader` 84×, `Badge` 70×, `cn` 67×, `DataTable` 57×...); DELETE the forked theme layer (`src/lib/theme/**`, keys `cockpit.theme`) and adopt the lib `ThemeProvider` + `getThemeScript` (FC-3), keeping dark-by-default; rebuild `ThemeToggle.tsx` on lib pieces while preserving the app-local density feature; keep documented divergences (`SilocMoney`, `SlcStateBadge`, `RecordStatusBadge`) as local wrappers re-pointed to sindarian-ui; update `index.css` imports + `@source`; codemod-first strategy (import rewrites are mechanical; prop adaptations are not).
+**Scope:** repo br-sfn, `cockpit/**`. Largest lane: 348 files import the lib (141 symbols, 1644 occurrences), 28 more test files mock it. Work: swap dep (pinned exact today, 0.14.1); mass-adapt collided call sites (`Button` 180×, `PageHeader` 84×, `Badge` 70×, `cn` 67×, `DataTable` 57×...); DELETE the forked theme layer (`src/lib/theme/**`, keys `cockpit.theme`) and adopt the lib `ThemeProvider` with `defaultTheme="dark"` — ATENÇÃO: do NOT inject `getThemeScript` here (its no-stored-value fallback is the system preference and would strip the static dark class pre-paint for light-OS users); keep the static `class="dark"` on `<html>`, parity with today's fork; rebuild `ThemeToggle.tsx` on lib pieces while preserving the app-local density feature; keep documented divergences (`SilocMoney`, `SlcStateBadge`, `RecordStatusBadge`) as local wrappers re-pointed to sindarian-ui; update `index.css` imports + `@source`; codemod-first strategy (import rewrites are mechanical; prop adaptations are not).
 **Depends on:** lib-integration
 **Done when:** app builds, full test suite green (~590 test files), no `sindarian-x` reference, visual pass on SPI/SPB/SLC/SILOC/STA surfaces in both themes.
 **Status:** Pending

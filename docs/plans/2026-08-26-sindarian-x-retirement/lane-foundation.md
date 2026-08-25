@@ -97,7 +97,7 @@ Append-only: no existing line moves or changes. Dark values are explicit (no der
 **Files:**
 - Modify: `packages/sindarian-ui/src/globals.css`
 
-**Verification:** `grep -c -- '--chart-' packages/sindarian-ui/src/globals.css` ≥ 24 (root + dark + theme-inline); build green.
+**Verification:** assert each token by block form: `--<name>:` present in `:root` and `.dark`, and `--color-<name>:` present in `@theme inline` (the contract test in Task 1.2.2 asserts exactly this per block); build green.
 
 **Done when:** every FC-2 name resolves in light and dark and `git diff globals.css` contains only additions.
 

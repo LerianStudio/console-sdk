@@ -79,7 +79,7 @@
 
 **Context:** sindarian-ui already has a form-field family under `src/components/form/` (InputField, SelectField, SwitchField, …) with its own conventions — THOSE conventions win over the legacy field-shell pattern (senior rule; the legacy `FieldLabel`/field-shell is NOT ported). Legacy references for props: `~/repos/lerianstudio/lib-sindarian-ui/src/components/fields/{textarea-field,radio-group-field,file-upload-field}.tsx`. Consumers: lender (TextareaField 11×, RadioGroupField), br-consignado-gw (FileUploadField).
 
-**Implementation vision:** Mirror sindarian-ui's existing `InputField` implementation shape (read it first; follow its prop naming, generics, and Form integration exactly), swapping the control for Textarea / RadioGroup / FileUpload. Keep the legacy prop names that consumers pass (label, description, placeholder, control, name, options/accept) compatible where they do not conflict with sindarian-ui's field conventions; where they conflict, sindarian-ui's convention wins and the divergence is listed in the lane report for the app lanes.
+**Implementation vision:** Mirror sindarian-ui's existing `InputField` implementation shape (read it first; follow its prop naming, generics, and Form integration exactly), swapping the control for Textarea / RadioGroup / FileUpload. Per FC-3 exception #1 (index.md): these fields follow sindarian-ui's field conventions, NOT the legacy props. Deliverable alongside the code: a legacy→new prop-mapping table in the lane report, one row per legacy prop, so the app lanes adapt their ~17 call sites mechanically.
 
 **Files:**
 - Create: `packages/sindarian-ui/src/components/form/{textarea-field,radio-group-field,file-upload-field}/index.tsx` + tests + stories
