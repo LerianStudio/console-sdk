@@ -266,6 +266,96 @@ describe('ThresholdGauge render', () => {
       ).toBeInTheDocument()
     })
 
+    // CodeRabbit round 2 #3: `??` only skips null/undefined, so an empty string
+    // WON the fallback chain and produced aria-label="" — worse than a missing
+    // name, since an empty aria-label also suppresses other naming routes.
+    it('falls through an empty ariaLabel to the visible label', () => {
+      render(
+        <ThresholdGauge
+          value={62}
+          max={100}
+          warn={80}
+          breach={90}
+          direction="higher-is-worse"
+          format="count"
+          locale="en-US"
+          label="Utilização do limite"
+          ariaLabel=""
+        />
+      )
+      expect(
+        screen.getByRole('meter', { name: 'Utilização do limite' })
+      ).toBeInTheDocument()
+    })
+
+    it('falls through empty ariaLabel AND empty label to the band word', () => {
+      render(
+        <ThresholdGauge
+          value={95}
+          max={100}
+          warn={80}
+          breach={90}
+          direction="higher-is-worse"
+          format="count"
+          locale="en-US"
+          label=""
+          ariaLabel="   "
+        />
+      )
+      expect(
+        screen.getByRole('meter', { name: 'Limite ultrapassado' })
+      ).toBeInTheDocument()
+    })
+
+    it('falls through an empty band-label override to the pt-BR default', () => {
+      const { container } = render(
+        <ThresholdGauge
+          value={95}
+          max={100}
+          warn={80}
+          breach={90}
+          direction="higher-is-worse"
+          format="count"
+          locale="en-US"
+          bandLabels={{ breach: '' }}
+        />
+      )
+      // The sr-only band word is the only non-chromatic band cue — it must never
+      // be blanked by an empty override.
+      expect(container.innerHTML).toMatch(/Limite ultrapassado/)
+      expect(
+        screen.getByRole('meter', { name: 'Limite ultrapassado' })
+      ).toBeInTheDocument()
+    })
+
+    it('never renders a meter with an empty accessible name', () => {
+      for (const props of [
+        { ariaLabel: '' },
+        { label: '' },
+        { ariaLabel: '', label: '' },
+        { ariaLabel: '  ', label: '  ' },
+        { bandLabels: { breach: '' } },
+        { ariaLabel: '', label: '', bandLabels: { breach: '  ' } }
+      ]) {
+        const { unmount } = render(
+          <ThresholdGauge
+            value={95}
+            max={100}
+            warn={80}
+            breach={90}
+            direction="higher-is-worse"
+            format="count"
+            locale="en-US"
+            {...props}
+          />
+        )
+        const name = screen.getByRole('meter').getAttribute('aria-label')
+        expect(name).toBeTruthy()
+        expect(name?.trim()).not.toBe('')
+        unmount()
+      }
+    })
+
     it('never renders a meter without an accessible name', () => {
       for (const props of [
         { label: 'Caption' },

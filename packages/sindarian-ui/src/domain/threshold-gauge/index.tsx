@@ -183,6 +183,17 @@ export function gaugeBand(
   return 'low'
 }
 
+/**
+ * An empty or whitespace-only string is not a name. `??` only skips null and
+ * undefined, so `ariaLabel=""` or `bandLabels={{ breach: '' }}` won the fallback
+ * chain and produced an EMPTY accessible name — worse than the missing one it
+ * was meant to fix, because `aria-label=""` also suppresses the element's other
+ * naming routes. Normalizing to undefined lets the chain fall through properly.
+ */
+function nonEmpty(value: string | undefined): string | undefined {
+  return value != null && value.trim() !== '' ? value : undefined
+}
+
 /** Clamp a value into [min, max] then normalize to a 0..1 fraction of the
  *  track. A zero-width track (max <= min) collapses to 0 rather than dividing by
  *  zero. */
@@ -238,11 +249,14 @@ export function ThresholdGauge({
   const { Icon, tint } = BAND[band]
   // The sr-only word is the band's only non-chromatic cue, so it is also the
   // string a trilingual consumer has to translate. pt-BR default, override wins.
-  const word = bandLabels?.[band] ?? BAND[band].word
+  // Every rung of the naming chain is normalized: an empty override must fall
+  // through to the next source rather than win with a blank string.
+  const word = nonEmpty(bandLabels?.[band]) ?? BAND[band].word
+  const caption = nonEmpty(label)
   // A `role="meter"` with no accessible name is announced as a naked number.
   // The band word is always present and always meaningful, so the meter is named
   // even when a consumer renders the gauge without a visible caption.
-  const meterName = ariaLabel ?? label ?? word
+  const meterName = nonEmpty(ariaLabel) ?? caption ?? word
 
   const valuePct = trackFraction(value, min, max) * 100
   const warnPct = trackFraction(warn, min, max) * 100
@@ -253,8 +267,8 @@ export function ThresholdGauge({
       {/* Header: quiet label on the left, the named band on the right. The
           band is the headline — glyph + word + figure, color-independent. */}
       <div className="flex items-baseline justify-between gap-3">
-        {label != null ? (
-          <span className={LABEL_VOICE_CLASS}>{label}</span>
+        {caption != null ? (
+          <span className={LABEL_VOICE_CLASS}>{caption}</span>
         ) : (
           <span />
         )}

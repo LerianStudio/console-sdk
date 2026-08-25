@@ -101,6 +101,81 @@ describe('delinquencyRate', () => {
     }
   })
 
+  // CodeRabbit round 2 #2: a negative bucket total is parseable but is not a
+  // share of a portfolio — the ratio stops being bounded by 0..1 the moment a
+  // component goes negative. Legacy divided anyway and printed the result.
+  describe('negative bucket totals', () => {
+    it('reports no rate instead of an out-of-range percentage', () => {
+      // -50 current + 100 overdue: legacy computed 100/50 = 200% delinquent.
+      const r = delinquencyRate(buckets(['-50.00', false], ['100.00', true]), 2)
+      expect(r.rate).toBeNull()
+      expect(r.indeterminate).toBe(true)
+      // The sums are still correct and are kept — only the RATIO is refused.
+      expect(r.totalMinor).toBe(5000n)
+      expect(r.overdueMinor).toBe(10000n)
+    })
+
+    it('refuses the rate wherever the negative sits', () => {
+      for (const rows of [
+        [
+          ['-50.00', false],
+          ['100.00', true]
+        ],
+        [
+          ['100.00', false],
+          ['-50.00', true]
+        ],
+        [['-1.00', true]],
+        [
+          ['500.00', false],
+          ['500.00', true],
+          ['-0.01', true]
+        ]
+      ] as Array<Array<[string, boolean]>>) {
+        const r = delinquencyRate(buckets(...rows), 2)
+        expect(r.rate).toBeNull()
+        expect(r.indeterminate).toBe(true)
+      }
+    })
+
+    it('leaves an all-non-negative portfolio untouched', () => {
+      // The boundary: exactly zero is not negative, so it still yields a rate.
+      const r = delinquencyRate(buckets(['0.00', false], ['100.00', true]), 2)
+      expect(r.indeterminate).toBe(false)
+      expect(r.rate).toBe(1)
+    })
+
+    // The invariant the guard restores: with no negative component the rate is
+    // always a real share of the portfolio.
+    it('keeps the rate inside 0..1 for every non-negative portfolio', () => {
+      const rows: Array<Array<[string, boolean]>> = [
+        [
+          ['900.00', false],
+          ['100.00', true]
+        ],
+        [
+          ['0.00', false],
+          ['0.01', true]
+        ],
+        [
+          ['1000.00', false],
+          ['0.00', true]
+        ],
+        [
+          ['1.00', true],
+          ['1.00', true]
+        ]
+      ]
+      for (const portfolio of rows) {
+        const r = delinquencyRate(buckets(...portfolio), 2)
+        if (r.rate !== null) {
+          expect(r.rate).toBeGreaterThanOrEqual(0)
+          expect(r.rate).toBeLessThanOrEqual(1)
+        }
+      }
+    })
+  })
+
   it('handles zero-decimal currencies via scale (JPY scale 0)', () => {
     // No fractional minor unit: 250 of 1000 → 0.25.
     const r = delinquencyRate(buckets(['750', false], ['250', true]), 0)

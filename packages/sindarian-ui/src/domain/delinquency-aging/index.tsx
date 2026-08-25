@@ -48,7 +48,7 @@ import { cn } from '@/lib/utils'
 
 import { Figure } from '../figure'
 import { formatPercent, NO_VALUE } from '../format'
-import { minorDigitsOf, sumMinor } from '../money-math'
+import { minorDigitsOf, toMinor } from '../money-math'
 import { SectionLabel } from '../section-label'
 import { gaugeBand } from '../threshold-gauge'
 import type { GaugeBand } from '../threshold-gauge'
@@ -77,7 +77,9 @@ export interface DelinquencyRate {
   overdueMinor: bigint | null
   /** Σ(all bucket totals) in minor units; null if any total is unparseable. */
   totalMinor: bigint | null
-  /** True when any bucket total could not be parsed — the rate is unknowable. */
+  /** True when the RATE cannot be determined: a bucket total that could not be
+   *  parsed, or a negative bucket total (parseable, but not a share of a
+   *  portfolio). The sums may still be present in the negative case. */
   indeterminate: boolean
 }
 
@@ -94,22 +96,38 @@ export function delinquencyRate(
   buckets: DelinquencyBucket[],
   scale: number
 ): DelinquencyRate {
-  const totalMinor = sumMinor(
-    buckets.map((b) => b.total),
-    scale
-  )
-  const overdueMinor = sumMinor(
-    buckets.filter((b) => b.overdue).map((b) => b.total),
-    scale
-  )
-
-  if (totalMinor === null || overdueMinor === null) {
+  // Parse each bucket exactly once: the sums and the per-bucket SIGN check both
+  // come off the same pass, so the two can never disagree about the same input.
+  const parsed = buckets.map((b) => toMinor(b.total, scale))
+  if (parsed.some((m) => m === null)) {
     return {
       rate: null,
       overdueMinor: null,
       totalMinor: null,
       indeterminate: true
     }
+  }
+
+  let totalMinor = 0n
+  let overdueMinor = 0n
+  let hasNegativeBucket = false
+  parsed.forEach((m, i) => {
+    const minor = m as bigint
+    if (minor < 0n) hasNegativeBucket = true
+    totalMinor += minor
+    if (buckets[i].overdue) overdueMinor += minor
+  })
+
+  // A NEGATIVE bucket total is parseable but not interpretable as a share of a
+  // portfolio: overdue/total stops being bounded by 0..1 the moment a component
+  // is negative (a -50 current band against a 100 overdue band yields "200%
+  // delinquent"), and it can also cancel the denominator toward zero. A credit
+  // adjustment is real data, but it is not aging data, so the honest answer is
+  // that the RATE cannot be determined — the sums stay, since they are still
+  // correct, and the readout takes the no-value path. Legacy divided anyway and
+  // printed the out-of-range percentage.
+  if (hasNegativeBucket) {
+    return { rate: null, overdueMinor, totalMinor, indeterminate: true }
   }
 
   // A zero portfolio has no rate to report — null, never overdueMinor/0 (NaN).

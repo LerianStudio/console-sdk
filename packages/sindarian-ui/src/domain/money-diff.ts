@@ -41,8 +41,17 @@ export function moneyDiff(money: MoneyDiffInput): {
   const r = toMinor(money.right, scale)
   if (l === null || r === null) return { decimal: null, breach: false }
   const diff = l - r
-  const rawTol =
-    money.tolerance == null ? null : toMinor(money.tolerance, scale)
+
+  // A tolerance that was SUPPLIED but does not parse ('', 'oops', '-.') is not
+  // the same thing as no tolerance at all. Degrading to the no-tolerance rule
+  // made every nonzero difference a breach, so one typo in a tolerance field
+  // turned a reconciled book into a screen of false breaches — the loudest
+  // possible wrong answer. A supplied-invalid tolerance is INDETERMINATE,
+  // exactly like an unparseable operand: no number, no verdict.
+  const supplied = money.tolerance != null
+  const rawTol = supplied ? toMinor(money.tolerance, scale) : null
+  if (supplied && rawTol === null) return { decimal: null, breach: false }
+
   // A tolerance is a BAND WIDTH, so only its magnitude is meaningful. Taken
   // signed, a negative tolerance made `|diff| > tol` true for every value
   // including an exact tie (0n > -5n), flagging perfectly reconciled pairs as

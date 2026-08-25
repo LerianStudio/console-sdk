@@ -170,6 +170,78 @@ describe('moneyDiff', () => {
     })
   })
 
+  // CodeRabbit round 2 #1: a SUPPLIED-but-unparseable tolerance previously fell
+  // through to the no-tolerance rule, which makes every nonzero difference a
+  // breach. One typo in a tolerance field then repainted a reconciled book as a
+  // screen of breaches. Supplied-invalid is indeterminate, like a bad operand.
+  describe('supplied-but-unparseable tolerance', () => {
+    it('is indeterminate, never a false breach', () => {
+      for (const tolerance of ['', 'oops', '-.', '.', '-', 'R$ 0,05']) {
+        expect(
+          moneyDiff({
+            left: '100.01',
+            right: '100.00',
+            currency: 'BRL',
+            tolerance
+          })
+        ).toEqual({ decimal: null, breach: false })
+      }
+    })
+
+    it('is indeterminate even when the two sides tie', () => {
+      expect(
+        moneyDiff({
+          left: '100.00',
+          right: '100.00',
+          currency: 'BRL',
+          tolerance: 'oops'
+        })
+      ).toEqual({ decimal: null, breach: false })
+    })
+
+    it('does not confuse an OMITTED tolerance with an invalid one', () => {
+      // Omitted → the no-tolerance rule still applies: any nonzero diff breaches.
+      expect(
+        moneyDiff({ left: '100.01', right: '100.00', currency: 'BRL' })
+      ).toEqual({ decimal: '0.01', breach: true })
+      expect(
+        moneyDiff({
+          left: '100.01',
+          right: '100.00',
+          currency: 'BRL',
+          tolerance: undefined
+        })
+      ).toEqual({ decimal: '0.01', breach: true })
+      expect(
+        moneyDiff({
+          left: '100.01',
+          right: '100.00',
+          currency: 'BRL',
+          tolerance: null
+        })
+      ).toEqual({ decimal: '0.01', breach: true })
+    })
+
+    it('accepts a valid zero tolerance as a real band, not as absent', () => {
+      expect(
+        moneyDiff({
+          left: '100.00',
+          right: '100.00',
+          currency: 'BRL',
+          tolerance: '0'
+        })
+      ).toEqual({ decimal: '0.00', breach: false })
+      expect(
+        moneyDiff({
+          left: '100.01',
+          right: '100.00',
+          currency: 'BRL',
+          tolerance: '0'
+        })
+      ).toEqual({ decimal: '0.01', breach: true })
+    })
+  })
+
   // CodeRabbit #2: a digitless token must never become an exact zero — a
   // fabricated tie is the most dangerous possible answer in reconciliation.
   it('treats a digitless operand as indeterminate, never an exact tie', () => {
