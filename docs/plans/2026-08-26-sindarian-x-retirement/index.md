@@ -84,6 +84,11 @@ Added to `packages/sindarian-ui/src/globals.css` in `:root` AND `.dark`, each wi
 
 Semantic-state tokens are NOT duplicated: ported components map sindarian-x's `success`/`warning`/`info`/`destructive` usages onto sindarian-ui's existing `system-success` / `system-alert` / `system-info` / `system-error` / `destructive` tokens. No existing sindarian-ui token changes name or value — ever (senior rule).
 
+Landed by foundation (PR #131) — binding on porting lanes:
+- Raw tokens are HSL TRIPLES (house convention), wrapped by `hsl()` only in `@theme inline`. Code that resolves colors directly MUST use `var(--color-chart-N)` / `var(--color-credit)` etc., never `var(--chart-N)` — sindarian-x's charts used the raw form and need this one-token rename (allowed by FC-3 (b)).
+- `--matched-surface`/`--unmatched-surface` are hue-NEUTRAL matte fills (as in sindarian-x's actual values), not success/error tints: the matched/unmatched signal is carried by the bar edge, not the wall.
+- `--credit-foreground` MIRRORS `--credit` (legacy contract: the red itself carries the role as text; components use `bg-credit/10` + `text-credit`, never solid bg + foreground text).
+
 ### FC-3 — Legacy-API compatibility (freeze-by-reference)
 
 Every symbol ported from sindarian-x keeps the public TypeScript API published in `@lerianstudio/sindarian-x@0.15.0` (`dist/**/*.d.ts` — an immutable npm artifact): same export name, same props/signature, same generics. Only two deviations are allowed: (a) styling re-based on sindarian-ui tokens, (b) internal imports re-pointed at sindarian-ui primitives. A porting lane that cannot keep an API byte-compatible stops and reports — it does not improvise a new API.
