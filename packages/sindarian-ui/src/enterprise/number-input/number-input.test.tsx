@@ -1,0 +1,199 @@
+import { fireEvent, render, screen } from '@testing-library/react'
+import { isTransientPartial, NumberInput, parseRaw } from '.'
+
+describe('parseRaw', () => {
+  it.each([
+    ['en-US', '1,234.56', 1234.56],
+    ['en-US', '-9,876.5', -9876.5],
+    ['pt-BR', '1.234,56', 1234.56],
+    ['pt-BR', '-9.876,5', -9876.5]
+  ] as const)('parses %s numeric input %s', (locale, raw, expected) => {
+    expect(parseRaw(raw, locale)).toBe(expected)
+  })
+
+  it('rejects an invalid draft and maps an empty draft to null', () => {
+    expect(parseRaw('not-a-number', 'en-US')).toBeNull()
+    expect(parseRaw('', 'en-US')).toBeNull()
+    expect(parseRaw('   ', 'pt-BR')).toBeNull()
+  })
+})
+
+describe('isTransientPartial', () => {
+  it.each([
+    ['', false],
+    ['-', true],
+    ['+', false],
+    ['.', true],
+    [',', false],
+    ['1.', true],
+    ['1,', false],
+    ['12', false],
+    ['12.5', false]
+  ] as const)('classifies transient draft %j', (draft, expected) => {
+    expect(isTransientPartial(draft, 'en-US')).toBe(expected)
+  })
+
+  it('follows the locale decimal mark', () => {
+    expect(isTransientPartial('1,', 'pt-BR')).toBe(true)
+    expect(isTransientPartial('1.', 'pt-BR')).toBe(false)
+  })
+})
+
+describe('NumberInput', () => {
+  it('renders the locale-formatted value and its spinbutton range', () => {
+    render(
+      <NumberInput
+        id="amount"
+        value={1234.5}
+        onValueChange={jest.fn()}
+        locale="pt-BR"
+        precision={2}
+        min={0}
+        max={2000}
+        step={0.5}
+        aria-label="Settlement amount"
+        aria-describedby="amount-help"
+      />
+    )
+
+    const input = screen.getByRole('spinbutton', { name: 'Settlement amount' })
+    expect(input).toHaveValue('1.234,50')
+    expect(input).toHaveAttribute('aria-valuemin', '0')
+    expect(input).toHaveAttribute('aria-valuemax', '2000')
+    expect(input).toHaveAttribute('aria-valuenow', '1234.5')
+    expect(input).toHaveAttribute('aria-describedby', 'amount-help')
+  })
+
+  it('renders a null value as an empty field', () => {
+    render(
+      <NumberInput
+        value={null}
+        onValueChange={jest.fn()}
+        placeholder="Enter amount"
+      />
+    )
+
+    const input = screen.getByRole('spinbutton')
+    expect(input).toHaveValue('')
+    expect(input).toHaveAttribute('placeholder', 'Enter amount')
+    expect(input).not.toHaveAttribute('aria-valuenow')
+  })
+
+  it('disables the input and both untabbable step controls', () => {
+    render(<NumberInput value={5} onValueChange={jest.fn()} disabled />)
+
+    expect(screen.getByRole('spinbutton')).toBeDisabled()
+    const buttons = screen.getAllByRole('button')
+    expect(buttons).toHaveLength(2)
+    buttons.forEach((button) => {
+      expect(button).toBeDisabled()
+      expect(button).toHaveAttribute('tabindex', '-1')
+    })
+  })
+
+  it('steps by `step` and clamps to the bounds', () => {
+    const onValueChange = jest.fn()
+    render(
+      <NumberInput
+        value={9.5}
+        onValueChange={onValueChange}
+        step={0.5}
+        min={0}
+        max={10}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Increase' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(10)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(9)
+  })
+
+  it('disables the steppers at the bounds', () => {
+    const { rerender } = render(
+      <NumberInput value={0} onValueChange={jest.fn()} min={0} max={10} />
+    )
+    expect(screen.getByRole('button', { name: 'Decrease' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Increase' })).toBeEnabled()
+
+    rerender(
+      <NumberInput value={10} onValueChange={jest.fn()} min={0} max={10} />
+    )
+    expect(screen.getByRole('button', { name: 'Decrease' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Increase' })).toBeDisabled()
+  })
+
+  it('steps with ArrowUp / ArrowDown on the field', () => {
+    const onValueChange = jest.fn()
+    render(<NumberInput value={4} onValueChange={onValueChange} step={2} />)
+
+    const input = screen.getByRole('spinbutton')
+    fireEvent.keyDown(input, { key: 'ArrowUp' })
+    expect(onValueChange).toHaveBeenLastCalledWith(6)
+
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    expect(onValueChange).toHaveBeenLastCalledWith(2)
+  })
+
+  it('commits a parsed edit and a genuine clear, but never a transient partial', () => {
+    const onValueChange = jest.fn()
+    render(
+      <NumberInput value={1} onValueChange={onValueChange} locale="en-US" />
+    )
+
+    const input = screen.getByRole('spinbutton')
+    fireEvent.focus(input)
+
+    fireEvent.change(input, { target: { value: '-' } })
+    expect(onValueChange).not.toHaveBeenCalled()
+
+    fireEvent.change(input, { target: { value: '-12.' } })
+    expect(onValueChange).not.toHaveBeenCalled()
+
+    fireEvent.change(input, { target: { value: '-12.5' } })
+    expect(onValueChange).toHaveBeenLastCalledWith(-12.5)
+
+    fireEvent.change(input, { target: { value: '' } })
+    expect(onValueChange).toHaveBeenLastCalledWith(null)
+  })
+
+  it('re-clamps an out-of-range committed value on blur', () => {
+    const onValueChange = jest.fn()
+    render(
+      <NumberInput value={99} onValueChange={onValueChange} min={0} max={10} />
+    )
+
+    fireEvent.blur(screen.getByRole('spinbutton'))
+    expect(onValueChange).toHaveBeenCalledWith(10)
+  })
+
+  it('shows the editable draft while focused and reformats on blur', () => {
+    const { rerender } = render(
+      <NumberInput
+        value={1234.5}
+        onValueChange={jest.fn()}
+        locale="en-US"
+        precision={2}
+      />
+    )
+
+    const input = screen.getByRole('spinbutton')
+    expect(input).toHaveValue('1,234.50')
+
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: '7' } })
+    expect(input).toHaveValue('7')
+
+    fireEvent.blur(input)
+    rerender(
+      <NumberInput
+        value={7}
+        onValueChange={jest.fn()}
+        locale="en-US"
+        precision={2}
+      />
+    )
+    expect(input).toHaveValue('7.00')
+  })
+})

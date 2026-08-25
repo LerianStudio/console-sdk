@@ -1,0 +1,99 @@
+import { render, screen } from '@testing-library/react'
+import { StatCard, type StatCardTone } from '.'
+
+const series = [{ value: 1 }, { value: 4 }, { value: 2 }, { value: 9 }]
+
+describe('StatCard', () => {
+  it('renders the label and the hero figure', () => {
+    render(<StatCard label="Match rate" value="98.4%" />)
+
+    expect(
+      screen.getByRole('heading', { name: 'Match rate' })
+    ).toBeInTheDocument()
+    expect(screen.getByText('98.4%')).toBeInTheDocument()
+  })
+
+  it('renders the delta line only when supplied', () => {
+    const { rerender } = render(<StatCard label="Rate" value="98%" />)
+    expect(screen.queryByText('+0.6 pts')).toBeNull()
+
+    rerender(<StatCard label="Rate" value="98%" delta="+0.6 pts" />)
+    expect(screen.getByText('+0.6 pts')).toBeInTheDocument()
+  })
+
+  it.each([
+    ['default', 'text-foreground'],
+    ['success', 'text-system-success-text'],
+    ['warning', 'text-system-alert-text'],
+    ['destructive', 'text-destructive']
+  ] as const)('escalates the %s tone onto its token', (tone, expected) => {
+    render(
+      <StatCard
+        label="Rate"
+        value="98%"
+        tone={tone as StatCardTone}
+        delta="-1"
+      />
+    )
+    expect(screen.getByText('98%')).toHaveClass(expected)
+    expect(screen.getByText('-1')).toHaveClass(expected)
+  })
+
+  it('renders the trend sparkline for a plottable series', () => {
+    const { container } = render(
+      <StatCard label="In flight" value="129" trend={series} />
+    )
+    const polyline = container.querySelector('polyline')
+    expect(polyline).toBeInTheDocument()
+    expect(polyline?.getAttribute('points')?.split(' ')).toHaveLength(4)
+  })
+
+  it('reads the trend from a custom trendKey', () => {
+    const { container } = render(
+      <StatCard
+        label="In flight"
+        value="129"
+        trend={[{ v: 3 }, { v: 7 }]}
+        trendKey="v"
+      />
+    )
+    expect(container.querySelector('polyline')).toBeInTheDocument()
+  })
+
+  it('renders no trend for an empty or single-point series', () => {
+    const { container, rerender } = render(
+      <StatCard label="Flat" value="0" trend={[]} />
+    )
+    expect(container.querySelector('svg')).toBeNull()
+
+    rerender(<StatCard label="Flat" value="0" trend={[{ value: 1 }]} />)
+    expect(container.querySelector('svg')).toBeNull()
+  })
+
+  it('survives a flat series without dividing by zero', () => {
+    const { container } = render(
+      <StatCard label="Flat" value="5" trend={[{ value: 5 }, { value: 5 }]} />
+    )
+    expect(container.querySelector('polyline')?.getAttribute('points')).toBe(
+      '0.00,20.00 100.00,20.00'
+    )
+  })
+
+  it('renders the secondary key/value rows', () => {
+    render(
+      <StatCard
+        label="Disputes"
+        value="3"
+        rows={[
+          { label: 'Open', value: '3' },
+          { label: 'Closed', value: '11' }
+        ]}
+      />
+    )
+
+    expect(screen.getByText('Open')).toBeInTheDocument()
+    expect(screen.getByText('3', { selector: 'dd' })).toBeInTheDocument()
+    expect(screen.getByText('Closed')).toBeInTheDocument()
+    expect(screen.getByText('11')).toBeInTheDocument()
+  })
+})
