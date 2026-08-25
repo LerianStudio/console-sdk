@@ -5,15 +5,6 @@ import { useForm, type UseFormReturn } from 'react-hook-form'
 import { Form } from '@/components/ui/form'
 import { RadioGroupField } from '.'
 
-// Radix measures the indicator with ResizeObserver, which jsdom does not ship.
-beforeAll(() => {
-  global.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver
-})
-
 function Harness({
   onSubmit,
   error

@@ -2,15 +2,6 @@ import '@testing-library/jest-dom'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { RadioGroup, RadioGroupItem } from '.'
 
-// Radix measures the indicator with ResizeObserver, which jsdom does not ship.
-beforeAll(() => {
-  global.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver
-})
-
 describe('RadioGroup', () => {
   it('selects the clicked option and reports the value', () => {
     const onValueChange = jest.fn()

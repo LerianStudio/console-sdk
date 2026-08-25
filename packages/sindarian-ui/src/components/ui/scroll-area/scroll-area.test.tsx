@@ -2,15 +2,6 @@ import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 import { ScrollArea, ScrollBar } from '.'
 
-// Radix measures the viewport with ResizeObserver, which jsdom does not ship.
-beforeAll(() => {
-  global.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver
-})
-
 describe('ScrollArea', () => {
   it('renders its children inside the scrollable viewport', () => {
     const { container } = render(

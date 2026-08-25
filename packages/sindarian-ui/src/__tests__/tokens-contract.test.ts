@@ -78,6 +78,25 @@ describe('design token contract', () => {
     })
   })
 
+  // FC-2 semantics, not just presence. `--credit-foreground` MIRRORS `--credit`
+  // (legacy contract: the red itself carries the role as text, so components
+  // write `bg-credit/10` + `text-credit`, never a solid fill with contrasting
+  // text). A foreground that drifts to white would silently turn every credit
+  // reading unreadable on its own tinted surface.
+  describe.each([
+    ['light', root],
+    ['dark', dark]
+  ])('--credit-foreground in %s', (_theme, scope: string) => {
+    it('mirrors --credit', () => {
+      const read = (token: string) =>
+        scope.match(new RegExp(`^\\s*--${token}:\\s*([^;]+);`, 'm'))?.[1].trim()
+
+      const credit = read('credit')
+      expect(credit).toBeDefined()
+      expect(read('credit-foreground')).toBe(credit)
+    })
+  })
+
   describe.each(SENTINELS)('pre-existing %s', (token, value, scope: string) => {
     it(`still resolves to ${value}`, () => {
       const match = scope.match(new RegExp(`^\\s*${token}:\\s*([^;]+);`, 'm'))
