@@ -57,3 +57,14 @@ export * from './components/page'
 export * from './components/page-header'
 export * from './components/pagination'
 export * from './components/table'
+
+// Enterprise surface (sindarian-x absorption — see docs/plans/2026-08-26-sindarian-x-retirement/)
+export * from './enterprise'
+export * from './theme'
+export * from './toast'
+export * from './charts'
+export * from './domain'
+
+// Utilities
+export { cn } from './lib/utils'
+export * from './lib/typography'
