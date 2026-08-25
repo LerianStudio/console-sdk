@@ -1,0 +1,111 @@
+import * as React from 'react'
+import { Meta, StoryObj } from '@storybook/nextjs'
+import type { ColumnDef, RowSelectionState } from '@tanstack/react-table'
+import { DataTable, DataTableProps } from '.'
+import { StatusBadge } from '../status-badge'
+
+type Settlement = {
+  id: string
+  counterparty: string
+  status: string
+  amount: number
+}
+
+const data: Settlement[] = [
+  {
+    id: 'stl_01',
+    counterparty: 'Banco Alpha',
+    status: 'SUCCEEDED',
+    amount: 1250
+  },
+  {
+    id: 'stl_02',
+    counterparty: 'Banco Bravo',
+    status: 'PENDING',
+    amount: 980.5
+  },
+  { id: 'stl_03', counterparty: 'Banco Charlie', status: 'FAILED', amount: 42 }
+]
+
+const columns: ColumnDef<Settlement, unknown>[] = [
+  { accessorKey: 'id', header: 'Id' },
+  { accessorKey: 'counterparty', header: 'Counterparty' },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => <StatusBadge status={row.original.status} withIcon />
+  },
+  {
+    accessorKey: 'amount',
+    header: 'Amount',
+    meta: { numeric: true },
+    cell: ({ getValue }) =>
+      getValue<number>().toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      })
+  }
+]
+
+const meta: Meta<DataTableProps<Settlement>> = {
+  title: 'Enterprise/DataTable',
+  component: DataTable,
+  argTypes: {
+    density: { control: 'inline-radio', options: ['comfortable', 'compact'] },
+    flush: { control: 'boolean' },
+    loading: { control: 'boolean' }
+  }
+}
+
+export default meta
+
+export const Default: StoryObj<DataTableProps<Settlement>> = {
+  args: { columns, data, getRowId: (row) => row.id }
+}
+
+export const Loading: StoryObj<DataTableProps<Settlement>> = {
+  args: { columns, data: [], loading: true, skeletonRows: 4 }
+}
+
+export const Empty: StoryObj<DataTableProps<Settlement>> = {
+  args: {
+    columns,
+    data: [],
+    empty: {
+      title: 'No settlements match this view',
+      description: 'Try widening the date range.'
+    }
+  }
+}
+
+export const Compact: StoryObj<DataTableProps<Settlement>> = {
+  args: { columns, data, getRowId: (row) => row.id, density: 'compact' }
+}
+
+export const KeyboardNavigable: StoryObj<DataTableProps<Settlement>> = {
+  args: {
+    columns,
+    data,
+    getRowId: (row) => row.id,
+    onRowActivate: (row) => window.alert(`Activated ${row.id}`),
+    rowHref: (row) => `/settlements/${row.id}`
+  }
+}
+
+export const RowSelection: StoryObj<DataTableProps<Settlement>> = {
+  render: () => {
+    const [rowSelection, setRowSelection] = React.useState<RowSelectionState>(
+      {}
+    )
+    return (
+      <DataTable
+        columns={columns}
+        data={data}
+        getRowId={(row) => row.id}
+        enableRowSelection
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
+      />
+    )
+  }
+}
