@@ -1,3 +1,39 @@
+## [1.2.0-beta.14](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.13...sindarian-ui-v1.2.0-beta.14) (2026-08-25)
+
+
+### Features
+
+* **sindarian-ui:** add enterprise components (sindarian-x port) ([93bd278](https://github.com/LerianStudio/console-sdk/commit/93bd27814d3db5117ff58e349371b798f68ce791))
+* **sindarian-ui:** add finance domain grammar (sindarian-x port) ([248ebe9](https://github.com/LerianStudio/console-sdk/commit/248ebe953600a4b9e8664f07062d4d312bc0d89a))
+* **sindarian-ui:** add missing primitives and form fields (sindarian-x port) ([eaa3c07](https://github.com/LerianStudio/console-sdk/commit/eaa3c077306606e11eb2770106e24f52920aaeb0))
+* **sindarian-ui:** add theme system, toast helpers and chart wrapper (sindarian-x port) ([6fcdb9b](https://github.com/LerianStudio/console-sdk/commit/6fcdb9b631eac5a29b1d074a732eccbc5366f03c))
+* **sindarian-ui:** add warning toast variant ([f7d2d32](https://github.com/LerianStudio/console-sdk/commit/f7d2d329b89e405e3e3238beb1842a882df181b7))
+* **sindarian-ui:** let apps inject the sidebar's router ([c5d23a0](https://github.com/LerianStudio/console-sdk/commit/c5d23a0bcb31dd3398ab9f5b3057c653e7b69f38))
+* **sindarian-ui:** scaffold enterprise foundation (sub-barrels, deps, tokens, cn export) ([#131](https://github.com/LerianStudio/console-sdk/issues/131)) ([bd5a2fd](https://github.com/LerianStudio/console-sdk/commit/bd5a2fdecc79cdbbd554781a03eaa123c3c7da80))
+* **sindarian-ui:** ship a tree-shakeable ESM build alongside CJS ([4edca3e](https://github.com/LerianStudio/console-sdk/commit/4edca3e49b0a4d4bae3e3a25a7e7a5f6cf629394))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** address review findings on enterprise components ([c8b58bf](https://github.com/LerianStudio/console-sdk/commit/c8b58bf4150beea6ff1cb0ba472a8cdd0b7c922b))
+* **sindarian-ui:** address review findings on ported primitives and fields ([9a53576](https://github.com/LerianStudio/console-sdk/commit/9a535764271f3926713015634213270953c2a012))
+* **sindarian-ui:** address round-2 review findings on enterprise components ([6beef2f](https://github.com/LerianStudio/console-sdk/commit/6beef2fa77e18138399b7676c08e632fb76de55b))
+* **sindarian-ui:** address round-3 review findings on enterprise components ([c05cc24](https://github.com/LerianStudio/console-sdk/commit/c05cc24543ea61b0b3eb87fdcd56a093940a6ff3))
+* **sindarian-ui:** harden chart style injection and mirror provider fallback in theme script ([95b6d12](https://github.com/LerianStudio/console-sdk/commit/95b6d1205bd188cc38d17430c2bda9f037f2ae68))
+* **sindarian-ui:** harden domain money, PII masking and gauge a11y ([5d580f2](https://github.com/LerianStudio/console-sdk/commit/5d580f2a7cc0c8f1286358867df6d61696c85bfe)), closes [#135](https://github.com/LerianStudio/console-sdk/issues/135)
+* **sindarian-ui:** harden form field accessible-name and path typing ([9d18fa5](https://github.com/LerianStudio/console-sdk/commit/9d18fa54187ba6328291efd68188e7919672ee6d))
+* **sindarian-ui:** make Input's focus() and blur() actually run ([951c0cc](https://github.com/LerianStudio/console-sdk/commit/951c0cc675778ed36bdbb2f551b6ff48982d6d7e))
+* **sindarian-ui:** refuse verdicts the domain data cannot support ([3e02d73](https://github.com/LerianStudio/console-sdk/commit/3e02d73b9bee34e86226a826e4f947c703c476dc)), closes [#135](https://github.com/LerianStudio/console-sdk/issues/135)
+* **sindarian-ui:** reject url() colors, allow numeric series keys, survive blocked storage ([5729c9b](https://github.com/LerianStudio/console-sdk/commit/5729c9b0e6330119e5f45f1eb8a66faaf2fc34de))
+* **sindarian-ui:** require an accessible name on every ported form field ([808ab3a](https://github.com/LerianStudio/console-sdk/commit/808ab3aa181abcd0e5ccb223758cee20238bc256))
+* **sindarian-ui:** resolve one version of every [@radix-ui](https://github.com/radix-ui) package ([ec7e1c3](https://github.com/LerianStudio/console-sdk/commit/ec7e1c34cfe3fa7ee4cb697738002f14de556adf))
+* **sindarian-ui:** snap stepped value before clamping in NumberInput ([d9bce0a](https://github.com/LerianStudio/console-sdk/commit/d9bce0af6d949451aae64bfc0f9396d2f6d37ac7))
+* **sindarian-ui:** stop portal labels recursing forever in the label guard ([d70edbb](https://github.com/LerianStudio/console-sdk/commit/d70edbbdec92445df1983bf0cb485bc6b096620f))
+* **sindarian-ui:** stop shipping test files and start type-checking stories ([3cd2830](https://github.com/LerianStudio/console-sdk/commit/3cd2830b4f0561ed964709e7e1c5be0c02cf20d4))
+* **sindarian-ui:** treat blank labels as absent and de-flake file-upload tests ([b1f477f](https://github.com/LerianStudio/console-sdk/commit/b1f477faa0aa425e6149129b61432be4733fa4da))
+* **sindarian-ui:** treat empty label collections and fragments as absent ([bc4633c](https://github.com/LerianStudio/console-sdk/commit/bc4633ca90d910aad633a6414f110fbef070e458))
+* **sindarian-ui:** treat portal labels as nameless and keep next/link options intact ([9b54560](https://github.com/LerianStudio/console-sdk/commit/9b54560c84e30950bae88489eb9b28539acf0c59))
+
 ## [1.2.0-beta.13](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.12...sindarian-ui-v1.2.0-beta.13) (2026-08-07)
 
 
