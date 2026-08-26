@@ -21,7 +21,10 @@
  * grand total is shown it is summed through `money-math` integer minor units
  * (BigInt, at the currency's CLDR scale) — never IEEE-754 — and rendered via
  * `MoneyText`. A single unparseable bucket total poisons the sum to NO_VALUE
- * rather than silently displaying a wrong number.
+ * rather than silently displaying a wrong number. The SAME currency scale that
+ * drives the sum is also the print scale handed to `MoneyText`, so the digits on
+ * screen are the digits that were summed — the printed total can never be a
+ * re-rounding of the computed one.
  *
  * Pure display: no directive, no interactivity, server-safe for RSC.
  */
@@ -45,6 +48,27 @@ export interface AgingBucket {
   total: string | number
 }
 
+export type AgingBand = 'current' | 'recent' | 'aging' | 'overdue'
+
+/**
+ * Overrides for the fixed pt-BR copy. Every field is optional and defaults to
+ * the current value, so a consumer that passes nothing renders exactly as
+ * before. The band words in particular are the ACCESSIBLE severity cue (the
+ * sr-only text a screen reader announces), so a consumer running in another
+ * language needs them translatable, not just the digits `locale` already
+ * covers.
+ */
+export interface AgingBucketsLabels {
+  /** sr-only severity word per band. Merged shallowly over the pt-BR canon. */
+  bands?: Partial<Record<AgingBand, string>>
+  /** Caption under the count column. Defaults to "Itens". */
+  count?: string
+  /** Caption under the money column. Defaults to "Total". */
+  total?: string
+  /** Label of the grand-total row. Defaults to "Total geral". */
+  grandTotal?: string
+}
+
 export interface AgingBucketsProps {
   /** Ordered current → oldest. Order carries meaning; not reordered internally. */
   buckets: AgingBucket[]
@@ -54,10 +78,10 @@ export interface AgingBucketsProps {
   locale?: string
   /** Render a money-math-exact grand total row across all buckets. */
   showTotal?: boolean
+  /** Override the fixed pt-BR copy. Omitted fields keep their defaults. */
+  labels?: AgingBucketsLabels
   className?: string
 }
-
-export type AgingBand = 'current' | 'recent' | 'aging' | 'overdue'
 
 /** Band → glyph + tint + accessible word. The glyph (and the sr-only word) is
  *  the load-bearing severity cue; the tint only reinforces it, so the
@@ -121,8 +145,18 @@ export function AgingBuckets({
   currency,
   locale,
   showTotal = false,
+  labels,
   className
 }: AgingBucketsProps) {
+  const countLabel = labels?.count ?? 'Itens'
+  const totalLabel = labels?.total ?? 'Total'
+  const grandTotalLabel = labels?.grandTotal ?? 'Total geral'
+
+  // THIRD RAIL: one scale for BOTH the arithmetic and the print. `MoneyText`
+  // defaults to 2 fraction digits, so leaving it unset printed JPY (scale 0)
+  // with two decimals the currency does not have, and re-rounded the exact BHD
+  // (scale 3) grand total `1.005` to `1.01` — a printed total that disagreed
+  // with the total that was actually summed.
   const scale = currency ? minorDigitsOf(currency) : 2
   const grandTotal = showTotal ? sumBucketTotals(buckets, scale) : null
 
@@ -132,6 +166,8 @@ export function AgingBuckets({
         {buckets.map((bucket, i) => {
           const band = bucketBand(i, buckets.length)
           const { Icon, tint, word } = BAND[band]
+          // Shallow merge: an unlisted band keeps its pt-BR default.
+          const bandWord = labels?.bands?.[band] ?? word
 
           return (
             // Stable key: the label is the natural band identity; the index
@@ -143,7 +179,7 @@ export function AgingBuckets({
               {/* The band glyph leads the row; the sr-only word carries the
                   severity to assistive tech so it is never color-only. */}
               <Icon aria-hidden className={cn('size-4 shrink-0', tint)} />
-              <span className="sr-only">{word}: </span>
+              <span className="sr-only">{bandWord}: </span>
 
               <span
                 className={cn(
@@ -158,7 +194,9 @@ export function AgingBuckets({
                 <Figure size="row" className="text-foreground">
                   {formatCount(bucket.count, locale)}
                 </Figure>
-                <span className={cn(LABEL_VOICE_CLASS, 'mt-1')}>Itens</span>
+                <span className={cn(LABEL_VOICE_CLASS, 'mt-1')}>
+                  {countLabel}
+                </span>
               </span>
 
               <span className="flex w-32 shrink-0 flex-col items-end leading-none sm:w-40">
@@ -169,11 +207,14 @@ export function AgingBuckets({
                   <MoneyText
                     amount={bucket.total}
                     currency={currency}
+                    fractionDigits={scale}
                     locale={locale}
                     signColor={false}
                   />
                 </Figure>
-                <span className={cn(LABEL_VOICE_CLASS, 'mt-1')}>Total</span>
+                <span className={cn(LABEL_VOICE_CLASS, 'mt-1')}>
+                  {totalLabel}
+                </span>
               </span>
             </li>
           )
@@ -188,7 +229,7 @@ export function AgingBuckets({
           <span
             className={cn(LABEL_VOICE_CLASS, 'text-foreground min-w-0 flex-1')}
           >
-            Total geral
+            {grandTotalLabel}
           </span>
           <span className="w-32 shrink-0 text-right sm:w-40">
             {grandTotal === null ? (
@@ -200,6 +241,7 @@ export function AgingBuckets({
                 <MoneyText
                   amount={grandTotal}
                   currency={currency}
+                  fractionDigits={scale}
                   locale={locale}
                   signColor={false}
                 />

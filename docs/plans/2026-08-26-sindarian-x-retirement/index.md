@@ -109,7 +109,7 @@ function ThemeProvider(props: {
   storageKey?: string              // default 'sindarian.theme'
 }): JSX.Element
 function useTheme(): { theme: ThemePreference; setTheme(t: ThemePreference): void; resolvedTheme: 'light' | 'dark' }
-function getThemeScript(storageKey?: string): string   // pre-hydration FOUC guard, inline <script> body
+function getThemeScript(storageKey?: string, defaultTheme?: ThemePreference): string  // pre-hydration FOUC guard, inline <script> body; defaults 'sindarian.theme' / 'system'
 function ModeToggle(props: ModeToggleProps): JSX.Element
 
 // Fallback contract (tested by lane theme-toasts-charts, 30-case parity matrix):

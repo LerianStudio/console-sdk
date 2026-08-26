@@ -15,8 +15,9 @@
 import { minorDigitsOf, minorToDecimal, toMinor } from './money-math'
 import type { Amount } from './money-math'
 
-/** The money-comparison contract: two sides, a currency, an optional tolerance. */
-type MoneyDiffInput = {
+/** The money-comparison contract: two sides, a currency, an optional tolerance.
+ *  Exported so a consumer can name the argument type it is already passing. */
+export type MoneyDiffInput = {
   /** Left amount (canonical decimal string preferred for lossless math). */
   left: Amount
   /** Right amount. The difference is left − right. */
@@ -28,7 +29,12 @@ type MoneyDiffInput = {
   minorDigits?: number
   /** Absolute tolerance in MAJOR units. `|left − right| > tolerance` is a breach. */
   tolerance?: Amount
-  /** BCP 47 locale for the money figure. */
+  /** BCP 47 locale. CURRENTLY UNUSED: `moneyDiff` returns `{ decimal, breach }`
+   *  and formats nothing, so this value has no effect on the result. It stays in
+   *  the contract because removing it would break every consumer that passes it
+   *  (an object literal with an unknown member is an excess-property error), and
+   *  because the formatting side of the pair — `MoneyText` — takes a locale of
+   *  its own. Pass the locale THERE, at the point the figure is rendered. */
   locale?: string
 }
 

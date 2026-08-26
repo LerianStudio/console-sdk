@@ -10,6 +10,7 @@ import { render, screen } from '@testing-library/react'
 
 import { ThresholdGauge, gaugeBand } from '.'
 import type { ThresholdGaugeProps } from '.'
+import { NO_VALUE } from '../format'
 
 // higher-is-worse: value climbs into danger. warn < breach (e.g. utilization).
 const HIGH = { warn: 0.8, breach: 0.9 }
@@ -203,6 +204,55 @@ describe('ThresholdGauge render', () => {
     expect(html).toMatch(/Próximo do limite/)
     expect(html).not.toMatch(/Limite ultrapassado/)
     expect(html).toMatch(/>200</)
+  })
+
+  // A non-finite reading is a SUPPORTED degraded state everywhere else — the
+  // band degrades to low, the track collapses to 0, the readout prints NO_VALUE
+  // — but the raw number still reached ARIA, so React serialized
+  // aria-valuenow="NaN"/"Infinity" and assistive tech announced a meaningless
+  // figure for a meter whose visible text says there is no value.
+  describe('non-finite reading', () => {
+    it.each([
+      ['NaN', Number.NaN],
+      ['Infinity', Number.POSITIVE_INFINITY],
+      ['-Infinity', Number.NEGATIVE_INFINITY]
+    ])('omits aria-valuenow for %s', (_kind, value) => {
+      render(
+        <ThresholdGauge
+          value={value}
+          max={100}
+          warn={80}
+          breach={90}
+          direction="higher-is-worse"
+          format="count"
+          locale="en-US"
+          ariaLabel="Utilização"
+        />
+      )
+      const meter = screen.getByRole('meter')
+
+      expect(meter).not.toHaveAttribute('aria-valuenow')
+      // The bounds still describe the track, and the visible readout still
+      // states the no-value placeholder.
+      expect(meter).toHaveAttribute('aria-valuemax', '100')
+      expect(meter.parentElement?.textContent).toContain(NO_VALUE)
+    })
+
+    it('keeps aria-valuenow for a finite reading', () => {
+      render(
+        <ThresholdGauge
+          value={62}
+          max={100}
+          warn={80}
+          breach={90}
+          direction="higher-is-worse"
+          format="count"
+          locale="en-US"
+          ariaLabel="Utilização"
+        />
+      )
+      expect(screen.getByRole('meter')).toHaveAttribute('aria-valuenow', '62')
+    })
   })
 
   // CodeRabbit #9: aria-label was `label`, so a gauge rendered without a visible

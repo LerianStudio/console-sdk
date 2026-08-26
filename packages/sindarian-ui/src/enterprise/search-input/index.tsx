@@ -69,13 +69,19 @@ export function SearchInput({
   )
 
   React.useEffect(() => {
-    if (lastEmitted.current === value) {
-      // This is the echo of our own emission. Consume the token: a LATER
-      // external change back to this same text (foo -> bar -> foo) is a real
-      // change and must reach the draft.
-      lastEmitted.current = NO_PENDING_ECHO
-      return
-    }
+    const isEcho = lastEmitted.current === value
+    // ANY external change consumes the token, echo or not. Consuming it only on
+    // a match left a DROPPED emission pending forever: emit "pix", the parent
+    // rejects it and holds "", the parent later sets "foo" (draft follows, token
+    // still holding "pix"), the parent then sets "pix" — read as our own echo,
+    // so the draft stayed on "foo" and the visible field disagreed with the
+    // controlled value. A later external change is proof the parent moved on,
+    // which invalidates any echo still outstanding.
+    lastEmitted.current = NO_PENDING_ECHO
+    // A genuine echo must NOT reach the draft: the parent echoes one render
+    // later, by which time the user may have typed further, and syncing would
+    // rewind the field and swallow those keystrokes.
+    if (isEcho) return
     setDraft(value)
   }, [value])
 

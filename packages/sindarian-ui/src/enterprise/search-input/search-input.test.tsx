@@ -147,6 +147,40 @@ describe('SearchInput', () => {
     expect(input).toHaveValue('pix')
   })
 
+  it('invalidates a stale echo token when the parent drops an emission', () => {
+    // The token was consumed only on a matching echo, so a REJECTED emission
+    // left it pending forever and poisoned the next external change to that
+    // same text.
+    const onValueChange = jest.fn()
+    const { rerender } = render(
+      <SearchInput value="" onValueChange={onValueChange} />
+    )
+
+    const input = screen.getByRole('searchbox')
+    fireEvent.change(input, { target: { value: 'pix' } })
+    act(() => {
+      jest.advanceTimersByTime(250)
+    })
+    expect(onValueChange).toHaveBeenLastCalledWith('pix')
+
+    // The parent rejects it and holds "" — the prop never changes, so no echo
+    // ever arrives and the token stays stuck on "pix". The field keeps showing
+    // what the user typed, which is correct on its own.
+    rerender(<SearchInput value="" onValueChange={onValueChange} />)
+    expect(input).toHaveValue('pix')
+
+    // A real external change lands. This is proof the parent moved on, and must
+    // invalidate the outstanding echo.
+    rerender(<SearchInput value="foo" onValueChange={onValueChange} />)
+    expect(input).toHaveValue('foo')
+
+    // The parent now externally sets "pix". With the stale token still pending
+    // this read as our own echo and the field stayed on "foo", disagreeing with
+    // the controlled value.
+    rerender(<SearchInput value="pix" onValueChange={onValueChange} />)
+    expect(input).toHaveValue('pix')
+  })
+
   it('follows an out-of-band value change from the parent', () => {
     const { rerender } = render(
       <SearchInput value="pix" onValueChange={jest.fn()} />

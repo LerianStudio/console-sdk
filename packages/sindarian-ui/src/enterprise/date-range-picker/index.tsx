@@ -1,14 +1,24 @@
 'use client'
 
 /**
- * DateRangePicker — a single popover range control.
+ * DateRangePicker — a two-segment popover range control.
  *
- * Two labelled mono trigger segments (from / to) share one two-month
- * react-day-picker range calendar. The external contract is plain YYYY-MM-DD
- * strings (empty string = unset) so state shapes that speak `date_from`/
- * `date_to` stay untouched. The picker guarantees from <= to (react-day-picker
- * reorders inverted picks); aria-invalid/aria-describedby pass-throughs keep
- * external validation wiring alive. i18n is via plain string/locale props.
+ * Two labelled mono trigger segments (from / to) each open the SAME two-month
+ * react-day-picker range calendar over the same range selection. The external
+ * contract is plain YYYY-MM-DD strings (empty string = unset) so state shapes
+ * that speak `date_from`/`date_to` stay untouched. The picker guarantees
+ * from <= to (react-day-picker reorders inverted picks);
+ * aria-invalid/aria-describedby pass-throughs keep external validation wiring
+ * alive. i18n is via plain string/locale props.
+ *
+ * ONE POPOVER ROOT PER SEGMENT, deliberately. A single `Popover.Root` holds ONE
+ * trigger ref and ONE open state, so wrapping the whole two-button row in a
+ * single `PopoverTrigger asChild` put Radix's dialog attributes
+ * (`aria-haspopup`, `aria-expanded`, `aria-controls`) on a plain, non-focusable
+ * `div` — an aria-allowed-attr violation, two buttons advertising the same
+ * expanded state, and focus that Radix could drop on `document.body` when the
+ * popover closed. Each segment is now a real `PopoverTrigger` button: focusable,
+ * correctly named, and the element Radix returns focus to on dismissal.
  */
 import { useState } from 'react'
 import type { ComponentProps, ReactNode } from 'react'
@@ -108,7 +118,11 @@ export function DateRangePicker({
   clearLabel = 'Clear',
   locale = enUS
 }: DateRangePickerProps) {
-  const [open, setOpen] = useState(false)
+  // Which segment's popover is open, if any. One root per segment means one open
+  // state per segment; holding the identity of the open one here keeps them
+  // mutually exclusive, so clicking "to" while "from" is open swaps the anchor
+  // instead of stacking two calendars.
+  const [openSegment, setOpenSegment] = useState<'from' | 'to' | null>(null)
 
   const fromDate = parseDay(value.from)
   const toDate = parseDay(value.to)
@@ -131,70 +145,89 @@ export function DateRangePicker({
     invalid && 'border-destructive'
   )
 
-  const renderTrigger = (id: string, label: ReactNode, dateValue: string) => (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id} className={SECTION_LABEL_CLASS}>
-        {label}
-      </Label>
-      {/* No onClick here: the whole segment row is the PopoverTrigger, so Radix
-          owns open/close. A manual `setOpen(true)` would race the outside-click
-          dismissal — pointerdown closes, the click then reopens, and the popover
-          could never be dismissed by clicking its own trigger. */}
-      <button
-        type="button"
-        id={id}
-        className={triggerClass}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-invalid={invalid || undefined}
-        aria-describedby={invalid ? errorId : undefined}
-      >
-        <CalendarDays
-          className="text-muted-foreground size-4 shrink-0"
-          aria-hidden
-        />
-        {dateValue ? (
-          <span>{dateValue}</span>
-        ) : (
-          <span className="text-muted-foreground font-sans">{placeholder}</span>
-        )}
-      </button>
-    </div>
+  // The one calendar, rendered inside whichever segment's popover is open. Both
+  // segments read and write the SAME range selection, so which one you opened
+  // changes only the anchor, never the state.
+  const calendar = (
+    <>
+      <Calendar
+        mode="range"
+        numberOfMonths={2}
+        defaultMonth={fromDate ?? toDate ?? new Date()}
+        selected={selected}
+        onSelect={onSelect}
+        locale={locale}
+      />
+      <div className="border-border flex items-center justify-end border-t px-3 py-2">
+        <Button
+          type="button"
+          variant="plain"
+          size="small"
+          disabled={!hasValue}
+          onClick={() => onValueChange({ from: '', to: '' })}
+        >
+          {clearLabel}
+        </Button>
+      </div>
+    </>
   )
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          {renderTrigger(fromId, fromLabel, value.from)}
-          {renderTrigger(toId, toLabel, value.to)}
-        </div>
-      </PopoverTrigger>
+  const renderSegment = (
+    segment: 'from' | 'to',
+    id: string,
+    label: ReactNode,
+    dateValue: string
+  ) => (
+    // Popover.Root renders no DOM node, so the label+trigger column below is
+    // still the direct flex child of the row — the layout is byte-identical.
+    <Popover
+      key={segment}
+      open={openSegment === segment}
+      onOpenChange={(next) => setOpenSegment(next ? segment : null)}
+    >
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={id} className={SECTION_LABEL_CLASS}>
+          {label}
+        </Label>
+        {/* No onClick: PopoverTrigger owns open/close. A manual `setOpen(true)`
+            would race the outside-click dismissal — pointerdown closes, the
+            click reopens, and the popover could never be dismissed by clicking
+            its own trigger. Radix supplies aria-haspopup/aria-expanded here,
+            on a real <button> that can legally carry them. */}
+        <PopoverTrigger
+          type="button"
+          id={id}
+          className={triggerClass}
+          aria-invalid={invalid || undefined}
+          aria-describedby={invalid ? errorId : undefined}
+        >
+          <CalendarDays
+            className="text-muted-foreground size-4 shrink-0"
+            aria-hidden
+          />
+          {dateValue ? (
+            <span>{dateValue}</span>
+          ) : (
+            <span className="text-muted-foreground font-sans">
+              {placeholder}
+            </span>
+          )}
+        </PopoverTrigger>
+      </div>
       <PopoverContent
         align="start"
         className="w-auto p-0"
         aria-label={ariaLabel}
       >
-        <Calendar
-          mode="range"
-          numberOfMonths={2}
-          defaultMonth={fromDate ?? toDate ?? new Date()}
-          selected={selected}
-          onSelect={onSelect}
-          locale={locale}
-        />
-        <div className="border-border flex items-center justify-end border-t px-3 py-2">
-          <Button
-            type="button"
-            variant="plain"
-            size="small"
-            disabled={!hasValue}
-            onClick={() => onValueChange({ from: '', to: '' })}
-          >
-            {clearLabel}
-          </Button>
-        </div>
+        {calendar}
       </PopoverContent>
     </Popover>
+  )
+
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+      {renderSegment('from', fromId, fromLabel, value.from)}
+      {renderSegment('to', toId, toLabel, value.to)}
+    </div>
   )
 }

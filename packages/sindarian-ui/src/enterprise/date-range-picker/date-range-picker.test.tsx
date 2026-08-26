@@ -60,6 +60,68 @@ describe('DateRangePicker', () => {
     expect(from).toHaveAttribute('aria-describedby', 'range-error')
   })
 
+  // The dialog attributes Radix puts on a trigger (aria-haspopup,
+  // aria-expanded, aria-controls) are only legal on an element with a role that
+  // allows them. Wrapping the whole two-button row in one `PopoverTrigger
+  // asChild` stamped them onto a plain, non-focusable <div> — an
+  // aria-allowed-attr violation, and focus Radix could drop on document.body
+  // when the popover closed. Each segment is its own real button trigger now.
+  it.each([
+    ['From', 'date-from'],
+    ['To', 'date-to']
+  ])('makes the %s segment a focusable button trigger', (label, id) => {
+    setup({ from: '', to: '' })
+    const trigger = screen.getByLabelText(label)
+
+    expect(trigger.tagName).toBe('BUTTON')
+    expect(trigger).toHaveAttribute('id', id)
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog')
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+
+    trigger.focus()
+    expect(trigger).toHaveFocus()
+  })
+
+  it('carries no dialog attributes on a non-interactive wrapper', () => {
+    const { container } = setup({ from: '', to: '' })
+
+    // Every element advertising a popup must itself be a button; a div holding
+    // aria-expanded is exactly the violation this replaced.
+    for (const el of container.querySelectorAll(
+      '[aria-expanded], [aria-haspopup], [aria-controls]'
+    )) {
+      expect(el.tagName).toBe('BUTTON')
+    }
+  })
+
+  it('expands only the segment that was clicked', () => {
+    setup({ from: '', to: '' })
+
+    fireEvent.click(screen.getByLabelText('To'))
+    expect(screen.getByLabelText('To')).toHaveAttribute('aria-expanded', 'true')
+    // The other segment must not claim to be expanded: one shared open state
+    // across two triggers had both reporting the same value.
+    expect(screen.getByLabelText('From')).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    )
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+  })
+
+  it('opens the same range calendar from either segment', () => {
+    const { onValueChange } = setup({ from: '2026-03-10', to: '' })
+
+    // Opened from the "to" segment, the calendar still edits the one shared
+    // range — the segment picks the anchor, never a separate selection.
+    fireEvent.click(screen.getByLabelText('To'))
+    fireEvent.click(screen.getByLabelText('Thursday, March 12th, 2026'))
+
+    expect(onValueChange).toHaveBeenCalledWith({
+      from: '2026-03-10',
+      to: '2026-03-12'
+    })
+  })
+
   it('opens the calendar popover from a trigger', () => {
     setup({ from: '', to: '' })
 

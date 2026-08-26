@@ -129,6 +129,64 @@ describe('FileUpload', () => {
     expect(result.text).toBe('PEM BODY')
   })
 
+  // The browser fires `change` only when the selection DIFFERS from what the
+  // input already holds. Holding on to the FileList made re-picking the same
+  // file after a host reset a silent no-op: the picker opened, the user chose
+  // the file, and nothing happened. jsdom does not model that suppression (and
+  // fireEvent pins `files` as an own property, so the real value setter cannot
+  // empty it), so the observable contract is the write itself.
+  describe('releases the native input after reading it', () => {
+    /** Watch what the component assigns to the input's `value`. */
+    function watchValue(container: HTMLElement) {
+      const input =
+        container.querySelector<HTMLInputElement>('input[type="file"]')!
+      const setValue = jest.fn()
+      Object.defineProperty(input, 'value', {
+        configurable: true,
+        get: () => '',
+        set: setValue
+      })
+      return setValue
+    }
+
+    it('clears it after an accepted pick, so the same file can be picked again', async () => {
+      const onSelect = jest.fn()
+      const { container } = render(
+        <FileUpload accept=".pem" onSelect={onSelect} />
+      )
+      const setValue = watchValue(container)
+
+      pick(
+        container,
+        new File(['PEM BODY'], 'cert.pem', { type: 'text/plain' })
+      )
+      await waitFor(() => expect(onSelect).toHaveBeenCalledTimes(1))
+      expect(setValue).toHaveBeenCalledWith('')
+
+      // The same file again: with the input released this is a real change.
+      pick(
+        container,
+        new File(['PEM BODY'], 'cert.pem', { type: 'text/plain' })
+      )
+      await waitFor(() => expect(onSelect).toHaveBeenCalledTimes(2))
+      expect(setValue).toHaveBeenCalledTimes(2)
+    })
+
+    it('clears it after a REJECTED pick too', async () => {
+      // Retrying the same rejected file is the commonest way to hit this: the
+      // user changes nothing, picks again, and expects the error to reappear.
+      const onError = jest.fn()
+      const { container } = render(
+        <FileUpload accept=".pem" onSelect={jest.fn()} onError={onError} />
+      )
+      const setValue = watchValue(container)
+
+      pick(container, new File(['x'], 'notes.txt', { type: 'text/plain' }))
+      await waitFor(() => expect(onError).toHaveBeenCalledTimes(1))
+      expect(setValue).toHaveBeenCalledWith('')
+    })
+  })
+
   it('rejects a wrong-type pick: announces it, calls onError, and never selects', async () => {
     const onSelect = jest.fn()
     const onError = jest.fn()

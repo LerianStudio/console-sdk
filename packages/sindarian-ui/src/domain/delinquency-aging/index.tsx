@@ -53,7 +53,12 @@ import { SectionLabel } from '../section-label'
 import { gaugeBand } from '../threshold-gauge'
 import type { GaugeBand } from '../threshold-gauge'
 import { AgingBuckets } from './aging-buckets'
-import type { AgingBucket } from './aging-buckets'
+import type { AgingBucket, AgingBucketsLabels } from './aging-buckets'
+
+// `bucketLabels` is part of this component's public shape, so the type a caller
+// needs to name it travels with it — even though AgingBuckets itself stays
+// internal to the composite.
+export type { AgingBand, AgingBucketsLabels } from './aging-buckets'
 
 /** Fixed-point scale for the rate division: 1e12 keeps twelve decimal places of
  *  a 0..1 ratio, and both it and any in-range scaled quotient stay well inside
@@ -175,6 +180,19 @@ export interface DelinquencyAgingProps {
   locale?: string
   /** Quiet caption above the rate readout. Defaults to "Inadimplência". */
   rateLabel?: string
+  /** sr-only rate band word per band ("Saudável" / "Elevada" / "Em estresse").
+   *  Merged shallowly; an unlisted band keeps its pt-BR default. This is the
+   *  ACCESSIBLE band cue, so it has to be translatable — `locale` only reaches
+   *  the digits. */
+  rateBandLabels?: Partial<Record<GaugeBand, string>>
+  /** Readout when the portfolio is empty. Defaults to "sem carteira". */
+  emptyLabel?: string
+  /** Readout when the rate cannot be determined. Defaults to "indeterminada". */
+  indeterminateLabel?: string
+  /** Override the fixed pt-BR copy of the distribution below (band words, the
+   *  count/money captions, the grand-total row). Omitted fields keep their
+   *  defaults. */
+  bucketLabels?: AgingBucketsLabels
   /** Warn edge for the rate band (0..1 ratio). Crossing it strictly → elevated. */
   warn?: number
   /** Breach edge for the rate band (0..1 ratio). Crossing it strictly → distressed. */
@@ -189,6 +207,10 @@ export function DelinquencyAging({
   currency,
   locale,
   rateLabel = 'Inadimplência',
+  rateBandLabels,
+  emptyLabel = 'sem carteira',
+  indeterminateLabel = 'indeterminada',
+  bucketLabels,
   warn = 0.05,
   breach = 0.1,
   showTotal = false,
@@ -208,6 +230,8 @@ export function DelinquencyAging({
     ? gaugeBand(rate, { warn, breach }, 'higher-is-worse')
     : 'low'
   const { Icon, tint, word } = RATE_BAND[band]
+  // Shallow merge: an unlisted band keeps its pt-BR default.
+  const bandWord = rateBandLabels?.[band] ?? word
   const distressed = band === 'breach'
 
   return (
@@ -226,7 +250,7 @@ export function DelinquencyAging({
             className={cn('inline-flex items-center gap-1.5', tint)}
           >
             <Icon aria-hidden className="size-4 shrink-0" />
-            <span className="sr-only">{word}: </span>
+            <span className="sr-only">{bandWord}: </span>
             <Figure size="row" className={tint}>
               {formatPercent(rate, { unit: 'ratio', locale })}
             </Figure>
@@ -239,7 +263,7 @@ export function DelinquencyAging({
             <span
               className={cn(LABEL_VOICE_CLASS, 'tracking-normal normal-case')}
             >
-              {indeterminate ? 'indeterminada' : 'sem carteira'}
+              {indeterminate ? indeterminateLabel : emptyLabel}
             </span>
             <Figure size="row" className="text-muted-foreground">
               {NO_VALUE}
@@ -255,6 +279,7 @@ export function DelinquencyAging({
         currency={currency}
         locale={locale}
         showTotal={showTotal}
+        labels={bucketLabels}
       />
     </div>
   )

@@ -17,6 +17,7 @@ export {
 export type { FormatPercentOptions, PercentUnit } from './format'
 
 export { moneyDiff } from './money-diff'
+export type { MoneyDiffInput } from './money-diff'
 
 export { MoneyText } from './money-text'
 export type { MoneyTextProps } from './money-text'
@@ -55,6 +56,8 @@ export type {
 
 export { DelinquencyAging } from './delinquency-aging'
 export type {
+  AgingBand,
+  AgingBucketsLabels,
   DelinquencyAgingProps,
   DelinquencyBucket
 } from './delinquency-aging'

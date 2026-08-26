@@ -55,11 +55,17 @@ function AlertDialogContent({
     'container' | 'forceMount'
   >) {
   return (
+    // The overlay and the content hold their OWN presence state; the portal
+    // does not control them. Forcing only the portal to mount left both children
+    // absent while closed, so a caller animating the exit (or measuring the
+    // dialog before it opens) got nothing to work with. forceMount reaches all
+    // three.
     <AlertDialogPortal container={container} forceMount={forceMount}>
-      <AlertDialogOverlay />
+      <AlertDialogOverlay forceMount={forceMount} />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn('dialog-content', className)}
+        forceMount={forceMount}
         {...props}
       />
     </AlertDialogPortal>

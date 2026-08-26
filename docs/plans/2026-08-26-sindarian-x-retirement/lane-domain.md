@@ -5,7 +5,7 @@
 > Read `index.md` in this directory FIRST — §§ Frozen Contracts (FC-1..FC-6, incl. the
 > executed census and the family rule) and File Ownership bind this lane.
 
-**Goal:** The 27 census domain symbols exist under `src/domain/`: format helpers (NO_VALUE, formatPercent, formatCount, humanizeDurationMs, toPercentValue), MoneyText(+Props), Figure(+FIGURE_CLASS/FigureSize/FigureTone), KeyId, SectionLabel, Blotter/BlotterRow, LedgerSheet/LedgerPanel, StatusRail/Dot/LivePulse(+types), ThresholdGauge/gaugeBand/GaugeThresholds, DelinquencyAging, moneyDiff.
+**Goal:** The 26 ported domain symbols exist under `src/domain/`: format helpers (NO_VALUE, formatPercent, formatCount, humanizeDurationMs, toPercentValue), MoneyText(+Props), Figure(+FIGURE_CLASS/FigureSize), KeyId, SectionLabel, Blotter/BlotterRow, LedgerSheet/LedgerPanel, StatusRail/Dot/LivePulse(+types), ThresholdGauge/gaugeBand/GaugeThresholds, DelinquencyAging, moneyDiff. The census lists 27 raw entries; per the erratum in `index.md`, `FigureTone` is a matcher-LOCAL type (matcher's own `figure.tsx` wrapper), never a lib export — it is NOT ported and MUST NOT appear in `src/domain/index.ts`.
 
 **Architecture:** Port from sindarian-x@0.15.0 (read-only reference: `~/repos/lerianstudio/lib-sindarian-ui/src/components/{ledger,recon,credit}/` and `src/components/ledger/format.ts`), API byte-compatible (FC-3), styling on sindarian-ui tokens (FC-2: `--color-credit`, `--color-matched-surface`, `--color-unmatched-surface`; semantic states via `system-*`). ATENÇÃO: money display correctness is non-negotiable — MoneyText's internal amount normalization and moneyDiff's arithmetic port EXACTLY, with their full legacy test suites; any internal money-math helpers they need port as UNEXPORTED internals with tests. pt-BR strings inside composites stay as-is (apps localize at app level, as today). Exports ONLY through `src/domain/index.ts`.
 
@@ -19,13 +19,13 @@
 
 | Phase | Milestone | Epics | Status |
 |-------|-----------|-------|--------|
-| 1 | all 27 census symbols exported from src/domain, tested, storied; turbo green | 1.1, 1.2, 1.3 | Detailed |
+| 1 | all 26 ported domain symbols exported from src/domain, tested, storied; turbo green | 1.1, 1.2, 1.3 | Detailed |
 
 ---
 
 ### Epic 1.1: Format helpers and money/figure text
 
-**Goal:** NO_VALUE, formatPercent, formatCount, humanizeDurationMs, toPercentValue, moneyDiff, MoneyText(+MoneyTextProps), Figure(+FIGURE_CLASS/FigureSize/FigureTone) exported.
+**Goal:** NO_VALUE, formatPercent, formatCount, humanizeDurationMs, toPercentValue, moneyDiff, MoneyText(+MoneyTextProps), Figure(+FIGURE_CLASS/FigureSize) exported. `FigureTone` is matcher-local and is NOT part of this goal.
 **Scope:** `src/domain/{format.ts,money-text,figure}/**`, `src/domain/index.ts`.
 **Dependencies:** none
 **Done when:** legacy format/money tests ported and green; turbo green.

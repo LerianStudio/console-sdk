@@ -20,6 +20,36 @@ describe('StatusRail', () => {
     expect(container.querySelectorAll('[aria-hidden]')).toHaveLength(1)
   })
 
+  // The lead span and the first item's separator used to ask the same question
+  // two different ways: `lead !== undefined && lead !== null` for the span,
+  // `lead != null` for the dot. They agree on null/undefined and diverge on a
+  // ReactNode that RENDERS nothing — so a lead of `false` or `''` produced an
+  // empty span AND a leading dot, opening the rail with a stray `·`.
+  it.each([
+    ['false', false],
+    // React renders `true` as nothing too — it is exactly as empty as `false`.
+    ['true', true],
+    ['empty string', ''],
+    ['null', null],
+    ['undefined', undefined]
+  ])('never leads with a separator for a lead of %s', (_kind, lead) => {
+    const { container } = render(
+      <StatusRail lead={lead} items={[{ value: '90d' }, { value: '12:04' }]} />
+    )
+    // Two items, nothing rendered as a lead → exactly one separator, between
+    // the items and never before the first one.
+    expect(container.querySelectorAll('[aria-hidden]')).toHaveLength(1)
+    expect(container.textContent?.trimStart().startsWith('·')).toBe(false)
+  })
+
+  it('still leads with a separator when there IS a lead', () => {
+    const { container } = render(
+      <StatusRail lead="SPI" items={[{ value: '90d' }, { value: '12:04' }]} />
+    )
+    // Lead + two items → a dot before each item.
+    expect(container.querySelectorAll('[aria-hidden]')).toHaveLength(2)
+  })
+
   it('renders an item label inline before its value', () => {
     render(<StatusRail items={[{ label: 'Updated', value: '12:04 UTC' }]} />)
     expect(screen.getByText('Updated')).toHaveClass('uppercase')

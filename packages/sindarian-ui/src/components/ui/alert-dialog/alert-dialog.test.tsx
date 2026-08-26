@@ -58,4 +58,43 @@ describe('AlertDialog', () => {
     fireEvent.click(screen.getByText('Cancel'))
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
   })
+
+  it('keeps the overlay and content mounted while closed under forceMount', () => {
+    // The overlay and the content each hold their OWN presence state; the
+    // portal does not control them. Forwarding forceMount to the portal alone
+    // left both children unmounted while closed, so a caller animating the exit
+    // had nothing to animate.
+    render(
+      <AlertDialog>
+        <AlertDialogTrigger>Delete</AlertDialogTrigger>
+        <AlertDialogContent forceMount>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </AlertDialogContent>
+      </AlertDialog>
+    )
+
+    // Never opened, yet both parts are in the DOM and marked closed.
+    const content = document.querySelector('[data-slot="alert-dialog-content"]')
+    const overlay = document.querySelector('[data-slot="alert-dialog-overlay"]')
+    expect(content).toBeInTheDocument()
+    expect(overlay).toBeInTheDocument()
+    expect(content).toHaveAttribute('data-state', 'closed')
+    expect(overlay).toHaveAttribute('data-state', 'closed')
+  })
+
+  it('unmounts the overlay and content while closed without forceMount', () => {
+    render(<Basic />)
+
+    expect(
+      document.querySelector('[data-slot="alert-dialog-content"]')
+    ).toBeNull()
+    expect(
+      document.querySelector('[data-slot="alert-dialog-overlay"]')
+    ).toBeNull()
+  })
 })

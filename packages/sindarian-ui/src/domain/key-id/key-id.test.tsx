@@ -121,7 +121,17 @@ describe('maskKeyId', () => {
     }
   })
   it('hides the CPF check digits (the spoofable tail)', () => {
-    expect(maskKeyId(CPF, 'pix-cpf')).not.toContain('25')
+    // Structural, not "does the string contain 25". That substring check passes
+    // for THIS fixture only: another CPF's revealed middle blocks could legally
+    // contain those two characters and fail a perfectly correct mask. What
+    // matters is that the block after the final separator — the check digits —
+    // is dots, and as many dots as there were digits.
+    const masked = maskKeyId(CPF, 'pix-cpf')
+    const checkDigits = CPF.slice(CPF.lastIndexOf('-') + 1)
+    const maskedTail = masked.slice(masked.lastIndexOf('-') + 1)
+
+    expect(maskedTail).toBe(DOT_BULLET.repeat(checkDigits.length))
+    expect(maskedTail).not.toBe(checkDigits)
   })
 })
 

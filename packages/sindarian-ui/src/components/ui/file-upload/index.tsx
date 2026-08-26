@@ -216,7 +216,14 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
     }
 
     const onInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      handleFile(event.target.files?.[0])
+      const file = event.target.files?.[0]
+      // Release the FileList the moment it has been read. The browser fires
+      // `change` only when the selection DIFFERS from what the input already
+      // holds, so keeping it meant re-picking the same file after a host reset
+      // (or retrying a rejected one) was silently a no-op — the picker opened,
+      // the user chose the file, and nothing happened.
+      event.target.value = ''
+      handleFile(file)
     }
 
     const onDragOver = (event: React.DragEvent<HTMLDivElement>) => {

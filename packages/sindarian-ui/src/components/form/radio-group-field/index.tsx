@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Control, FieldValues, Path } from 'react-hook-form'
 
 import {
@@ -62,6 +62,12 @@ export const RadioGroupField = <T extends FieldValues = FieldValues>({
   // An empty or whitespace-only aria-label is worse than none: it names the
   // control "". Drop it so the attribute never reaches the DOM.
   const ariaLabel = ariaLabelProp?.trim() ? ariaLabelProp : undefined
+  // `FormLabel` names its control through `htmlFor`, which only works on a
+  // labelable element — and the Radix radiogroup root is a plain div. So the
+  // visible label reached nobody: a screen-reader user landing on the group
+  // heard the options and no field name. The group points BACK at the label
+  // instead, via aria-labelledby on a stable generated id.
+  const labelId = useId()
 
   // The type cannot rule out `label=""`, so this is the only signal a developer
   // gets that the control shipped nameless.
@@ -84,6 +90,7 @@ export const RadioGroupField = <T extends FieldValues = FieldValues>({
         <FormItem required={required}>
           {showLabel && (
             <FormLabel
+              id={labelId}
               extra={tooltip ? <FormTooltip>{tooltip}</FormTooltip> : undefined}
             >
               {label}
@@ -96,7 +103,10 @@ export const RadioGroupField = <T extends FieldValues = FieldValues>({
               onValueChange={field.onChange}
               onBlur={field.onBlur}
               disabled={disabled}
-              aria-label={ariaLabel}
+              // The visible label wins when there is one; `aria-label` would
+              // override it and hide the tooltip/required affordances it carries.
+              aria-labelledby={showLabel ? labelId : undefined}
+              aria-label={showLabel ? undefined : ariaLabel}
               className="gap-2"
             >
               {options.map((option, index) => {
