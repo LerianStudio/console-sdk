@@ -21,7 +21,10 @@ export default meta
 type TextareaFieldStoryArgs = Omit<TextareaFieldProps, 'name' | 'control'>
 
 function BaseComponent(args: TextareaFieldStoryArgs) {
-  const form = useForm()
+  // Seed the field react-hook-form will control. Without it the value goes
+  // undefined → string on the first edit, which is React's
+  // uncontrolled-to-controlled switch and warns in the console.
+  const form = useForm({ defaultValues: { notes: '' } })
 
   return (
     <div className="w-1/2">
