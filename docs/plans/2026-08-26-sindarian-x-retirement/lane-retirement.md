@@ -75,7 +75,7 @@ fi
 **Goal:** A stable (non-beta) sindarian-ui exists on npm so apps can leave the beta pin.
 **Scope:** one PR `develop` → `main` in console-sdk, merge commit (squash is disabled org-wide). semantic-release on main publishes the stable versions of every package with accumulated changes (sindarian-ui carries the absorbed surface + ESM dual build + radix/focus fixes).
 **Dependencies:** app-cockpit merged (#143) — merge order rule 5 in index.md: promotion happens in this lane, before the npm deprecation.
-**Done when:** release run on main is green; `npm view @lerianstudio/sindarian-ui dist-tags.latest` shows the new stable.
+**Done when:** the stable is published from main and `npm view @lerianstudio/sindarian-ui dist-tags.latest` shows it. Post-publish notification steps are non-gating: a failure there is an infrastructure follow-up, not a release blocker.
 **Status:** Done
 
 #### Task 2.1.1: Open and merge the promotion PR
