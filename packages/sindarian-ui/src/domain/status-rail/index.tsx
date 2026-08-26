@@ -61,10 +61,12 @@ export function StatusRail({
 }: StatusRailProps) {
   // ONE test, used by both the lead span and the first item's separator. Two
   // separate tests (`lead !== undefined && lead !== null` vs `lead != null`)
-  // agreed on null/undefined and diverged on a ReactNode that RENDERS nothing:
-  // `lead={false}` or `lead=""` produced an empty lead span while the first item
-  // still got its leading dot, so the rail opened with a stray `·`.
-  const hasLead = lead != null && lead !== false && lead !== ''
+  // agreed on null/undefined and diverged on a ReactNode that RENDERS NOTHING,
+  // which produced an empty lead span while the first item still got its
+  // leading dot — the rail opened with a stray `·`. React renders BOTH booleans
+  // as nothing, so `true` is as empty as `false`; the typeof check covers the
+  // pair rather than naming one of them.
+  const hasLead = lead != null && lead !== '' && typeof lead !== 'boolean'
 
   return (
     <div

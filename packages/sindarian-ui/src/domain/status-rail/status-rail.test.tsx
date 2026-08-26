@@ -27,6 +27,8 @@ describe('StatusRail', () => {
   // empty span AND a leading dot, opening the rail with a stray `·`.
   it.each([
     ['false', false],
+    // React renders `true` as nothing too — it is exactly as empty as `false`.
+    ['true', true],
     ['empty string', ''],
     ['null', null],
     ['undefined', undefined]
