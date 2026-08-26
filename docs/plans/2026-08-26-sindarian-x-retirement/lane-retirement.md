@@ -102,9 +102,9 @@ Re-run the br-sfn row after #143 merges; expected 0.
 export NPM_CONFIG_USERCONFIG=$(mktemp)
 trap 'rm -f "$NPM_CONFIG_USERCONFIG"; unset NPM_TOKEN NPM_CONFIG_USERCONFIG' EXIT
 printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$NPM_CONFIG_USERCONFIG"
-npm whoami   # preflight: must print lerianstudio before proceeding
+[ "$(npm whoami)" = "lerianstudio" ] || { echo "wrong npm identity, aborting" >&2; exit 1; }
 npm deprecate "@lerianstudio/sindarian-x@*" \
-  "Retired 2026-08. Use @lerianstudio/sindarian-ui (console-sdk) — full surface absorbed as of 1.2.0-beta.14+."
+  "Retired 2026-08. Use @lerianstudio/sindarian-ui (console-sdk) — full surface absorbed as of 1.2.0-beta.14 and later."
 ```
 **Verification:** every published version carries the message, not just latest: `npm view "@lerianstudio/sindarian-x@*" version deprecated --json` — assert the message on each entry.
 **Done when:** deprecation message live for all versions.
