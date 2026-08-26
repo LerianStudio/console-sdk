@@ -294,6 +294,112 @@ describe('DelinquencyAging', () => {
     expect(container.textContent).toContain('1,000.00')
   })
 
+  // The fixed pt-BR copy is overridable, so a consumer running in another
+  // language can translate the ACCESSIBLE band words and captions — `locale`
+  // only ever reached the digits. Every override is optional and defaults to the
+  // current value, so nothing moves for an existing caller.
+  describe('label overrides', () => {
+    const EN = {
+      rateBandLabels: {
+        low: 'Healthy',
+        warn: 'Elevated',
+        breach: 'Distressed'
+      },
+      emptyLabel: 'no portfolio',
+      indeterminateLabel: 'undetermined',
+      bucketLabels: {
+        bands: {
+          current: 'Current',
+          recent: 'Recently overdue',
+          aging: 'Overdue',
+          overdue: 'Past due'
+        },
+        count: 'Items',
+        total: 'Total',
+        grandTotal: 'Grand total'
+      }
+    } as const
+
+    it('defaults every string to pt-BR when nothing is passed', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={PORTFOLIO}
+          currency="BRL"
+          locale="en-US"
+          showTotal
+        />
+      )
+      const text = container.textContent ?? ''
+      expect(text).toContain('Elevada')
+      expect(text).toContain('Itens')
+      expect(text).toContain('Total geral')
+      expect(text).toContain('Em dia')
+    })
+
+    it('replaces the rate band word and the bucket copy', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={PORTFOLIO}
+          currency="BRL"
+          locale="en-US"
+          showTotal
+          {...EN}
+        />
+      )
+      const text = container.textContent ?? ''
+      expect(text).toContain('Elevated')
+      expect(text).toContain('Items')
+      expect(text).toContain('Grand total')
+      expect(text).toContain('Current')
+      expect(text).toContain('Past due')
+      expect(text).not.toContain('Elevada')
+      expect(text).not.toContain('Itens')
+      expect(text).not.toContain('Total geral')
+      expect(text).not.toContain('Em dia')
+    })
+
+    it('merges shallowly — an unlisted band keeps its pt-BR default', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={PORTFOLIO}
+          currency="BRL"
+          locale="en-US"
+          rateBandLabels={{ breach: 'Distressed' }}
+          bucketLabels={{ bands: { overdue: 'Past due' } }}
+        />
+      )
+      const text = container.textContent ?? ''
+      // The rate sits in warn and the first bucket is current: both unlisted.
+      expect(text).toContain('Elevada')
+      expect(text).toContain('Em dia')
+      expect(text).toContain('Past due')
+    })
+
+    it('replaces the empty-portfolio readout', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={[{ label: 'Current', count: 0, total: '0.00' }]}
+          currency="BRL"
+          {...EN}
+        />
+      )
+      expect(container.textContent).toContain('no portfolio')
+      expect(container.textContent).not.toContain('sem carteira')
+    })
+
+    it('replaces the indeterminate readout', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={[{ label: 'Current', count: 1, total: 'oops' }]}
+          currency="BRL"
+          {...EN}
+        />
+      )
+      expect(container.textContent).toContain('undetermined')
+      expect(container.textContent).not.toContain('indeterminada')
+    })
+  })
+
   // THIRD RAIL: the printed digits must be the digits that were summed. The
   // arithmetic already ran at the currency's CLDR scale; when that scale was not
   // also handed to MoneyText the readout fell back to two fraction digits, so a
