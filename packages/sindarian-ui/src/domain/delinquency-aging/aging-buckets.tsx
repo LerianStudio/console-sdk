@@ -21,7 +21,10 @@
  * grand total is shown it is summed through `money-math` integer minor units
  * (BigInt, at the currency's CLDR scale) — never IEEE-754 — and rendered via
  * `MoneyText`. A single unparseable bucket total poisons the sum to NO_VALUE
- * rather than silently displaying a wrong number.
+ * rather than silently displaying a wrong number. The SAME currency scale that
+ * drives the sum is also the print scale handed to `MoneyText`, so the digits on
+ * screen are the digits that were summed — the printed total can never be a
+ * re-rounding of the computed one.
  *
  * Pure display: no directive, no interactivity, server-safe for RSC.
  */
@@ -123,6 +126,11 @@ export function AgingBuckets({
   showTotal = false,
   className
 }: AgingBucketsProps) {
+  // THIRD RAIL: one scale for BOTH the arithmetic and the print. `MoneyText`
+  // defaults to 2 fraction digits, so leaving it unset printed JPY (scale 0)
+  // with two decimals the currency does not have, and re-rounded the exact BHD
+  // (scale 3) grand total `1.005` to `1.01` — a printed total that disagreed
+  // with the total that was actually summed.
   const scale = currency ? minorDigitsOf(currency) : 2
   const grandTotal = showTotal ? sumBucketTotals(buckets, scale) : null
 
@@ -169,6 +177,7 @@ export function AgingBuckets({
                   <MoneyText
                     amount={bucket.total}
                     currency={currency}
+                    fractionDigits={scale}
                     locale={locale}
                     signColor={false}
                   />
@@ -200,6 +209,7 @@ export function AgingBuckets({
                 <MoneyText
                   amount={grandTotal}
                   currency={currency}
+                  fractionDigits={scale}
                   locale={locale}
                   signColor={false}
                 />

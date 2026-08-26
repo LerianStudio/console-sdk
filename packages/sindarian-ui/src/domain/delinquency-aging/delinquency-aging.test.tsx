@@ -293,4 +293,53 @@ describe('DelinquencyAging', () => {
     expect(container.textContent).toContain('Total geral')
     expect(container.textContent).toContain('1,000.00')
   })
+
+  // THIRD RAIL: the printed digits must be the digits that were summed. The
+  // arithmetic already ran at the currency's CLDR scale; when that scale was not
+  // also handed to MoneyText the readout fell back to two fraction digits, so a
+  // zero-decimal currency printed decimals it does not have and a three-decimal
+  // currency had its EXACT grand total re-rounded on the way to the screen.
+  describe('prints every figure at the currency scale', () => {
+    it('gives JPY (scale 0) no decimals in the rows or the grand total', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={[
+            { label: 'A vencer', count: 2, total: '1000', overdue: false },
+            { label: '90+', count: 1, total: '2000', overdue: true }
+          ]}
+          currency="JPY"
+          locale="en-US"
+          showTotal
+        />
+      )
+      const text = container.textContent ?? ''
+      expect(text).toContain('1,000')
+      expect(text).toContain('2,000')
+      expect(text).toContain('3,000')
+      // The regression: '1,000.00' / '3,000.00' — two decimals the yen has not
+      // had since 1953.
+      expect(text).not.toContain('.00')
+    })
+
+    it('prints the exact BHD (scale 3) grand total without re-rounding it', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={[
+            { label: 'A vencer', count: 1, total: '0.500', overdue: false },
+            { label: '90+', count: 1, total: '0.505', overdue: true }
+          ]}
+          currency="BHD"
+          locale="en-US"
+          showTotal
+        />
+      )
+      const text = container.textContent ?? ''
+      expect(text).toContain('0.500')
+      expect(text).toContain('0.505')
+      // sumMinor at scale 3 → 1005 fils → the exact '1.005'. The regression
+      // printed '1.01', a total that disagreed with its own summands.
+      expect(text).toContain('1.005')
+      expect(text).not.toContain('1.01')
+    })
+  })
 })
