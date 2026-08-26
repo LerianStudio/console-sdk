@@ -35,22 +35,22 @@
 
 **Explicit allowlist (by design, not failures) — every hit must match one of these exact classes:**
 1. `docs/plans/**` at any depth — plans reference the name intentionally (matcher has two nested plan dirs: `site/docs/plans/`, `ui/docs/plans/`).
-2. Generated CHANGELOGs (matcher, console-sdk) — release history is not falsified.
+2. Exactly two generated CHANGELOG paths, both in matcher: `CHANGELOG.md` and `mcp/CHANGELOG.md` — release history is not falsified. No other repo's CHANGELOG mentions the package (verified).
 3. Named equivalence tests that cite their origin by design: `packages/sindarian-ui/src/__tests__/tokens-contract.test.ts` (FC-3), `packages/sindarian-ui/src/domain/legacy-equivalence.test.ts`.
 4. Provenance comments inside sindarian-ui source: `src/domain/index.ts:3`, `src/enterprise/index.ts:3` (and short-name mentions in `.storybook/main.ts`, `src/charts/index.ts`).
 5. `br-sfn/.impeccable/critique/2026-07-10*` — dated historical critique record.
 
-**Verification (re-executed 2026-08-26, post wave-4 merges):** the scan covers EVERY tracked file (no positive extension filter — `.cjs`, `.cts`, `.yml` and anything else included) and emits line numbers, so each matching LINE is validated against the allowlist individually — `-l` is not used, because a file with one allowed line could hide a second, unallowed one.
+**Verification (re-executed 2026-08-26, post wave-4 merges):** the scan covers every tracked TEXT file (no positive extension filter — `.cjs`, `.cts`, `.yml` and anything else included; `git grep` skips binary blobs, which cannot carry a live dependency) and emits line numbers, so each matching LINE is validated against the allowlist individually. Neither `-l` nor a blanket CHANGELOG exclusion is used — a file with one allowed line could hide an unallowed one, and a non-allowlisted CHANGELOG must fail the gate, not vanish from it.
 
 ```sh
 git grep -n "@lerianstudio/sindarian-x" origin/develop -- \
-  ':!docs/plans' ':!*/docs/plans/*' ':!*CHANGELOG*'
+  ':!docs/plans' ':!*/docs/plans/*'
 # gate: every resulting LINE matches an allowlist class above; anything else = FAIL
 ```
 
 | Repo | Matching lines | Outside allowlist | Verdict |
 |------|----------------|-------------------|---------|
-| matcher | 0 | 0 | clean |
+| matcher | 2 (all in the two class-2 CHANGELOGs) | 0 | clean |
 | lender | 0 | 0 | clean |
 | br-consignado-gw | 0 | 0 | clean |
 | br-sfn | 1 (`.impeccable/critique/2026-07-10…`, class 5) | 0 | clean |
