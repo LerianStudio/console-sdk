@@ -19,13 +19,13 @@
 
 | Phase | Milestone | Epics | Status |
 |-------|-----------|-------|--------|
-| 1 | all 27 census symbols exported from src/domain, tested, storied; turbo green | 1.1, 1.2, 1.3 | Detailed |
+| 1 | all 26 ported domain symbols exported from src/domain, tested, storied; turbo green | 1.1, 1.2, 1.3 | Detailed |
 
 ---
 
 ### Epic 1.1: Format helpers and money/figure text
 
-**Goal:** NO_VALUE, formatPercent, formatCount, humanizeDurationMs, toPercentValue, moneyDiff, MoneyText(+MoneyTextProps), Figure(+FIGURE_CLASS/FigureSize/FigureTone) exported.
+**Goal:** NO_VALUE, formatPercent, formatCount, humanizeDurationMs, toPercentValue, moneyDiff, MoneyText(+MoneyTextProps), Figure(+FIGURE_CLASS/FigureSize) exported. `FigureTone` is matcher-local and is NOT part of this goal.
 **Scope:** `src/domain/{format.ts,money-text,figure}/**`, `src/domain/index.ts`.
 **Dependencies:** none
 **Done when:** legacy format/money tests ported and green; turbo green.
