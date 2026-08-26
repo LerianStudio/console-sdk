@@ -97,12 +97,27 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
       control={control}
       name={name}
       render={({ field }) => {
-        // Derive the shown chip from the form value: a falsy field.value (after
-        // form.reset() or setValue(name, '')) forces the chip empty, so the
-        // local File metadata can never linger when the form value is cleared
-        // externally. The form owns the text; localValue only carries the File
-        // for the chip while the value is non-empty.
-        const shown = field.value ? localValue : null
+        // The chip follows the LOCAL selection, reconciled against the form
+        // value — not the form value's truthiness.
+        //
+        // Truthiness cannot tell "no file" from "an accepted EMPTY file": both
+        // store ''. So picking a legitimately empty file hid the chip, the zone
+        // went back to "Choose a file or drag and drop" even though the pick was
+        // accepted, and a `z.string().min(1)` rule then failed the field with
+        // nothing on screen to explain why.
+        //
+        // Comparing against the text we last wrote keeps the external-reset
+        // behaviour that truthiness was there for: after form.reset() or
+        // setValue(name, ''), the stored text no longer matches the selection, so
+        // the stale File metadata still cannot linger.
+        //
+        // ponytail: one residual case is irreducible from the form value alone —
+        // resetting AFTER picking an empty file leaves the chip up, because ''
+        // (reset) and '' (that file's text) are the same string and the form
+        // value carries nothing else to tell them apart. Fix needs a reset epoch
+        // from react-hook-form, or a form value richer than the file text.
+        const shown =
+          localValue && field.value === localValue.text ? localValue : null
         return (
           <FormItem required={required}>
             {showLabel && (

@@ -85,6 +85,23 @@ describe('FileUploadField', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ cert: '' }))
   })
 
+  it('shows the chip for an accepted EMPTY file', async () => {
+    // An empty file's text is '', and the chip used to be gated on the
+    // truthiness of the form value — so an ACCEPTED pick rendered as if nothing
+    // had been chosen, and a `min(1)` rule then failed the field with nothing on
+    // screen to explain why.
+    const onSubmit = jest.fn()
+    const { container } = render(<Harness onSubmit={onSubmit} />)
+
+    pick(container, new File([], 'empty.pem', { type: 'text/plain' }))
+
+    expect(await screen.findByText('empty.pem')).toBeInTheDocument()
+    expect(screen.queryByText('Choose a file')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('Submit'))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ cert: '' }))
+  })
+
   it('drops the chip when the form value is reset externally', async () => {
     let form!: UseFormReturn<{ cert: string }>
     const { container } = render(<Harness formRef={(f) => (form = f)} />)
