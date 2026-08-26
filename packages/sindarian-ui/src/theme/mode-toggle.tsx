@@ -46,9 +46,27 @@ const DEFAULT_LABELS: Required<ModeToggleLabels> = {
   group: 'Theme'
 }
 
+/**
+ * Merge overrides over the defaults, IGNORING blank ones. A plain spread lets
+ * `labels={{ light: '' }}` win, and every segment here is icon-only — so a blank
+ * override leaves a button (or the whole group) with `aria-label=""`, which names
+ * it "" AND suppresses the element's other naming routes. That is strictly worse
+ * than the missing translation it came from: an untranslated English label is
+ * usable, a nameless button is not. A blank string is a missing value, not a
+ * chosen one.
+ */
+function resolveLabels(labels?: ModeToggleLabels): Required<ModeToggleLabels> {
+  const resolved = { ...DEFAULT_LABELS }
+  for (const key of Object.keys(DEFAULT_LABELS) as (keyof ModeToggleLabels)[]) {
+    const override = labels?.[key]
+    if (override?.trim()) resolved[key] = override
+  }
+  return resolved
+}
+
 export function ModeToggle({ labels, className }: ModeToggleProps) {
   const { theme, setTheme } = useTheme()
-  const resolved = { ...DEFAULT_LABELS, ...labels }
+  const resolved = resolveLabels(labels)
 
   return (
     <div
