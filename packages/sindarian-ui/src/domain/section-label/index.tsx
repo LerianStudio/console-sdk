@@ -10,7 +10,7 @@
  * Renders an `<h2>` by default (the ledger-sheet cell heading), but `as` lets
  * it become a `<p>`/`<span>`/`<dt>` for captions and inline labels.
  */
-import type { ElementType, ReactNode } from 'react'
+import type { ElementType, HTMLAttributes, ReactNode } from 'react'
 
 import { SECTION_LABEL_CLASS } from '@/lib/typography'
 import { cn } from '@/lib/utils'
@@ -20,12 +20,21 @@ export type SectionLabelProps = {
   className?: string
   /** Render element. Defaults to `h2` (the ledger-sheet cell heading). */
   as?: ElementType
-}
+} & Omit<HTMLAttributes<HTMLElement>, 'children' | 'className'>
 
 export function SectionLabel({
   children,
   className,
-  as: Tag = 'h2'
+  as: Tag = 'h2',
+  ...rest
 }: SectionLabelProps) {
-  return <Tag className={cn(SECTION_LABEL_CLASS, className)}>{children}</Tag>
+  // The remaining element props reach the rendered tag, so a panel can point
+  // `aria-labelledby` at this heading via `id`, and tests can hang a `data-*`
+  // hook off it. Without the spread there was no way to reference the heading
+  // from its own container.
+  return (
+    <Tag className={cn(SECTION_LABEL_CLASS, className)} {...rest}>
+      {children}
+    </Tag>
+  )
 }
