@@ -68,8 +68,19 @@ function isMissingNextEntry(error) {
 }
 
 exports.loadNextRouter = function loadNextRouter() {
+  // Which entry is being loaded right now, so a failure can name the one that
+  // actually failed. Both requires share one try block, and the message used to
+  // say "next/link" unconditionally — so a broken `next/navigation` sent whoever
+  // read the warning to inspect the wrong module.
+  //
+  // A variable for the MESSAGE only. Both specifiers stay literal in the
+  // `require` calls: per the header, a computed specifier hides them from Next's
+  // bundler and silently downgrades navigation, which is the whole reason this
+  // file is CommonJS.
+  let loading = 'next/link'
   try {
     const link = require('next/link')
+    loading = 'next/navigation'
     const navigation = require('next/navigation')
 
     const Link = link?.default ?? link
@@ -98,7 +109,7 @@ exports.loadNextRouter = function loadNextRouter() {
       !isMissingNextEntry(error)
     ) {
       console.warn(
-        '[sindarian-ui] next is installed but next/link failed to load, so ' +
+        `[sindarian-ui] next is installed but ${loading} failed to load, so ` +
           'sidebar navigation falls back to full page loads. Original error:',
         error
       )
