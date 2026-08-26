@@ -1,3 +1,18 @@
+# Sindarian-tokens Changelog
+
+## [1.1.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-tokens-v1.1.0)
+
+- **Features**
+  - Release v1.1.0
+  - Release v1.1.0-beta.1
+
+- **Contributors**
+  - @fred
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-tokens-v1.0.2...sindarian-tokens-v1.1.0)
+
+---
+
 ## [1.1.0](https://github.com/LerianStudio/console-sdk/compare/sindarian-tokens-v1.0.2...sindarian-tokens-v1.1.0) (2026-08-26)
 
 
@@ -167,3 +182,4 @@ Contributors: @jeff, @jefferson.comff
 Contributors: @jefferson.comff
 
 [View all changes](https://github.com/LerianStudio/console-sdk/commits/sindarian-tokens-v1.0.0)
+

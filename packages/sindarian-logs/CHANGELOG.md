@@ -1,3 +1,20 @@
+# Sindarian-logs Changelog
+
+## [1.2.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-logs-v1.2.0)
+
+- **Features**
+  - Released version v1.2.0.
+  - Released version v1.2.0-beta.1.
+
+- **Improvements**
+  - Dedupe generated changelog sections and scope the absence gate exclusions.
+
+Contributors: @fred
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v1.1.0...sindarian-logs-v1.2.0)
+
+---
+
 ## [1.2.0](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v1.1.0...sindarian-logs-v1.2.0) (2026-08-26)
 
 
@@ -172,3 +189,4 @@ Contributors: @caio_aletroca
 Contributors: @caio_aletroca,
 
 [View all changes](https://github.com/LerianStudio/console-sdk/commits/sindarian-logs-v1.0.0)
+
