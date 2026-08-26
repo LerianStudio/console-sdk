@@ -375,6 +375,44 @@ describe('DelinquencyAging', () => {
       )
       expect(container.textContent).toContain('Saudável')
     })
+
+    // A threshold that is FINITE but huge overflows to Infinity once scaled for
+    // the integer comparison, and BigInt(Infinity) throws a RangeError —
+    // mid-render. 1e300 is enough; it does not take MAX_VALUE.
+    it.each([
+      ['Number.MAX_VALUE', Number.MAX_VALUE],
+      ['1e300', 1e300]
+    ])('renders with a huge positive threshold (%s)', (_kind, huge) => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={PORTFOLIO}
+          currency="BRL"
+          locale="en-US"
+          warn={huge}
+          breach={huge}
+        />
+      )
+      // No 0..1 ratio can reach it, so the calm band is the EXACT answer.
+      expect(container.textContent).toContain('Saudável')
+      expect(container.textContent).toContain('10.0%')
+    })
+
+    it.each([
+      ['-Number.MAX_VALUE', -Number.MAX_VALUE],
+      ['-1e300', -1e300]
+    ])('renders with a huge negative threshold (%s)', (_kind, huge) => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={PORTFOLIO}
+          currency="BRL"
+          locale="en-US"
+          warn={huge}
+          breach={huge}
+        />
+      )
+      // Every ratio sits above it, so breach is the EXACT answer.
+      expect(container.textContent).toContain('Em estresse')
+    })
   })
 
   // The fixed pt-BR copy is overridable, so a consumer running in another

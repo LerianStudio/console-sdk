@@ -179,8 +179,16 @@ function ratioExceeds(
 ): boolean {
   // A non-finite threshold is no threshold: nothing can be past it.
   if (!Number.isFinite(threshold)) return false
-  const scaled = BigInt(Math.round(threshold * Number(THRESHOLD_SCALE)))
-  return overdue * THRESHOLD_SCALE > scaled * total
+  // Scaling overflows to ±Infinity for a threshold that is finite but huge —
+  // 1e300 is enough, MAX_VALUE certainly — and `BigInt(Infinity)` throws a
+  // RangeError, mid-render, taking the surface down. Both overflow directions
+  // have an EXACT answer, so this degrades to the right result rather than a
+  // merely safe one: an overflowed positive threshold is one no 0..1 ratio could
+  // ever reach (not exceeded), an overflowed negative one sits below every ratio
+  // (always exceeded).
+  const scaled = Math.round(threshold * Number(THRESHOLD_SCALE))
+  if (!Number.isFinite(scaled)) return scaled < 0
+  return overdue * THRESHOLD_SCALE > BigInt(scaled) * total
 }
 
 /**
