@@ -55,6 +55,11 @@ import type { GaugeBand } from '../threshold-gauge'
 import { AgingBuckets } from './aging-buckets'
 import type { AgingBucket, AgingBucketsLabels } from './aging-buckets'
 
+// `bucketLabels` is part of this component's public shape, so the type a caller
+// needs to name it travels with it — even though AgingBuckets itself stays
+// internal to the composite.
+export type { AgingBand, AgingBucketsLabels } from './aging-buckets'
+
 /** Fixed-point scale for the rate division: 1e12 keeps twelve decimal places of
  *  a 0..1 ratio, and both it and any in-range scaled quotient stay well inside
  *  the exact-integer range of a double (2^53), so the conversion is lossless. */
