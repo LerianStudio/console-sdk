@@ -294,6 +294,89 @@ describe('DelinquencyAging', () => {
     expect(container.textContent).toContain('1,000.00')
   })
 
+  // THIRD RAIL: the band is decided on the exact integer ratio. The displayed
+  // `rate` is truncated at 1e-12 by RATE_PRECISION, so a portfolio a hair past a
+  // threshold used to truncate ONTO the threshold and the strict-edge rule then
+  // reported the calmer band — a delinquency alarm that failed to fire.
+  describe('band precision at a threshold edge', () => {
+    // 500000000001 / 10000000000000 = 0.0500000000001, past the 0.05 warn edge.
+    // Truncated to 1e-12 it becomes exactly 0.05, which reads as low.
+    const EDGE = [
+      { label: 'A vencer', count: 1, total: '94999999999.99', overdue: false },
+      { label: '90+', count: 1, total: '5000000000.01', overdue: true }
+    ]
+
+    it('escalates a rate that is only just past the warn edge', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={EDGE}
+          currency="BRL"
+          locale="en-US"
+          warn={0.05}
+          breach={0.1}
+        />
+      )
+      const text = container.textContent ?? ''
+      expect(text).toContain('Elevada')
+      expect(text).not.toContain('Saudável')
+    })
+
+    it('keeps a rate exactly ON the edge in the calmer band (strict edges)', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={[
+            {
+              label: 'A vencer',
+              count: 1,
+              total: '95000000000.00',
+              overdue: false
+            },
+            { label: '90+', count: 1, total: '5000000000.00', overdue: true }
+          ]}
+          currency="BRL"
+          locale="en-US"
+          warn={0.05}
+          breach={0.1}
+        />
+      )
+      expect(container.textContent).toContain('Saudável')
+    })
+
+    it('escalates to breach just past the breach edge', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={[
+            {
+              label: 'A vencer',
+              count: 1,
+              total: '89999999999.99',
+              overdue: false
+            },
+            { label: '90+', count: 1, total: '10000000000.01', overdue: true }
+          ]}
+          currency="BRL"
+          locale="en-US"
+          warn={0.05}
+          breach={0.1}
+        />
+      )
+      expect(container.textContent).toContain('Em estresse')
+    })
+
+    it('treats a non-finite threshold as no threshold at all', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={PORTFOLIO}
+          currency="BRL"
+          locale="en-US"
+          warn={Number.NaN}
+          breach={Number.NaN}
+        />
+      )
+      expect(container.textContent).toContain('Saudável')
+    })
+  })
+
   // The fixed pt-BR copy is overridable, so a consumer running in another
   // language can translate the ACCESSIBLE band words and captions — `locale`
   // only ever reached the digits. Every override is optional and defaults to the
