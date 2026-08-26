@@ -218,6 +218,12 @@ export function CopyField({
           type={showAsText ? 'text' : 'password'}
           value={value}
           readOnly
+          // This field holds secrets: TOTP manual-entry secrets, recovery
+          // codes. While masked it renders as type="password", which invites
+          // browsers and password managers to autofill it or offer to SAVE its
+          // value, and spellcheck can ship the text to a remote service.
+          autoComplete="off"
+          spellCheck={false}
           aria-label={label ? undefined : valueLabel}
           // `min-w-0` lets this flex item shrink below its content width so a
           // long value (e.g. a UUID recovery code) scrolls inside the field

@@ -44,6 +44,21 @@ describe('CopyField', () => {
     expect(screen.getByLabelText('API Key')).toBeInTheDocument()
   })
 
+  it.each([[true], [false]])(
+    'keeps the value out of autofill and spellcheck (masked=%s)',
+    (masked) => {
+      // The field carries secrets - TOTP manual-entry secrets, recovery codes.
+      // While masked it is a type="password" input, which invites browsers and
+      // password managers to autofill it or offer to SAVE it, and spellcheck
+      // can ship the text to a remote service.
+      render(<CopyField value="SECRET123" label="Secret" masked={masked} />)
+      const input = screen.getByLabelText('Secret')
+
+      expect(input).toHaveAttribute('autocomplete', 'off')
+      expect(input).toHaveAttribute('spellcheck', 'false')
+    }
+  )
+
   it('copies the value to the clipboard when the copy button is clicked', async () => {
     render(<CopyField value="SECRET123" label="Secret" />)
     await act(async () => {
