@@ -22,6 +22,37 @@ export function isValidDigitCount(digits: number): boolean {
   return Number.isInteger(digits) && digits >= 0 && digits <= 100
 }
 
+/**
+ * A locale tag `Intl` will accept, or `undefined` — which every `Intl`
+ * constructor reads as "the runtime locale", the documented default for every
+ * `locale` prop in this layer.
+ *
+ * A structurally invalid tag makes EVERY `Intl` constructor throw a RangeError:
+ * `''`, `'en_US'` (underscore for hyphen — the commonest mistake, and what a
+ * POSIX `LANG` value looks like), a truncated tag out of a stored user
+ * preference. Unguarded, that RangeError escapes during render, so one bad
+ * preference string takes down the whole money surface instead of printing a
+ * number with the wrong decimal mark. `Intl.getCanonicalLocales` rejects exactly
+ * the tags the formatters reject, so it is the predicate rather than a
+ * hand-rolled BCP 47 regex.
+ *
+ * The locale is the least important input to a figure — the DIGITS are the
+ * point — so an unusable tag degrades to the runtime locale and the number still
+ * renders.
+ *
+ * Internal: shared by `format`, `money-text` and `number-input` so they cannot
+ * drift. Never exported from `src/domain/index.ts`.
+ */
+export function safeLocale(locale?: string): string | undefined {
+  if (locale === undefined) return undefined
+  try {
+    Intl.getCanonicalLocales(locale)
+    return locale
+  } catch {
+    return undefined
+  }
+}
+
 /** Whether an input rate is a 0..1 ratio or an already-scaled 0..100 percent.
  * Defaults to 'ratio' — no guessing from magnitude. */
 export type PercentUnit = 'ratio' | 'percent'
@@ -55,7 +86,7 @@ export function formatPercent(
   // would throw a RangeError and take the whole surface down with it.
   if (!isValidDigitCount(digits)) return NO_VALUE
   const ratio = unit === 'percent' ? value / 100 : value
-  return new Intl.NumberFormat(locale, {
+  return new Intl.NumberFormat(safeLocale(locale), {
     style: 'percent',
     minimumFractionDigits: digits,
     maximumFractionDigits: digits
@@ -82,9 +113,9 @@ export function formatCount(
 ): string {
   if (value === null || value === undefined || !Number.isFinite(value))
     return NO_VALUE
-  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(
-    value
-  )
+  return new Intl.NumberFormat(safeLocale(locale), {
+    maximumFractionDigits: 0
+  }).format(value)
 }
 
 /**

@@ -20,7 +20,7 @@
  */
 import { cn } from '@/lib/utils'
 
-import { NO_VALUE, isValidDigitCount } from '../format'
+import { NO_VALUE, isValidDigitCount, safeLocale } from '../format'
 
 export type MoneyTextProps = {
   amount: string | number | null | undefined
@@ -88,7 +88,9 @@ export function formatMoneyParts(
   const exactZero = /\d/.test(normalized) && /^-?0*(\.0*)?$/.test(normalized)
   const forFormat = exactZero ? normalized.replace(/^-/, '') : normalized
 
-  const formatter = new Intl.NumberFormat(locale, {
+  // A malformed tag would throw a RangeError out of this constructor and take
+  // the whole amount down; degrade to the runtime locale instead.
+  const formatter = new Intl.NumberFormat(safeLocale(locale), {
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
     signDisplay: 'auto'

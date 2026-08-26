@@ -182,6 +182,25 @@ describe('MoneyText', () => {
     expect(container.textContent).toBe('10.00BRL10.00USD1,000JPY')
   })
 
+  // A malformed BCP 47 tag makes Intl.NumberFormat throw a RangeError. That
+  // escaped formatMoneyParts' null fallback, so MoneyText THREW during render
+  // instead of degrading — a blank money surface over a bad locale string.
+  it.each([[''], ['en_US'], ['x'], ['123'], ['xx-YY-ZZ-bad--']])(
+    'renders the amount despite the malformed locale %p',
+    (locale) => {
+      const { container } = render(
+        <MoneyText amount="1234.50" currency="BRL" locale={locale} />
+      )
+      expect(container.textContent).toContain('1,234.50')
+      expect(container.textContent).toContain('BRL')
+    }
+  )
+
+  it('still honours a VALID locale (the fallback is not unconditional)', () => {
+    const { container } = render(<MoneyText amount="1234.50" locale="de-DE" />)
+    expect(container.textContent).toContain('1.234,50')
+  })
+
   it('always carries tabular figures so columns line up', () => {
     const { container } = render(<MoneyText amount="1.00" locale="en-US" />)
     expect(container.firstElementChild).toHaveClass('tabular-nums')

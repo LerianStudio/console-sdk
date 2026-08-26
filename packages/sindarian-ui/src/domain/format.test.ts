@@ -115,3 +115,27 @@ describe('humanizeDurationMs', () => {
     expect(humanizeDurationMs(ms)).toBe('3h 20m')
   })
 })
+
+// --- invalid locale tags degrade, never throw ------------------------------
+// Every Intl constructor throws a RangeError on a structurally invalid tag
+// ('' , 'en_US' with an underscore, a truncated stored preference). Unguarded,
+// that escapes during render and takes the whole readout down over the LEAST
+// important input to a figure.
+describe('malformed locale tags', () => {
+  const BAD = ['', 'en_US', 'x', '123', 'xx-YY-ZZ-bad--']
+
+  it.each(BAD)('formatPercent still renders with locale %p', (locale) => {
+    expect(() => formatPercent(0.25, { locale })).not.toThrow()
+    expect(formatPercent(0.25, { locale })).toContain('25')
+  })
+
+  it.each(BAD)('formatCount still renders with locale %p', (locale) => {
+    expect(() => formatCount(1234, locale)).not.toThrow()
+    expect(formatCount(1234, locale)).toMatch(/1.?234/)
+  })
+
+  it('still honours a VALID locale (the fallback is not unconditional)', () => {
+    expect(formatCount(1234, 'de-DE')).toBe('1.234')
+    expect(formatPercent(0.25, { locale: 'de-DE' })).toBe('25,0\u00a0%')
+  })
+})
