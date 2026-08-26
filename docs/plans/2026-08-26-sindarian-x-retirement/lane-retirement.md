@@ -40,24 +40,21 @@
 4. Provenance comments inside sindarian-ui source: `src/domain/index.ts:3`, `src/enterprise/index.ts:3` (and short-name mentions in `.storybook/main.ts`, `src/charts/index.ts`).
 5. `br-sfn/.impeccable/critique/2026-07-10*` — dated historical critique record.
 
-**Verification (executed 2026-08-26, pre-cockpit-merge):** test files stay IN the scan — only `docs/plans` and CHANGELOGs are excluded by pattern; everything else is judged against the allowlist by hand.
+**Verification (re-executed 2026-08-26, post wave-4 merges):** the scan covers EVERY tracked file (no positive extension filter — `.cjs`, `.cts`, `.yml` and anything else included) and emits line numbers, so each matching LINE is validated against the allowlist individually — `-l` is not used, because a file with one allowed line could hide a second, unallowed one.
 
 ```sh
-git grep -l "@lerianstudio/sindarian-x" origin/develop -- \
-  '*.json' '*.ts' '*.tsx' '*.js' '*.mjs' '*.yaml' \
+git grep -n "@lerianstudio/sindarian-x" origin/develop -- \
   ':!docs/plans' ':!*/docs/plans/*' ':!*CHANGELOG*'
-# gate: every resulting path is in the allowlist above; anything else = FAIL
+# gate: every resulting LINE matches an allowlist class above; anything else = FAIL
 ```
 
-| Repo | Hits | Outside allowlist | Verdict |
-|------|------|-------------------|---------|
+| Repo | Matching lines | Outside allowlist | Verdict |
+|------|----------------|-------------------|---------|
 | matcher | 0 | 0 | clean |
 | lender | 0 | 0 | clean |
 | br-consignado-gw | 0 | 0 | clean |
-| br-sfn | 360 (pre-merge) / 0 on `feat/migrate-to-sindarian-ui` | 0 at #143 | clean at #143 merge |
-| console-sdk | 4 (2 provenance sub-barrel comments + 2 equivalence tests) | 0 | clean |
-
-Re-run the br-sfn row after #143 merges; expected 0.
+| br-sfn | 1 (`.impeccable/critique/2026-07-10…`, class 5) | 0 | clean |
+| console-sdk | 3 (2 provenance comments class 4 + 1 equivalence-test header class 3) | 0 | clean |
 
 ### Epic 2.1: Promote console-sdk develop → main (stable release)
 
