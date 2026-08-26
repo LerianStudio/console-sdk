@@ -56,6 +56,16 @@ describe('RadioGroupField', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ rail: 'ted' }))
   })
 
+  it('names the group with its visible label', () => {
+    // `FormLabel` names its control through `htmlFor`, which cannot reach the
+    // Radix radiogroup root (a plain div) — so the visible label was decoration
+    // and the group reached a screen reader nameless. It now points back at the
+    // label with aria-labelledby.
+    render(<Harness />)
+
+    expect(screen.getByRole('radiogroup', { name: 'Rail' })).toBeInTheDocument()
+  })
+
   it('renders the validation message through FormMessage', async () => {
     render(<Harness error="Pick a rail" />)
 
