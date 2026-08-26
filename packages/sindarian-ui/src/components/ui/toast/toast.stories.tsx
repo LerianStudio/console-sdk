@@ -55,6 +55,29 @@ export const Success: StoryObj<typeof Toaster> = {
   }
 }
 
+export const Warning: StoryObj<typeof Toaster> = {
+  render: () => {
+    const { toast } = useToast()
+
+    return (
+      <div className="flex h-48 flex-col items-center justify-center gap-2">
+        <Button
+          onClick={() =>
+            toast({
+              title: 'Heads up',
+              description: 'The request went through, but only partially.',
+              variant: 'warning'
+            })
+          }
+        >
+          Show Warning
+        </Button>
+        <Toaster />
+      </div>
+    )
+  }
+}
+
 export const Destructive: StoryObj<typeof Toaster> = {
   render: () => {
     const { toast } = useToast()

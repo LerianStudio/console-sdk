@@ -159,6 +159,22 @@
   --color-system-purple-border: hsl(var(--system-purple-border));
   --color-system-purple-text: hsl(var(--system-purple-text) / 0.7);
 
+  /* Ledger + reconciliation tokens */
+  --color-credit: hsl(var(--credit));
+  --color-credit-foreground: hsl(var(--credit-foreground));
+  --color-matched-surface: hsl(var(--matched-surface));
+  --color-unmatched-surface: hsl(var(--unmatched-surface));
+
+  /* Chart series tokens */
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --color-chart-6: hsl(var(--chart-6));
+  --color-chart-7: hsl(var(--chart-7));
+  --color-chart-8: hsl(var(--chart-8));
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -228,6 +244,10 @@
     --destructive-foreground: 0 0% 100%; /* white */
     --border: 240 5% 90%; /* base/200 = #E4E4E7 */
     --input: 0 0% 100%; /* base/white */
+    /* One step lighter than --muted-foreground, which is also the label colour:
+       a placeholder that matches its own label has no hierarchy left to give.
+       Still 4.4:1 on the shadcn-100 field, so it stays legible as a hint. */
+    --input-placeholder: 240 4% 46%; /* base/500 = #71717A */
     --ring: 240 5% 65%; /* focus ring */
     --radius: 0.5rem;
 
@@ -264,6 +284,38 @@
 
     /* Shadow color token for dark mode adaptation */
     --shadow-color: 0 0% 0%;
+
+    /*
+      Ledger credit semantic — deliberately DISTINCT from --destructive, not an
+      alias: --destructive is an error/alarm, --credit is the accounting reading
+      of a credit amount. Deeper than --destructive (red/700 vs red/500) so the
+      two never read as the same signal. --credit-foreground mirrors --credit:
+      the red itself carries the role as text.
+    */
+    --credit: 0 74% 42%; /* red/700 = #B91C1C */
+    --credit-foreground: 0 74% 42%; /* mirrors --credit */
+
+    /*
+      Reconciliation matte fills — the recessed track behind a balance bar, one
+      neutral step apart. Deliberately hue-neutral: the matched/unmatched signal
+      is carried by the bar's leading edge, so a tinted wall would double-encode.
+    */
+    --matched-surface: 240 5% 96%; /* base/100 = #F4F4F5 */
+    --unmatched-surface: 240 5% 90%; /* base/200 = #E4E4E7 */
+
+    /*
+      Chart series palette — 8 categorical slots drawn from the brand scales
+      (de-york, sunglow, cod-gray) plus the system hues, ordered so no adjacent
+      pair shares a hue neighbourhood.
+    */
+    --chart-1: 143 59% 36%; /* de-york-600 = #26934F */
+    --chart-2: 0 72% 51%; /* red/600 = #DC2626 */
+    --chart-3: 39 98% 40%; /* sunglow-600 = #CC8402 */
+    --chart-4: 221 83% 53%; /* blue/600 = #2563EB */
+    --chart-5: 333 71% 51%; /* pink/600 = #DB2777 */
+    --chart-6: 193 82% 31%; /* cyan/700 = #0E7490 */
+    --chart-7: 272 72% 47%; /* purple/700 = #7E22CE */
+    --chart-8: 351 9% 43%; /* cod-gray-500 = #776366 */
   }
 
   .dark {
@@ -292,6 +344,10 @@
     --popover-foreground: 240 5% 96%; /* base/100 = #F4F4F5 */
     --border: 240 5% 34%; /* base/600 = #52525B */
     --input: 240 4% 16%; /* base/800 = #27272A */
+    /* Held at base/400 rather than stepped down with the light theme: on the
+       dark field that is already only 5.8:1, and going lighter here means
+       darker, which would push the hint under the AA floor. */
+    --input-placeholder: 240 5% 65%; /* base/400 = #A1A1AA */
     --primary: 240 5% 96%; /* base/100 = #F4F4F5 */
     --primary-foreground: 240 4% 16%; /* base/800 = #27272A */
     --secondary: 240 4% 16%; /* base/800 = #27272A */
@@ -339,6 +395,24 @@
 
     /* Shadow color for dark mode */
     --shadow-color: 0 0% 100%;
+
+    /* Ledger credit semantic — lifted for the dark canvas; foreground mirrors. */
+    --credit: 0 91% 71%; /* red/400 = #F87171 */
+    --credit-foreground: 0 91% 71%; /* mirrors --credit */
+
+    /* Reconciliation matte fills — raised surfaces over base/800, one step apart. */
+    --matched-surface: 240 5% 26%; /* base/700 = #3F3F46 */
+    --unmatched-surface: 240 5% 34%; /* base/600 = #52525B */
+
+    /* Chart series palette — same families, lifted for the dark canvas. */
+    --chart-1: 143 53% 58%; /* de-york-400 = #5BCD86 */
+    --chart-2: 0 91% 71%; /* red/400 = #F87171 */
+    --chart-3: 46 98% 57%; /* sunglow-400 = #FDCB28 */
+    --chart-4: 213 94% 68%; /* blue/400 = #60A5FA */
+    --chart-5: 329 86% 70%; /* pink/400 = #F472B6 */
+    --chart-6: 188 86% 53%; /* cyan/400 = #22D3EE */
+    --chart-7: 270 95% 75%; /* purple/400 = #C084FC */
+    --chart-8: 351 9% 69%; /* cod-gray-300 = #B7A9AB */
   }
 }
 

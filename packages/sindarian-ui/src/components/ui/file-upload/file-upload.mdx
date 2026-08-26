@@ -1,0 +1,41 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './file-upload.stories'
+
+<Meta of={Story} />
+
+# FileUpload
+
+Pick one text file — by click, keyboard, or drag-and-drop — validate it, read it
+as UTF-8, and hand back `{ file, text }`.
+
+Controlled: the host owns `value` and receives every accept (`{ file, text }`)
+or clear (`null`) through `onSelect`. A pick that fails the `accept` filter or
+the `maxSizeBytes` ceiling never produces a value — it is announced inline via
+`role="alert"` and reported through `onError`. Because the file is read with
+`FileReader.readAsText`, binary formats (`.pfx`, `.p12`) are out of scope.
+
+`validateFile(file, { accept, maxSizeBytes })` is exported so a host can
+pre-validate a file before handing it over. `accept` is matched against BOTH the
+filename extension and the MIME type, since the native `accept` attribute is
+only a browser hint and drag-and-drop bypasses it.
+
+Inside a form, prefer `FileUploadField`.
+
+### Primary
+
+<Canvas of={Story.Primary} />
+
+### Selected
+
+<Canvas of={Story.Selected} />
+
+### Invalid
+
+<Canvas of={Story.Invalid} />
+
+### Disabled
+
+<Canvas of={Story.Disabled} />
+
+<Primary />
+<Controls />

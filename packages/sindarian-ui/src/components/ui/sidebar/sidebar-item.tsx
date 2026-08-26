@@ -1,10 +1,10 @@
 'use client'
 
 import React from 'react'
-import { usePathname } from 'next/navigation'
 import { SidebarItemButton } from './sidebar-item-button'
 import { SidebarItemIconButton } from './sidebar-item-icon-button'
 import { useSidebar } from './sidebar-provider'
+import { useSidebarRouter } from './sidebar-router'
 
 export type SidebarItemProps = React.ComponentProps<typeof SidebarItemButton> &
   React.ComponentProps<typeof SidebarItemIconButton> & {
@@ -22,6 +22,7 @@ export const SidebarItem = ({
   children: _children,
   ...props
 }: SidebarItemProps) => {
+  const { usePathname } = useSidebarRouter()
   const pathname = usePathname()
   const { isCollapsed } = useSidebar()
 

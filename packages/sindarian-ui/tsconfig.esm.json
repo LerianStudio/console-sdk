@@ -1,0 +1,14 @@
+{
+  // ESM half of the dual build. Same sources, same declarations, emitted as
+  // real ES modules into dist/esm so bundlers can tree-shake the barrel — a
+  // consumer that imports one component stops paying for recharts, cmdk,
+  // sonner and friends. dist/ (CommonJS) stays byte-compatible for everyone
+  // already on `main`.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "outDir": "./dist/esm",
+    "tsBuildInfoFile": ".cache/tsconfig.esm.tsbuildinfo"
+  }
+}

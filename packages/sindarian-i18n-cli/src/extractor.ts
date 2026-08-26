@@ -200,3 +200,57 @@ export function formatSimpleJson(
   }
   return stringify(simple, { space: 2 })
 }
+
+/**
+ * Formats a non-default locale as simple JSON: { [id]: translation }.
+ * Keeps existing translations, emits an empty string for keys that have none,
+ * and drops keys no longer present in the extraction.
+ *
+ * Uses json-stable-stringify for the same alphabetical ordering as
+ * formatSimpleJson, so output does not depend on file traversal order.
+ *
+ * The accumulator is null-prototype and lookups are own-property-only, so ids
+ * that collide with Object.prototype members ("__proto__", "toString", ...) are
+ * carried through as ordinary keys instead of being silently dropped.
+ */
+/**
+ * Whether a parsed locale file is something `formatLocaleJson` can read: a JSON
+ * object, not an array, mapping every own key to a STRING.
+ *
+ * `JSON.parse` succeeds on `null`, `[]`, `"text"` and `42` — all valid JSON, none
+ * of them a locale map. Handed to `formatLocaleJson`, `Object.hasOwn(null, key)`
+ * throws a TypeError that surfaced from the WRITE handler as "Failed to write
+ * locale file", pointing the operator at the wrong step entirely.
+ *
+ * The VALUES matter just as much. `{ "app.title": 42 }` is an object, so a
+ * shape-only check passed it, and `translation ?? ''` keeps a number — so the 42
+ * flowed through untouched and was written back into the locale file. The next
+ * read then hands every consumer of these files JSON whose type no longer matches
+ * the `Record<string, string>` this guard claims. A nested object is rejected for
+ * the same reason: keys here are flat dotted ids, so a nested file would have
+ * silently emitted `''` for every one of them and wiped the translations.
+ *
+ * The caller checks this right after parsing, where the real cause is still known.
+ */
+export function isLocaleObject(
+  parsed: unknown
+): parsed is Record<string, string> {
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return false
+  }
+  // Own enumerable values only — the same reach `formatLocaleJson` reads with
+  // `Object.hasOwn`, so the guard cannot pass something the formatter then trips on.
+  return Object.values(parsed).every((value) => typeof value === 'string')
+}
+
+export function formatLocaleJson(
+  extractedKeys: string[],
+  existing: Record<string, string>
+): string {
+  const merged: Record<string, string> = Object.create(null)
+  for (const key of extractedKeys) {
+    const translation = Object.hasOwn(existing, key) ? existing[key] : undefined
+    merged[key] = translation ?? ''
+  }
+  return stringify(merged, { space: 2 })
+}

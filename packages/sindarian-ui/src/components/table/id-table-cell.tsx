@@ -9,7 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip'
-import { truncate } from 'lodash'
+import truncate from 'lodash/truncate.js'
 import { Copy } from 'lucide-react'
 
 export type IdTableCellProps = Omit<

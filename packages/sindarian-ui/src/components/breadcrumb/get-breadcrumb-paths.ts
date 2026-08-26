@@ -1,5 +1,5 @@
 import { BreadcrumbPath } from '.'
-import { isNil } from 'lodash'
+import isNil from 'lodash/isNil.js'
 
 type BreadcrumbPathTabs = (BreadcrumbPath & {
   active?: () => boolean

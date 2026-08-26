@@ -3,7 +3,12 @@ import path from 'path'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import { createRequire } from 'node:module'
 import { loadConfig } from './config'
-import { extractAll, formatSimpleJson } from './extractor'
+import {
+  extractAll,
+  formatLocaleJson,
+  formatSimpleJson,
+  isLocaleObject
+} from './extractor'
 import { validate } from './validator'
 import { diffKeys, formatKeyDiffReport } from './key-differ'
 import { formatValidationReport, formatExtractionErrors } from './reporter'
@@ -30,7 +35,25 @@ async function mergeLocale(
   let existing: Record<string, string> = {}
   try {
     const content = await readFile(localePath, 'utf-8')
-    existing = JSON.parse(content)
+    const parsed: unknown = JSON.parse(content)
+    // Valid JSON is not necessarily a locale map: `null`, `[]`, `"text"` and `42`
+    // all parse fine and all slipped past this catch, then blew up inside
+    // formatLocaleJson as a misleading "Failed to write locale file". Reject here,
+    // where the real cause is still known.
+    if (!isLocaleObject(parsed)) {
+      const shape = Array.isArray(parsed)
+        ? 'an array'
+        : parsed === null
+          ? 'null'
+          : typeof parsed === 'object'
+            ? 'an object with non-string values'
+            : typeof parsed
+      console.error(
+        `Locale file "${localePath}" must be a JSON object mapping each key to a string, got ${shape}.`
+      )
+      process.exit(1)
+    }
+    existing = parsed
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === 'ENOENT') {
       // File doesn't exist yet
@@ -42,13 +65,12 @@ async function mergeLocale(
     }
   }
 
-  const merged: Record<string, string> = {}
-  for (const key of extractedKeys) {
-    merged[key] = existing[key] ?? ''
-  }
-
   try {
-    await writeFile(localePath, JSON.stringify(merged, null, 2), 'utf-8')
+    await writeFile(
+      localePath,
+      formatLocaleJson(extractedKeys, existing),
+      'utf-8'
+    )
   } catch (e) {
     console.error(
       `Failed to write locale file "${localePath}": ${(e as Error).message}`

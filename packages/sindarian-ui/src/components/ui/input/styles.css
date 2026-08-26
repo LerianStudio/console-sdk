@@ -3,7 +3,7 @@
   --spacing-input-wrapper-p: calc(var(--spacing) * 2);
   --spacing-input-px: calc(var(--spacing) * 4);
   --color-input-foreground: var(--color-foreground);
-  --color-input-placeholder: var(--color-muted-foreground);
+  --color-input-placeholder: hsl(var(--input-placeholder));
   --color-input-border: var(--color-shadcn-400);
 
   --color-input-adornment: var(--color-container-text);
@@ -24,8 +24,12 @@
     @apply border-ring;
   }
 
+  /* Don't give the placeholder its own size or weight. At a smaller size it
+     still shares the input's baseline, so it rode ~0.75px below the value and
+     the text jumped the moment you typed; font-medium gave the hint the same
+     presence as the label naming the field. */
   .input-base {
-    @apply px-input-px text-input-foreground placeholder:text-input-placeholder h-full min-h-0 flex-1 border-none bg-transparent outline-none placeholder:text-sm placeholder:font-medium focus:ring-0 focus:ring-offset-0;
+    @apply px-input-px text-input-foreground placeholder:text-input-placeholder h-full min-h-0 flex-1 border-none bg-transparent outline-none focus:ring-0 focus:ring-offset-0;
   }
 
   .input-disabled {

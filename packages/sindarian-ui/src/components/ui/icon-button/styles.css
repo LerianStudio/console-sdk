@@ -1,33 +1,33 @@
 @theme inline {
-    --spacing-icon-button-p: calc(var(--spacing) * 2)
+  --spacing-icon-button-p: calc(var(--spacing) * 2);
 }
 
 @layer components {
-    .icon-button-base {
-        @apply p-icon-button-p rounded-md size-10 [&>*]:size-6;
-    }
+  .icon-button-base {
+    @apply p-icon-button-p size-10 rounded-md [&>*]:size-6 [&>*]:shrink-0;
+  }
 
-    .icon-button-read-only {
-        @apply data-[read-only=true]:border data-[read-only=true]:border-button-border;
-    }
+  .icon-button-read-only {
+    @apply data-[read-only=true]:border-button-border data-[read-only=true]:border;
+  }
 
-    .icon-button-disabled {
-        @apply disabled:border disabled:border-button-border;
-    }
+  .icon-button-disabled {
+    @apply disabled:border-button-border disabled:border;
+  }
 
-    .icon-button-small {
-        @apply size-8 [&>*]:size-4;
-    }
+  .icon-button-small {
+    @apply size-8 [&>*]:size-4;
+  }
 
-    .icon-button-rounded {
-        @apply rounded-full;
-    }
+  .icon-button-rounded {
+    @apply rounded-full;
+  }
 
-    /* Overwrite for outline style */
-    .button-outline.icon-button-disabled {
-        @apply disabled:border-transparent
-    }
-    .button-outline.icon-button-read-only {
-        @apply data-[read-only=true]:border-transparent
-    }
+  /* Overwrite for outline style */
+  .button-outline.icon-button-disabled {
+    @apply disabled:border-transparent;
+  }
+  .button-outline.icon-button-read-only {
+    @apply data-[read-only=true]:border-transparent;
+  }
 }

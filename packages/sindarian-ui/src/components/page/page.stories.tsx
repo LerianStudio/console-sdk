@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/nextjs/*'
+import { Meta, StoryObj } from '@storybook/nextjs'
 import { PageContent, PageRoot, PageView } from '.'
 
 const meta: Meta<React.ComponentProps<typeof PageRoot>> = {

@@ -1,5 +1,6 @@
 import { getStorage } from './get-storage'
-import { isNil, isEmpty } from 'lodash'
+import isEmpty from 'lodash/isEmpty.js'
+import isNil from 'lodash/isNil.js'
 
 export function getStorageObject(key: string, defaultValue: any) {
   try {

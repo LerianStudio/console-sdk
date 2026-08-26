@@ -35,7 +35,12 @@ const config: Config = {
   // Make explicit that no UI-specific after-env setup is used in this package
   setupFilesAfterEnv: undefined,
 
-  testPathIgnorePatterns: ['<rootDir>/test']
+  // Spread the base patterns (node_modules, dist) — this key replaces rather
+  // than merges, so omitting them would let build output be tested.
+  testPathIgnorePatterns: [
+    ...(baseConfig.testPathIgnorePatterns ?? []),
+    '<rootDir>/test'
+  ]
 }
 
 export default config

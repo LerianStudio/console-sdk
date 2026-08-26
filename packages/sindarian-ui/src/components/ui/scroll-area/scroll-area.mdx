@@ -1,0 +1,23 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './scroll-area.stories'
+
+<Meta of={Story} />
+
+# ScrollArea
+
+Native scroll behavior with a custom, cross-browser scrollbar. \
+[Docs](https://www.radix-ui.com/primitives/docs/components/scroll-area)
+
+A vertical `ScrollBar` is rendered for you. For a horizontally scrolling area,
+add `<ScrollBar orientation="horizontal" />` as a child.
+
+### Primary
+
+<Canvas of={Story.Primary} />
+
+### Horizontal
+
+<Canvas of={Story.Horizontal} />
+
+<Primary />
+<Controls />

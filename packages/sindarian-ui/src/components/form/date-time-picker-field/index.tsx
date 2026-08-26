@@ -161,7 +161,7 @@ export const DateTimePickerField = <T extends FieldValues = FieldValues>({
                     role="button"
                     tabIndex={0}
                     aria-label="Clear date and time"
-                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute right-2 top-1/2 z-10 inline-flex -translate-y-1/2 shrink-0 rounded-sm outline-none focus-visible:ring-2"
+                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1/2 right-2 z-10 inline-flex shrink-0 -translate-y-1/2 rounded-sm outline-none focus-visible:ring-2"
                     onClick={handleClear}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {

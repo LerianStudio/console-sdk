@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Slot } from '@radix-ui/react-slot'
+import { Slot, Slottable } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib/utils'
@@ -95,7 +95,12 @@ function Button({
           {icon}
         </span>
       )}
-      {props.children}
+      {/*
+       * Required, not decoration: the icon slots always render (as `false`), so
+       * asChild's Slot sees 3 children and can't tell which to merge onto.
+       * Slottable marks the target; it's transparent when Comp is a 'button'.
+       */}
+      <Slottable>{props.children}</Slottable>
       {icon && iconPlacement !== 'start' && (
         <span className={cn(iconVariants({ position: iconPlacement, size }))}>
           {icon}

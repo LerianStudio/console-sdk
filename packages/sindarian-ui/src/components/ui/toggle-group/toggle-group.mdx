@@ -1,0 +1,33 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './toggle-group.stories'
+
+<Meta of={Story} />
+
+# ToggleGroup
+
+A set of two-state buttons that can be toggled on or off. \
+[Docs](https://www.radix-ui.com/primitives/docs/components/toggle-group)
+
+`type="single"` behaves like a segmented control; `type="multiple"` lets several
+items stay on. `variant` and `size` set on the group flow down to every item.
+`spacing` (default `0`) welds the items into one segmented bar; a positive value
+separates them.
+
+### Primary
+
+<Canvas of={Story.Primary} />
+
+### Outline
+
+<Canvas of={Story.Outline} />
+
+### Spaced
+
+<Canvas of={Story.Spaced} />
+
+### Multiple
+
+<Canvas of={Story.Multiple} />
+
+<Primary />
+<Controls />

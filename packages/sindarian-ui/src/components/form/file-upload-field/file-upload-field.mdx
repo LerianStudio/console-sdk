@@ -1,0 +1,51 @@
+import {
+  Meta,
+  Controls,
+  Primary,
+  Canvas
+} from '@storybook/addon-docs/blocks'
+import * as Story from './file-upload-field.stories'
+
+<Meta of={Story} />
+
+# FileUploadField
+
+A file picker wired to react-hook-form, for text files whose CONTENT is the
+value — certificates, keys, CSV payloads.
+
+The form value is the file's UTF-8 text, and `''` when cleared: never the `File`
+object, never `null`. That means `z.string().min(1)` gives you the required
+check with no adapter code. The filename chip is derived from the form value, so
+a `form.reset()` or `setValue(name, '')` clears the chip too — it can never
+linger out of sync.
+
+A pick rejected by `accept` or `maxSizeBytes` clears the form value, so a bad
+file can never pass validation. Two surfaces announce problems: the picker's own
+inline `role="alert"` for size/type/read failures, and `FormMessage` for
+resolver errors.
+
+Pass `onSelect` when you also need the `File` itself (name, size) alongside the
+text.
+
+### Basic
+
+<Canvas of={Story.Primary} />
+
+### Required
+
+<Canvas of={Story.Required} />
+
+### With Description
+
+<Canvas of={Story.WithDescription} />
+
+### With Tooltip
+
+<Canvas of={Story.WithTooltip} />
+
+### Disabled
+
+<Canvas of={Story.Disabled} />
+
+<Primary />
+<Controls />

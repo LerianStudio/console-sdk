@@ -16,7 +16,8 @@ export {
   extractAll,
   extractFile,
   calculateLineColFromOffset,
-  formatSimpleJson
+  formatSimpleJson,
+  formatLocaleJson
 } from './extractor'
 
 // Validation
