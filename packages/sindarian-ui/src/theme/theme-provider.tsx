@@ -115,17 +115,23 @@ export function ThemeProvider({
     if (typeof window === 'undefined') return
 
     const onStorage = (event: StorageEvent) => {
+      // WHICH STORE first, then which key. Only the store the preference lives
+      // in may change it: a sessionStorage event carrying the SAME key would
+      // otherwise mutate a localStorage-backed preference. `storageArea` is
+      // absent only on a hand-dispatched synthetic event — apps use those for
+      // same-tab sync — and one of those is not attributable to any store, so it
+      // is allowed through rather than silently dropped.
+      if (
+        event.storageArea != null &&
+        event.storageArea !== window.localStorage
+      )
+        return
       // A null key means another tab called `clear()` on the whole store, so the
       // stored preference is gone even though it is not named. Returning early
       // on that left the provider holding a deleted preference — and the wrong
       // `dark` class on the document. Fall through with newValue null, which
-      // lands on the fallback. `storageArea` keeps a sessionStorage.clear() from
-      // resetting a localStorage-backed preference.
-      if (event.key === null) {
-        if (event.storageArea !== window.localStorage) return
-      } else if (event.key !== storageKey) {
-        return
-      }
+      // lands on the fallback.
+      if (event.key !== null && event.key !== storageKey) return
       setThemeState(
         isThemePreference(event.newValue) ? event.newValue : defaultTheme
       )

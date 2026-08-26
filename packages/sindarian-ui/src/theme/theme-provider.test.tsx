@@ -205,6 +205,37 @@ describe('ThemeProvider', () => {
     expect(document.documentElement).not.toHaveClass('dark')
   })
 
+  it('ignores a sessionStorage event carrying the SAME key', async () => {
+    // The store check has to run BEFORE the key check. Testing the key first
+    // let a sessionStorage write under the same name through, and it mutated a
+    // preference that lives in localStorage.
+    window.localStorage.setItem('app.theme', 'dark')
+
+    render(
+      <ThemeProvider storageKey="app.theme" defaultTheme="light">
+        <Probe />
+      </ThemeProvider>
+    )
+
+    await waitFor(() =>
+      expect(screen.getByTestId('theme')).toHaveTextContent('dark')
+    )
+
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: 'app.theme',
+          newValue: 'light',
+          storageArea: window.sessionStorage
+        })
+      )
+    })
+
+    await waitFor(() =>
+      expect(screen.getByTestId('theme')).toHaveTextContent('dark')
+    )
+  })
+
   it('ignores a sessionStorage clear', async () => {
     // Only the store the preference lives in can reset it; sessionStorage
     // clearing its own keys says nothing about the theme.
