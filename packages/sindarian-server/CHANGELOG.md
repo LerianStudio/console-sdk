@@ -1,3 +1,20 @@
+# Sindarian-server Changelog
+
+## [1.3.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-server-v1.3.0)
+
+Features:
+- Released version v1.3.0.
+- Released version v1.2.0-beta.3.
+
+Fixes:
+- Stopped Jest from collecting tests from the dist directory.
+
+Contributors: @gabrielcastro.xy
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.2.0...sindarian-server-v1.3.0)
+
+---
+
 ## [1.3.0](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.2.0...sindarian-server-v1.3.0) (2026-08-26)
 
 
@@ -462,3 +479,4 @@ Contributors: Caio Alexandre Troti Caetano, lerian-studio
 * prevent Git conflicts in parallel package releases ([abc3ae1](https://github.com/LerianStudio/console-sdk/commit/abc3ae1992fb545d6eb55b5028a126c0910c36c6))
 * Route specificity on sindarian-server ([0e91ba5](https://github.com/LerianStudio/console-sdk/commit/0e91ba5cf7acec1cd4b561e2b2cafc232ce377f6))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
+

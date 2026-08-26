@@ -1,3 +1,34 @@
+# Sindarian-ui Changelog
+
+## [1.3.0](https://github.com/LerianStudio/console-sdk/releases/tag/sindarian-ui-v1.3.0)
+
+- **Features:**
+  - Exported the `money-diff` and `aging-label` input types.
+  - Allowed overriding the delinquency aging copy.
+  - Forwarded element props from `SectionLabel`.
+  - Added a warning toast variant.
+  - Added enterprise components, finance domain grammar, missing primitives, and form fields (ported from sindarian-x).
+
+- **Fixes:**
+  - Clamped a sub-scale delinquency threshold to the floor.
+  - Named the next entry that actually failed to load.
+  - Warned only when Next.js is installed but broken.
+  - Survived a huge finite delinquency threshold.
+  - Showed the chip for an accepted empty file.
+
+- **Improvements:**
+  - Composed `StatCard` from the ledger primitives.
+  - Stopped shipping test files and started type-checking stories.
+  - Hardened form field accessible-name and path typing.
+  - Addressed review findings on enterprise components.
+  - Applied eslint autofix drift present on develop.
+
+Contributors: @fred, @gabrielcastro.xy
+
+[Compare changes](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0...sindarian-ui-v1.3.0)
+
+---
+
 ## [1.3.0](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0...sindarian-ui-v1.3.0) (2026-08-26)
 
 
@@ -866,3 +897,4 @@ Contributors: Caio Alexandre Troti Caetano, lerian-studio
 
 * prevent Git conflicts in parallel package releases ([abc3ae1](https://github.com/LerianStudio/console-sdk/commit/abc3ae1992fb545d6eb55b5028a126c0910c36c6))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
+
