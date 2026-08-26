@@ -72,6 +72,22 @@ An i18n message extraction, validation, and key diffing CLI + library for React/
 
 ---
 
+### [@lerianstudio/sindarian-tokens](./packages/sindarian-tokens)
+
+The design tokens Lerian internal consoles are converging on: one neutral colour ladder, in light and dark, gated at WCAG 2.2 AA. Published and complete; console adoption is still pending.
+
+**Key Features**:
+
+- 🎨 Intended single source of truth for the internal-console identity (backoffice-console, caradhras) — neither imports it yet; both still carry their own copy
+- 🌗 Light and dark palettes with the same token set, enforced
+- ♿ Every composed pair measured against its WCAG 2.2 AA floor on every test run, with no exemption list
+- 🧩 Tailwind v4 CSS-first entry (`tokens.css`) plus a Tailwind-free values-only entry (`palette.css`)
+- 📘 Token names exported as TypeScript constants for tooling
+
+[View Documentation →](./packages/sindarian-tokens)
+
+---
+
 ## ✨ Features
 
 - ✅ **Monorepo Structure** - Powered by npm workspaces and Turbo
@@ -127,6 +143,7 @@ Each package contains its own comprehensive documentation:
 - [**Sindarian UI Documentation**](./packages/sindarian-ui) - Component library with Storybook
 - [**Sindarian Logs Documentation**](./packages/sindarian-logs) - Logging and tracing system
 - [**Sindarian i18n CLI Documentation**](./packages/sindarian-i18n-cli) - i18n extraction and validation
+- [**Sindarian Tokens Documentation**](./packages/sindarian-tokens) - WCAG-gated console design tokens, pending console adoption
 
 ---
 
@@ -139,6 +156,7 @@ console-sdk/
 │   ├── sindarian-ui/           # React component library
 │   ├── sindarian-logs/         # Logging and tracing system
 │   ├── sindarian-i18n-cli/     # i18n extraction and validation CLI
+│   ├── sindarian-tokens/       # Shared console design tokens (WCAG-gated)
 │   └── utils/                  # Shared utilities and base configs
 ├── package.json                # Root workspace configuration
 └── turbo.json                  # Turbo build configuration

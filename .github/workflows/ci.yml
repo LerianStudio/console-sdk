@@ -45,6 +45,7 @@ jobs:
             packages/sindarian-ui
             packages/sindarian-logs
             packages/sindarian-i18n-cli
+            packages/sindarian-tokens
           path-level: '2'
           get-app-name: 'true'
 
