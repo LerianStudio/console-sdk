@@ -59,6 +59,13 @@ export function StatusRail({
   chips = [],
   className
 }: StatusRailProps) {
+  // ONE test, used by both the lead span and the first item's separator. Two
+  // separate tests (`lead !== undefined && lead !== null` vs `lead != null`)
+  // agreed on null/undefined and diverged on a ReactNode that RENDERS nothing:
+  // `lead={false}` or `lead=""` produced an empty lead span while the first item
+  // still got its leading dot, so the rail opened with a stray `·`.
+  const hasLead = lead != null && lead !== false && lead !== ''
+
   return (
     <div
       className={cn(
@@ -69,12 +76,12 @@ export function StatusRail({
         className
       )}
     >
-      {lead !== undefined && lead !== null ? (
+      {hasLead ? (
         <span className="text-foreground font-medium">{lead}</span>
       ) : null}
 
       {items.map((item, i) => (
-        <RailFragment key={item.id ?? i} hasLead={lead != null || i > 0}>
+        <RailFragment key={item.id ?? i} hasLead={hasLead || i > 0}>
           {item.label != null ? (
             <span className="flex items-center gap-1.5">
               <span className="tracking-[0.08em] uppercase">{item.label}</span>
