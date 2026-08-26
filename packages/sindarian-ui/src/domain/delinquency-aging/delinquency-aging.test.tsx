@@ -397,6 +397,91 @@ describe('DelinquencyAging', () => {
       expect(container.textContent).toContain('10.0%')
     })
 
+    // The other end of the scale: a threshold FINER than one unit of the
+    // comparison scale (1e-18) rounds to zero, and a zero threshold means
+    // "anything above zero is past it" — the opposite of what a tiny positive
+    // threshold asks. It is clamped to the floor instead.
+    describe('sub-scale threshold floor (1e-18)', () => {
+      // Ratio 1e-19: one minor unit against 1e19 of them.
+      const TINY_RATIO = [
+        {
+          label: 'A vencer',
+          count: 1,
+          total: '99999999999999999.99',
+          overdue: false
+        },
+        { label: '90+', count: 1, total: '0.01', overdue: true }
+      ]
+
+      it('does not escalate a ratio below a sub-scale threshold', () => {
+        const { container } = render(
+          <DelinquencyAging
+            buckets={TINY_RATIO}
+            currency="BRL"
+            locale="en-US"
+            warn={4e-19}
+            breach={4e-19}
+          />
+        )
+        // 1e-19 does not exceed 4e-19. Scaling 4e-19 to 0 made this "Em estresse".
+        expect(container.textContent).toContain('Saudável')
+        expect(container.textContent).not.toContain('Em estresse')
+      })
+
+      it('behaves as the 1e-18 floor, not as zero', () => {
+        // A sub-scale threshold and the floor itself must agree — that is what
+        // "clamped to the floor" means.
+        const atFloor = render(
+          <DelinquencyAging
+            buckets={TINY_RATIO}
+            currency="BRL"
+            locale="en-US"
+            warn={1e-18}
+            breach={1e-18}
+          />
+        ).container.textContent
+        const belowFloor = render(
+          <DelinquencyAging
+            buckets={TINY_RATIO}
+            currency="BRL"
+            locale="en-US"
+            warn={4e-19}
+            breach={4e-19}
+          />
+        ).container.textContent
+
+        expect(belowFloor).toBe(atFloor)
+      })
+
+      it('still escalates an ordinary ratio past a sub-scale threshold', () => {
+        // Clamping must not smother a threshold that a real rate clearly passes.
+        const { container } = render(
+          <DelinquencyAging
+            buckets={PORTFOLIO}
+            currency="BRL"
+            locale="en-US"
+            warn={4e-19}
+            breach={4e-19}
+          />
+        )
+        expect(container.textContent).toContain('Em estresse')
+      })
+
+      it('treats an exact zero threshold as zero, not as the floor', () => {
+        // Every positive ratio DOES exceed zero; the floor must not change that.
+        const { container } = render(
+          <DelinquencyAging
+            buckets={TINY_RATIO}
+            currency="BRL"
+            locale="en-US"
+            warn={0}
+            breach={0}
+          />
+        )
+        expect(container.textContent).toContain('Em estresse')
+      })
+    })
+
     it.each([
       ['-Number.MAX_VALUE', -Number.MAX_VALUE],
       ['-1e300', -1e300]

@@ -188,7 +188,24 @@ function ratioExceeds(
   // (always exceeded).
   const scaled = Math.round(threshold * Number(THRESHOLD_SCALE))
   if (!Number.isFinite(scaled)) return scaled < 0
-  return overdue * THRESHOLD_SCALE > BigInt(scaled) * total
+
+  let scaledInt = BigInt(scaled)
+  // A threshold FINER than one unit of the scale rounds to zero, and a zero
+  // threshold means "anything above zero is past it" — the exact opposite of what
+  // a tiny positive threshold asks for. 4e-19 scaled to 0, so a ratio of 1e-19
+  // was reported as exceeding it. Clamp to one unit instead, keeping the sign, so
+  // a sub-scale threshold behaves as the finest one this comparison supports.
+  //
+  // ponytail: the floor is 1e-18 (THRESHOLD_SCALE), so a threshold between 0 and
+  // 1e-18 is treated as 1e-18 and a ratio in that sliver reads calmer than the
+  // literal number asks. Immaterial for a delinquency ratio — a portfolio would
+  // need ~1e18 currency units for one minor unit to land there — and the honest
+  // alternative is exact rational threshold conversion, which buys nothing real.
+  // An EXACT zero is left alone: every positive ratio does exceed it.
+  if (scaledInt === 0n && threshold !== 0) {
+    scaledInt = threshold < 0 ? -1n : 1n
+  }
+  return overdue * THRESHOLD_SCALE > scaledInt * total
 }
 
 /**
@@ -244,9 +261,13 @@ export interface DelinquencyAgingProps {
    *  count/money captions, the grand-total row). Omitted fields keep their
    *  defaults. */
   bucketLabels?: AgingBucketsLabels
-  /** Warn edge for the rate band (0..1 ratio). Crossing it strictly → elevated. */
+  /** Warn edge for the rate band (0..1 ratio). Crossing it strictly → elevated.
+   *  Compared against the EXACT minor-unit ratio, with a resolution floor of
+   *  1e-18: a magnitude finer than that is treated as 1e-18, and a non-finite
+   *  value is treated as no threshold at all. */
   warn?: number
-  /** Breach edge for the rate band (0..1 ratio). Crossing it strictly → distressed. */
+  /** Breach edge for the rate band (0..1 ratio). Crossing it strictly → distressed.
+   *  Same 1e-18 resolution floor and non-finite handling as `warn`. */
   breach?: number
   /** Render the money-math-exact grand total row under the distribution. */
   showTotal?: boolean
