@@ -355,3 +355,63 @@ describe('NumberInput', () => {
     expect(input).toHaveValue('7.00')
   })
 })
+
+// --- non-finite entries and unusable steps ---------------------------------
+describe('parseRaw non-finite guard', () => {
+  it.each([['1e999'], ['Infinity'], ['-Infinity'], ['-1e999']])(
+    'rejects %p rather than committing a non-finite number',
+    (raw) => {
+      // Number('1e999') is Infinity, which passed the old NaN-only check and
+      // was committed straight to onValueChange.
+      expect(parseRaw(raw)).toBeNull()
+    }
+  )
+
+  it('still parses ordinary and exponential finite values', () => {
+    expect(parseRaw('1e3')).toBe(1000)
+    expect(parseRaw('-2.5')).toBe(-2.5)
+  })
+})
+
+describe('NumberInput unusable step', () => {
+  const bad: Array<[string, number]> = [
+    ['negative', -5],
+    ['zero', 0],
+    ['NaN', Number.NaN],
+    ['Infinity', Number.POSITIVE_INFINITY]
+  ]
+
+  it.each(bad)('falls back to a step of 1 for a %s step', (_kind, step) => {
+    // A negative step reversed the buttons, zero/NaN never progressed (and NaN
+    // escaped into the form), and an infinite step committed Infinity with no max.
+    const onValueChange = jest.fn()
+    render(
+      <NumberInput
+        value={10}
+        onValueChange={onValueChange}
+        step={step}
+        aria-label="Amount"
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Increase Amount' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(11)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease Amount' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(9)
+  })
+
+  it('still honours a valid step', () => {
+    const onValueChange = jest.fn()
+    render(
+      <NumberInput
+        value={10}
+        onValueChange={onValueChange}
+        step={0.25}
+        aria-label="Amount"
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Increase Amount' }))
+    expect(onValueChange).toHaveBeenLastCalledWith(10.25)
+  })
+})
