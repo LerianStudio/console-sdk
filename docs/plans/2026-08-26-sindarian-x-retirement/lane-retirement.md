@@ -97,16 +97,16 @@ Re-run the br-sfn row after #143 merges; expected 0.
 - [ ] Done
 
 **Context:** the package owner on npm is the service account `lerianstudio <srv.iam@lerian.studio>`. The orchestrator's machine has no npm login (`npm whoami` → ENEEDAUTH), so this command needs Fred (or a one-shot `NPM_TOKEN=<service token> npm deprecate ...`).
-**Implementation vision:** authenticate first, then deprecate. With the service-account token:
+**Implementation vision:** authenticate through a throwaway npm userconfig so no pre-existing `~/.npmrc` token is touched:
 ```sh
-export NPM_TOKEN=<service token>
-npm config set //registry.npmjs.org/:_authToken='${NPM_TOKEN}' --location=user
+export NPM_CONFIG_USERCONFIG=$(mktemp)
+trap 'rm -f "$NPM_CONFIG_USERCONFIG"; unset NPM_TOKEN NPM_CONFIG_USERCONFIG' EXIT
+printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$NPM_CONFIG_USERCONFIG"
 npm whoami   # preflight: must print lerianstudio before proceeding
 npm deprecate "@lerianstudio/sindarian-x@*" \
   "Retired 2026-08. Use @lerianstudio/sindarian-ui (console-sdk) — full surface absorbed as of 1.2.0-beta.14+."
-npm config delete //registry.npmjs.org/:_authToken --location=user
 ```
-**Verification:** `npm view @lerianstudio/sindarian-x deprecated`.
+**Verification:** every published version carries the message, not just latest: `npm view "@lerianstudio/sindarian-x@*" version deprecated --json` — assert the message on each entry.
 **Done when:** deprecation message live for all versions.
 
 #### Task 4.1.2: Archive the GitHub repo — orchestrator
@@ -114,6 +114,6 @@ npm config delete //registry.npmjs.org/:_authToken --location=user
 - [ ] Done
 
 **Context:** orchestrator credentials have `admin: true` on `LerianStudio/lib-sindarian-ui` (verified 2026-08-26).
-**Implementation vision:** confirm no open PRs/issues worth migrating, then `gh api -X PATCH repos/LerianStudio/lib-sindarian-ui -F archived=true` (`-F` sends a real Boolean; `-f` would send the string "true"). Update the repo description to point at console-sdk first (description edits are impossible after archiving without unarchiving).
-**Verification:** `gh api repos/LerianStudio/lib-sindarian-ui --jq .archived` → true.
+**Implementation vision:** confirm no open PRs/issues worth migrating. Set the pointer description FIRST (description edits are impossible after archiving without unarchiving): `gh api -X PATCH repos/LerianStudio/lib-sindarian-ui -f description='RETIRED — absorbed into @lerianstudio/sindarian-ui (github.com/LerianStudio/console-sdk)'`. Then archive: `gh api -X PATCH repos/LerianStudio/lib-sindarian-ui -F archived=true` (`-F` sends a real Boolean; `-f` would send the string "true").
+**Verification:** both fields in one read: `gh api repos/LerianStudio/lib-sindarian-ui --jq '{archived,description}'` → archived true AND the pointer description.
 **Done when:** repo read-only with a pointer description.
