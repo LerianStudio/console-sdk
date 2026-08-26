@@ -30,32 +30,32 @@
 **Goal:** No live consumer of `@lerianstudio/sindarian-x` exists.
 **Scope:** read-only. The check that matters is STRICT absence — real dependencies and imports — not textual mentions.
 **Dependencies:** none (verifiable per-repo as each app lane merges)
-**Done when:** strict grep returns zero in every repo's develop.
+**Done when:** the scan returns zero hits outside the explicit allowlist in every repo's develop.
 **Status:** Doing
 
-**Allowed residual mentions (by design, not failures):**
+**Explicit allowlist (by design, not failures) — every hit must match one of these exact classes:**
 1. `docs/plans/**` at any depth — plans reference the name intentionally (matcher has two nested plan dirs: `site/docs/plans/`, `ui/docs/plans/`).
 2. Generated CHANGELOGs (matcher, console-sdk) — release history is not falsified.
-3. `packages/sindarian-ui/src/__tests__/tokens-contract.test.ts` — FC-3 byte-compat contract names its origin by design.
-4. Provenance comments inside sindarian-ui source (`.storybook/main.ts`, `charts/index.ts`, absorbed components) — history, not dependency.
+3. Named equivalence tests that cite their origin by design: `packages/sindarian-ui/src/__tests__/tokens-contract.test.ts` (FC-3), `packages/sindarian-ui/src/domain/legacy-equivalence.test.ts`.
+4. Provenance comments inside sindarian-ui source: `src/domain/index.ts:3`, `src/enterprise/index.ts:3` (and short-name mentions in `.storybook/main.ts`, `src/charts/index.ts`).
 5. `br-sfn/.impeccable/critique/2026-07-10*` — dated historical critique record.
 
-**Verification (executed 2026-08-26, pre-cockpit-merge):**
+**Verification (executed 2026-08-26, pre-cockpit-merge):** test files stay IN the scan — only `docs/plans` and CHANGELOGs are excluded by pattern; everything else is judged against the allowlist by hand.
 
 ```sh
-# strict: real deps/imports only
 git grep -l "@lerianstudio/sindarian-x" origin/develop -- \
   '*.json' '*.ts' '*.tsx' '*.js' '*.mjs' '*.yaml' \
-  ':!docs/plans' ':!*/docs/plans/*' ':!*CHANGELOG*' ':!*.test.ts'
+  ':!docs/plans' ':!*/docs/plans/*' ':!*CHANGELOG*'
+# gate: every resulting path is in the allowlist above; anything else = FAIL
 ```
 
-| Repo | Strict hits (develop) | Verdict |
-|------|----------------------|---------|
-| matcher | 0 | clean |
-| lender | 0 | clean |
-| br-consignado-gw | 0 | clean |
-| br-sfn | 360 (pre-merge) / 0 on `feat/migrate-to-sindarian-ui` | clean at #143 merge |
-| console-sdk | 2 (provenance comments, allowed class 4) | clean |
+| Repo | Hits | Outside allowlist | Verdict |
+|------|------|-------------------|---------|
+| matcher | 0 | 0 | clean |
+| lender | 0 | 0 | clean |
+| br-consignado-gw | 0 | 0 | clean |
+| br-sfn | 360 (pre-merge) / 0 on `feat/migrate-to-sindarian-ui` | 0 at #143 | clean at #143 merge |
+| console-sdk | 4 (2 provenance sub-barrel comments + 2 equivalence tests) | 0 | clean |
 
 Re-run the br-sfn row after #143 merges; expected 0.
 
@@ -86,7 +86,7 @@ Re-run the br-sfn row after #143 merges; expected 0.
 
 ### Epic 4.1: Registry deprecation and repo archive
 
-**Goal:** sindarian-x cannot be adopted by accident again.
+**Goal:** accidental re-adoption of sindarian-x is discouraged at the registry (npm deprecation warns on install; it does not block downloads) and impossible via the repo (archived, read-only).
 **Scope:** npm + GitHub administration. Both idempotent.
 **Dependencies:** Epics 1.1–3.1 complete (deprecate last, per merge order).
 **Done when:** `npm view @lerianstudio/sindarian-x deprecated` returns the message; `gh api repos/LerianStudio/lib-sindarian-ui --jq .archived` returns true.
@@ -97,10 +97,14 @@ Re-run the br-sfn row after #143 merges; expected 0.
 - [ ] Done
 
 **Context:** the package owner on npm is the service account `lerianstudio <srv.iam@lerian.studio>`. The orchestrator's machine has no npm login (`npm whoami` → ENEEDAUTH), so this command needs Fred (or a one-shot `NPM_TOKEN=<service token> npm deprecate ...`).
-**Implementation vision:**
+**Implementation vision:** authenticate first, then deprecate. With the service-account token:
 ```sh
+export NPM_TOKEN=<service token>
+npm config set //registry.npmjs.org/:_authToken='${NPM_TOKEN}' --location=user
+npm whoami   # preflight: must print lerianstudio before proceeding
 npm deprecate "@lerianstudio/sindarian-x@*" \
   "Retired 2026-08. Use @lerianstudio/sindarian-ui (console-sdk) — full surface absorbed as of 1.2.0-beta.14+."
+npm config delete //registry.npmjs.org/:_authToken --location=user
 ```
 **Verification:** `npm view @lerianstudio/sindarian-x deprecated`.
 **Done when:** deprecation message live for all versions.
@@ -110,6 +114,6 @@ npm deprecate "@lerianstudio/sindarian-x@*" \
 - [ ] Done
 
 **Context:** orchestrator credentials have `admin: true` on `LerianStudio/lib-sindarian-ui` (verified 2026-08-26).
-**Implementation vision:** confirm no open PRs/issues worth migrating, then `gh api -X PATCH repos/LerianStudio/lib-sindarian-ui -f archived=true`. Update the repo description to point at console-sdk first (description edits are impossible after archiving without unarchiving).
+**Implementation vision:** confirm no open PRs/issues worth migrating, then `gh api -X PATCH repos/LerianStudio/lib-sindarian-ui -F archived=true` (`-F` sends a real Boolean; `-f` would send the string "true"). Update the repo description to point at console-sdk first (description edits are impossible after archiving without unarchiving).
 **Verification:** `gh api repos/LerianStudio/lib-sindarian-ui --jq .archived` → true.
 **Done when:** repo read-only with a pointer description.
