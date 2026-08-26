@@ -50,7 +50,6 @@ import { Figure } from '../figure'
 import { formatPercent, NO_VALUE } from '../format'
 import { minorDigitsOf, toMinor } from '../money-math'
 import { SectionLabel } from '../section-label'
-import { gaugeBand } from '../threshold-gauge'
 import type { GaugeBand } from '../threshold-gauge'
 import { AgingBuckets } from './aging-buckets'
 import type { AgingBucket, AgingBucketsLabels } from './aging-buckets'
@@ -157,6 +156,75 @@ export function delinquencyRate(
   return { rate, overdueMinor, totalMinor, indeterminate: false }
 }
 
+/** Fixed-point scale for comparing the ratio against a float threshold as exact
+ *  integers. 1e18 is well past the ~1e-16 relative precision a double carries,
+ *  so the comparison is exact to the limit of the threshold value itself. */
+const THRESHOLD_SCALE = 10n ** 18n
+
+/**
+ * THIRD RAIL: `overdue / total > threshold`, decided on EXACT integers.
+ *
+ * The float `rate` is a TRUNCATED view of the ratio — RATE_PRECISION drops every
+ * digit past 1e-12 — so a rate a hair ABOVE a threshold rounds down onto it, and
+ * the strict-edge rule then reads it as the calmer band. 500000000001 /
+ * 10000000000000 is 0.0500000000001, genuinely past a 0.05 warn edge, and
+ * truncates to exactly 0.05, which reported "Saudável" on a portfolio that had
+ * crossed into "Elevada". Cross-multiplying keeps the comparison in integers,
+ * where no digit is dropped.
+ */
+function ratioExceeds(
+  overdue: bigint,
+  total: bigint,
+  threshold: number
+): boolean {
+  // A non-finite threshold is no threshold: nothing can be past it.
+  if (!Number.isFinite(threshold)) return false
+  // Scaling overflows to ±Infinity for a threshold that is finite but huge —
+  // 1e300 is enough, MAX_VALUE certainly — and `BigInt(Infinity)` throws a
+  // RangeError, mid-render, taking the surface down. Both overflow directions
+  // have an EXACT answer, so this degrades to the right result rather than a
+  // merely safe one: an overflowed positive threshold is one no 0..1 ratio could
+  // ever reach (not exceeded), an overflowed negative one sits below every ratio
+  // (always exceeded).
+  const scaled = Math.round(threshold * Number(THRESHOLD_SCALE))
+  if (!Number.isFinite(scaled)) return scaled < 0
+
+  let scaledInt = BigInt(scaled)
+  // A threshold FINER than one unit of the scale rounds to zero, and a zero
+  // threshold means "anything above zero is past it" — the exact opposite of what
+  // a tiny positive threshold asks for. 4e-19 scaled to 0, so a ratio of 1e-19
+  // was reported as exceeding it. Clamp to one unit instead, keeping the sign, so
+  // a sub-scale threshold behaves as the finest one this comparison supports.
+  //
+  // ponytail: the floor is 1e-18 (THRESHOLD_SCALE), so a threshold between 0 and
+  // 1e-18 is treated as 1e-18 and a ratio in that sliver reads calmer than the
+  // literal number asks. Immaterial for a delinquency ratio — a portfolio would
+  // need ~1e18 currency units for one minor unit to land there — and the honest
+  // alternative is exact rational threshold conversion, which buys nothing real.
+  // An EXACT zero is left alone: every positive ratio does exceed it.
+  if (scaledInt === 0n && threshold !== 0) {
+    scaledInt = threshold < 0 ? -1n : 1n
+  }
+  return overdue * THRESHOLD_SCALE > scaledInt * total
+}
+
+/**
+ * The rate band, resolved from the exact minor-unit ratio. Mirrors `gaugeBand`'s
+ * higher-is-worse STRICT-edge canon (a ratio exactly ON a threshold stays in the
+ * calmer band) rather than calling it: `gaugeBand` takes a float, and handing it
+ * the truncated rate is precisely the defect above.
+ */
+function exactBand(
+  overdue: bigint,
+  total: bigint,
+  warn: number,
+  breach: number
+): GaugeBand {
+  if (ratioExceeds(overdue, total, breach)) return 'breach'
+  if (ratioExceeds(overdue, total, warn)) return 'warn'
+  return 'low'
+}
+
 /** Band → glyph + tint + accessible word. The glyph and sr-only word are the
  *  load-bearing cue; the tint only reinforces, so the band survives grayscale
  *  and color-vision deficiency. Mirrors the gauge's three-band canon, renamed
@@ -193,9 +261,13 @@ export interface DelinquencyAgingProps {
    *  count/money captions, the grand-total row). Omitted fields keep their
    *  defaults. */
   bucketLabels?: AgingBucketsLabels
-  /** Warn edge for the rate band (0..1 ratio). Crossing it strictly → elevated. */
+  /** Warn edge for the rate band (0..1 ratio). Crossing it strictly → elevated.
+   *  Compared against the EXACT minor-unit ratio, with a resolution floor of
+   *  1e-18: a magnitude finer than that is treated as 1e-18, and a non-finite
+   *  value is treated as no threshold at all. */
   warn?: number
-  /** Breach edge for the rate band (0..1 ratio). Crossing it strictly → distressed. */
+  /** Breach edge for the rate band (0..1 ratio). Crossing it strictly → distressed.
+   *  Same 1e-18 resolution floor and non-finite handling as `warn`. */
   breach?: number
   /** Render the money-math-exact grand total row under the distribution. */
   showTotal?: boolean
@@ -219,16 +291,21 @@ export function DelinquencyAging({
   // THIRD RAIL: the rate scale and the two totals come from money-math, never
   // float. The division below is of two exact BigInt-derived integers.
   const scale = currency ? minorDigitsOf(currency) : 2
-  const { rate, indeterminate } = delinquencyRate(buckets, scale)
+  const { rate, overdueMinor, totalMinor, indeterminate } = delinquencyRate(
+    buckets,
+    scale
+  )
 
   // The band is only meaningful when there is a rate; an empty/indeterminate
   // portfolio has no band to name (rendered as the explicit no-value readout).
   const hasRate = rate !== null
-  // higher-is-worse: more value past due is worse. gaugeBand is strict-edge, so
-  // a rate exactly on a threshold stays in the calmer band.
-  const band = hasRate
-    ? gaugeBand(rate, { warn, breach }, 'higher-is-worse')
-    : 'low'
+  // higher-is-worse: more value past due is worse. The band comes off the EXACT
+  // minor-unit ratio, never `rate` — that float is truncated at 1e-12 and is for
+  // DISPLAY only (one decimal place, where the truncation cannot show).
+  const band: GaugeBand =
+    hasRate && overdueMinor !== null && totalMinor !== null
+      ? exactBand(overdueMinor, totalMinor, warn, breach)
+      : 'low'
   const { Icon, tint, word } = RATE_BAND[band]
   // Shallow merge: an unlisted band keeps its pt-BR default.
   const bandWord = rateBandLabels?.[band] ?? word

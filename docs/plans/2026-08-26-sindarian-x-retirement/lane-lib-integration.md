@@ -9,7 +9,9 @@
 
 **Architecture:** This lane runs ALONE in wave 3 — the single-owner window. Unlike wave-2 lanes, it may touch ANY file in `packages/sindarian-ui` (and repo config), because no sibling writes concurrently. The senior rule still holds for behavior: changes to pre-existing code must be additive or defect fixes (the `warning` toast variant is additive; the tsconfig fix removes accidentally-shipped test files).
 
-NOTA: the develop release workflow currently fails with npm 401 ("Invalid npm token") — publishing is impossible until the secret is rotated (Fred's action, out of this lane's reach). Every task below is registry-independent: consumer verification uses `npm pack`. When the token is fixed, this lane's merge to develop triggers the accumulated beta automatically.
+NOTA (RESOLVED — kept for history): the develop release workflow was failing with npm 401 ("Invalid npm token"), so publishing was impossible until the secret was rotated. That blocker is CLEARED: the token was rotated and the accumulated betas published, through `@lerianstudio/sindarian-ui@1.2.0-beta.15` — the version the four app lanes migrated and verified against. `1.2.0` is the stable this promote PR carries. There is no `1.3.0-beta.*`, and none is expected: the retirement shipped inside the 1.2.0 line.
+
+Every task below stays registry-independent regardless (consumer verification uses `npm pack`), which is why the lane could complete while the token was still broken.
 
 **Tech Stack:** TypeScript 6, Jest/RTL, Turbo, Vite (scratch consumer), semantic-release.
 

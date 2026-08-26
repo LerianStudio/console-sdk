@@ -294,6 +294,212 @@ describe('DelinquencyAging', () => {
     expect(container.textContent).toContain('1,000.00')
   })
 
+  // THIRD RAIL: the band is decided on the exact integer ratio. The displayed
+  // `rate` is truncated at 1e-12 by RATE_PRECISION, so a portfolio a hair past a
+  // threshold used to truncate ONTO the threshold and the strict-edge rule then
+  // reported the calmer band — a delinquency alarm that failed to fire.
+  describe('band precision at a threshold edge', () => {
+    // 500000000001 / 10000000000000 = 0.0500000000001, past the 0.05 warn edge.
+    // Truncated to 1e-12 it becomes exactly 0.05, which reads as low.
+    const EDGE = [
+      { label: 'A vencer', count: 1, total: '94999999999.99', overdue: false },
+      { label: '90+', count: 1, total: '5000000000.01', overdue: true }
+    ]
+
+    it('escalates a rate that is only just past the warn edge', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={EDGE}
+          currency="BRL"
+          locale="en-US"
+          warn={0.05}
+          breach={0.1}
+        />
+      )
+      const text = container.textContent ?? ''
+      expect(text).toContain('Elevada')
+      expect(text).not.toContain('Saudável')
+    })
+
+    it('keeps a rate exactly ON the edge in the calmer band (strict edges)', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={[
+            {
+              label: 'A vencer',
+              count: 1,
+              total: '95000000000.00',
+              overdue: false
+            },
+            { label: '90+', count: 1, total: '5000000000.00', overdue: true }
+          ]}
+          currency="BRL"
+          locale="en-US"
+          warn={0.05}
+          breach={0.1}
+        />
+      )
+      expect(container.textContent).toContain('Saudável')
+    })
+
+    it('escalates to breach just past the breach edge', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={[
+            {
+              label: 'A vencer',
+              count: 1,
+              total: '89999999999.99',
+              overdue: false
+            },
+            { label: '90+', count: 1, total: '10000000000.01', overdue: true }
+          ]}
+          currency="BRL"
+          locale="en-US"
+          warn={0.05}
+          breach={0.1}
+        />
+      )
+      expect(container.textContent).toContain('Em estresse')
+    })
+
+    it('treats a non-finite threshold as no threshold at all', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={PORTFOLIO}
+          currency="BRL"
+          locale="en-US"
+          warn={Number.NaN}
+          breach={Number.NaN}
+        />
+      )
+      expect(container.textContent).toContain('Saudável')
+    })
+
+    // A threshold that is FINITE but huge overflows to Infinity once scaled for
+    // the integer comparison, and BigInt(Infinity) throws a RangeError —
+    // mid-render. 1e300 is enough; it does not take MAX_VALUE.
+    it.each([
+      ['Number.MAX_VALUE', Number.MAX_VALUE],
+      ['1e300', 1e300]
+    ])('renders with a huge positive threshold (%s)', (_kind, huge) => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={PORTFOLIO}
+          currency="BRL"
+          locale="en-US"
+          warn={huge}
+          breach={huge}
+        />
+      )
+      // No 0..1 ratio can reach it, so the calm band is the EXACT answer.
+      expect(container.textContent).toContain('Saudável')
+      expect(container.textContent).toContain('10.0%')
+    })
+
+    // The other end of the scale: a threshold FINER than one unit of the
+    // comparison scale (1e-18) rounds to zero, and a zero threshold means
+    // "anything above zero is past it" — the opposite of what a tiny positive
+    // threshold asks. It is clamped to the floor instead.
+    describe('sub-scale threshold floor (1e-18)', () => {
+      // Ratio 1e-19: one minor unit against 1e19 of them.
+      const TINY_RATIO = [
+        {
+          label: 'A vencer',
+          count: 1,
+          total: '99999999999999999.99',
+          overdue: false
+        },
+        { label: '90+', count: 1, total: '0.01', overdue: true }
+      ]
+
+      it('does not escalate a ratio below a sub-scale threshold', () => {
+        const { container } = render(
+          <DelinquencyAging
+            buckets={TINY_RATIO}
+            currency="BRL"
+            locale="en-US"
+            warn={4e-19}
+            breach={4e-19}
+          />
+        )
+        // 1e-19 does not exceed 4e-19. Scaling 4e-19 to 0 made this "Em estresse".
+        expect(container.textContent).toContain('Saudável')
+        expect(container.textContent).not.toContain('Em estresse')
+      })
+
+      it('behaves as the 1e-18 floor, not as zero', () => {
+        // A sub-scale threshold and the floor itself must agree — that is what
+        // "clamped to the floor" means.
+        const atFloor = render(
+          <DelinquencyAging
+            buckets={TINY_RATIO}
+            currency="BRL"
+            locale="en-US"
+            warn={1e-18}
+            breach={1e-18}
+          />
+        ).container.textContent
+        const belowFloor = render(
+          <DelinquencyAging
+            buckets={TINY_RATIO}
+            currency="BRL"
+            locale="en-US"
+            warn={4e-19}
+            breach={4e-19}
+          />
+        ).container.textContent
+
+        expect(belowFloor).toBe(atFloor)
+      })
+
+      it('still escalates an ordinary ratio past a sub-scale threshold', () => {
+        // Clamping must not smother a threshold that a real rate clearly passes.
+        const { container } = render(
+          <DelinquencyAging
+            buckets={PORTFOLIO}
+            currency="BRL"
+            locale="en-US"
+            warn={4e-19}
+            breach={4e-19}
+          />
+        )
+        expect(container.textContent).toContain('Em estresse')
+      })
+
+      it('treats an exact zero threshold as zero, not as the floor', () => {
+        // Every positive ratio DOES exceed zero; the floor must not change that.
+        const { container } = render(
+          <DelinquencyAging
+            buckets={TINY_RATIO}
+            currency="BRL"
+            locale="en-US"
+            warn={0}
+            breach={0}
+          />
+        )
+        expect(container.textContent).toContain('Em estresse')
+      })
+    })
+
+    it.each([
+      ['-Number.MAX_VALUE', -Number.MAX_VALUE],
+      ['-1e300', -1e300]
+    ])('renders with a huge negative threshold (%s)', (_kind, huge) => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={PORTFOLIO}
+          currency="BRL"
+          locale="en-US"
+          warn={huge}
+          breach={huge}
+        />
+      )
+      // Every ratio sits above it, so breach is the EXACT answer.
+      expect(container.textContent).toContain('Em estresse')
+    })
+  })
+
   // The fixed pt-BR copy is overridable, so a consumer running in another
   // language can translate the ACCESSIBLE band words and captions — `locale`
   // only ever reached the digits. Every override is optional and defaults to the

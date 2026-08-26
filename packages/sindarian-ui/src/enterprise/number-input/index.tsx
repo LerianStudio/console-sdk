@@ -14,6 +14,7 @@
 import * as React from 'react'
 import { Minus, Plus } from 'lucide-react'
 
+import { safeLocale } from '@/domain/format'
 import { IconButton } from '@/components/ui/icon-button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -101,7 +102,7 @@ function snapToStep(value: number, base: number, step: number): number {
 
 /** The locale's decimal and group separators, derived from a known sample. */
 function localeSeparators(locale?: string): { decimal: string; group: string } {
-  const parts = new Intl.NumberFormat(locale).formatToParts(11111.1)
+  const parts = new Intl.NumberFormat(safeLocale(locale)).formatToParts(11111.1)
   const decimal = parts.find((p) => p.type === 'decimal')?.value ?? '.'
   const group = parts.find((p) => p.type === 'group')?.value ?? ''
   return { decimal, group }
@@ -124,7 +125,13 @@ export function parseRaw(raw: string, locale?: string): number | null {
   if (decimal !== '.') normalized = normalized.split(decimal).join('.')
   if (normalized === '') return null
   const parsed = Number(normalized)
-  return Number.isNaN(parsed) ? null : parsed
+  // NaN is not the only unusable result: `Number('1e999')` and `Number('Infinity')`
+  // are both `Infinity`, which passed the NaN check and was committed straight to
+  // `onValueChange`. An infinite committed value poisons everything downstream —
+  // `clamp` returns it verbatim with no `max`, `toFixed` cannot render it, and a
+  // form submits it. A non-finite entry is no number at all, so the committed
+  // value stays where it was.
+  return Number.isFinite(parsed) ? parsed : null
 }
 
 /**
@@ -162,9 +169,17 @@ export function NumberInput({
   // The string the user is editing. Only authoritative while focused.
   const [draft, setDraft] = React.useState('')
 
+  // A step has to be a POSITIVE FINITE number or the control stops meaning what
+  // its buttons say: a negative step makes "+" decrease and "−" increase, a zero
+  // or NaN step commits a value that never progresses (and NaN escapes into the
+  // form), and an infinite step commits Infinity the moment `max` is unset.
+  // None of those is a step, so an unusable one falls back to the documented
+  // default of 1 rather than being fed to the arithmetic.
+  const safeStep = Number.isFinite(step) && step > 0 ? step : 1
+
   const formatter = React.useMemo(
     () =>
-      new Intl.NumberFormat(locale, {
+      new Intl.NumberFormat(safeLocale(locale), {
         maximumFractionDigits: precision ?? 20,
         minimumFractionDigits: precision ?? 0,
         useGrouping: true
@@ -192,7 +207,7 @@ export function NumberInput({
     // makes the bound the final word, and `clamp` returns it verbatim, so a
     // bound is emitted exactly as the caller gave it.
     const next = clamp(
-      snapToStep(base + direction * step, base, step),
+      snapToStep(base + direction * safeStep, base, safeStep),
       min,
       max
     )

@@ -83,6 +83,32 @@ describe('ModeToggle', () => {
     expect(window.localStorage.getItem('toggle.theme')).toBe('system')
   })
 
+  // Every segment is icon-only, so a blank override leaves aria-label="", which
+  // names the button "" AND suppresses its other naming routes — strictly worse
+  // than the untranslated English it replaced. A blank string is a MISSING
+  // translation, not a chosen name.
+  it.each([[''], ['   '], ['\t\n']])(
+    'keeps the default label when an override is blank (%p)',
+    (blank) => {
+      renderToggle({
+        labels: { light: blank, system: blank, dark: blank, group: blank }
+      })
+
+      expect(screen.getByRole('group', { name: 'Theme' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Light' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'System' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Dark' })).toBeInTheDocument()
+    }
+  )
+
+  it('falls back per key, so one blank override does not lose the others', () => {
+    renderToggle({ labels: { light: '', dark: 'Escuro', group: 'Tema' } })
+
+    expect(screen.getByRole('group', { name: 'Tema' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Light' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Escuro' })).toBeInTheDocument()
+  })
+
   it('localizes the segment and group labels', () => {
     renderToggle({
       labels: {

@@ -43,9 +43,23 @@
 **Verification (re-executed 2026-08-26, post wave-4 merges):** the scan covers every tracked TEXT file (no positive extension filter — `.cjs`, `.cts`, `.yml` and anything else included; `git grep` skips binary blobs, which cannot carry a live dependency) and emits line numbers, so each matching LINE is validated against the allowlist individually. Neither `-l` nor a blanket CHANGELOG exclusion is used — a file with one allowed line could hide an unallowed one, and a non-allowlisted CHANGELOG must fail the gate, not vanish from it.
 
 ```sh
-git grep -n "@lerianstudio/sindarian-x" origin/develop -- \
-  ':!docs/plans' ':!*/docs/plans/*'
+set -euo pipefail
+
+# Refresh the ref FIRST: `git grep <ref>` reads whatever the local ref points at,
+# so a stale origin/develop silently gates an outdated tree and reports clean.
+git fetch origin develop
+
+# `git grep` exits 1 for NO MATCHES, which is the clean result here — under
+# `set -e` that exit status would abort the gate as if it had failed. Exit 0 (hits)
+# and 1 (none) are both valid; anything higher is a real git error.
+git grep -n "@lerianstudio/sindarian-x" FETCH_HEAD -- \
+  ':!docs/plans' ':!*/docs/plans/*' && rc=0 || rc=$?
+if [ "$rc" -gt 1 ]; then
+  echo "git grep failed (exit $rc)" >&2
+  exit 1
+fi
 # gate: every resulting LINE matches an allowlist class above; anything else = FAIL
+# rc=1 (zero matches) is a PASS.
 ```
 
 | Repo | Matching lines | Outside allowlist | Verdict |

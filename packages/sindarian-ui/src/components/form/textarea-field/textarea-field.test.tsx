@@ -242,9 +242,10 @@ describe('TextareaField', () => {
     fireEvent.click(screen.getByText('Submit'))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalled())
-    expect(onSubmit.mock.calls[0][0]).toEqual({
-      notes: undefined,
-      rail: 'pix'
-    })
+    // toStrictEqual, and no `notes` key: react-hook-form OMITS a disabled field
+    // from the payload rather than submitting it as undefined. `toEqual` treats
+    // an absent key and an undefined value as the same thing, so it would pass
+    // either way and could not tell us which one actually happens.
+    expect(onSubmit.mock.calls[0][0]).toStrictEqual({ rail: 'pix' })
   })
 })
