@@ -172,6 +172,69 @@ describe('ThemeProvider', () => {
     expect(document.documentElement).not.toHaveClass('dark')
   })
 
+  it('falls back to defaultTheme when another tab clears the whole store', async () => {
+    // `localStorage.clear()` fires a storage event with key === null: the
+    // preference is gone but never named. Bailing out on an unnamed key left
+    // the provider holding a deleted preference and the wrong document class.
+    window.localStorage.setItem('app.theme', 'dark')
+
+    render(
+      <ThemeProvider storageKey="app.theme" defaultTheme="light">
+        <Probe />
+      </ThemeProvider>
+    )
+
+    await waitFor(() =>
+      expect(screen.getByTestId('theme')).toHaveTextContent('dark')
+    )
+
+    act(() => {
+      window.localStorage.clear()
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: null,
+          newValue: null,
+          storageArea: window.localStorage
+        })
+      )
+    })
+
+    await waitFor(() =>
+      expect(screen.getByTestId('theme')).toHaveTextContent('light')
+    )
+    expect(document.documentElement).not.toHaveClass('dark')
+  })
+
+  it('ignores a sessionStorage clear', async () => {
+    // Only the store the preference lives in can reset it; sessionStorage
+    // clearing its own keys says nothing about the theme.
+    window.localStorage.setItem('app.theme', 'dark')
+
+    render(
+      <ThemeProvider storageKey="app.theme" defaultTheme="light">
+        <Probe />
+      </ThemeProvider>
+    )
+
+    await waitFor(() =>
+      expect(screen.getByTestId('theme')).toHaveTextContent('dark')
+    )
+
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: null,
+          newValue: null,
+          storageArea: window.sessionStorage
+        })
+      )
+    })
+
+    await waitFor(() =>
+      expect(screen.getByTestId('theme')).toHaveTextContent('dark')
+    )
+  })
+
   it('ignores storage events for other keys', async () => {
     render(
       <ThemeProvider storageKey="app.theme">
