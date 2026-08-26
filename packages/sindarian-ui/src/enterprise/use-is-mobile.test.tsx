@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react'
-import { useIsMobile } from './use-is-mobile'
+import { MOBILE_BREAKPOINT, useIsMobile } from './use-is-mobile'
 
 type Listener = () => void
 
@@ -36,6 +36,21 @@ describe('useIsMobile', () => {
 
   afterEach(() => {
     window.innerWidth = originalWidth
+  })
+
+  it('subscribes at the query built from MOBILE_BREAKPOINT', () => {
+    // The mock derives `matches` from its own hardcoded 768, not from the query
+    // it receives — so every breakpoint test below would keep passing if the
+    // hook stopped using MOBILE_BREAKPOINT. This is the one assertion that ties
+    // the mock to the query the hook actually subscribes at.
+    window.innerWidth = 1280
+    mockMatchMedia()
+
+    renderHook(() => useIsMobile())
+
+    expect(window.matchMedia).toHaveBeenCalledWith(
+      `(max-width: ${MOBILE_BREAKPOINT - 1}px)`
+    )
   })
 
   it('is false on a desktop-width viewport', () => {
