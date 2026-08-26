@@ -1,3 +1,29 @@
+## [1.2.0-beta.15](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.14...sindarian-ui-v1.2.0-beta.15) (2026-08-26)
+
+
+### Features
+
+* **sindarian-ui:** allow overriding the delinquency aging copy ([07ab85c](https://github.com/LerianStudio/console-sdk/commit/07ab85c6e058ee1959dfa3b20df56b892c137f7d))
+* **sindarian-ui:** export the money-diff and aging-label input types ([37373d5](https://github.com/LerianStudio/console-sdk/commit/37373d5f8d5130b4686c14a18a81c958612e6a9e))
+* **sindarian-ui:** forward element props from SectionLabel ([0522e48](https://github.com/LerianStudio/console-sdk/commit/0522e481ad3477b09d711e5375fb928656824ee1))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** check the storage area before the storage key ([92340fa](https://github.com/LerianStudio/console-sdk/commit/92340fa2527de377c2cb779dfdabf3009a6c0d29))
+* **sindarian-ui:** drop aria-valuenow for a non-finite gauge reading ([fe2bbae](https://github.com/LerianStudio/console-sdk/commit/fe2bbae434ebff280085fa81a2a9891b6968ff25))
+* **sindarian-ui:** drop the stray leading dot on an empty status rail lead ([fbe98da](https://github.com/LerianStudio/console-sdk/commit/fbe98dac9a67b85dfd0f5d5f0ca585432ac634e3))
+* **sindarian-ui:** forward forceMount through the alert dialog ([5b66b9a](https://github.com/LerianStudio/console-sdk/commit/5b66b9a53ac13da82ffdffac0b5a8e0d55e3f6ca))
+* **sindarian-ui:** give each date range segment a real focusable trigger ([af96b25](https://github.com/LerianStudio/console-sdk/commit/af96b25fd4e90351d7f7afb6cc2ad7a46a1dd9e8))
+* **sindarian-ui:** invalidate a stale echo token on an external change ([cbef4f5](https://github.com/LerianStudio/console-sdk/commit/cbef4f5925720a59756595be5482e4149db71757))
+* **sindarian-ui:** keep the copy field value out of autofill and spellcheck ([74715a3](https://github.com/LerianStudio/console-sdk/commit/74715a3ad5bdfb98fbccd5b2ade9ca0a0377e578))
+* **sindarian-ui:** name the radio group with its visible label ([eddab80](https://github.com/LerianStudio/console-sdk/commit/eddab80f27c781913341fdfefad76041aa59e4bc))
+* **sindarian-ui:** print delinquency money at the currency scale ([8e62985](https://github.com/LerianStudio/console-sdk/commit/8e629852dbc77d6088da2c8144560fee94ac625c))
+* **sindarian-ui:** release the file input after reading the selection ([53b0852](https://github.com/LerianStudio/console-sdk/commit/53b0852b2e2fa396ba0faa7f509721cf502acf97))
+* **sindarian-ui:** seed the textarea story form value ([5449854](https://github.com/LerianStudio/console-sdk/commit/5449854b743c82458b4e5ef80e55a6514fc616fb))
+* **sindarian-ui:** treat a boolean status rail lead as empty ([3d7296f](https://github.com/LerianStudio/console-sdk/commit/3d7296fb639bec8f718ecff8fd805586fd6d29a4))
+* **sindarian-ui:** treat a cleared storage area as a theme reset ([bdd89f1](https://github.com/LerianStudio/console-sdk/commit/bdd89f10a1a311daca83371d509e693e38396568))
+
 ## [1.2.0-beta.14](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0-beta.13...sindarian-ui-v1.2.0-beta.14) (2026-08-25)
 
 
