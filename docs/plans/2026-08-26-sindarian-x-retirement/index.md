@@ -25,8 +25,8 @@
 | app-consignado | br-consignado-gw UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-consignado` (repo br-consignado-gw) / `feat/migrate-to-sindarian-ui` | lane-app-consignado.md (authored by lane) | Merged (br-consignado-gw#123) |
 | app-matcher | matcher UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-matcher` (repo matcher) / `feat/migrate-to-sindarian-ui` | lane-app-matcher.md (authored by lane) | Merged (matcher#376) |
 | app-lender | lender UI on sindarian-ui, sindarian-x removed | lib-integration | 4 | `/srv/worktrees/sindarian-app-lender` (repo lender) / `feat/migrate-to-sindarian-ui` | lane-app-lender.md (authored by lane) | Merged (lender#183) |
-| app-cockpit | br-sfn cockpit on sindarian-ui, sindarian-x removed, local theme fork deleted | lib-integration | 4 | `/srv/worktrees/sindarian-app-cockpit` (repo br-sfn) / `feat/migrate-to-sindarian-ui` | lane-app-cockpit.md (authored by lane) | In review (br-sfn#143) |
-| retirement | npm deprecation of sindarian-x, repo archive, cross-repo absence verification, stable promotion + app re-pins | app-consignado, app-matcher, app-lender, app-cockpit | 5 | orchestrator-executed / `docs/lane-retirement` (docs only) | lane-retirement.md | In flight |
+| app-cockpit | br-sfn cockpit on sindarian-ui, sindarian-x removed, local theme fork deleted | lib-integration | 4 | `/srv/worktrees/sindarian-app-cockpit` (repo br-sfn) / `feat/migrate-to-sindarian-ui` | lane-app-cockpit.md (authored by lane) | Merged (br-sfn#143; stable re-pin br-sfn#145) |
+| retirement | npm deprecation of sindarian-x, repo archive, cross-repo absence verification, stable promotion + app re-pins | app-consignado, app-matcher, app-lender, app-cockpit | 5 | orchestrator-executed / `docs/lane-retirement` (docs only) | lane-retirement.md | Merged (executed 2026-08-26 — all four phases complete, see lane-retirement.md) |
 
 `Status` lifecycle: Pending → In flight → In review → Merged | Failed.
 The orchestrator session owns this column. Lanes never write to this file.
