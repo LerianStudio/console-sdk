@@ -289,7 +289,12 @@ export function ThresholdGauge({
           reader sees the line the value crossed, not an implied gradient. */}
       <div
         role="meter"
-        aria-valuenow={value}
+        // A non-finite reading is a supported degraded state: gaugeBand, the
+        // track fraction and the visible readout all treat it as no value. The
+        // raw number reached ARIA anyway, so React serialized
+        // aria-valuenow="NaN" / "Infinity" and assistive tech announced a
+        // meaningless figure for a meter whose visible text says NO_VALUE.
+        aria-valuenow={Number.isFinite(value) ? value : undefined}
         aria-valuemin={min}
         aria-valuemax={max}
         aria-label={meterName}
