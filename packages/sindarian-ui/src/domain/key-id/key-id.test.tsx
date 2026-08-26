@@ -73,6 +73,19 @@ describe('maskKeyId', () => {
   it('redacts an email with no domain', () => {
     expect(maskKeyId('no-at-sign-here', 'pix-email')).toBe(REDACTED)
   })
+  it.each([
+    ['a@private@domain.test'],
+    ['first.last@corp@example.com'],
+    ['x@@y.test'],
+    ['a@b@c@d.test']
+  ])('redacts an email with more than one @ (%s)', (value) => {
+    // Splitting on the FIRST '@' published the rest verbatim as the "domain",
+    // so the local part of the second address leaked out of the masked view.
+    const masked = maskKeyId(value, 'pix-email')
+    expect(masked).toBe(REDACTED)
+    expect(masked).not.toContain('private')
+    expect(masked).not.toContain('@')
+  })
   it('redacts a non-BR / wrong-length phone', () => {
     expect(maskKeyId('+1 415 555 0100', 'pix-phone')).toBe(REDACTED)
   })

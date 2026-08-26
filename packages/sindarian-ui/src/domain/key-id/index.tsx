@@ -117,6 +117,12 @@ function maskCnpj(value: string): string {
 function maskEmail(value: string): string {
   const at = value.indexOf('@')
   if (at <= 0 || at === value.length - 1) return redactPii()
+  // EXACTLY one '@', or it is not an address and the domain half cannot be
+  // trusted to be a domain. `a@private@domain.test` split on the FIRST '@' and
+  // published `private@domain.test` verbatim as the "domain" — the local part of
+  // a second address, revealed in a view whose whole purpose is to hide it.
+  // Malformed PII redacts, exactly like a wrong-length CPF.
+  if (value.indexOf('@', at + 1) !== -1) return redactPii()
   const first = value.slice(0, 1)
   const domain = value.slice(at + 1)
   return `${first}${DOT.repeat(3)}@${domain}`
