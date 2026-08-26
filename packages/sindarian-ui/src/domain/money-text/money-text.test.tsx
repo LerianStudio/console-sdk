@@ -188,10 +188,19 @@ describe('MoneyText', () => {
   it.each([[''], ['en_US'], ['x'], ['123'], ['xx-YY-ZZ-bad--']])(
     'renders the amount despite the malformed locale %p',
     (locale) => {
+      // Expected string derived from the HOST locale with MoneyText's own
+      // options, never hard-coded: the fallback is "the runtime locale", so a
+      // literal '1,234.50' would fail on a host whose default renders
+      // non-ASCII digits for output that is perfectly correct.
+      const hostAmount = new Intl.NumberFormat(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(1234.5)
+
       const { container } = render(
         <MoneyText amount="1234.50" currency="BRL" locale={locale} />
       )
-      expect(container.textContent).toContain('1,234.50')
+      expect(container.textContent).toContain(hostAmount)
       expect(container.textContent).toContain('BRL')
     }
   )

@@ -124,14 +124,31 @@ describe('humanizeDurationMs', () => {
 describe('malformed locale tags', () => {
   const BAD = ['', 'en_US', 'x', '123', 'xx-YY-ZZ-bad--']
 
-  it.each(BAD)('formatPercent still renders with locale %p', (locale) => {
-    expect(() => formatPercent(0.25, { locale })).not.toThrow()
-    expect(formatPercent(0.25, { locale })).toContain('25')
-  })
+  // Derived from the HOST locale with the same options the helpers use, never
+  // hard-coded: the fallback is "the runtime locale", so on a host whose default
+  // is not ASCII-digit (ar-EG renders ١٬٢٣٤) a literal '1,234' would fail for a
+  // perfectly correct fallback. This also asserts something stronger than a
+  // regex — that the degraded output IS exactly the host rendering.
+  const hostPercent = new Intl.NumberFormat(undefined, {
+    style: 'percent',
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  }).format(0.25)
+  const hostCount = new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 0
+  }).format(1234)
 
-  it.each(BAD)('formatCount still renders with locale %p', (locale) => {
+  it.each(BAD)(
+    'formatPercent falls back to the host locale for %p',
+    (locale) => {
+      expect(() => formatPercent(0.25, { locale })).not.toThrow()
+      expect(formatPercent(0.25, { locale })).toBe(hostPercent)
+    }
+  )
+
+  it.each(BAD)('formatCount falls back to the host locale for %p', (locale) => {
     expect(() => formatCount(1234, locale)).not.toThrow()
-    expect(formatCount(1234, locale)).toMatch(/1.?234/)
+    expect(formatCount(1234, locale)).toBe(hostCount)
   })
 
   it('still honours a VALID locale (the fallback is not unconditional)', () => {
