@@ -5,7 +5,8 @@ import {
   calculateLineColFromOffset,
   extractFile,
   formatLocaleJson,
-  formatSimpleJson
+  formatSimpleJson,
+  isLocaleObject
 } from './extractor'
 import type { ExtractorConfig, ResolvedMessage } from './types'
 
@@ -244,5 +245,38 @@ describe('formatLocaleJson', () => {
     )
 
     expect(parsed).toEqual({ toString: '', constructor: '', 'a.key': 'Ola' })
+  })
+})
+
+// --- isLocaleObject: valid JSON is not necessarily a locale map -------------
+describe('isLocaleObject', () => {
+  it.each([
+    ['null', null],
+    ['an array', []],
+    ['a populated array', ['a', 'b']],
+    ['a string', 'text'],
+    ['a number', 42],
+    ['a boolean', true],
+    ['undefined', undefined]
+  ])('rejects %s', (_kind, parsed) => {
+    expect(isLocaleObject(parsed)).toBe(false)
+  })
+
+  it.each([
+    ['an empty object', {}],
+    ['a populated map', { 'app.title': 'Console' }],
+    ['a null-prototype map', Object.assign(Object.create(null), { a: 'b' })]
+  ])('accepts %s', (_kind, parsed) => {
+    expect(isLocaleObject(parsed)).toBe(true)
+  })
+
+  it('is what stops formatLocaleJson from throwing on a null locale file', () => {
+    // The defect: JSON.parse('null') succeeds, so `null` reached
+    // formatLocaleJson and Object.hasOwn(null, key) threw a TypeError, which the
+    // CLI then reported as a WRITE failure.
+    expect(() =>
+      formatLocaleJson(['a.b'], null as unknown as Record<string, string>)
+    ).toThrow(TypeError)
+    expect(isLocaleObject(null)).toBe(false)
   })
 })

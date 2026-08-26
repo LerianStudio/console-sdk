@@ -213,6 +213,22 @@ export function formatSimpleJson(
  * that collide with Object.prototype members ("__proto__", "toString", ...) are
  * carried through as ordinary keys instead of being silently dropped.
  */
+/**
+ * Whether a parsed locale file is something `formatLocaleJson` can read: a JSON
+ * OBJECT, and not an array.
+ *
+ * `JSON.parse` succeeds on `null`, `[]`, `"text"` and `42` — all valid JSON, none
+ * of them a locale map. Handed to `formatLocaleJson`, `Object.hasOwn(null, key)`
+ * throws a TypeError that surfaced from the WRITE handler as "Failed to write
+ * locale file", pointing the operator at the wrong step entirely. The caller
+ * checks this right after parsing, where the real cause is still known.
+ */
+export function isLocaleObject(
+  parsed: unknown
+): parsed is Record<string, string> {
+  return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+}
+
 export function formatLocaleJson(
   extractedKeys: string[],
   existing: Record<string, string>
