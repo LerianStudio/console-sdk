@@ -265,9 +265,36 @@ describe('isLocaleObject', () => {
   it.each([
     ['an empty object', {}],
     ['a populated map', { 'app.title': 'Console' }],
-    ['a null-prototype map', Object.assign(Object.create(null), { a: 'b' })]
+    ['a null-prototype map', Object.assign(Object.create(null), { a: 'b' })],
+    ['an empty-string translation', { 'app.title': '' }]
   ])('accepts %s', (_kind, parsed) => {
     expect(isLocaleObject(parsed)).toBe(true)
+  })
+
+  // The VALUES matter as much as the shape. `translation ?? ''` keeps anything
+  // that is not null/undefined, so a non-string value flowed straight through
+  // formatLocaleJson and was WRITTEN BACK into the locale file — handing every
+  // later reader JSON that no longer matches Record<string, string>.
+  it.each([
+    ['a number', { 'app.title': 42 }],
+    ['a boolean', { 'app.title': true }],
+    ['null', { 'app.title': null }],
+    ['an array', { 'app.title': ['a'] }],
+    ['a nested object', { app: { title: 'Console' } }],
+    ['one bad value among good ones', { 'a.ok': 'Fine', 'b.bad': 0 }]
+  ])('rejects %s', (_kind, parsed) => {
+    expect(isLocaleObject(parsed)).toBe(false)
+  })
+
+  it('is what stops a non-string value reaching the written file', () => {
+    // Without the value check this wrote {"app.title":42} back to disk.
+    const written = JSON.parse(
+      formatLocaleJson(['app.title'], {
+        'app.title': 42
+      } as unknown as Record<string, string>)
+    )
+    expect(written['app.title']).toBe(42)
+    expect(isLocaleObject({ 'app.title': 42 })).toBe(false)
   })
 
   it('is what stops formatLocaleJson from throwing on a null locale file', () => {

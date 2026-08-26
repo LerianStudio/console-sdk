@@ -41,14 +41,15 @@ async function mergeLocale(
     // formatLocaleJson as a misleading "Failed to write locale file". Reject here,
     // where the real cause is still known.
     if (!isLocaleObject(parsed)) {
+      const shape = Array.isArray(parsed)
+        ? 'an array'
+        : parsed === null
+          ? 'null'
+          : typeof parsed === 'object'
+            ? 'an object with non-string values'
+            : typeof parsed
       console.error(
-        `Locale file "${localePath}" must contain a JSON object, got ${
-          Array.isArray(parsed)
-            ? 'an array'
-            : parsed === null
-              ? 'null'
-              : typeof parsed
-        }.`
+        `Locale file "${localePath}" must be a JSON object mapping each key to a string, got ${shape}.`
       )
       process.exit(1)
     }
