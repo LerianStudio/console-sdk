@@ -329,6 +329,18 @@ export function AutocompleteContent({
   )
 
   useClickAway(_ref, (event) => {
+    /**
+     * ⛔ THE `open` GUARD IS LOAD-BEARING SINCE THIS LIST STOPPED UNMOUNTING.
+     * While the panel returned `null` this handler was inert by accident: its
+     * ref pointed at nothing. Now that the list stays in the DOM (see the return
+     * below), every click anywhere on the page reaches here — and without this
+     * line each one would call `setOpen(false)` and blur the input. A consumer
+     * form carrying ten of these would run ten handlers per click.
+     */
+    if (!open) {
+      return
+    }
+
     // Should not close when clicking on the scrollbar
     if (onScrollbar) {
       return
@@ -383,12 +395,36 @@ export function AutocompleteContent({
     _searchChildren(children)
   }, [children])
 
-  if (!open) {
-    return null
-  }
-
+  /**
+   * ⛔ THE LIST STAYS IN THE DOM, THE OPTIONS DO NOT — and the split is the whole
+   * fix (#150).
+   *
+   * cmdk puts `aria-controls={listId}` on the input it renders and `id={listId}`
+   * on this list. Returning `null` while closed therefore left the input naming
+   * an element that did not exist, which axe-core reports as a CRITICAL
+   * `aria-valid-attr-value` violation — measured as 10 failing cases across five
+   * forms in a consumer, in both the populated and the empty state. A screen
+   * reader following the reference resolved it to nothing.
+   *
+   * ⛔ AND NOT "KEEP EVERYTHING MOUNTED", which is the obvious reading of the
+   * fix and is too expensive. Only the LIST carries the id; the options carry
+   * the cost. One consumer form puts up to ten of these on screen, each holding
+   * a page of up to a hundred options — roughly a thousand permanently present
+   * nodes for an id that is one element. `{open ? children : null}` keeps the
+   * reference resolvable and the DOM the size it was.
+   *
+   * ⚠️ `hidden` AND NOT A CLASS. It removes the subtree from the accessibility
+   * tree as well as from view, so a closed panel is not an empty `listbox` that
+   * a screen reader can reach into.
+   *
+   * ⚠️ THE ENTRY ANIMATION IS NOT LOST, because there was none to lose: the
+   * className carries `animate-in` with no `fade-in-*` / `zoom-in-*` / `slide-in-*`
+   * companion, so every `--tw-enter-*` variable sits at its default and the
+   * keyframe is a no-op today. Should a real one be added later, it belongs on a
+   * wrapper INSIDE this list — that subtree still mounts with the children.
+   */
   return (
-    <div className="relative">
+    <div className="relative" hidden={!open}>
       <CommandPrimitive.List
         ref={_ref}
         className={cn(
@@ -408,7 +444,7 @@ export function AutocompleteContent({
           setOnScrollbar(false)
         }}
       >
-        {children}
+        {open ? children : null}
       </CommandPrimitive.List>
     </div>
   )
