@@ -1,3 +1,10 @@
+## [1.3.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.1...sindarian-ui-v1.3.0-beta.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** keep the listbox in the DOM so aria-controls resolves ([ad0d8dd](https://github.com/LerianStudio/console-sdk/commit/ad0d8dd4b51e8a747310bdb6b4f4a7bbc177cff2)), closes [LerianStudio/console-sdk#150](https://github.com/LerianStudio/console-sdk/issues/150)
+
 ## [1.3.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.2.0...sindarian-ui-v1.3.0-beta.1) (2026-08-26)
 
 
