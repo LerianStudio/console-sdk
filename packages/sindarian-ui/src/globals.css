@@ -212,6 +212,8 @@
 
 @layer base {
   :root {
+    color-scheme: light; /* native widgets (form controls, scrollbars) follow the theme */
+
     /* Application tokens (from Figma ring-tokens) */
     --body-surface: 240 5% 96%; /* base/100 = #F4F4F5 */
     --body-text: 240 4% 46%; /* base/500 = #71717A */
@@ -320,6 +322,8 @@
   }
 
   .dark {
+    color-scheme: dark; /* native widgets (form controls, scrollbars) follow the theme */
+
     /* Custom — Layout */
     --link-hover: 240 5% 96%; /* #F4F4F5 80% (opacity via /80) */
     --link-mute: 240 5% 96%; /* #F4F4F5 40% (opacity via /40) */

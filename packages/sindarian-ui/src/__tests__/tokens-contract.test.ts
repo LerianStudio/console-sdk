@@ -97,6 +97,18 @@ describe('design token contract', () => {
     })
   })
 
+  // The custom properties theme what we paint; `color-scheme` themes what the
+  // user agent paints for us — form controls, scrollbars, the autofill overlay.
+  // Without it those stay light under `.dark`, and no token can reach them.
+  describe.each([
+    ['light', root],
+    ['dark', dark]
+  ])('%s theme block', (scheme, scope: string) => {
+    it(`declares color-scheme: ${scheme}`, () => {
+      expect(scope).toMatch(new RegExp(`^\\s*color-scheme:\\s*${scheme};`, 'm'))
+    })
+  })
+
   describe.each(SENTINELS)('pre-existing %s', (token, value, scope: string) => {
     it(`still resolves to ${value}`, () => {
       const match = scope.match(new RegExp(`^\\s*${token}:\\s*([^;]+);`, 'm'))
