@@ -1,3 +1,43 @@
+## [1.4.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0...sindarian-ui-v1.4.0-beta.1) (2026-09-02)
+
+
+### Features
+
+* **sindarian-ui:** add a destructive button variant ([a96f033](https://github.com/LerianStudio/console-sdk/commit/a96f033e966385dea48315bee8856c83598c6704))
+* **sindarian-ui:** add a heading-level escape hatch to CardTitle ([37baf21](https://github.com/LerianStudio/console-sdk/commit/37baf21e6d46f39516211fc9ef086b920fea68d1))
+* **sindarian-ui:** add a small badge size ([fec2d9a](https://github.com/LerianStudio/console-sdk/commit/fec2d9aca68cac40b61b1eb5d7ea94ba79b6e5d1))
+* **sindarian-ui:** add badge credit variant ([2098091](https://github.com/LerianStudio/console-sdk/commit/2098091160bfb99c472ff5797256b4335e69027a))
+* **sindarian-ui:** add DataTable headClassName and footer seams ([495edab](https://github.com/LerianStudio/console-sdk/commit/495edabfa98f946d97ddb77908509ebe59bccfb1))
+* **sindarian-ui:** add domain and enterprise component seams ([447b366](https://github.com/LerianStudio/console-sdk/commit/447b3668a32fdbb35fa1261553d4ce2e5ae027a5))
+* **sindarian-ui:** add page-header margin seams ([610e194](https://github.com/LerianStudio/console-sdk/commit/610e1947ccd4296ab3f63786f02f38be70881f8b))
+* **sindarian-ui:** allow naming the AppShell banner landmark ([939a812](https://github.com/LerianStudio/console-sdk/commit/939a812d1b9d7c14a50313bafe6266f5c4cbd844))
+* **sindarian-ui:** follow the resolved theme in Toaster ([b5b7c58](https://github.com/LerianStudio/console-sdk/commit/b5b7c58c710b248ceba55bcbbd7336a0c42341c1))
+* **sindarian-ui:** give sidebar expand button an accessible name and state ([50e0f8a](https://github.com/LerianStudio/console-sdk/commit/50e0f8ab83501c7d7cd14b2e8de769cf16803ed2))
+* **sindarian-ui:** let the alert-dialog cancel take a variant ([506e258](https://github.com/LerianStudio/console-sdk/commit/506e258ea4de32d7709bada682dd9fb0d26deb0b))
+* **sindarian-ui:** localize the ConfirmationDialog pending announcement ([73027fc](https://github.com/LerianStudio/console-sdk/commit/73027fc4130a65d378c1dbf19766825507cc2414))
+* **sindarian-ui:** merge the button variant classes in cn ([a6b8965](https://github.com/LerianStudio/console-sdk/commit/a6b896572a0070401e5148acfa1eaa3e1c934059))
+* **sindarian-ui:** thread a variant through AlertDialogAction ([4c29964](https://github.com/LerianStudio/console-sdk/commit/4c29964376af87d6cab0d86c343e2bd2e339be10))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** declare color-scheme in the light and dark theme blocks ([f9f40b2](https://github.com/LerianStudio/console-sdk/commit/f9f40b2bf577ec91c331c998e7246176e994054e))
+* **sindarian-ui:** define --destructive for dark mode ([9b39c57](https://github.com/LerianStudio/console-sdk/commit/9b39c57f1bf51ce7ce430691357cdca71387d8bb)), closes [#EF4444](https://github.com/LerianStudio/console-sdk/issues/EF4444) [#F87272](https://github.com/LerianStudio/console-sdk/issues/F87272) [#430A0](https://github.com/LerianStudio/console-sdk/issues/430A0) [#1](https://github.com/LerianStudio/console-sdk/issues/1) [#EF4343](https://github.com/LerianStudio/console-sdk/issues/EF4343) [#27272](https://github.com/LerianStudio/console-sdk/issues/27272) [#3F3F46](https://github.com/LerianStudio/console-sdk/issues/3F3F46) [#1](https://github.com/LerianStudio/console-sdk/issues/1) [#3](https://github.com/LerianStudio/console-sdk/issues/3)
+* **sindarian-ui:** drop caret-blink keyframes duplicated from tw-animate-css ([7dfc7a8](https://github.com/LerianStudio/console-sdk/commit/7dfc7a8531cfd63765fd2f37ecdfe59e5718e826))
+* **sindarian-ui:** drop the dangling button font-size var ([a9a58c9](https://github.com/LerianStudio/console-sdk/commit/a9a58c976a12985e49eb64aae4143234eb646bc3))
+* **sindarian-ui:** give --font-sans a working fallback ([91957c5](https://github.com/LerianStudio/console-sdk/commit/91957c5d7559393b5cea878326c83b4a60938848)), closes [#3](https://github.com/LerianStudio/console-sdk/issues/3)
+* **sindarian-ui:** give kit buttons a keyboard focus ring ([1b3df7b](https://github.com/LerianStudio/console-sdk/commit/1b3df7b76b7e32fa05d62cdbfda1cbad3d5064d0))
+* **sindarian-ui:** guard kit animations behind prefers-reduced-motion ([2220ded](https://github.com/LerianStudio/console-sdk/commit/2220dedcc0db0ada02686ba83ba6b9e6763ed069))
+* **sindarian-ui:** keep the listbox in the DOM so aria-controls resolves ([ad0d8dd](https://github.com/LerianStudio/console-sdk/commit/ad0d8dd4b51e8a747310bdb6b4f4a7bbc177cff2)), closes [LerianStudio/console-sdk#150](https://github.com/LerianStudio/console-sdk/issues/150)
+* **sindarian-ui:** keep the ruled marker in sync under forwarded data-variant ([093cb99](https://github.com/LerianStudio/console-sdk/commit/093cb995982622e6a8bc9e5f1d374565defdb0c2))
+* **sindarian-ui:** lift dark credit pair to meet AA over cards ([1590cd8](https://github.com/LerianStudio/console-sdk/commit/1590cd8b2e4d9e6cca3086996550cc19d2ddebb6)), closes [#FCA6A6](https://github.com/LerianStudio/console-sdk/issues/FCA6A6) [#3F3F46](https://github.com/LerianStudio/console-sdk/issues/3F3F46) [#524950](https://github.com/LerianStudio/console-sdk/issues/524950) [#3F3F46](https://github.com/LerianStudio/console-sdk/issues/3F3F46) [#27272](https://github.com/LerianStudio/console-sdk/issues/27272)
+* **sindarian-ui:** make ConfirmationDialog a real alert dialog ([1cf5304](https://github.com/LerianStudio/console-sdk/commit/1cf5304986e490b2a5b20f1cecf510d63d5221e2))
+* **sindarian-ui:** quote the Inter font-family fallback ([2da0a43](https://github.com/LerianStudio/console-sdk/commit/2da0a4357e8c04636d6611ace7502f00963755d4))
+* **sindarian-ui:** render DataTable heads in the kit label voice ([3bbeea4](https://github.com/LerianStudio/console-sdk/commit/3bbeea4105bc0bad194db385063b7859d17e5cba))
+* **sindarian-ui:** restore the ConfirmationDialog cancel variant ([86b013d](https://github.com/LerianStudio/console-sdk/commit/86b013dbb79cd320670daa8b34e659f06dc9ae0b))
+* **sindarian-ui:** theme sonner toasts through system tokens ([748af29](https://github.com/LerianStudio/console-sdk/commit/748af2935bccd9e4c562acbbda4badbb83671d4b)), closes [#22c55](https://github.com/LerianStudio/console-sdk/issues/22c55) [#ef4444](https://github.com/LerianStudio/console-sdk/issues/ef4444) [#f59e0](https://github.com/LerianStudio/console-sdk/issues/f59e0) [#3](https://github.com/LerianStudio/console-sdk/issues/3)
+* **sindarian-ui:** tokenize badge destructive variant ([2a097db](https://github.com/LerianStudio/console-sdk/commit/2a097db243f5724c2e4d824034c8298b010a0ddc))
+
 # Sindarian-ui Changelog
 
 ## [1.3.0-beta.7](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.6...sindarian-ui-v1.3.0-beta.7) (2026-09-02)
@@ -971,4 +1011,3 @@ Contributors: Caio Alexandre Troti Caetano, lerian-studio
 
 * prevent Git conflicts in parallel package releases ([abc3ae1](https://github.com/LerianStudio/console-sdk/commit/abc3ae1992fb545d6eb55b5028a126c0910c36c6))
 * update changelog action to use helm-repo branch with working directory ([3166b0a](https://github.com/LerianStudio/console-sdk/commit/3166b0a7ca5945dc2ef4e2f119de4d9dd4c6f22c))
-
