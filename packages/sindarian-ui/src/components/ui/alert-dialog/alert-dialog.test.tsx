@@ -87,6 +87,32 @@ describe('AlertDialog', () => {
     expect(overlay).toHaveAttribute('data-state', 'closed')
   })
 
+  it('gives the action the primary button by default', () => {
+    render(<Basic />)
+
+    fireEvent.click(screen.getByText('Delete'))
+    expect(screen.getByText('Confirm')).toHaveClass('button-primary')
+  })
+
+  it('threads a variant through to the action', () => {
+    render(
+      <AlertDialog defaultOpen>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction variant="destructive">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    )
+
+    const action = screen.getByText('Delete')
+    expect(action).toHaveClass('button-destructive')
+    expect(action).not.toHaveClass('button-primary')
+  })
+
   it('unmounts the overlay and content while closed without forceMount', () => {
     render(<Basic />)
 
