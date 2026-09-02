@@ -18,7 +18,7 @@ const badgeVariants = cva(
         secondary:
           'border-transparent bg-muted-foreground text-white dark:text-black',
         destructive:
-          'border-transparent bg-red-500 text-primary-foreground hover:bg-red-500/80',
+          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
         error:
           'border-system-error-border bg-system-error-surface text-system-error-text px-[10px] py-1',
         success:
