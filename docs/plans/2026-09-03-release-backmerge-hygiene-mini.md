@@ -76,7 +76,7 @@ Decisions already made (Fred, 2026-09-03): back-merge only (no develop→main pr
 
 ### Epic 1.3: integration + verification
 
-**Goal:** the combined diff is exactly the two planned files and CI-safe.
+**Goal:** the combined diff is exactly the two implementation files plus this plan file, and CI-safe.
 **Scope:** verification only.
 **Dependencies:** 1.1, 1.2
 **Done when:** diff scoped, yaml valid, claims verified.
@@ -86,7 +86,7 @@ Decisions already made (Fred, 2026-09-03): back-merge only (no develop→main pr
 
 - [x] Done
 
-**Context:** repo CI ignores `**/*.md`, and workflow-file changes don't run package jobs — the only executable gate here is yaml validity, so the review weight falls on reading.
+**Context:** repo CI ignores `**/*.md`, and workflow-file changes don't run package jobs — the executable gates here are the yaml parse and `actionlint` (against the pre-existing baseline), so the review weight falls on reading.
 
 **Implementation vision:** `git diff --stat` touches only `.github/workflows/release.yml`, `docs/PROJECT_RULES.md`, and this plan file; re-run the yaml parse; re-read the compatibility table from 1.1 against the actual v1.65.0 file one more time.
 
