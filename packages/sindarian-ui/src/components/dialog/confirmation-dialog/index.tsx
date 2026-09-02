@@ -140,12 +140,13 @@ export function ConfirmationDialog({
 
         <AlertDialogFooter className="gap-4">
           {/*
-           * AlertDialogCancel hardcodes the outline classes and Slot CONCATENATES
-           * className, so the button carries button-secondary AND button-outline;
-           * same @layer, outline declared later, so it wins the three properties
-           * they contest. The utilities below win them back (utilities outrank
-           * components), `enabled:` scoped so the disabled state still drops its
-           * border and shadow like a plain secondary button.
+           * `button-secondary` is repeated in className on purpose. AlertDialogCancel
+           * hardcodes the outline variant, and Slot joins its className into this
+           * child's, so Button ends up calling cn('…button-secondary', '…button-outline').
+           * Those two are one conflict group now, last one wins, and outline arrives
+           * second — which silently erased the secondary chrome. Slot's join puts this
+           * className after Cancel's, so repeating the class here lands it last and
+           * takes the group back.
            */}
           <AlertDialogCancel asChild>
             <Button
@@ -153,7 +154,7 @@ export function ConfirmationDialog({
               disabled={busy}
               variant="secondary"
               size="small"
-              className="enabled:border-button-border hover:border-button-border enabled:shadow-sm"
+              className="button-secondary"
             >
               {cancelLabel ?? 'Cancel'}
             </Button>

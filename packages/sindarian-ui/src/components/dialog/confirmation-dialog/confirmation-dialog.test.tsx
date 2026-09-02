@@ -201,21 +201,20 @@ describe('ConfirmationDialog', () => {
   })
 
   it('keeps the cancel action looking like a secondary button', () => {
-    // AlertDialogCancel hardcodes the outline classes and Slot concatenates
-    // className, so both land on the element and outline — declared later in the
-    // same layer — wins border-colour, box-shadow and the hover border. jsdom
-    // cannot see the cascade, so assert the collision and the overrides that
-    // answer it: drop them and the cancel silently loses its secondary chrome.
+    // AlertDialogCancel hardcodes the outline variant and Slot joins its
+    // className into this child's, so the two variants meet inside one cn call.
+    // They are a single conflict group, last one wins, and outline arrives
+    // second — so the secondary chrome survives only while this child's
+    // className re-asserts it last. Absence of button-outline IS the assertion.
     renderDialog()
 
     const cancel = screen.getByText('Cancel')
 
-    expect(cancel).toHaveClass('button-secondary', 'button-outline')
-    expect(cancel).toHaveClass(
-      'enabled:border-button-border',
-      'enabled:shadow-sm',
-      'hover:border-button-border'
-    )
+    expect(cancel).toHaveClass('button-secondary')
+    expect(cancel).not.toHaveClass('button-outline')
+    // The composers ride along, so the disabled state still drops its border
+    // and shadow the way a plain secondary button does.
+    expect(cancel).toHaveClass('button-base', 'button-disabled', 'button-small')
   })
 
   it('carries no raw palette colours on any variant', () => {
