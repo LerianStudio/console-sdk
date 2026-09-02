@@ -102,7 +102,7 @@ export function AccountBalanceCardContent({
     <CollapsibleContent
       data-slot="account-balance-card-content"
       className={cn(
-        'data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden',
+        'motion-safe:data-[state=closed]:animate-accordion-up motion-safe:data-[state=open]:animate-accordion-down overflow-hidden',
         className
       )}
       {...props}
@@ -205,7 +205,7 @@ export function AccountBalanceCardUpdateButton({
         {!loading && updated && updatedLabel}
       </p>
       {!loading && updated && (
-        <CheckCircle2 className="h-4 w-4 text-green-600" />
+        <CheckCircle2 className="text-system-success h-4 w-4" />
       )}
       {(!updated || loading) && (
         <Button
@@ -217,7 +217,9 @@ export function AccountBalanceCardUpdateButton({
           disabled={loading}
           {...props}
         >
-          <RefreshCw className={cn('size-4', { 'animate-spin': loading })} />
+          <RefreshCw
+            className={cn('size-4', { 'motion-safe:animate-spin': loading })}
+          />
         </Button>
       )}
     </div>

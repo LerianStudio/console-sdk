@@ -14,7 +14,7 @@ function LoadingButton({
 }: LoadingButtonProps) {
   return (
     <Button {...props} disabled={loading || disabled}>
-      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {loading && <Loader2 className="mr-2 h-4 w-4 motion-safe:animate-spin" />}
       {children}
     </Button>
   )
