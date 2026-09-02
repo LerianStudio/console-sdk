@@ -37,6 +37,28 @@ describe('AppShell — landmark frame', () => {
     expect(main?.querySelector('header')).toBeNull()
   })
 
+  it('names the banner with headerLabel, rendered as aria-label on the <header>', () => {
+    const { container } = render(
+      <AppShell header="page-header" headerLabel="Barra do console">
+        body
+      </AppShell>
+    )
+
+    const header = container.querySelector('header')
+    expect(header).toHaveAttribute('aria-label', 'Barra do console')
+    expect(screen.getByRole('banner', { name: 'Barra do console' })).toBe(
+      header
+    )
+  })
+
+  it('leaves the banner unnamed — NO aria-label attribute — when headerLabel is omitted', () => {
+    const { container } = render(<AppShell header="page-header">body</AppShell>)
+
+    const header = container.querySelector('header')
+    expect(header).toBeInTheDocument()
+    expect(header?.hasAttribute('aria-label')).toBe(false)
+  })
+
   it('renders no <header> when no header prop is given', () => {
     const { container } = render(<AppShell>body</AppShell>)
     expect(container.querySelectorAll('header')).toHaveLength(0)

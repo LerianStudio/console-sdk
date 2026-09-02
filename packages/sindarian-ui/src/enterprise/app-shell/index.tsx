@@ -52,6 +52,20 @@ export type AppShellProps = {
    * inside <main> and are correctly page content, not a top-level landmark.
    */
   header?: React.ReactNode
+  /**
+   * Accessible name for the <header> banner landmark, rendered as its
+   * `aria-label`. Omit it and the attribute is absent — the single banner is
+   * unambiguous on its own, so a name buys nothing and an unlocalized one costs
+   * clarity.
+   *
+   * Name it when the page carries MORE than one banner-role region (the shell's
+   * banner plus, say, an embedded app frame), because a screen-reader landmark
+   * list then shows two entries called "banner" with nothing to tell them
+   * apart. Also name it when an audit rule demands every landmark be named
+   * (`landmark-unique` / a house i18n-strict policy). Pass an ALREADY-TRANSLATED
+   * string — the shell does no i18n.
+   */
+  headerLabel?: string
   children: React.ReactNode
   className?: string
   contentClassName?: string
@@ -69,6 +83,7 @@ export const AppShell = React.forwardRef<HTMLElement, AppShellProps>(
     {
       sidebar,
       header,
+      headerLabel,
       children,
       className,
       contentClassName,
@@ -102,7 +117,10 @@ export const AppShell = React.forwardRef<HTMLElement, AppShellProps>(
             className="bg-background relative flex w-full min-w-0 flex-1 flex-col"
           >
             {header ? (
-              <header className="border-border bg-background sticky top-0 z-10 flex items-center gap-3 border-b px-6 py-3">
+              <header
+                aria-label={headerLabel}
+                className="border-border bg-background sticky top-0 z-10 flex items-center gap-3 border-b px-6 py-3"
+              >
                 {header}
               </header>
             ) : null}
