@@ -38,10 +38,22 @@ const badgeVariants = cva(
         purple:
           'border-system-purple-border bg-system-purple-surface text-system-purple-text px-[10px] py-1',
         outline: 'text-foreground'
+      },
+      /**
+       * Font size only. Padding is baked per-variant above, so a `sm` that also
+       * shrank the box would fight every variant that sets its own; scoping the
+       * axis to type keeps `sm` composable with all of them. 11px is the canon
+       * for fine print — the one micro-badge size, replacing the per-consumer
+       * 0.7rem/10px/11px anarchy.
+       */
+      size: {
+        default: '',
+        sm: 'text-[11px]'
       }
     },
     defaultVariants: {
-      variant: 'default'
+      variant: 'default',
+      size: 'default'
     }
   }
 )
@@ -49,13 +61,13 @@ const badgeVariants = cva(
 export type BadgeProps = React.ComponentProps<'span'> &
   VariantProps<typeof badgeVariants> & { asChild?: boolean }
 
-function Badge({ className, variant, asChild, ...props }: BadgeProps) {
+function Badge({ className, variant, size, asChild, ...props }: BadgeProps) {
   const Comp = asChild ? Slot : 'span'
 
   return (
     <Comp
       data-slot="badge"
-      className={cn(badgeVariants({ variant }), className)}
+      className={cn(badgeVariants({ variant, size }), className)}
       {...props}
     />
   )
