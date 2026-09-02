@@ -96,6 +96,7 @@ describe('DataTable', () => {
 
     screen.getAllByRole('columnheader').forEach((head) => {
       expect(head).toHaveClass('text-foreground', 'tracking-[0.08em]')
+      expect(head).not.toHaveClass('text-muted-foreground')
     })
   })
 
