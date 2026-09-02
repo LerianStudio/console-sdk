@@ -408,9 +408,23 @@
     /* Shadow color for dark mode */
     --shadow-color: 0 0% 100%;
 
-    /* Ledger credit semantic — lifted for the dark canvas; foreground mirrors. */
-    --credit: 0 91% 71%; /* red/400 = #F87171 */
-    --credit-foreground: 0 91% 71%; /* mirrors --credit */
+    /*
+      Ledger credit semantic — lifted for the dark canvas; foreground mirrors.
+      Sized by the composite the mirror actually produces, not by the plain
+      pair: components write `bg-credit/10` + `text-credit`, so the real
+      measurement is credit-as-text over a 10% credit tint composited on
+      --card. red/400 read only 3.34:1 there. red/300 — the channel this block
+      already uses for --system-error-text — reaches 4.59:1, and 5.54:1 as
+      plain text on --card.
+
+      Credit stays one step further from the canvas than --destructive
+      (red/400 here), the way light keeps credit at red/700 against a red/500
+      destructive: on a dark ground "further from the canvas" means lighter,
+      so the direction inverts but the separation holds and the two never read
+      as the same signal.
+    */
+    --credit: 0 94% 82%; /* red/300 = #FCA5A5 */
+    --credit-foreground: 0 94% 82%; /* mirrors --credit */
 
     /* Reconciliation matte fills — raised surfaces over base/800, one step apart. */
     --matched-surface: 240 5% 26%; /* base/700 = #3F3F46 */
