@@ -92,6 +92,24 @@ export const KeyboardNavigable: StoryObj<DataTableProps<Settlement>> = {
   }
 }
 
+export const Footed: StoryObj<DataTableProps<Settlement>> = {
+  args: {
+    columns,
+    data,
+    getRowId: (row) => row.id,
+    footer: (
+      <tr>
+        <td colSpan={3}>{data.length} settlements</td>
+        <td className="text-right font-mono tabular-nums">
+          {data
+            .reduce((total, row) => total + row.amount, 0)
+            .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+        </td>
+      </tr>
+    )
+  }
+}
+
 export const RowSelection: StoryObj<DataTableProps<Settlement>> = {
   render: () => {
     const [rowSelection, setRowSelection] = React.useState<RowSelectionState>(

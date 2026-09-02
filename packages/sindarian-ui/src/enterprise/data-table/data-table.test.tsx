@@ -76,6 +76,55 @@ describe('DataTable', () => {
     expect(screen.getByRole('status')).toHaveTextContent('2 rows')
   })
 
+  it('renders header cells in the kit label voice', () => {
+    render(<DataTable columns={columns} data={rows} getRowId={getRowId} />)
+
+    const head = screen.getByRole('columnheader', { name: 'Name' })
+    expect(head).toHaveClass('tracking-[0.08em]', 'text-[11px]', 'uppercase')
+    expect(head).not.toHaveClass('tracking-wide')
+  })
+
+  it('merges headClassName into every header cell', () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={rows}
+        getRowId={getRowId}
+        headClassName="text-foreground"
+      />
+    )
+
+    screen.getAllByRole('columnheader').forEach((head) => {
+      expect(head).toHaveClass('text-foreground', 'tracking-[0.08em]')
+      expect(head).not.toHaveClass('text-muted-foreground')
+    })
+  })
+
+  it('renders the footer slot inside a tfoot and omits it by default', () => {
+    const { container, rerender } = render(
+      <DataTable columns={columns} data={rows} getRowId={getRowId} />
+    )
+    expect(container.querySelector('tfoot')).toBeNull()
+
+    rerender(
+      <DataTable
+        columns={columns}
+        data={rows}
+        getRowId={getRowId}
+        footer={
+          <tr>
+            <td>Total</td>
+            <td>$2230.00</td>
+          </tr>
+        }
+      />
+    )
+
+    const tfoot = container.querySelector('tfoot')
+    expect(tfoot).not.toBeNull()
+    expect(tfoot).toContainElement(screen.getByText('$2230.00'))
+  })
+
   it('applies the compact density and flush framing', () => {
     const { container } = render(
       <DataTable
