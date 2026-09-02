@@ -13,7 +13,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    var(--font-inter, 'Inter'), 'Inter', ui-sans-serif, system-ui, sans-serif;
 
   --shadow-sidebar: 5px 0px 15px -3px hsl(var(--shadow-color) / 0.05);
   --shadow-data-table:
@@ -358,6 +359,17 @@
     --accent-hover: 46 98% 57%; /* sunglow/400 = #FDCB28 - opacity via /70 */
     --accent-mute: 46 98% 57%; /* sunglow/400 = #FDCB28 - opacity via /50 */
 
+    /*
+      Shadcn — Destructive. Lifted to red/400 like every other red in this
+      block (--system-error, --credit, --chart-2): the light red/500 inherited
+      here before, which left `text-destructive` at 2.76:1 on a --card surface
+      and `bg-destructive`/`text-destructive-foreground` at 3.78:1. The
+      foreground inverts to red/950 — the deep end this theme already uses as
+      --system-error-surface — so the pair reads 5.94:1.
+    */
+    --destructive: 0 91% 71%; /* red/400 = #F87171 */
+    --destructive-foreground: 0 75% 15%; /* red/950 = #450A0A */
+
     /* Shadcn — System Error */
     --system-error: 0 91% 71%; /* red/400 = #F87171 */
     --system-error-surface: 0 75% 15%; /* red/950 = #450A0A */
@@ -396,9 +408,23 @@
     /* Shadow color for dark mode */
     --shadow-color: 0 0% 100%;
 
-    /* Ledger credit semantic — lifted for the dark canvas; foreground mirrors. */
-    --credit: 0 91% 71%; /* red/400 = #F87171 */
-    --credit-foreground: 0 91% 71%; /* mirrors --credit */
+    /*
+      Ledger credit semantic — lifted for the dark canvas; foreground mirrors.
+      Sized by the composite the mirror actually produces, not by the plain
+      pair: components write `bg-credit/10` + `text-credit`, so the real
+      measurement is credit-as-text over a 10% credit tint composited on
+      --card. red/400 read only 3.34:1 there. red/300 — the channel this block
+      already uses for --system-error-text — reaches 4.59:1, and 5.54:1 as
+      plain text on --card.
+
+      Credit stays one step further from the canvas than --destructive
+      (red/400 here), the way light keeps credit at red/700 against a red/500
+      destructive: on a dark ground "further from the canvas" means lighter,
+      so the direction inverts but the separation holds and the two never read
+      as the same signal.
+    */
+    --credit: 0 94% 82%; /* red/300 = #FCA5A5 */
+    --credit-foreground: 0 94% 82%; /* mirrors --credit */
 
     /* Reconciliation matte fills — raised surfaces over base/800, one step apart. */
     --matched-surface: 240 5% 26%; /* base/700 = #3F3F46 */
@@ -433,21 +459,30 @@
     0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
+/*
+  Type fills come from the system token families, so a toast themes with the
+  rest of the app. Ink is picked per family by polarity, not per theme:
+  --primary-foreground is the ink that sits on a solid fill and already
+  inverts (white in light, base/800 in dark), which is what the success and
+  error fills need — they darken in light and lift in dark. --system-alert is
+  bright in BOTH themes, so warning takes --accent-foreground, the token that
+  means "ink on yellow" and is near-black in both.
+*/
 [data-sonner-toast][data-type='success'] {
-  --normal-bg: #22c55e;
-  --normal-text: #ffffff;
+  --normal-bg: hsl(var(--system-success));
+  --normal-text: hsl(var(--primary-foreground));
   --normal-border: transparent;
 }
 
 [data-sonner-toast][data-type='error'] {
-  --normal-bg: #ef4444;
-  --normal-text: #ffffff;
+  --normal-bg: hsl(var(--system-error));
+  --normal-text: hsl(var(--primary-foreground));
   --normal-border: transparent;
 }
 
 [data-sonner-toast][data-type='warning'] {
-  --normal-bg: #f59e0b;
-  --normal-text: #422006;
+  --normal-bg: hsl(var(--system-alert));
+  --normal-text: hsl(var(--accent-foreground));
   --normal-border: transparent;
 }
 
@@ -476,42 +511,35 @@
   display: none !important;
 }
 
+/*
+  The close button derives from the toast's own --normal-text, so it is legible
+  on every fill and in both themes by construction. That is what replaced the
+  six rules previously here: one per-theme pair plus one pair per coloured
+  type, each hardcoding the ink it assumed the fill needed.
+
+  Both rules keep !important. Sonner's own resting rule is
+  `[data-sonner-toast][data-styled='true'] [data-close-button]` (0,3,0,
+  color: var(--gray12)) and its dark rule adds a fourth compound, so a plain
+  descendant selector here cannot win the cascade against a stylesheet that is
+  injected at runtime — the fade this rule intends was previously decided by
+  source order rather than by the sheet.
+*/
 [data-sonner-toast] [data-close-button] {
-  color: hsl(var(--foreground) / 0.5);
+  color: color-mix(in srgb, var(--normal-text) 50%, transparent) !important;
 }
 
 [data-sonner-toast] [data-close-button]:hover {
-  color: #ffffff !important;
-  background-color: hsl(var(--foreground)) !important;
-  border-color: hsl(var(--foreground)) !important;
-}
-
-.dark [data-sonner-toast] [data-close-button]:hover {
-  color: #ffffff !important;
-  background-color: hsl(240 5% 26%) !important;
-  border-color: hsl(240 5% 26%) !important;
-}
-
-[data-sonner-toast][data-type='success'] [data-close-button],
-[data-sonner-toast][data-type='error'] [data-close-button] {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-[data-sonner-toast][data-type='success'] [data-close-button]:hover,
-[data-sonner-toast][data-type='error'] [data-close-button]:hover {
-  color: #ffffff !important;
-  background-color: hsl(var(--foreground)) !important;
-  border-color: hsl(var(--foreground)) !important;
-}
-
-[data-sonner-toast][data-type='warning'] [data-close-button] {
-  color: rgba(66, 32, 6, 0.5);
-}
-
-[data-sonner-toast][data-type='warning'] [data-close-button]:hover {
-  color: #422006 !important;
-  background-color: rgba(66, 32, 6, 0.15) !important;
-  border-color: rgba(66, 32, 6, 0.15) !important;
+  color: var(--normal-text) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--normal-text) 15%,
+    transparent
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--normal-text) 15%,
+    transparent
+  ) !important;
 }
 
 .dark [data-sonner-toast] {
@@ -555,22 +583,6 @@
   *::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-shadcn-400);
   }
-}
-
-@keyframes caret-blink {
-  0%,
-  70%,
-  100% {
-    opacity: 1;
-  }
-  20%,
-  50% {
-    opacity: 0;
-  }
-}
-
-@utility animate-caret-blink {
-  animation: caret-blink 1.25s ease-out infinite;
 }
 
 .ticket {
