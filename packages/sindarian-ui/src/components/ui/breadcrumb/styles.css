@@ -6,7 +6,7 @@
 
 @layer components {
   .breadcrumb-list {
-    @apply flex flex-wrap items-center gap-2 break-words text-xs font-medium sm:gap-2.5;
+    @apply flex flex-wrap items-center gap-2 text-xs font-medium break-words sm:gap-2.5;
   }
 
   .breadcrumb-item {

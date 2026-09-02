@@ -23,7 +23,7 @@
 @layer components {
   .alert {
     @apply p-alert-p text-alert-text bg-card relative w-full rounded-lg;
-    @apply [&>svg]:size-alert-icon-size [&>svg~*]:pl-9.5 [&>svg]:left-4.5 [&>svg]:top-4.5 [&>svg]:text-alert-text [&>svg]:absolute;
+    @apply [&>svg]:size-alert-icon-size [&>svg]:text-alert-text [&>svg]:absolute [&>svg]:top-4.5 [&>svg]:left-4.5 [&>svg~*]:pl-9.5;
   }
 
   .alert-informative {
@@ -47,7 +47,7 @@
   }
 
   .alert-title {
-    @apply text-alert-title mb-2 font-medium leading-none tracking-tight;
+    @apply text-alert-title mb-2 leading-none font-medium tracking-tight;
   }
 
   .alert-description {
@@ -59,7 +59,7 @@
   }
 
   .alert-top-action {
-    @apply absolute right-2 top-2 flex gap-2 !pl-0;
+    @apply absolute top-2 right-2 flex gap-2 !pl-0;
   }
 
   .alert-close {
