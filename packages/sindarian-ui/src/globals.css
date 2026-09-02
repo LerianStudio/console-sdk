@@ -359,6 +359,17 @@
     --accent-hover: 46 98% 57%; /* sunglow/400 = #FDCB28 - opacity via /70 */
     --accent-mute: 46 98% 57%; /* sunglow/400 = #FDCB28 - opacity via /50 */
 
+    /*
+      Shadcn — Destructive. Lifted to red/400 like every other red in this
+      block (--system-error, --credit, --chart-2): the light red/500 inherited
+      here before, which left `text-destructive` at 2.76:1 on a --card surface
+      and `bg-destructive`/`text-destructive-foreground` at 3.78:1. The
+      foreground inverts to red/950 — the deep end this theme already uses as
+      --system-error-surface — so the pair reads 5.94:1.
+    */
+    --destructive: 0 91% 71%; /* red/400 = #F87171 */
+    --destructive-foreground: 0 75% 15%; /* red/950 = #450A0A */
+
     /* Shadcn — System Error */
     --system-error: 0 91% 71%; /* red/400 = #F87171 */
     --system-error-surface: 0 75% 15%; /* red/950 = #450A0A */
