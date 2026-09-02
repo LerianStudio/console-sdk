@@ -1,3 +1,26 @@
+## [1.3.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.3...sindarian-ui-v1.3.0-beta.4) (2026-09-02)
+
+
+### Features
+
+* **sindarian-ui:** add badge credit variant ([2098091](https://github.com/LerianStudio/console-sdk/commit/2098091160bfb99c472ff5797256b4335e69027a))
+* **sindarian-ui:** add domain and enterprise component seams ([447b366](https://github.com/LerianStudio/console-sdk/commit/447b3668a32fdbb35fa1261553d4ce2e5ae027a5))
+* **sindarian-ui:** add page-header margin seams ([610e194](https://github.com/LerianStudio/console-sdk/commit/610e1947ccd4296ab3f63786f02f38be70881f8b))
+* **sindarian-ui:** give sidebar expand button an accessible name and state ([50e0f8a](https://github.com/LerianStudio/console-sdk/commit/50e0f8ab83501c7d7cd14b2e8de769cf16803ed2))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** define --destructive for dark mode ([9b39c57](https://github.com/LerianStudio/console-sdk/commit/9b39c57f1bf51ce7ce430691357cdca71387d8bb)), closes [#EF4444](https://github.com/LerianStudio/console-sdk/issues/EF4444) [#F87272](https://github.com/LerianStudio/console-sdk/issues/F87272) [#430A0](https://github.com/LerianStudio/console-sdk/issues/430A0) [#1](https://github.com/LerianStudio/console-sdk/issues/1) [#EF4343](https://github.com/LerianStudio/console-sdk/issues/EF4343) [#27272](https://github.com/LerianStudio/console-sdk/issues/27272) [#3F3F46](https://github.com/LerianStudio/console-sdk/issues/3F3F46) [#1](https://github.com/LerianStudio/console-sdk/issues/1) [#3](https://github.com/LerianStudio/console-sdk/issues/3)
+* **sindarian-ui:** drop caret-blink keyframes duplicated from tw-animate-css ([7dfc7a8](https://github.com/LerianStudio/console-sdk/commit/7dfc7a8531cfd63765fd2f37ecdfe59e5718e826))
+* **sindarian-ui:** give --font-sans a working fallback ([91957c5](https://github.com/LerianStudio/console-sdk/commit/91957c5d7559393b5cea878326c83b4a60938848)), closes [#3](https://github.com/LerianStudio/console-sdk/issues/3)
+* **sindarian-ui:** keep the ruled marker in sync under forwarded data-variant ([093cb99](https://github.com/LerianStudio/console-sdk/commit/093cb995982622e6a8bc9e5f1d374565defdb0c2))
+* **sindarian-ui:** lift dark credit pair to meet AA over cards ([1590cd8](https://github.com/LerianStudio/console-sdk/commit/1590cd8b2e4d9e6cca3086996550cc19d2ddebb6)), closes [#FCA6A6](https://github.com/LerianStudio/console-sdk/issues/FCA6A6) [#3F3F46](https://github.com/LerianStudio/console-sdk/issues/3F3F46) [#524950](https://github.com/LerianStudio/console-sdk/issues/524950) [#3F3F46](https://github.com/LerianStudio/console-sdk/issues/3F3F46) [#27272](https://github.com/LerianStudio/console-sdk/issues/27272)
+* **sindarian-ui:** quote the Inter font-family fallback ([2da0a43](https://github.com/LerianStudio/console-sdk/commit/2da0a4357e8c04636d6611ace7502f00963755d4))
+* **sindarian-ui:** restore the ConfirmationDialog cancel variant ([86b013d](https://github.com/LerianStudio/console-sdk/commit/86b013dbb79cd320670daa8b34e659f06dc9ae0b))
+* **sindarian-ui:** theme sonner toasts through system tokens ([748af29](https://github.com/LerianStudio/console-sdk/commit/748af2935bccd9e4c562acbbda4badbb83671d4b)), closes [#22c55](https://github.com/LerianStudio/console-sdk/issues/22c55) [#ef4444](https://github.com/LerianStudio/console-sdk/issues/ef4444) [#f59e0](https://github.com/LerianStudio/console-sdk/issues/f59e0) [#3](https://github.com/LerianStudio/console-sdk/issues/3)
+* **sindarian-ui:** tokenize badge destructive variant ([2a097db](https://github.com/LerianStudio/console-sdk/commit/2a097db243f5724c2e4d824034c8298b010a0ddc))
+
 ## [1.3.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.2...sindarian-ui-v1.3.0-beta.3) (2026-09-02)
 
 
