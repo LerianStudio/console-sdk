@@ -25,9 +25,18 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
+type CardTitleProps = React.ComponentProps<'h3'> & {
+  /**
+   * Heading level to render. Defaults to `h3`, which is correct for a card
+   * nested under a section heading. Set it when the card sits directly under
+   * the page `h1` (or deeper), so the document heading order stays valid.
+   */
+  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+}
+
+function CardTitle({ className, as: Comp = 'h3', ...props }: CardTitleProps) {
   return (
-    <h3
+    <Comp
       data-slot="card-title"
       className={cn(
         'text-sm leading-none font-medium tracking-tight',
@@ -38,7 +47,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
-function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
+function CardDescription({ className, ...props }: React.ComponentProps<'p'>) {
   return (
     <p
       data-slot="card-description"

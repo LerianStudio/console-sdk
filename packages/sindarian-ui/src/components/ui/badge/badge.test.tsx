@@ -74,3 +74,97 @@ describe('Badge token hygiene', () => {
     )
   })
 })
+
+/**
+ * Class strings captured from the component BEFORE the `size` axis existed.
+ * An omitted size — and an explicit `size="default"` — must reproduce them byte
+ * for byte; that is the whole guarantee that adding the axis broke no consumer.
+ *
+ * `cn` runs everything through tailwind-merge (see `src/lib/utils.ts`), which is
+ * why the base `border-border` and `px-2.5 py-0.5` are absent from variants that
+ * declare their own border color or padding: the merge already dropped them.
+ * The same merge is what lets `sm` win over the base `text-sm`.
+ */
+const BEFORE_SIZE_AXIS = {
+  default:
+    'inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
+  credit:
+    'inline-flex items-center rounded-full border text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-credit/30 bg-credit/10 text-credit-foreground px-[10px] py-1',
+  outline:
+    'inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground'
+} as const
+
+describe('Badge default size', () => {
+  it('renders the pre-size-axis class string when size is omitted', () => {
+    render(<Badge>Default</Badge>)
+
+    expect(screen.getByText('Default')).toHaveAttribute(
+      'class',
+      BEFORE_SIZE_AXIS.default
+    )
+  })
+
+  it('renders the pre-size-axis class string for a padded system variant', () => {
+    render(<Badge variant="credit">Credit</Badge>)
+
+    expect(screen.getByText('Credit')).toHaveAttribute(
+      'class',
+      BEFORE_SIZE_AXIS.credit
+    )
+  })
+
+  it('renders the pre-size-axis class string for the outline variant', () => {
+    render(<Badge variant="outline">Outline</Badge>)
+
+    expect(screen.getByText('Outline')).toHaveAttribute(
+      'class',
+      BEFORE_SIZE_AXIS.outline
+    )
+  })
+
+  it('treats an explicit size="default" as the omitted size', () => {
+    render(<Badge size="default">Explicit</Badge>)
+
+    expect(screen.getByText('Explicit')).toHaveAttribute(
+      'class',
+      BEFORE_SIZE_AXIS.default
+    )
+  })
+})
+
+describe('Badge size="sm"', () => {
+  it('applies the 11px micro-badge type size', () => {
+    render(<Badge size="sm">Small</Badge>)
+
+    expect(screen.getByText('Small')).toHaveClass('text-[11px]')
+  })
+
+  it('drops the base text-sm through tailwind-merge', () => {
+    render(<Badge size="sm">Small</Badge>)
+
+    expect(screen.getByText('Small')).not.toHaveClass('text-sm')
+  })
+
+  it('changes the type size and nothing else', () => {
+    render(<Badge size="sm">Small</Badge>)
+
+    const actual = screen.getByText('Small').className.split(' ')
+    const expected = BEFORE_SIZE_AXIS.default
+      .split(' ')
+      .map((token) => (token === 'text-sm' ? 'text-[11px]' : token))
+
+    expect(new Set(actual)).toEqual(new Set(expected))
+  })
+
+  it('composes with a variant that sets its own padding', () => {
+    render(
+      <Badge variant="credit" size="sm">
+        Credit sm
+      </Badge>
+    )
+
+    const badge = screen.getByText('Credit sm')
+    expect(badge).toHaveClass('text-[11px]', 'px-[10px]', 'py-1')
+    expect(badge).not.toHaveClass('text-sm')
+  })
+})
