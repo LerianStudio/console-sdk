@@ -10,6 +10,9 @@
  *   - empty    → EmptyState (data resolved, zero rows)
  *   - data     → semantic table rows; cells own any links/actions
  *
+ * Column heads speak the kit's LABEL_VOICE_CLASS; `headClassName` overrides it
+ * per table. An optional `footer` node renders in a `tfoot` for footed totals.
+ *
  * Columns are standard TanStack `ColumnDef<T>`; cells receive the row's
  * `original` value, so screens compose money / date / status cells directly in
  * their column `cell` renderers.
@@ -49,6 +52,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow
@@ -146,6 +150,18 @@ type DataTableBaseProps<TData> = {
    */
   rowHref?: (row: TData) => string
   className?: string
+  /**
+   * Extra classes merged onto every header cell, after the kit label voice —
+   * so a caller can override the voice's size/tracking/color for one table
+   * without restating the cluster. Per-column alignment stays `meta.numeric`.
+   */
+  headClassName?: string
+  /**
+   * Footed-total row(s) rendered inside the kit `TableFooter` after the body.
+   * The caller supplies the row markup (`<tr><td>…</td></tr>`) so the footer
+   * can span, align and format its own figures. Omitted → no `tfoot`.
+   */
+  footer?: React.ReactNode
 }
 
 export type DataTableProps<TData> = DataTableBaseProps<TData> &
@@ -241,7 +257,9 @@ export function DataTable<TData>({
   getRowSelectionLabel,
   onRowActivate,
   rowHref,
-  className
+  className,
+  headClassName,
+  footer
 }: DataTableProps<TData>) {
   const tableColumns = useMemo(
     () =>
@@ -422,7 +440,8 @@ export function DataTable<TData>({
                     className={cn(
                       LABEL_VOICE_CLASS,
                       headDensityClass,
-                      header.column.id === SELECTION_COLUMN_ID && 'w-10'
+                      header.column.id === SELECTION_COLUMN_ID && 'w-10',
+                      headClassName
                     )}
                   >
                     {header.isPlaceholder
@@ -526,6 +545,7 @@ export function DataTable<TData>({
             ))
           )}
         </TableBody>
+        {footer ? <TableFooter>{footer}</TableFooter> : null}
       </Table>
     </div>
   )
