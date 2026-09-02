@@ -49,3 +49,10 @@ export const Destructive: StoryObj<BadgeProps> = {
     variant: 'destructive'
   }
 }
+
+export const Credit: StoryObj<BadgeProps> = {
+  args: {
+    children: 'Badge',
+    variant: 'credit'
+  }
+}
