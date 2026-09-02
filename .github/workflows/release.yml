@@ -272,7 +272,7 @@ jobs:
     name: Generate Changelog
     needs: [get-changed-paths, release]
     if: needs.get-changed-paths.outputs.matrix != '[]' && github.ref_name == 'main'
-    uses: LerianStudio/github-actions-shared-workflows/.github/workflows/gptchangelog.yml@v1.18.1
+    uses: LerianStudio/github-actions-shared-workflows/.github/workflows/gptchangelog.yml@v1.65.0
     with:
       runner_type: blacksmith-4vcpu-ubuntu-2404
       filter_paths: |
