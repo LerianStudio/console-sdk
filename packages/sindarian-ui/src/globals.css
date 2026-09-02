@@ -445,21 +445,30 @@
     0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
+/*
+  Type fills come from the system token families, so a toast themes with the
+  rest of the app. Ink is picked per family by polarity, not per theme:
+  --primary-foreground is the ink that sits on a solid fill and already
+  inverts (white in light, base/800 in dark), which is what the success and
+  error fills need — they darken in light and lift in dark. --system-alert is
+  bright in BOTH themes, so warning takes --accent-foreground, the token that
+  means "ink on yellow" and is near-black in both.
+*/
 [data-sonner-toast][data-type='success'] {
-  --normal-bg: #22c55e;
-  --normal-text: #ffffff;
+  --normal-bg: hsl(var(--system-success));
+  --normal-text: hsl(var(--primary-foreground));
   --normal-border: transparent;
 }
 
 [data-sonner-toast][data-type='error'] {
-  --normal-bg: #ef4444;
-  --normal-text: #ffffff;
+  --normal-bg: hsl(var(--system-error));
+  --normal-text: hsl(var(--primary-foreground));
   --normal-border: transparent;
 }
 
 [data-sonner-toast][data-type='warning'] {
-  --normal-bg: #f59e0b;
-  --normal-text: #422006;
+  --normal-bg: hsl(var(--system-alert));
+  --normal-text: hsl(var(--accent-foreground));
   --normal-border: transparent;
 }
 
@@ -488,42 +497,35 @@
   display: none !important;
 }
 
+/*
+  The close button derives from the toast's own --normal-text, so it is legible
+  on every fill and in both themes by construction. That is what replaced the
+  six rules previously here: one per-theme pair plus one pair per coloured
+  type, each hardcoding the ink it assumed the fill needed.
+
+  Both rules keep !important. Sonner's own resting rule is
+  `[data-sonner-toast][data-styled='true'] [data-close-button]` (0,3,0,
+  color: var(--gray12)) and its dark rule adds a fourth compound, so a plain
+  descendant selector here cannot win the cascade against a stylesheet that is
+  injected at runtime — the fade this rule intends was previously decided by
+  source order rather than by the sheet.
+*/
 [data-sonner-toast] [data-close-button] {
-  color: hsl(var(--foreground) / 0.5);
+  color: color-mix(in srgb, var(--normal-text) 50%, transparent) !important;
 }
 
 [data-sonner-toast] [data-close-button]:hover {
-  color: #ffffff !important;
-  background-color: hsl(var(--foreground)) !important;
-  border-color: hsl(var(--foreground)) !important;
-}
-
-.dark [data-sonner-toast] [data-close-button]:hover {
-  color: #ffffff !important;
-  background-color: hsl(240 5% 26%) !important;
-  border-color: hsl(240 5% 26%) !important;
-}
-
-[data-sonner-toast][data-type='success'] [data-close-button],
-[data-sonner-toast][data-type='error'] [data-close-button] {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-[data-sonner-toast][data-type='success'] [data-close-button]:hover,
-[data-sonner-toast][data-type='error'] [data-close-button]:hover {
-  color: #ffffff !important;
-  background-color: hsl(var(--foreground)) !important;
-  border-color: hsl(var(--foreground)) !important;
-}
-
-[data-sonner-toast][data-type='warning'] [data-close-button] {
-  color: rgba(66, 32, 6, 0.5);
-}
-
-[data-sonner-toast][data-type='warning'] [data-close-button]:hover {
-  color: #422006 !important;
-  background-color: rgba(66, 32, 6, 0.15) !important;
-  border-color: rgba(66, 32, 6, 0.15) !important;
+  color: var(--normal-text) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--normal-text) 15%,
+    transparent
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--normal-text) 15%,
+    transparent
+  ) !important;
 }
 
 .dark [data-sonner-toast] {
