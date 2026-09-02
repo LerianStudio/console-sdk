@@ -4,7 +4,14 @@ import { render, screen } from '@testing-library/react'
 import { FIGURE_CLASS, Figure } from '.'
 import type { FigureSize } from '.'
 
-const SIZES: FigureSize[] = ['hero', 'panel', 'count', 'row', 'tick']
+const SIZES: FigureSize[] = [
+  'hero',
+  'money-hero',
+  'panel',
+  'count',
+  'row',
+  'tick'
+]
 
 describe('FIGURE_CLASS', () => {
   it('carries the mono + tabular invariants on every size', () => {
@@ -17,6 +24,8 @@ describe('FIGURE_CLASS', () => {
   it('pins the canonical class strings (call sites compose these inline)', () => {
     expect(FIGURE_CLASS).toEqual({
       hero: 'font-mono text-4xl font-semibold tracking-tight tabular-nums lg:text-5xl',
+      'money-hero':
+        'font-mono text-2xl font-semibold tracking-tight tabular-nums lg:text-3xl',
       panel: 'font-mono text-3xl font-semibold tracking-tight tabular-nums',
       count: 'font-mono text-2xl font-semibold tracking-tight tabular-nums',
       row: 'font-mono text-sm tabular-nums',
@@ -39,6 +48,14 @@ describe('Figure', () => {
       </Figure>
     )
     expect(container.firstElementChild?.tagName).toBe('DD')
+  })
+
+  it('sizes a money hero one step under `hero` so 13-char BRL clears a 3-col panel', () => {
+    const { container } = render(
+      <Figure size="money-hero">R$ 1.840.500,00</Figure>
+    )
+    expect(container.firstElementChild).toHaveClass('text-2xl', 'lg:text-3xl')
+    expect(container.firstElementChild).not.toHaveClass('text-4xl')
   })
 
   it('applies the size class and merges an extra className', () => {

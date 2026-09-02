@@ -271,6 +271,16 @@ export interface DelinquencyAgingProps {
   breach?: number
   /** Render the money-math-exact grand total row under the distribution. */
   showTotal?: boolean
+  /**
+   * Tint of the healthy band — the low delinquency rate AND the `current`
+   * aging bucket. `'success'` (default) is the ambient green; `'ink'` retones
+   * both to `text-foreground`, which is the Ledger canon for a healthy-but-
+   * nonzero book: green reads as "achievement", and a book merely not in
+   * arrears has achieved nothing. Scoped to the healthy band only — elevated,
+   * distressed and overdue keep their alert and credit-red tints, since the
+   * glyph + sr-only word (not the tint) are the load-bearing cue either way.
+   */
+  healthyTone?: 'success' | 'ink'
   className?: string
 }
 
@@ -286,6 +296,7 @@ export function DelinquencyAging({
   warn = 0.05,
   breach = 0.1,
   showTotal = false,
+  healthyTone = 'success',
   className
 }: DelinquencyAgingProps) {
   // THIRD RAIL: the rate scale and the two totals come from money-math, never
@@ -306,7 +317,12 @@ export function DelinquencyAging({
     hasRate && overdueMinor !== null && totalMinor !== null
       ? exactBand(overdueMinor, totalMinor, warn, breach)
       : 'low'
-  const { Icon, tint, word } = RATE_BAND[band]
+  const { Icon, word } = RATE_BAND[band]
+  // `ink` retones ONLY the healthy band; `warn`/`breach` keep their alarm tints.
+  const tint =
+    healthyTone === 'ink' && band === 'low'
+      ? 'text-foreground'
+      : RATE_BAND[band].tint
   // Shallow merge: an unlisted band keeps its pt-BR default.
   const bandWord = rateBandLabels?.[band] ?? word
   const distressed = band === 'breach'
@@ -357,6 +373,7 @@ export function DelinquencyAging({
         locale={locale}
         showTotal={showTotal}
         labels={bucketLabels}
+        healthyTone={healthyTone}
       />
     </div>
   )

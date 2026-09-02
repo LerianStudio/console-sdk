@@ -30,6 +30,32 @@ describe('SectionLabel', () => {
     expect(container.firstElementChild).toHaveClass('mb-2')
   })
 
+  it('carries no rule and no data-variant by default', () => {
+    const { container } = render(<SectionLabel>Posição</SectionLabel>)
+    const label = container.firstElementChild
+
+    expect(label).not.toHaveAttribute('data-variant')
+    expect(label).not.toHaveClass('border-double')
+  })
+
+  it('rules the entry-section head when `ruled` is set', () => {
+    // Consumers were restating this double hairline ~20× — it is the
+    // entry-section head treatment, hairline `border-border`, NOT the register
+    // head's ink.
+    const { container } = render(<SectionLabel ruled>Posição</SectionLabel>)
+    const label = container.firstElementChild
+
+    expect(label).toHaveAttribute('data-variant', 'ruled')
+    expect(label).toHaveClass(
+      'border-b-[3px]',
+      'border-double',
+      'border-border',
+      'pb-2'
+    )
+    // The rule must not cost the shared label voice.
+    expect(label).toHaveClass(SECTION_LABEL_CLASS.split(' ')[0])
+  })
+
   it('forwards id, aria-* and data-* onto the rendered tag', () => {
     // Without the spread there was no way to reference the heading from its own
     // container — a panel could not point `aria-labelledby` at it, and a test

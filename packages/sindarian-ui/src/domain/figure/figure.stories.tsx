@@ -8,7 +8,14 @@ const meta: Meta<FigureProps> = {
   argTypes: {
     size: {
       control: { type: 'select' },
-      options: ['hero', 'panel', 'count', 'row', 'tick'] satisfies FigureSize[]
+      options: [
+        'hero',
+        'money-hero',
+        'panel',
+        'count',
+        'row',
+        'tick'
+      ] satisfies FigureSize[]
     }
   }
 }
@@ -24,16 +31,16 @@ export const Default: Story = {
 export const Scale: Story = {
   render: () => (
     <div className="flex flex-col gap-4">
-      {(['hero', 'panel', 'count', 'row', 'tick'] as FigureSize[]).map(
-        (size) => (
-          <div key={size} className="flex items-baseline gap-4">
-            <span className="text-muted-foreground w-16 text-[11px] tracking-[0.08em] uppercase">
-              {size}
-            </span>
-            <Figure size={size}>1.240.500,00</Figure>
-          </div>
-        )
-      )}
+      {(
+        ['hero', 'money-hero', 'panel', 'count', 'row', 'tick'] as FigureSize[]
+      ).map((size) => (
+        <div key={size} className="flex items-baseline gap-4">
+          <span className="text-muted-foreground w-24 text-[11px] tracking-[0.08em] uppercase">
+            {size}
+          </span>
+          <Figure size={size}>1.240.500,00</Figure>
+        </div>
+      ))}
     </div>
   )
 }

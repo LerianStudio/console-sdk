@@ -80,6 +80,9 @@ export interface AgingBucketsProps {
   showTotal?: boolean
   /** Override the fixed pt-BR copy. Omitted fields keep their defaults. */
   labels?: AgingBucketsLabels
+  /** Tint of the healthy (`current`) band: ambient green, or ink. Threaded in
+   *  from `DelinquencyAging`; see the knob's doc there. Defaults to `success`. */
+  healthyTone?: 'success' | 'ink'
   className?: string
 }
 
@@ -146,6 +149,7 @@ export function AgingBuckets({
   locale,
   showTotal = false,
   labels,
+  healthyTone = 'success',
   className
 }: AgingBucketsProps) {
   const countLabel = labels?.count ?? 'Itens'
@@ -165,7 +169,13 @@ export function AgingBuckets({
       <ul className="flex flex-col">
         {buckets.map((bucket, i) => {
           const band = bucketBand(i, buckets.length)
-          const { Icon, tint, word } = BAND[band]
+          const { Icon, word } = BAND[band]
+          // `ink` retones ONLY the healthy band — the escalated bands keep their
+          // alert and credit-red tints, which are the whole point of the scale.
+          const tint =
+            healthyTone === 'ink' && band === 'current'
+              ? 'text-foreground'
+              : BAND[band].tint
           // Shallow merge: an unlisted band keeps its pt-BR default.
           const bandWord = labels?.bands?.[band] ?? word
 

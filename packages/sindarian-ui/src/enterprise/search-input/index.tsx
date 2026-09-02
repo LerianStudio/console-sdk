@@ -41,6 +41,12 @@ export type SearchInputProps = {
   disabled?: boolean
   className?: string
   id?: string
+  /**
+   * Key events on the field, passed straight through. The component adds no
+   * Escape behaviour of its own: Escape-to-clear is a consumer gesture (some
+   * filter rows clear the field, others close a popover), so it owns it.
+   */
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
 }
 
 export function SearchInput({
@@ -52,7 +58,8 @@ export function SearchInput({
   clearLabel = 'Clear search',
   disabled = false,
   className,
-  id
+  id,
+  onKeyDown
 }: SearchInputProps) {
   // Local draft keeps typing instant; the controlled `value` is the source of
   // truth between edits. When the parent changes `value` out of band (reset,
@@ -125,6 +132,7 @@ export function SearchInput({
         role="searchbox"
         value={draft}
         onChange={handleChange}
+        onKeyDown={onKeyDown}
         placeholder={placeholder}
         aria-label={ariaLabel ?? placeholder ?? 'Search'}
         disabled={disabled}

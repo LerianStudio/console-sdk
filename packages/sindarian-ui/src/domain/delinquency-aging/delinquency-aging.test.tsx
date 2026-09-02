@@ -294,6 +294,64 @@ describe('DelinquencyAging', () => {
     expect(container.textContent).toContain('1,000.00')
   })
 
+  describe('healthyTone', () => {
+    // Nothing past due: the rate band is `low` and the leading bucket is
+    // `current` — the two ambient-green tints the knob retones.
+    const HEALTHY = [
+      { label: 'A vencer', count: 10, total: '1000.00', overdue: false },
+      { label: '90+', count: 0, total: '0.00', overdue: true }
+    ]
+
+    /** The tinted rate readout — the SectionLabel is the first span in header. */
+    const rateReadout = (container: HTMLElement) =>
+      container.querySelectorAll('header > span')[1]
+
+    it('tints the healthy band ambient green by default', () => {
+      const { container } = render(
+        <DelinquencyAging buckets={HEALTHY} currency="BRL" locale="en-US" />
+      )
+      expect(rateReadout(container)).toHaveClass('text-system-success')
+      expect(container.querySelector('li svg')).toHaveClass(
+        'text-system-success'
+      )
+    })
+
+    it('retones a healthy-but-nonzero book to ink', () => {
+      const { container } = render(
+        <DelinquencyAging
+          buckets={HEALTHY}
+          currency="BRL"
+          locale="en-US"
+          healthyTone="ink"
+        />
+      )
+      expect(container.querySelector('.text-system-success')).toBeNull()
+      expect(rateReadout(container)).toHaveClass('text-foreground')
+      expect(container.querySelector('li svg')).toHaveClass('text-foreground')
+    })
+
+    it('leaves the escalated bands alone', () => {
+      // The knob is scoped to the healthy band: an overdue tail stays credit-red
+      // and an elevated rate stays alert, whatever the healthy tone is.
+      const { container } = render(
+        <DelinquencyAging
+          buckets={[
+            { label: 'A vencer', count: 1, total: '900.00', overdue: false },
+            { label: '90+', count: 1, total: '100.00', overdue: true }
+          ]}
+          currency="BRL"
+          locale="en-US"
+          healthyTone="ink"
+        />
+      )
+      expect(container.textContent).toContain('Elevada')
+      expect(rateReadout(container)).toHaveClass('text-system-alert')
+      expect(container.querySelector('li:last-child svg')).toHaveClass(
+        'text-credit'
+      )
+    })
+  })
+
   // THIRD RAIL: the band is decided on the exact integer ratio. The displayed
   // `rate` is truncated at 1e-12 by RATE_PRECISION, so a portfolio a hair past a
   // threshold used to truncate ONTO the threshold and the strict-edge rule then
