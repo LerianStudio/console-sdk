@@ -157,3 +157,14 @@ export function useTheme(): ThemeContextValue {
   }
   return context
 }
+
+/**
+ * Reads the theme context without requiring a provider — `undefined` when
+ * there is none. For library components that should follow the theme when one
+ * exists but must not force every consumer to mount a ThemeProvider (Toaster).
+ * Not re-exported from the package barrel: consumers use `useTheme`, whose
+ * throw is the intended signal that the provider is missing.
+ */
+export function useOptionalTheme(): ThemeContextValue | undefined {
+  return React.useContext(ThemeContext) ?? undefined
+}
