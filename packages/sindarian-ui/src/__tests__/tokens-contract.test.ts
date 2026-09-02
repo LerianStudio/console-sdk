@@ -104,3 +104,104 @@ describe('design token contract', () => {
     })
   })
 })
+
+/**
+ * A sonner toast paints ink on a solid token fill, so its legibility is decided
+ * by two token values that live far apart in this file and are edited for
+ * unrelated reasons. That already shipped broken twice — white ink measured
+ * 3.35:1 on the light success fill — because the ratio was only ever computed
+ * by hand, in a comment, at the moment of the edit.
+ *
+ * This reads the pairs out of the toast rules themselves rather than hardcoding
+ * them, so swapping either the ink token or the fill token is re-measured, not
+ * re-trusted.
+ */
+const AA_NORMAL_TEXT = 4.5
+
+/** Resolve a token to its declared channels, following `var()` indirection. */
+function tokenValue(name: string, theme: 'light' | 'dark'): string {
+  const seen = new Set<string>()
+  let current = name
+
+  for (;;) {
+    if (seen.has(current)) throw new Error(`token cycle at --${current}`)
+    seen.add(current)
+
+    const read = (scope: string) =>
+      scope.match(new RegExp(`^\\s*--${current}:\\s*([^;]+);`, 'm'))?.[1].trim()
+
+    // Dark only redefines what it changes; anything else it inherits from :root.
+    const value = theme === 'dark' ? (read(dark) ?? read(root)) : read(root)
+    if (!value) throw new Error(`--${current} is undefined in ${theme}`)
+
+    const indirect = value.match(/^var\(--([\w-]+)\)$/)
+    if (!indirect) return value
+    current = indirect[1]
+  }
+}
+
+/** `H S% L%` (an optional `/ alpha` is ignored) to sRGB in 0..1. */
+function toRgb(declaration: string): [number, number, number] {
+  const [h, s, l] = declaration
+    .split('/')[0]
+    .trim()
+    .split(/\s+/)
+    .map((part) => parseFloat(part))
+
+  if ([h, s, l].some(Number.isNaN)) {
+    throw new Error(`not an hsl channel triplet: ${declaration}`)
+  }
+
+  const saturation = s / 100
+  const lightness = l / 100
+  const a = saturation * Math.min(lightness, 1 - lightness)
+  const k = (n: number) => (n + h / 30) % 12
+  const channel = (n: number) =>
+    lightness - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
+
+  return [channel(0), channel(8), channel(4)]
+}
+
+/** WCAG 2.x relative luminance. */
+function luminance(declaration: string): number {
+  const [r, g, b] = toRgb(declaration).map((c) =>
+    c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  )
+
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+/** The token pair each toast type actually paints with, read from its rule. */
+function toastPair(type: string): { fill: string; ink: string } {
+  const rule = block(`[data-sonner-toast][data-type='${type}'] {`)
+  const pick = (property: string) =>
+    rule.match(new RegExp(`${property}:\\s*hsl\\(var\\(--([\\w-]+)\\)\\)`))?.[1]
+
+  const fill = pick('--normal-bg')
+  const ink = pick('--normal-text')
+  if (!fill || !ink) throw new Error(`toast '${type}' has no token pair`)
+
+  return { fill, ink }
+}
+
+const TOAST_TYPES = ['success', 'error', 'warning', 'info']
+
+describe('sonner toast ink', () => {
+  describe.each(TOAST_TYPES)('%s', (type) => {
+    it.each(['light', 'dark'] as const)(
+      'clears AA for body text in %s',
+      (theme) => {
+        const { fill, ink } = toastPair(type)
+        const ratio = contrast(tokenValue(fill, theme), tokenValue(ink, theme))
+
+        expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+      }
+    )
+  })
+})

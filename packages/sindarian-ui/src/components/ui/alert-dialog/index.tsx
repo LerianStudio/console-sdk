@@ -132,7 +132,7 @@ function AlertDialogAction({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Action> & {
   // A destructive confirm previously had to class-stack onto the baked-in
   // primary, which only resolved by stylesheet source order. Same seam
-  // AlertDialogCancel already uses for `outline`.
+  // AlertDialogCancel has, which defaults to `outline` instead.
   variant?: VariantProps<typeof buttonVariants>['variant']
 }) {
   return (
@@ -146,12 +146,19 @@ function AlertDialogAction({
 
 function AlertDialogCancel({
   className,
+  variant = 'outline',
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel> & {
+  // A cancel that should read as anything but an outline — a secondary button,
+  // say — previously had to re-assert its own variant class to win the merge
+  // conflict group back from the baked-in outline. Same seam
+  // AlertDialogAction has, which defaults to `default` instead.
+  variant?: VariantProps<typeof buttonVariants>['variant']
+}) {
   return (
     <AlertDialogPrimitive.Cancel
       data-slot="alert-dialog-cancel"
-      className={cn(buttonVariants({ variant: 'outline' }), className)}
+      className={cn(buttonVariants({ variant }), className)}
       {...props}
     />
   )

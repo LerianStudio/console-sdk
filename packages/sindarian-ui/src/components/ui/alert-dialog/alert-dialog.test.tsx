@@ -113,6 +113,34 @@ describe('AlertDialog', () => {
     expect(action).not.toHaveClass('button-primary')
   })
 
+  it('gives the cancel the outline button by default', () => {
+    render(<Basic />)
+
+    fireEvent.click(screen.getByText('Delete'))
+    expect(screen.getByText('Cancel')).toHaveClass('button-outline')
+  })
+
+  it('threads a variant through to the cancel', () => {
+    // Without this seam a caller wanting a non-outline cancel had to re-assert
+    // the variant class in className and rely on it landing last in the merge.
+    render(
+      <AlertDialog defaultOpen>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel variant="secondary">Keep it</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    )
+
+    const cancel = screen.getByText('Keep it')
+    expect(cancel).toHaveClass('button-secondary')
+    expect(cancel).not.toHaveClass('button-outline')
+  })
+
   it('unmounts the overlay and content while closed without forceMount', () => {
     render(<Basic />)
 
