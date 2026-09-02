@@ -1,3 +1,18 @@
+## [1.3.0-beta.7](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.6...sindarian-ui-v1.3.0-beta.7) (2026-09-02)
+
+
+### Features
+
+* **sindarian-ui:** add a heading-level escape hatch to CardTitle ([37baf21](https://github.com/LerianStudio/console-sdk/commit/37baf21e6d46f39516211fc9ef086b920fea68d1))
+* **sindarian-ui:** add a small badge size ([fec2d9a](https://github.com/LerianStudio/console-sdk/commit/fec2d9aca68cac40b61b1eb5d7ea94ba79b6e5d1))
+* **sindarian-ui:** allow naming the AppShell banner landmark ([939a812](https://github.com/LerianStudio/console-sdk/commit/939a812d1b9d7c14a50313bafe6266f5c4cbd844))
+* **sindarian-ui:** follow the resolved theme in Toaster ([b5b7c58](https://github.com/LerianStudio/console-sdk/commit/b5b7c58c710b248ceba55bcbbd7336a0c42341c1))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** declare color-scheme in the light and dark theme blocks ([f9f40b2](https://github.com/LerianStudio/console-sdk/commit/f9f40b2bf577ec91c331c998e7246176e994054e))
+
 ## [1.3.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.5...sindarian-ui-v1.3.0-beta.6) (2026-09-02)
 
 
