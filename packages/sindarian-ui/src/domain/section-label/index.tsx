@@ -46,9 +46,9 @@ export function SectionLabel({
   // from its own container.
   return (
     <Tag
+      {...rest}
       data-variant={ruled ? 'ruled' : undefined}
       className={cn(SECTION_LABEL_CLASS, ruled && RULED_CLASS, className)}
-      {...rest}
     >
       {children}
     </Tag>

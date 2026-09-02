@@ -56,6 +56,20 @@ describe('SectionLabel', () => {
     expect(label).toHaveClass(SECTION_LABEL_CLASS.split(' ')[0])
   })
 
+  it('keeps the ruled marker in sync when a consumer forwards data-variant', () => {
+    // The marker and the ruled classes must never desync: the component-owned
+    // data-variant wins over a forwarded one.
+    const { container } = render(
+      <SectionLabel ruled data-variant="custom">
+        Posição
+      </SectionLabel>
+    )
+    const label = container.firstElementChild
+
+    expect(label).toHaveAttribute('data-variant', 'ruled')
+    expect(label).toHaveClass('border-double')
+  })
+
   it('forwards id, aria-* and data-* onto the rendered tag', () => {
     // Without the spread there was no way to reference the heading from its own
     // container — a panel could not point `aria-labelledby` at it, and a test
