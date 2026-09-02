@@ -19,6 +19,8 @@
   --color-button-tertiary: var(--color-accent);
   --color-button-tertiary-foreground: var(--color-accent-foreground);
   --color-button-outline-foreground: var(--color-muted-foreground);
+  --color-button-destructive: var(--color-destructive);
+  --color-button-destructive-foreground: var(--color-destructive-foreground);
 }
 
 @layer components {
@@ -44,6 +46,12 @@
 
   .button-outline {
     @apply text-button-outline-foreground hover:border-shadcn-400 border border-transparent shadow-none;
+  }
+
+  .button-destructive {
+    /* Disabled deliberately drops the red and reuses the shared muted pair: a
+       disabled danger button must not still read as armed. */
+    @apply bg-button-destructive text-button-destructive-foreground hover:bg-button-destructive/80 disabled:bg-button-primary-disabled disabled:text-button-primary-foreground-disabled;
   }
 
   .button-link {
