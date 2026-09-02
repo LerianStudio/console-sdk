@@ -116,3 +116,36 @@ describe('Button without asChild', () => {
     expect(onClick).not.toHaveBeenCalled()
   })
 })
+
+describe('Button destructive variant', () => {
+  it('renders the destructive component class', () => {
+    render(<Button variant="destructive">Delete</Button>)
+
+    expect(screen.getByRole('button', { name: 'Delete' })).toHaveClass(
+      'button-destructive'
+    )
+  })
+
+  it('does not carry the primary class alongside it', () => {
+    render(<Button variant="destructive">Delete</Button>)
+
+    const button = screen.getByRole('button', { name: 'Delete' })
+    expect(button).not.toHaveClass('button-primary')
+    // The composing base classes are unaffected by the variant.
+    expect(button).toHaveClass('button-base')
+  })
+
+  it('lets a caller override the variant through className', () => {
+    // The whole point of the class group `cn` now knows: a consumer stacking a
+    // variant class on top of a variant prop gets the later one, not both.
+    render(
+      <Button variant="primary" className="button-destructive">
+        Delete
+      </Button>
+    )
+
+    const button = screen.getByRole('button', { name: 'Delete' })
+    expect(button).toHaveClass('button-destructive')
+    expect(button).not.toHaveClass('button-primary')
+  })
+})

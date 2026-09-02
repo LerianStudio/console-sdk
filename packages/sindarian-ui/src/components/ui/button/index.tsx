@@ -15,7 +15,8 @@ const buttonVariants = cva('button-base button-disabled button-read-only', {
       secondary: 'button-secondary',
       tertiary: 'button-tertiary',
       outline: 'button-outline',
-      link: 'button-link'
+      link: 'button-link',
+      destructive: 'button-destructive'
     },
     fullWidth: {
       true: 'w-full',

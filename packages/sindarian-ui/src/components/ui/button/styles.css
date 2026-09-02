@@ -1,6 +1,6 @@
 @theme inline {
   /* Button */
-  --text-button: var(--font-size-sm);
+  --text-button-link: 13px;
   --spacing-button-px: calc(var(--spacing) * 4);
   --spacing-button-py: calc(var(--spacing) * 3);
   --spacing-button-px-small: calc(var(--spacing) * 3);
@@ -19,11 +19,18 @@
   --color-button-tertiary: var(--color-accent);
   --color-button-tertiary-foreground: var(--color-accent-foreground);
   --color-button-outline-foreground: var(--color-muted-foreground);
+  --color-button-destructive: var(--color-destructive);
+  --color-button-destructive-foreground: var(--color-destructive-foreground);
 }
 
 @layer components {
   .button-base {
-    @apply h-button-h px-button-px py-button-py relative inline-flex cursor-pointer items-center justify-center rounded-lg text-sm font-medium whitespace-nowrap shadow-sm transition-colors;
+    @apply h-button-h px-button-px py-button-py ring-offset-background relative inline-flex cursor-pointer items-center justify-center rounded-lg text-sm font-medium whitespace-nowrap shadow-sm transition-colors;
+    /* Keyboard focus was unstyled on every kit button, so consumers restated a
+       ring by hand. Same idiom as tabs-trigger and textarea. `.button-read-only`
+       out-specifies this (class + attribute + pseudo-class), so the read-only
+       suppression still wins without depending on source order. */
+    @apply focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none;
   }
 
   .button-plain {
@@ -46,8 +53,14 @@
     @apply text-button-outline-foreground hover:border-shadcn-400 border border-transparent shadow-none;
   }
 
+  .button-destructive {
+    /* Disabled deliberately drops the red and reuses the shared muted pair: a
+       disabled danger button must not still read as armed. */
+    @apply bg-button-destructive text-button-destructive-foreground hover:bg-button-destructive/80 disabled:bg-button-primary-disabled disabled:text-button-primary-foreground-disabled;
+  }
+
   .button-link {
-    @apply !h-4 !p-0 !px-0 !py-0 !text-[13px] underline shadow-none;
+    @apply !text-button-link !h-4 !p-0 !px-0 !py-0 underline shadow-none;
   }
 
   .button-disabled {
@@ -55,7 +68,7 @@
   }
 
   .button-read-only {
-    @apply data-[read-only=true]:cursor-default data-[read-only=true]:border-transparent data-[read-only=true]:opacity-50 data-[read-only=true]:shadow-none data-[read-only=true]:focus:ring-0 data-[read-only=true]:focus:outline-hidden;
+    @apply data-[read-only=true]:cursor-default data-[read-only=true]:border-transparent data-[read-only=true]:opacity-50 data-[read-only=true]:shadow-none data-[read-only=true]:focus:ring-0 data-[read-only=true]:focus:ring-offset-0 data-[read-only=true]:focus:outline-hidden;
   }
 
   .button-small {

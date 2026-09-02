@@ -59,6 +59,22 @@ export const Tertiary: StoryObj<ButtonProps> = {
   }
 }
 
+export const Destructive: StoryObj<ButtonProps> = {
+  args: {
+    children: 'Delete',
+    variant: 'destructive'
+  },
+  render(args) {
+    return (
+      <div className="flex gap-2">
+        <Button {...args} />
+        <Button {...args} disabled />
+        <Button {...args} size="small" />
+      </div>
+    )
+  }
+}
+
 export const Outline: StoryObj<ButtonProps> = {
   args: {
     children: 'Button',
