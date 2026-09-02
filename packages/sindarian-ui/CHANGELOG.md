@@ -1,3 +1,10 @@
+## [1.3.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.5...sindarian-ui-v1.3.0-beta.6) (2026-09-02)
+
+
+### Features
+
+* **sindarian-ui:** let the alert-dialog cancel take a variant ([506e258](https://github.com/LerianStudio/console-sdk/commit/506e258ea4de32d7709bada682dd9fb0d26deb0b))
+
 ## [1.3.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.4...sindarian-ui-v1.3.0-beta.5) (2026-09-02)
 
 ## [1.3.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.3...sindarian-ui-v1.3.0-beta.4) (2026-09-02)
