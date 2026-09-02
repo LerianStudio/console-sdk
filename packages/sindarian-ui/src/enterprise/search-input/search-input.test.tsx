@@ -191,6 +191,26 @@ describe('SearchInput', () => {
     expect(screen.getByRole('searchbox')).toHaveValue('')
   })
 
+  it('passes key events through to the consumer (Escape-to-clear is theirs)', () => {
+    // Without the passthrough the props type was closed and the inner Input got
+    // no key handler, so a consumer could not bind Escape-to-clear at all. The
+    // component adds no Escape behaviour of its own — the gesture stays the
+    // consumer's.
+    const onKeyDown = jest.fn()
+    render(
+      <SearchInput
+        value="pix"
+        onValueChange={jest.fn()}
+        onKeyDown={onKeyDown}
+      />
+    )
+
+    fireEvent.keyDown(screen.getByRole('searchbox'), { key: 'Escape' })
+
+    expect(onKeyDown).toHaveBeenCalledTimes(1)
+    expect(onKeyDown.mock.calls[0][0].key).toBe('Escape')
+  })
+
   it('never fires a pending emission after unmount', () => {
     const onValueChange = jest.fn()
     const { unmount } = render(

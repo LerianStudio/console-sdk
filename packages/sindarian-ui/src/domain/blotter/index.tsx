@@ -17,6 +17,7 @@
  */
 import type { ReactNode } from 'react'
 
+import { Skeleton } from '@/components/ui/skeleton'
 import { LABEL_VOICE_CLASS } from '@/lib/typography'
 import { cn } from '@/lib/utils'
 
@@ -43,6 +44,12 @@ export type BlotterRowProps = {
    * used by inline rows.
    */
   stacked?: boolean
+  /**
+   * Render a skeleton in the value slot and mark the row `aria-busy`. The label
+   * is known before the figure is, so it keeps rendering — a loading blotter
+   * still reads as the same set of rows. Default off.
+   */
+  loading?: boolean
 }
 
 export function BlotterRow({
@@ -50,11 +57,21 @@ export function BlotterRow({
   value,
   valueClassName,
   className,
-  stacked = false
+  stacked = false,
+  loading = false
 }: BlotterRowProps) {
+  // The skeleton stands in for the value slot's own shape: a full-width prose
+  // line when stacked, the mono figure's width when inline.
+  const shownValue = loading ? (
+    <Skeleton className={cn('h-4', stacked ? 'w-full' : 'w-24')} />
+  ) : (
+    value
+  )
+
   if (stacked) {
     return (
       <div
+        aria-busy={loading || undefined}
         className={cn(
           'hover:bg-body-surface space-y-1 px-2 py-2 transition-colors duration-150 ease-out',
           className
@@ -67,7 +84,7 @@ export function BlotterRow({
             valueClassName
           )}
         >
-          {value}
+          {shownValue}
         </dd>
       </div>
     )
@@ -75,6 +92,7 @@ export function BlotterRow({
 
   return (
     <div
+      aria-busy={loading || undefined}
       className={cn(
         'hover:bg-body-surface flex items-center justify-between gap-3 px-2 py-2 transition-colors duration-150 ease-out',
         className
@@ -87,7 +105,7 @@ export function BlotterRow({
           valueClassName
         )}
       >
-        {value}
+        {shownValue}
       </dd>
     </div>
   )

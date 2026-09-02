@@ -15,17 +15,29 @@ import type { ElementType, HTMLAttributes, ReactNode } from 'react'
 import { SECTION_LABEL_CLASS } from '@/lib/typography'
 import { cn } from '@/lib/utils'
 
+/** The entry-section head treatment: a hairline double rule under the label.
+ *  `border-border`, NOT the register head's ink — this is the quieter of the two
+ *  head rules. Pinned here because ~20 call sites were restating it. */
+const RULED_CLASS = 'border-b-[3px] border-double border-border pb-2'
+
 export type SectionLabelProps = {
   children: ReactNode
   className?: string
   /** Render element. Defaults to `h2` (the ledger-sheet cell heading). */
   as?: ElementType
+  /**
+   * Rule the label as an entry-section head (hairline double border, `pb-2`)
+   * and stamp `data-variant="ruled"`. Mirrors `EmptyState.ruled`. Default off,
+   * so an unruled label renders exactly as before.
+   */
+  ruled?: boolean
 } & Omit<HTMLAttributes<HTMLElement>, 'children' | 'className'>
 
 export function SectionLabel({
   children,
   className,
   as: Tag = 'h2',
+  ruled = false,
   ...rest
 }: SectionLabelProps) {
   // The remaining element props reach the rendered tag, so a panel can point
@@ -33,7 +45,11 @@ export function SectionLabel({
   // hook off it. Without the spread there was no way to reference the heading
   // from its own container.
   return (
-    <Tag className={cn(SECTION_LABEL_CLASS, className)} {...rest}>
+    <Tag
+      {...rest}
+      data-variant={ruled ? 'ruled' : undefined}
+      className={cn(SECTION_LABEL_CLASS, ruled && RULED_CLASS, className)}
+    >
       {children}
     </Tag>
   )
