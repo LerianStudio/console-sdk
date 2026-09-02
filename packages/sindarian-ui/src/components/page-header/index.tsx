@@ -52,15 +52,28 @@ export function PageHeaderWrapper({
 
 type PageHeaderProps = {
   children: ReactNode
+  /** Routed to the inner Collapsible, as it always has been. */
   className?: string
+  /**
+   * Seam for the root element's own margins. Merged AFTER the hard-coded
+   * `mt-12`/`mb-12` so a consumer utility (e.g. `mt-0`) wins via tailwind-merge.
+   */
+  rootClassName?: string
 }
 
-export function PageHeader({ children, className }: PageHeaderProps) {
+export function PageHeader({
+  children,
+  className,
+  rootClassName
+}: PageHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
     <PageHeaderContext.Provider value={{ isOpen }}>
-      <div data-slot="page-header" className={cn('mt-12', isOpen && 'mb-12')}>
+      <div
+        data-slot="page-header"
+        className={cn('mt-12', isOpen && 'mb-12', rootClassName)}
+      >
         <Collapsible
           open={isOpen}
           onOpenChange={setIsOpen}
@@ -77,7 +90,13 @@ export type PageHeaderInfoTitleProps = {
   title: string
   subtitle?: string
   subtitleCopyToClipboard?: boolean
+  /** Routed to the `h1`, as it always has been. */
   className?: string
+  /**
+   * Seam for the wrapper element's own margins. Merged AFTER the hard-coded
+   * `mb-12` so a consumer utility (e.g. `mb-0`) wins via tailwind-merge.
+   */
+  containerClassName?: string
   children?: ReactNode
 }
 
@@ -85,12 +104,13 @@ export function PageHeaderInfoTitle({
   title,
   subtitle,
   className,
+  containerClassName,
   children
 }: PageHeaderInfoTitleProps) {
   return (
     <div
       data-slot="page-header-info-title"
-      className="mb-12 flex flex-col gap-4"
+      className={cn('mb-12 flex flex-col gap-4', containerClassName)}
     >
       <h1
         className={cn('text-foreground text-4xl font-bold', className)}
