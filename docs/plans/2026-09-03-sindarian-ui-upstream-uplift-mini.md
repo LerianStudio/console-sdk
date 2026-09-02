@@ -5,7 +5,7 @@
 > branch. All work lands in a single PR.
 
 **Goal:** land the consumer-proven fixes from the br-sfn cockpit token audit (2026-09-02) in `packages/sindarian-ui`: Badge small size, Toaster theme wiring, `color-scheme`, CardTitle heading level, AppShell banner label, and the migration doc.
-**Scope:** `packages/sindarian-ui` only. Base branch `develop` (PR base per repo template). All changes additive — no breaking change to any existing consumer.
+**Scope:** `packages/sindarian-ui` only. Base branch `develop` (PR base per repo template). All changes additive — no runtime breaking change to any existing consumer. One deliberate type-level narrowing rides along: `CardTitle`/`CardDescription` prop types move from `'div'` to the elements they actually render (`h3`/`p`) — the old typing was a runtime lie (a passed ref always received an h3/p), no known consumer passes refs to either, and the migration guide documents it.
 
 **Already fixed on develop (do NOT redo):** `--font-sans` fallback (`91957c5`), SidebarExpandButton accessible name (`50e0f8a`), Button destructive variant (`a96f033`).
 

@@ -142,7 +142,8 @@ pass it explicitly:
 `var(--font-inter, 'Inter'), 'Inter', ui-sans-serif, system-ui, sans-serif`.
 `--font-inter` is a `next/font` slot: Next.js apps fill it, Vite and other
 bundlers do not. The fallback list keeps text readable, but nothing installs
-Inter for you. Load it and fill the slot:
+Inter for you. Install it (`npm install @fontsource-variable/inter`), load it
+and fill the slot:
 
 ```css
 @import '@fontsource-variable/inter';
