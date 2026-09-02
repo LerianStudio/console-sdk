@@ -76,6 +76,14 @@ describe('DataTable', () => {
     expect(screen.getByRole('status')).toHaveTextContent('2 rows')
   })
 
+  it('renders header cells in the kit label voice', () => {
+    render(<DataTable columns={columns} data={rows} getRowId={getRowId} />)
+
+    const head = screen.getByRole('columnheader', { name: 'Name' })
+    expect(head).toHaveClass('tracking-[0.08em]', 'text-[11px]', 'uppercase')
+    expect(head).not.toHaveClass('tracking-wide')
+  })
+
   it('applies the compact density and flush framing', () => {
     const { container } = render(
       <DataTable

@@ -54,6 +54,7 @@ import {
   TableRow
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import { LABEL_VOICE_CLASS } from '@/lib/typography'
 import { cn } from '@/lib/utils'
 import { EmptyState, type EmptyStateProps } from '../empty-state'
 
@@ -419,7 +420,7 @@ export function DataTable<TData>({
                     key={header.id}
                     align={numeric ? 'right' : undefined}
                     className={cn(
-                      'tracking-wide uppercase',
+                      LABEL_VOICE_CLASS,
                       headDensityClass,
                       header.column.id === SELECTION_COLUMN_ID && 'w-10'
                     )}
