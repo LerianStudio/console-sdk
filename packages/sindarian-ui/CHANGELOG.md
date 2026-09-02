@@ -1,3 +1,23 @@
+## [1.3.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.2...sindarian-ui-v1.3.0-beta.3) (2026-09-02)
+
+
+### Features
+
+* **sindarian-ui:** add a destructive button variant ([a96f033](https://github.com/LerianStudio/console-sdk/commit/a96f033e966385dea48315bee8856c83598c6704))
+* **sindarian-ui:** add DataTable headClassName and footer seams ([495edab](https://github.com/LerianStudio/console-sdk/commit/495edabfa98f946d97ddb77908509ebe59bccfb1))
+* **sindarian-ui:** localize the ConfirmationDialog pending announcement ([73027fc](https://github.com/LerianStudio/console-sdk/commit/73027fc4130a65d378c1dbf19766825507cc2414))
+* **sindarian-ui:** merge the button variant classes in cn ([a6b8965](https://github.com/LerianStudio/console-sdk/commit/a6b896572a0070401e5148acfa1eaa3e1c934059))
+* **sindarian-ui:** thread a variant through AlertDialogAction ([4c29964](https://github.com/LerianStudio/console-sdk/commit/4c29964376af87d6cab0d86c343e2bd2e339be10))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** drop the dangling button font-size var ([a9a58c9](https://github.com/LerianStudio/console-sdk/commit/a9a58c976a12985e49eb64aae4143234eb646bc3))
+* **sindarian-ui:** give kit buttons a keyboard focus ring ([1b3df7b](https://github.com/LerianStudio/console-sdk/commit/1b3df7b76b7e32fa05d62cdbfda1cbad3d5064d0))
+* **sindarian-ui:** guard kit animations behind prefers-reduced-motion ([2220ded](https://github.com/LerianStudio/console-sdk/commit/2220dedcc0db0ada02686ba83ba6b9e6763ed069))
+* **sindarian-ui:** make ConfirmationDialog a real alert dialog ([1cf5304](https://github.com/LerianStudio/console-sdk/commit/1cf5304986e490b2a5b20f1cecf510d63d5221e2))
+* **sindarian-ui:** render DataTable heads in the kit label voice ([3bbeea4](https://github.com/LerianStudio/console-sdk/commit/3bbeea4105bc0bad194db385063b7859d17e5cba))
+
 ## [1.3.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.1...sindarian-ui-v1.3.0-beta.2) (2026-08-31)
 
 
