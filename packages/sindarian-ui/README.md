@@ -41,17 +41,33 @@ npm install react@>=19.0.0 react-dom@>=19.0.0 react-hook-form@>=7.60.0 lucide-re
 
 ### Tailwind CSS Setup
 
-Add the package path to your `tailwind.config.js` to ensure proper styling:
+The library is built with Tailwind CSS v4, which is configured from CSS — there
+is no `tailwind.config.js`. Your app needs `tailwindcss@^4` plus
+`@tailwindcss/postcss` (Next.js) or `@tailwindcss/vite` (Vite).
 
-```js
-module.exports = {
-  content: [
-    './src/**/*.{js,ts,jsx,tsx}',
-    './node_modules/sindarian-ui/**/*.{js,ts,jsx,tsx}' // Add this line
-  ]
-  // ... rest of your config
-}
+Wire the library into your app's entry stylesheet in this order:
+
+```css
+/* Keep the Tailwind import in your app's entry stylesheet — source scanning
+   breaks when the only import lives inside node_modules. */
+@import 'tailwindcss';
+
+/* The dark variant, matched against a `.dark` class on an ancestor. */
+@custom-variant dark (&:is(.dark *));
+
+/* Design tokens, base layer and component styles. */
+@import '@lerianstudio/sindarian-ui/dist/globals.css';
+
+/* Scan the library's compiled output so its utility classes survive the
+   content purge. The path is relative to this file. */
+@source '../node_modules/@lerianstudio/sindarian-ui/dist';
 ```
+
+Adjust the `@source` depth to where your entry stylesheet sits: `../..` from
+`src/app/globals.css` in a Next.js app, `..` from `src/index.css` in a Vite app.
+
+Non-Next.js apps must also load Inter themselves — see "Migrating to 1.3+"
+below.
 
 ## 🚀 Quick Start
 
@@ -63,7 +79,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle
-} from 'sindarian-ui'
+} from '@lerianstudio/sindarian-ui'
 
 function App() {
   return (
@@ -79,6 +95,70 @@ function App() {
   )
 }
 ```
+
+## ⬆️ Migrating to 1.3+
+
+What every app upgrading from an earlier version has had to work out.
+
+### Remove `tailwindcss-animate`
+
+The library imports `tw-animate-css` in its own `globals.css`. An app that still
+registers the v3-era `@plugin 'tailwindcss-animate'` wins the cascade with its
+`.animate-in` rules and pins every library overlay to that plugin's fixed
+duration, silently. Drop the plugin directive and the dependency.
+
+### `CardTitle` accepts a heading level
+
+New: `CardTitle` takes an `as` prop to pick the heading level. It has always
+rendered an `<h3>`, so consumer wrappers that existed only to get a real
+heading element can go — and where `h3` would skip a level under a page
+`<h1>`, set the level directly:
+
+```tsx
+<CardTitle as="h2">Accounts</CardTitle>
+```
+
+The omitted case still renders `h3` with the same classes and `data-slot`.
+
+The prop types now match the rendered elements: `CardTitle` is typed against
+`h3` (heading), `CardDescription` against `p` — both were typed against `div`.
+A `ref` typed `Ref<HTMLDivElement>` passed to either no longer compiles;
+retype it to the real element (`HTMLHeadingElement` / `HTMLParagraphElement`).
+
+### `Toaster` follows the app theme
+
+An unset `<Toaster />` rendered inside the library's `ThemeProvider` now
+follows the provider's resolved theme instead of the OS preference. Outside a
+provider nothing changes (`system`). To keep OS-following inside a provider,
+pass it explicitly:
+
+```tsx
+<Toaster theme="system" />
+```
+
+### Non-Next.js apps must load Inter
+
+`--font-sans` resolves to
+`var(--font-inter, 'Inter'), 'Inter', ui-sans-serif, system-ui, sans-serif`.
+`--font-inter` is a `next/font` slot: Next.js apps fill it, Vite and other
+bundlers do not. The fallback list keeps text readable, but nothing installs
+Inter for you. Load it and fill the slot:
+
+```css
+@import '@fontsource-variable/inter';
+
+:root {
+  --font-inter: 'Inter Variable';
+}
+```
+
+### The preflight is emitted twice
+
+The library's `globals.css` opens with `@import 'tailwindcss'`, so an app that
+also imports Tailwind — as the setup above requires — gets the preflight layer
+twice. The rules are identical and the duplication is harmless, costing roughly
+8 KB pre-gzip. Keep the app's `@import 'tailwindcss'` first; do not drop it to
+avoid the duplicate.
 
 ## 📚 Component Categories
 
@@ -219,7 +299,7 @@ Please ensure your code follows the project's coding standards and includes appr
 
 ## 📝 Changelog
 
-See [CHANGELOG.md](../../CHANGELOG.md) for a detailed history of changes.
+See [CHANGELOG.md](./CHANGELOG.md) for a detailed history of changes.
 
 ## 📄 License
 
