@@ -140,21 +140,19 @@ export function ConfirmationDialog({
 
         <AlertDialogFooter className="gap-4">
           {/*
-           * `button-secondary` is repeated in className on purpose. AlertDialogCancel
-           * hardcodes the outline variant, and Slot joins its className into this
-           * child's, so Button ends up calling cn('…button-secondary', '…button-outline').
-           * Those two are one conflict group now, last one wins, and outline arrives
-           * second — which silently erased the secondary chrome. Slot's join puts this
-           * className after Cancel's, so repeating the class here lands it last and
-           * takes the group back.
+           * The variant is declared on BOTH halves on purpose. Slot joins
+           * Cancel's className into this child's, so the two meet inside one cn
+           * call and the button variants are a single conflict group. Telling
+           * Cancel the variant means both halves emit `button-secondary`, which
+           * merges to itself — instead of an outline arriving last and silently
+           * erasing the secondary chrome.
            */}
-          <AlertDialogCancel asChild>
+          <AlertDialogCancel asChild variant="secondary">
             <Button
               onClick={onCancel}
               disabled={busy}
               variant="secondary"
               size="small"
-              className="button-secondary"
             >
               {cancelLabel ?? 'Cancel'}
             </Button>

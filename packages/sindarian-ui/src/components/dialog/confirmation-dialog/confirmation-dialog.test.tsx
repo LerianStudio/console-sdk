@@ -201,11 +201,11 @@ describe('ConfirmationDialog', () => {
   })
 
   it('keeps the cancel action looking like a secondary button', () => {
-    // AlertDialogCancel hardcodes the outline variant and Slot joins its
-    // className into this child's, so the two variants meet inside one cn call.
-    // They are a single conflict group, last one wins, and outline arrives
-    // second — so the secondary chrome survives only while this child's
-    // className re-asserts it last. Absence of button-outline IS the assertion.
+    // Slot joins AlertDialogCancel's className into this child's, so both
+    // variants meet inside one cn call as a single conflict group. The dialog
+    // hands Cancel the secondary variant through its own seam, so both halves
+    // emit button-secondary and there is no outline left to arrive last and win
+    // the group. Absence of button-outline IS the assertion.
     renderDialog()
 
     const cancel = screen.getByText('Cancel')

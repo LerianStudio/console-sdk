@@ -35,7 +35,10 @@ export function EntityCardGridFooter({
   return (
     <div
       className={cn(
-        'flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-6 py-4',
+        // Semantic tokens, not raw palette steps: `bg-white`/`border-zinc-200`
+        // have no dark counterpart, so this footer stayed a white slab under
+        // cards that followed the theme.
+        'border-border bg-card flex items-center justify-between rounded-lg border px-6 py-4',
         className
       )}
       data-slot="entity-card-grid-footer"
