@@ -140,10 +140,17 @@ function tokenValue(name: string, theme: 'light' | 'dark'): string {
   }
 }
 
-/** `H S% L%` (an optional `/ alpha` is ignored) to sRGB in 0..1. */
+/** `H S% L%` to sRGB in 0..1. Alpha is rejected: WCAG contrast for a
+ * translucent color depends on what sits behind it, so it must be composited
+ * before it reaches this gate — a silent strip would report a wrong ratio. */
 function toRgb(declaration: string): [number, number, number] {
+  if (declaration.includes('/')) {
+    throw new Error(
+      `alpha channels require composited contrast: ${declaration}`
+    )
+  }
+
   const [h, s, l] = declaration
-    .split('/')[0]
     .trim()
     .split(/\s+/)
     .map((part) => parseFloat(part))
