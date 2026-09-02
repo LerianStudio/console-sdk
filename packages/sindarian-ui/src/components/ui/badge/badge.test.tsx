@@ -28,6 +28,43 @@ describe('Badge destructive variant', () => {
   })
 })
 
+/**
+ * `credit` is the accounting reading of a credit amount — deliberately NOT an
+ * alias of `destructive` (an error/alarm). The credit role is a TINT-and-INK
+ * pair: `--credit-foreground` mirrors `--credit` by contract
+ * (see src/__tests__/tokens-contract.test.ts), so the red carries the role as
+ * text over a tinted surface. A solid `bg-credit` fill under
+ * `text-credit-foreground` would render red-on-red and be invisible.
+ */
+describe('Badge credit variant', () => {
+  it('renders a tinted surface with the credit ink, never a solid fill', () => {
+    render(<Badge variant="credit">Credit</Badge>)
+
+    const badge = screen.getByText('Credit')
+    expect(badge).toHaveClass('bg-credit/10', 'text-credit-foreground')
+    // A solid fill would collapse the mirrored token pair into red-on-red.
+    expect(badge).not.toHaveClass('bg-credit')
+  })
+
+  it('carries a credit-tinted border, not the neutral default', () => {
+    render(<Badge variant="credit">Credit</Badge>)
+
+    const badge = screen.getByText('Credit')
+    expect(badge).toHaveClass('border-credit/30')
+    expect(badge).not.toHaveClass('border-border')
+  })
+
+  it('is distinct from the destructive variant', () => {
+    const { rerender } = render(<Badge variant="credit">Amount</Badge>)
+    const credit = screen.getByText('Amount').className
+
+    rerender(<Badge variant="destructive">Amount</Badge>)
+    const destructive = screen.getByText('Amount').className
+
+    expect(credit).not.toBe(destructive)
+  })
+})
+
 describe('Badge token hygiene', () => {
   it('declares no raw palette colors anywhere in the source', () => {
     const source = readFileSync(join(__dirname, 'index.tsx'), 'utf8')

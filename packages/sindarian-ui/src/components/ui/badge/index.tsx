@@ -4,6 +4,13 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 import { Slot } from '@radix-ui/react-slot'
 
+/**
+ * `credit` is the accounting reading of a credit amount, NOT an alias of
+ * `destructive` (an error/alarm). The credit role is a tint-and-ink pair:
+ * `--credit-foreground` mirrors `--credit` by contract, so the red carries the
+ * role as text over a tinted surface. Do not "fix" this into a solid
+ * `bg-credit` fill — that renders red-on-red and is invisible.
+ */
 const badgeVariants = cva(
   'inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
@@ -19,6 +26,8 @@ const badgeVariants = cva(
           'border-transparent bg-muted-foreground text-white dark:text-black',
         destructive:
           'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
+        credit:
+          'border-credit/30 bg-credit/10 text-credit-foreground px-[10px] py-1',
         error:
           'border-system-error-border bg-system-error-surface text-system-error-text px-[10px] py-1',
         success:
