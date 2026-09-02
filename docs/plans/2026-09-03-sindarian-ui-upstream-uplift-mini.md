@@ -13,15 +13,15 @@
 
 ## Streams
 
-| Epic | Delivers | Depends on | Files |
-|------|----------|------------|-------|
-| 1.1  | native widgets follow the theme (`color-scheme`) | none | `src/globals.css`, `src/__tests__/tokens-contract.test.ts` |
-| 1.2  | Toaster follows ThemeProvider's resolved theme | none | `src/components/ui/toast/toaster.tsx`, `src/theme/theme-provider.tsx`, `src/components/ui/toast/toaster.test.tsx` |
-| 1.3  | CardTitle heading-level escape hatch + honest prop types | none | `src/components/ui/card/index.tsx`, `src/components/ui/card/card.test.tsx` |
-| 1.4  | AppShell banner landmark can be named | none | `src/enterprise/app-shell/index.tsx`, `src/enterprise/app-shell/app-shell.test.tsx` |
-| 1.5  | Badge `size="sm"` (11px micro-badge) | none | `src/components/ui/badge/index.tsx`, `src/components/ui/badge/badge.test.tsx` |
-| 1.6  | migration + setup doc consumers actually need | none | `packages/sindarian-ui/README.md` |
-| 1.7  | integration + repo-wide verification | 1.1–1.6 | — (verification only) |
+| Epic | Delivers                                                 | Depends on | Files                                                                                                             |
+| ---- | -------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| 1.1  | native widgets follow the theme (`color-scheme`)         | none       | `src/globals.css`, `src/__tests__/tokens-contract.test.ts`                                                        |
+| 1.2  | Toaster follows ThemeProvider's resolved theme           | none       | `src/components/ui/toast/toaster.tsx`, `src/theme/theme-provider.tsx`, `src/components/ui/toast/toaster.test.tsx` |
+| 1.3  | CardTitle heading-level escape hatch + honest prop types | none       | `src/components/ui/card/index.tsx`, `src/components/ui/card/card.test.tsx`                                        |
+| 1.4  | AppShell banner landmark can be named                    | none       | `src/enterprise/app-shell/index.tsx`, `src/enterprise/app-shell/app-shell.test.tsx`                               |
+| 1.5  | Badge `size="sm"` (11px micro-badge)                     | none       | `src/components/ui/badge/index.tsx`, `src/components/ui/badge/badge.test.tsx`                                     |
+| 1.6  | migration + setup doc consumers actually need            | none       | `packages/sindarian-ui/README.md`                                                                                 |
+| 1.7  | integration + repo-wide verification                     | 1.1–1.6    | — (verification only)                                                                                             |
 
 All paths except the README are relative to `packages/sindarian-ui/`.
 
@@ -70,6 +70,7 @@ Frozen before dispatch. An agent MUST NOT change these; if one cannot be met, ST
 **Implementation vision:** add `color-scheme: light;` as the first declaration of the `:root` block and `color-scheme: dark;` as the first declaration of the `.dark` block, each with a one-line comment stating the constraint (native widget theming). Extend `tokens-contract.test.ts` with assertions that `color-scheme: light` appears in the root block and `color-scheme: dark` in the dark block.
 
 **Files:**
+
 - Modify: `src/globals.css`
 - Test: `src/__tests__/tokens-contract.test.ts`
 
@@ -96,6 +97,7 @@ Frozen before dispatch. An agent MUST NOT change these; if one cannot be met, ST
 **Implementation vision:** expose the theme context for optional consumption — either export the context object internally or add a `useOptionalTheme()` (returns `undefined` outside a provider) in `theme-provider.tsx`; keep `useTheme`'s throwing behavior untouched. In `Toaster`, resolve per Contract 4: explicit prop wins, else provider `resolvedTheme`, else `'system'`. Keep every other sonner prop byte-identical.
 
 **Files:**
+
 - Modify: `src/components/ui/toast/toaster.tsx`, `src/theme/theme-provider.tsx`
 - Test: `src/components/ui/toast/toaster.test.tsx` (create)
 
@@ -122,6 +124,7 @@ Frozen before dispatch. An agent MUST NOT change these; if one cannot be met, ST
 **Implementation vision:** implement Contract 2 (render `const Comp = as ?? 'h3'`); retype `CardDescription` props as `React.ComponentProps<'p'>`. No DOM/class change when `as` is omitted. Add a test file (none exists for card) asserting: default renders `h3` with `data-slot="card-title"` and today's classes; `as="h2"` renders `h2` with identical slot/classes.
 
 **Files:**
+
 - Modify: `src/components/ui/card/index.tsx`
 - Test: `src/components/ui/card/card.test.tsx` (create)
 
@@ -148,6 +151,7 @@ Frozen before dispatch. An agent MUST NOT change these; if one cannot be met, ST
 **Implementation vision:** implement Contract 3: `headerLabel?: string` on `AppShellProps` with a doc comment (when to name a banner), rendered as `aria-label` on the existing `<header>`. Omitted → attribute absent (assert that too). Extend the existing test file with both assertions.
 
 **Files:**
+
 - Modify: `src/enterprise/app-shell/index.tsx`
 - Test: `src/enterprise/app-shell/app-shell.test.tsx`
 
@@ -174,6 +178,7 @@ Frozen before dispatch. An agent MUST NOT change these; if one cannot be met, ST
 **Implementation vision:** add the `size` axis per Contract 1 verbatim; add `size: 'default'` to `defaultVariants`. Check whether the component runs classes through tailwind-merge (`cn`) — if plain concatenation, `text-[11px]` must still win over the base `text-sm` (cva emits base first; verify in the test by computed class list). Add a test: default badge class output unchanged (snapshot today's string for `variant="default"` and one system variant); `size="sm"` includes `text-[11px]`; `text-sm` does not survive merge when sm is set (if `cn` uses tailwind-merge).
 
 **Files:**
+
 - Modify: `src/components/ui/badge/index.tsx`
 - Test: `src/components/ui/badge/badge.test.tsx` (create)
 
@@ -200,6 +205,7 @@ Frozen before dispatch. An agent MUST NOT change these; if one cannot be met, ST
 **Implementation vision:** (a) rewrite "Tailwind CSS Setup" for v4: `@import 'tailwindcss'` then the lib's `dist/globals.css`, `@source` into the package dist, `@custom-variant dark` — mirror the wiring both production consumers use (br-sfn cockpit `src/index.css`, product-console `src/app/globals.css`). (b) Add a "Migrating to 1.3+" section with exactly these items: remove `tailwindcss-animate` from the app (the lib ships `tw-animate-css`; keeping the old plugin silently re-times every lib overlay); `CardTitle` renders a real `h3` since 1.3.0 — delete consumer heading wrappers, use `as` for a different level; Vite/non-Next consumers must load Inter themselves (`@fontsource-variable/inter`) and may set `--font-inter` (the lib falls back to `'Inter'` then system since 1.3.0-beta); note the double preflight (app `@import 'tailwindcss'` + lib globals both emit preflight — harmless duplication, ~10KB pre-gzip; keep the app import first). (c) Point the Changelog section at `packages/sindarian-ui/CHANGELOG.md`. English, factual, no marketing tone.
 
 **Files:**
+
 - Modify: `packages/sindarian-ui/README.md`
 
 **Verification:** every claim cross-checked against the code on THIS branch (e.g. the font fallback text must match what `globals.css` actually does after the develop fix). No fabricated flags or paths.
