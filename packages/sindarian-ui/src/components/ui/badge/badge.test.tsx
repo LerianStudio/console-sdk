@@ -70,7 +70,7 @@ describe('Badge token hygiene', () => {
     const source = readFileSync(join(__dirname, 'index.tsx'), 'utf8')
 
     expect(source).not.toMatch(
-      /(?:bg|text|border)-(?:red|green|yellow|amber)-\d/
+      /(?:bg|text|border)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d/
     )
   })
 })
