@@ -1,3 +1,5 @@
+## [1.3.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.4...sindarian-ui-v1.3.0-beta.5) (2026-09-02)
+
 ## [1.3.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0-beta.3...sindarian-ui-v1.3.0-beta.4) (2026-09-02)
 
 
