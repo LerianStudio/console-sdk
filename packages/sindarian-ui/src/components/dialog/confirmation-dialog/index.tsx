@@ -73,6 +73,8 @@ export type ConfirmationDialogProps = {
   onCancel?: () => void
   confirmLabel?: string
   cancelLabel?: string
+  /** Announced to screen readers while a confirm is in flight. */
+  pendingLabel?: string
 }
 
 export function ConfirmationDialog({
@@ -85,7 +87,8 @@ export function ConfirmationDialog({
   onConfirm = () => {},
   onCancel = () => {},
   confirmLabel,
-  cancelLabel
+  cancelLabel,
+  pendingLabel = 'Processing…'
 }: ConfirmationDialogProps) {
   const [pending, setPending] = React.useState(false)
   const busy = Boolean(loading) || pending
@@ -132,16 +135,25 @@ export function ConfirmationDialog({
         {/* Mounted empty so the announcement fires on the text change, not on
             the region appearing. The visible pending cue is the button spinner. */}
         <span role="status" className="sr-only">
-          {busy ? 'Processing…' : ''}
+          {busy ? pendingLabel : ''}
         </span>
 
         <AlertDialogFooter className="gap-4">
+          {/*
+           * AlertDialogCancel hardcodes the outline classes and Slot CONCATENATES
+           * className, so the button carries button-secondary AND button-outline;
+           * same @layer, outline declared later, so it wins the three properties
+           * they contest. The utilities below win them back (utilities outrank
+           * components), `enabled:` scoped so the disabled state still drops its
+           * border and shadow like a plain secondary button.
+           */}
           <AlertDialogCancel asChild>
             <Button
               onClick={onCancel}
               disabled={busy}
               variant="secondary"
               size="small"
+              className="enabled:border-button-border hover:border-button-border enabled:shadow-sm"
             >
               {cancelLabel ?? 'Cancel'}
             </Button>

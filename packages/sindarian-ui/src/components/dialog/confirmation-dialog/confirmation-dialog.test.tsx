@@ -159,6 +159,20 @@ describe('ConfirmationDialog', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 
+  it('lets the caller localize the pending announcement', async () => {
+    const { promise, resolve } = deferred()
+    renderDialog({ onConfirm: () => promise, pendingLabel: 'Processando…' })
+
+    fireEvent.click(screen.getByTestId('confirm'))
+
+    expect(screen.getByRole('status')).toHaveTextContent('Processando…')
+    expect(screen.getByRole('status')).not.toHaveTextContent('Processing')
+
+    await act(async () => {
+      resolve()
+    })
+  })
+
   it('keeps honouring the caller-driven loading prop', () => {
     renderDialog({ loading: true })
 
@@ -184,6 +198,24 @@ describe('ConfirmationDialog', () => {
     expect(destructiveClass).not.toBe(fallback?.className)
     expect(destructiveClass).toContain('bg-system-error-surface')
     expect(fallback?.className).toContain('bg-muted')
+  })
+
+  it('keeps the cancel action looking like a secondary button', () => {
+    // AlertDialogCancel hardcodes the outline classes and Slot concatenates
+    // className, so both land on the element and outline — declared later in the
+    // same layer — wins border-colour, box-shadow and the hover border. jsdom
+    // cannot see the cascade, so assert the collision and the overrides that
+    // answer it: drop them and the cancel silently loses its secondary chrome.
+    renderDialog()
+
+    const cancel = screen.getByText('Cancel')
+
+    expect(cancel).toHaveClass('button-secondary', 'button-outline')
+    expect(cancel).toHaveClass(
+      'enabled:border-button-border',
+      'enabled:shadow-sm',
+      'hover:border-button-border'
+    )
   })
 
   it('carries no raw palette colours on any variant', () => {
