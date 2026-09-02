@@ -77,7 +77,7 @@ function PaperCollapsibleContent({
     <CollapsibleContent
       data-slot="paper-collapsible-content"
       className={cn(
-        'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden transition-all duration-200 ease-in-out',
+        'motion-safe:data-[state=closed]:animate-collapsible-up motion-safe:data-[state=open]:animate-collapsible-down overflow-hidden transition-all duration-200 ease-in-out',
         className
       )}
       {...props}

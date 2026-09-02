@@ -291,7 +291,7 @@ export function AutocompleteLoading({
       )}
       {...props}
     >
-      <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+      <Loader2 className="text-muted-foreground h-5 w-5 motion-safe:animate-spin" />
     </CommandPrimitive.Loading>
   )
 }
@@ -428,7 +428,7 @@ export function AutocompleteContent({
       <CommandPrimitive.List
         ref={_ref}
         className={cn(
-          'bg-popover text-popover-foreground animate-in absolute top-1 z-50 max-h-96 w-full min-w-32 overflow-x-hidden overflow-y-auto rounded-md border shadow-md outline-hidden',
+          'bg-popover text-popover-foreground motion-safe:animate-in absolute top-1 z-50 max-h-96 w-full min-w-32 overflow-x-hidden overflow-y-auto rounded-md border shadow-md outline-hidden',
           position === 'popper' &&
             'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
           className
