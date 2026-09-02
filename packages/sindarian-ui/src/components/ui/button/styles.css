@@ -25,7 +25,12 @@
 
 @layer components {
   .button-base {
-    @apply h-button-h px-button-px py-button-py relative inline-flex cursor-pointer items-center justify-center rounded-lg text-sm font-medium whitespace-nowrap shadow-sm transition-colors;
+    @apply h-button-h px-button-px py-button-py ring-offset-background relative inline-flex cursor-pointer items-center justify-center rounded-lg text-sm font-medium whitespace-nowrap shadow-sm transition-colors;
+    /* Keyboard focus was unstyled on every kit button, so consumers restated a
+       ring by hand. Same idiom as tabs-trigger and textarea. `.button-read-only`
+       out-specifies this (class + attribute + pseudo-class), so the read-only
+       suppression still wins without depending on source order. */
+    @apply focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none;
   }
 
   .button-plain {
@@ -63,7 +68,7 @@
   }
 
   .button-read-only {
-    @apply data-[read-only=true]:cursor-default data-[read-only=true]:border-transparent data-[read-only=true]:opacity-50 data-[read-only=true]:shadow-none data-[read-only=true]:focus:ring-0 data-[read-only=true]:focus:outline-hidden;
+    @apply data-[read-only=true]:cursor-default data-[read-only=true]:border-transparent data-[read-only=true]:opacity-50 data-[read-only=true]:shadow-none data-[read-only=true]:focus:ring-0 data-[read-only=true]:focus:ring-offset-0 data-[read-only=true]:focus:outline-hidden;
   }
 
   .button-small {
