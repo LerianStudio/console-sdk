@@ -1,3 +1,10 @@
+## [1.4.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.2...sindarian-ui-v1.4.0-beta.3) (2026-09-03)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** default EntityBoxHeaderTitle to h2 and lift subtitle contrast to AA ([54eb1c1](https://github.com/LerianStudio/console-sdk/commit/54eb1c1777888755e78f5e8a79a440dfb9142489)), closes [#27272](https://github.com/LerianStudio/console-sdk/issues/27272)
+
 ## [1.4.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.1...sindarian-ui-v1.4.0-beta.2) (2026-09-03)
 
 
