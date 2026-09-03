@@ -42,6 +42,29 @@ export const Primary: StoryObj = {
   )
 }
 
+export const HeadingLevels: StoryObj = {
+  render: () => (
+    <div className="flex flex-col gap-2">
+      <h1 className="text-foreground mb-4 text-4xl font-bold">
+        Page title (the page's only h1)
+      </h1>
+      <EntityBox>
+        <EntityBoxHeaderTitle
+          title="Ledgers (default — h2)"
+          subtitle="A content box under the page title renders an h2."
+        />
+      </EntityBox>
+      <EntityBox>
+        <EntityBoxHeaderTitle
+          as="h3"
+          title='Accounts (as="h3")'
+          subtitle="Drop the level when the box nests inside an h2 section."
+        />
+      </EntityBox>
+    </div>
+  )
+}
+
 export const Collapsible: StoryObj = {
   render: (args) => {
     const form = useForm({ defaultValues: { limit: '10', name: '' } })

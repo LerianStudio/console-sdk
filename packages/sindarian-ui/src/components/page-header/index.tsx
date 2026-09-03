@@ -120,7 +120,7 @@ export function PageHeaderInfoTitle({
       </h1>
 
       <div className="flex items-center gap-2">
-        <p className="text-shadcn-400 text-sm font-medium">{subtitle}</p>
+        <p className="text-muted-foreground text-sm font-medium">{subtitle}</p>
         {children}
       </div>
     </div>
@@ -155,6 +155,13 @@ export function PageHeaderInfoTooltip({
             className="bg-shadcn-600 border-none"
             arrowPadding={0}
           >
+            {/*
+              shadcn-400 is correct HERE and must not be swapped for
+              --muted-foreground: this surface is bg-shadcn-600 (#27272A), fixed
+              dark in BOTH themes, so this is a deliberate light-on-dark pairing
+              at 5.81:1 — the same one the base Tooltip primitive uses.
+              --muted-foreground would read 1.93:1 against it in the light theme.
+            */}
             <p className="text-shadcn-400 text-sm font-medium">{subtitle}</p>
             <p className="text-center text-white">Click to copy</p>
             <Arrow height={8} width={15} />

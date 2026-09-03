@@ -9,6 +9,22 @@ Component used to show what entity the user is handling along side a data-table.
 
 <Canvas className="light" of={Story.Primary} />
 
+### Heading level
+
+`EntityBoxHeaderTitle` renders its title as an **`h2`** by default. An entity box
+is a content box that sits *under* the page's own heading — the page `h1` belongs
+to `PageHeaderInfoTitle` — so an `h1` here would give the page a second
+top-level heading and break the document outline for screen readers.
+
+Use `as` to move the title to another level when the box nests deeper in the
+page's section hierarchy. Accepted values: `h1`, `h2` (default), `h3`, `h4`.
+
+```tsx
+<EntityBoxHeaderTitle as="h3" title="Accounts" subtitle="..." />
+```
+
+<Canvas className="light" of={Story.HeadingLevels} />
+
 ### Collapsible
 
 Collapsible version to allow filter options.
