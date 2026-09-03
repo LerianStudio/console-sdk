@@ -73,11 +73,20 @@ function EntityBoxCollapsibleContent({
   )
 }
 
-interface EntityBoxHeaderProps extends React.ComponentProps<'div'> {
+export interface EntityBoxHeaderProps extends React.ComponentProps<'div'> {
   title: string
   subtitle?: string
   tooltip?: string
   tooltipWidth?: string | number
+  /**
+   * Heading element used for the title. Defaults to `h2`.
+   *
+   * An EntityBox is a content box UNDER the page's own heading — the page `h1`
+   * belongs to `PageHeaderInfoTitle` — so `h1` here would give the page a
+   * second top-level heading. Raise or lower the level to match the section
+   * the box actually sits in.
+   */
+  as?: 'h1' | 'h2' | 'h3' | 'h4'
 }
 
 function EntityBoxHeaderTitle({
@@ -86,6 +95,7 @@ function EntityBoxHeaderTitle({
   tooltip,
   tooltipWidth,
   className,
+  as: Heading = 'h2',
   ...props
 }: EntityBoxHeaderProps) {
   return (
@@ -95,7 +105,9 @@ function EntityBoxHeaderTitle({
       {...props}
     >
       <div className="flex items-center gap-[10px]">
-        <h1 className="text-muted-foreground text-lg font-medium">{title}</h1>
+        <Heading className="text-muted-foreground text-lg font-medium">
+          {title}
+        </Heading>
         {tooltip && (
           <TooltipProvider>
             <Tooltip>
@@ -116,7 +128,7 @@ function EntityBoxHeaderTitle({
           </TooltipProvider>
         )}
       </div>
-      {subtitle && <p className="text-shadcn-400 text-sm">{subtitle}</p>}
+      {subtitle && <p className="text-muted-foreground text-sm">{subtitle}</p>}
     </div>
   )
 }
