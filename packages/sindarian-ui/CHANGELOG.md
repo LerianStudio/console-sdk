@@ -1,3 +1,10 @@
+## [1.4.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.1...sindarian-ui-v1.4.0-beta.2) (2026-09-03)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** remove dead cmdk-input-wrapper selector from CommandDialog ([158c76c](https://github.com/LerianStudio/console-sdk/commit/158c76ce055724648346444d543e4d626fee7479))
+
 ## [1.4.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.3.0...sindarian-ui-v1.4.0-beta.1) (2026-09-02)
 
 
