@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Form } from '@/components/ui/form'
+import { MultipleSelectItem } from '@/components/ui/multiple-select'
 import { SelectItem } from '@/components/ui/select'
 import { SelectField } from '.'
 
@@ -96,8 +97,8 @@ describe('SelectField without react-hook-form', () => {
           label="Rail"
           value={rail}
           onChange={(value) => {
-            setRail(value as string)
-            onChange?.(value as string)
+            setRail(value)
+            onChange?.(value)
           }}
         >
           <SelectItem value="pix">Pix</SelectItem>
@@ -136,5 +137,62 @@ describe('SelectField without react-hook-form', () => {
     )
 
     expect(screen.getByText('Scopes the blotter')).toBeInTheDocument()
+  })
+})
+
+/**
+ * `multi` used to be an ordinary boolean beside `value?: string | string[]` and
+ * a union `onChange`, so `multi` with `value="pix"` compiled and the multi
+ * implementation quietly turned it into `[]` — a selection the caller asked for
+ * and never got. `multi` is the discriminant now: the array shape is the only
+ * one it accepts, and a multi consumer's `onChange` receives `string[]` with no
+ * cast at the call site.
+ */
+describe('SelectField in multi mode', () => {
+  function MultiHarness({
+    onChange
+  }: {
+    onChange?: (value: string[]) => void
+  }) {
+    const [rails, setRails] = useState<string[]>(['pix'])
+
+    return (
+      <>
+        <SelectField
+          name="rails"
+          label="Rails"
+          multi
+          value={rails}
+          onChange={(value) => {
+            setRails(value)
+            onChange?.(value)
+          }}
+        >
+          <MultipleSelectItem value="pix">Pix</MultipleSelectItem>
+          <MultipleSelectItem value="ted">TED</MultipleSelectItem>
+        </SelectField>
+        <output>{rails.join(',')}</output>
+      </>
+    )
+  }
+
+  it('renders the controlled array value with no casts at the call site', () => {
+    render(<MultiHarness />)
+
+    expect(screen.getByText('Rails')).toBeInTheDocument()
+    expect(screen.getByText('pix')).toBeInTheDocument()
+  })
+
+  it('reports the picked values as an array', async () => {
+    const onChange = jest.fn()
+    render(<MultiHarness onChange={onChange} />)
+
+    // Clicking the trigger opens the list; cmdk commits the pick on click.
+    fireEvent.click(screen.getByRole('combobox'))
+    fireEvent.click(await screen.findByRole('option', { name: 'TED' }))
+
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(['pix', 'ted']))
+    // The caller's state won the round trip, so both chips are on the trigger.
+    expect(screen.getByText('pix,ted')).toBeInTheDocument()
   })
 })

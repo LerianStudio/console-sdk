@@ -6,7 +6,18 @@ import { Form } from '@/components/ui/form'
 import { SelectItem } from '@/components/ui/select'
 import { MultipleSelectItem } from '@/components/ui/multiple-select'
 
-const meta: Meta<SelectFieldProps> = {
+/**
+ * Story args are the presentational props only. `multi`, `value` and `onChange`
+ * are the field's MODE, which each harness below fixes for itself — a control
+ * that could flip `multi` from the args panel would put the field in a shape
+ * its hard-coded children and callback no longer match.
+ */
+type SelectFieldStoryArgs = Omit<
+  SelectFieldProps,
+  'control' | 'multi' | 'value' | 'onChange'
+>
+
+const meta: Meta<SelectFieldStoryArgs> = {
   title: 'Components/Form/SelectField',
   component: SelectField,
   argTypes: {}
@@ -14,7 +25,7 @@ const meta: Meta<SelectFieldProps> = {
 
 export default meta
 
-function BaseComponent(args: Omit<SelectFieldProps, 'name' | 'control'>) {
+function BaseComponent(args: Omit<SelectFieldStoryArgs, 'name'>) {
   const form = useForm()
 
   return (
@@ -36,9 +47,7 @@ function BaseComponent(args: Omit<SelectFieldProps, 'name' | 'control'>) {
   )
 }
 
-function BaseComponentMultiSelect(
-  args: Omit<SelectFieldProps, 'name' | 'control'>
-) {
+function BaseComponentMultiSelect(args: Omit<SelectFieldStoryArgs, 'name'>) {
   const form = useForm()
 
   return (
@@ -61,43 +70,43 @@ function BaseComponentMultiSelect(
   )
 }
 
-export const Primary: StoryObj<SelectFieldProps> = {
+export const Primary: StoryObj<SelectFieldStoryArgs> = {
   render: (args) => BaseComponent(args)
 }
 
-export const Required: StoryObj<SelectFieldProps> = {
+export const Required: StoryObj<SelectFieldStoryArgs> = {
   args: {
     required: true
   },
   render: (args) => BaseComponent(args)
 }
 
-export const WithTooltip: StoryObj<SelectFieldProps> = {
+export const WithTooltip: StoryObj<SelectFieldStoryArgs> = {
   args: {
     tooltip: 'This is a Tooltip!'
   },
   render: (args) => BaseComponent(args)
 }
 
-export const WithExtraLabel: StoryObj<SelectFieldProps> = {
+export const WithExtraLabel: StoryObj<SelectFieldStoryArgs> = {
   args: {
     labelExtra: <span>Extra Label</span>
   },
   render: (args) => BaseComponent(args)
 }
 
-export const Disabled: StoryObj<SelectFieldProps> = {
+export const Disabled: StoryObj<SelectFieldStoryArgs> = {
   args: {
     disabled: true
   },
   render: (args) => BaseComponent(args)
 }
 
-export const MultiSelect: StoryObj<SelectFieldProps> = {
+export const MultiSelect: StoryObj<SelectFieldStoryArgs> = {
   render: (args) => BaseComponentMultiSelect(args)
 }
 
-export const MultiSelectDisabled: StoryObj<SelectFieldProps> = {
+export const MultiSelectDisabled: StoryObj<SelectFieldStoryArgs> = {
   args: {
     disabled: true
   },
@@ -105,7 +114,7 @@ export const MultiSelectDisabled: StoryObj<SelectFieldProps> = {
 }
 
 /** No `control`: the same select driven by plain state. */
-function StatefulComponent(args: Omit<SelectFieldProps, 'name' | 'control'>) {
+function StatefulComponent(args: Omit<SelectFieldStoryArgs, 'name'>) {
   const [rail, setRail] = useState('')
 
   return (
@@ -116,7 +125,7 @@ function StatefulComponent(args: Omit<SelectFieldProps, 'name' | 'control'>) {
         name="rail"
         placeholder="Pick a rail"
         value={rail}
-        onChange={(value) => setRail(value as string)}
+        onChange={(value) => setRail(value)}
       >
         <SelectItem value="pix">Pix</SelectItem>
         <SelectItem value="ted">TED</SelectItem>
@@ -126,6 +135,6 @@ function StatefulComponent(args: Omit<SelectFieldProps, 'name' | 'control'>) {
   )
 }
 
-export const WithoutReactHookForm: StoryObj<SelectFieldProps> = {
+export const WithoutReactHookForm: StoryObj<SelectFieldStoryArgs> = {
   render: (args) => StatefulComponent(args)
 }

@@ -29,7 +29,7 @@ import {
   Path
 } from 'react-hook-form'
 
-export type SelectFieldProps<T extends FieldValues = FieldValues> =
+type SelectFieldSharedProps<T extends FieldValues = FieldValues> =
   PropsWithChildren & {
     name: string
     label?: ReactNode
@@ -42,15 +42,38 @@ export type SelectFieldProps<T extends FieldValues = FieldValues> =
     /** react-hook-form control. Omit it to drive the field from plain state
      *  with `value` + `onChange`. */
     control?: Control<T>
-    /** Controlled value for the no-`control` path. Omit it to let the select
-     *  keep its own state and just report changes through `onChange`. */
-    value?: string | string[]
-    multi?: boolean
     required?: boolean
     emptyMessage?: string
-    onChange?: (value: string | string[]) => void
     'data-testid'?: string
   }
+
+/**
+ * `multi` is the DISCRIMINANT, not an independent flag: it selects which of the
+ * two field shapes the rest of the props must speak. Typed as a plain boolean
+ * beside `value?: string | string[]`, `multi` with `value="pix"` compiled and
+ * then rendered empty — the multi implementation only understands arrays and
+ * turned the string into `[]`, dropping the caller's selection with no error
+ * anywhere. The mismatch is unrepresentable now, and a multi consumer's
+ * `onChange` receives `string[]` without a cast at the call site.
+ */
+type SelectFieldModeProps =
+  | {
+      multi: true
+      /** Controlled values for the no-`control` path. Omit to let the select
+       *  keep its own state and just report changes through `onChange`. */
+      value?: string[]
+      onChange?: (value: string[]) => void
+    }
+  | {
+      multi?: false
+      /** Controlled value for the no-`control` path. Omit to let the select
+       *  keep its own state and just report changes through `onChange`. */
+      value?: string
+      onChange?: (value: string) => void
+    }
+
+export type SelectFieldProps<T extends FieldValues = FieldValues> =
+  SelectFieldSharedProps<T> & SelectFieldModeProps
 
 /**
  * Both paths hand the body the shape react-hook-form's `render` already gives
@@ -79,6 +102,13 @@ export const SelectField = <T extends FieldValues = FieldValues>({
   onChange,
   ...others
 }: SelectFieldProps<T>) => {
+  // The props union already pairs `multi` with the callback shape that branch
+  // emits, but destructuring an intersection loses that correlation — TS sees
+  // two unrelated callbacks. Both branches report through this one seam, each
+  // with the payload its own union member declared.
+  const emitChange = onChange as
+    ((value: string | string[]) => void) | undefined
+
   const renderItem = (field: Binding) => {
     return (
       <FormItem required={required}>
@@ -94,7 +124,7 @@ export const SelectField = <T extends FieldValues = FieldValues>({
           <MultipleSelect
             onValueChange={(value) => {
               field.onChange(value)
-              onChange?.(value)
+              emitChange?.(value)
             }}
             disabled={disabled}
             {...field}
@@ -108,7 +138,7 @@ export const SelectField = <T extends FieldValues = FieldValues>({
           <Select
             onValueChange={(value) => {
               field.onChange(value)
-              onChange?.(value)
+              emitChange?.(value)
             }}
             value={field.value as string | undefined}
             disabled={disabled}
@@ -156,7 +186,12 @@ export const SelectField = <T extends FieldValues = FieldValues>({
       name={name as Path<T>}
       control={control}
       {...others}
-      render={({ field }) => renderItem({ ...field, value: field.value ?? '' })}
+      // An unset field falls back to the EMPTY value of its own shape: `''`
+      // for the single select, `[]` for the multi one. Falling back to `''`
+      // for both handed MultipleSelect a string it silently discarded.
+      render={({ field }) =>
+        renderItem({ ...field, value: field.value ?? (multi ? [] : '') })
+      }
     />
   )
 }
