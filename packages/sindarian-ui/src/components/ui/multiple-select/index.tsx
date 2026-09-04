@@ -341,8 +341,17 @@ export const MultipleSelectItem = React.forwardRef<
 )
 MultipleSelectItem.displayName = 'MultipleSelectItem'
 
-export type MultipleSelectProps = React.ComponentPropsWithoutRef<
-  typeof CommandPrimitive
+/**
+ * cmdk's own `value`/`defaultValue`/`onValueChange` are single-string search
+ * state. Spreading them and re-declaring the multi-select versions produced an
+ * INTERSECTION (`string & string[]`, and a handler taking both `string` and
+ * `string[]`), which no caller can satisfy — the controlled shape this
+ * component exists for was uncallable. They are omitted before the multi-value
+ * versions are declared; the component consumes cmdk's search state itself.
+ */
+export type MultipleSelectProps = Omit<
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive>,
+  'value' | 'defaultValue' | 'onValueChange'
 > & {
   value?: string[] | []
   defaultValue?: string[] | []
