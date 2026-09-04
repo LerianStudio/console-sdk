@@ -75,4 +75,30 @@ describe('AlertBanner', () => {
     render(<AlertBanner title="Custom" className="probe-class" />)
     expect(screen.getByRole('alert')).toHaveClass('probe-class')
   })
+
+  it('forwards arbitrary DOM attributes to the container', () => {
+    // Swallowing the rest props made the banner undiscriminatable: a page with
+    // several banners could not be asserted on, which blocked its adoption.
+    render(
+      <AlertBanner
+        title="Probe"
+        data-testid="integrity-verdict"
+        aria-label="Audit integrity"
+        id="verdict-1"
+      />
+    )
+
+    const alert = screen.getByTestId('integrity-verdict')
+    expect(alert).toHaveAttribute('aria-label', 'Audit integrity')
+    expect(alert).toHaveAttribute('id', 'verdict-1')
+    expect(alert).toHaveAttribute('role', 'alert')
+  })
+
+  it('keeps its own role and tone when the caller passes neither', () => {
+    render(<AlertBanner tone="warning" title="Probe" data-testid="banner" />)
+
+    const alert = screen.getByTestId('banner')
+    expect(alert).toHaveAttribute('data-tone', 'warning')
+    expect(alert).toHaveClass('border-system-alert-border')
+  })
 })
