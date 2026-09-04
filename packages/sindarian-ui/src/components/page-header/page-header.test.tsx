@@ -1,7 +1,14 @@
 import '@testing-library/jest-dom'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 
-import { PageHeader, PageHeaderInfoTitle } from '.'
+import {
+  PageHeader,
+  PageHeaderActionButtons,
+  PageHeaderCollapsibleInfo,
+  PageHeaderCollapsibleInfoTrigger,
+  PageHeaderInfoTitle,
+  PageHeaderWrapper
+} from '.'
 
 /**
  * PageHeader forced `mt-12` on its root and `mb-12` on the info-title wrapper
@@ -119,5 +126,121 @@ describe('PageHeaderInfoTitle subtitle contrast', () => {
     expect(screen.getByText('Ledger overview')).not.toHaveClass(
       'text-shadcn-400'
     )
+  })
+})
+
+/**
+ * The page title is the page heading, so `h1` stays the DEFAULT. What was
+ * missing is the escape hatch: a consumer nesting this block under an existing
+ * `h1` (a wizard step, an embedded panel) had no way to demote it and had to
+ * re-implement the whole title block locally, class for class, to keep the
+ * document outline valid. `as` mirrors `EntityBoxHeaderTitle`'s seam and leaves
+ * the rendered classes untouched.
+ */
+describe('PageHeaderInfoTitle heading level', () => {
+  it('renders an h1 by default, because it is the page heading', () => {
+    render(<PageHeaderInfoTitle title="Ledgers" />)
+
+    expect(screen.getByTestId('title').tagName).toBe('H1')
+  })
+
+  it('renders the requested level with identical testid and class output', () => {
+    render(<PageHeaderInfoTitle title="Ledgers" as="h2" />)
+
+    const el = screen.getByTestId('title')
+    expect(el.tagName).toBe('H2')
+    expect(el.getAttribute('class')).toBe('text-foreground text-4xl font-bold')
+  })
+
+  it('accepts every heading level h1-h6', () => {
+    for (const level of ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const) {
+      const { unmount } = render(<PageHeaderInfoTitle title="L" as={level} />)
+      expect(screen.getByTestId('title').tagName).toBe(level.toUpperCase())
+      unmount()
+    }
+  })
+})
+
+/**
+ * The disclosure question was an `h1`, so every page that opened `info` served
+ * TWO `h1`s — one document, two top-level headings, which is what a screen
+ * reader announces as two documents' worth of structure. The question titles a
+ * real region under the page title, so it stays a heading (removing it from the
+ * outline would cost heading navigation) and becomes the `h2` that its position
+ * under the page `h1` describes. The rendered classes do not change.
+ */
+describe('PageHeaderCollapsibleInfo heading level', () => {
+  const QUESTION = 'What is a ledger?'
+
+  const openInfo = () => {
+    render(
+      <PageHeader>
+        <PageHeaderWrapper>
+          <PageHeaderInfoTitle title="Ledgers" />
+          <PageHeaderCollapsibleInfoTrigger question={QUESTION} />
+        </PageHeaderWrapper>
+        <PageHeaderCollapsibleInfo
+          question={QUESTION}
+          answer="A ledger holds accounts."
+        />
+      </PageHeader>
+    )
+    fireEvent.click(screen.getByRole('button'))
+  }
+
+  it('leaves exactly one h1 on the page once the info panel is open', () => {
+    openInfo()
+
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Ledgers'
+    )
+  })
+
+  it('renders the question as the h2 its position describes', () => {
+    openInfo()
+
+    const heading = screen.getByRole('heading', { level: 2 })
+    expect(heading).toHaveTextContent(QUESTION)
+    expect(heading.getAttribute('class')).toBe(
+      'text-foreground text-xl font-bold'
+    )
+  })
+})
+
+/**
+ * `flex items-center gap-8` with no `wrap` and no `min-w-0`: a flex item never
+ * shrinks below its own min-content, so a wide control in the action row pushed
+ * the row past the content column instead of wrapping — measured as a viewport
+ * overflow at 768px and 1280px. `flex-wrap` gives the row somewhere to go and
+ * `min-w-0` lets the row itself shrink inside the header's own flex parent. The
+ * gap is deliberately unchanged.
+ */
+describe('PageHeaderActionButtons overflow', () => {
+  const row = (container: HTMLElement) =>
+    container.querySelector('[data-slot="page-header-action-buttons"]')
+
+  it('wraps and shrinks instead of overflowing the content column', () => {
+    const { container } = render(
+      <PageHeaderActionButtons>
+        <button>Act</button>
+      </PageHeaderActionButtons>
+    )
+
+    expect(row(container)).toHaveClass('flex', 'flex-wrap', 'min-w-0')
+  })
+
+  it('keeps the established gap and cross-axis alignment', () => {
+    const { container } = render(<PageHeaderActionButtons />)
+
+    expect(row(container)).toHaveClass('items-center', 'gap-8')
+  })
+
+  it('still merges a consumer className last', () => {
+    const { container } = render(<PageHeaderActionButtons className="gap-2" />)
+
+    const el = row(container)
+    expect(el).toHaveClass('gap-2')
+    expect(el).not.toHaveClass('gap-8')
   })
 })

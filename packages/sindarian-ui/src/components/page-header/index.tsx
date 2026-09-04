@@ -25,7 +25,7 @@ export function PageHeaderActionButtons({
   return (
     <div
       data-slot="page-header-action-buttons"
-      className={cn('flex items-center gap-8', className)}
+      className={cn('flex min-w-0 flex-wrap items-center gap-8', className)}
       {...props}
     />
   )
@@ -90,8 +90,14 @@ export type PageHeaderInfoTitleProps = {
   title: string
   subtitle?: string
   subtitleCopyToClipboard?: boolean
-  /** Routed to the `h1`, as it always has been. */
+  /** Routed to the heading, as it always has been. */
   className?: string
+  /**
+   * Heading level to render. Defaults to `h1`, which is correct: this IS the
+   * page heading. Set it when the block is nested under an existing `h1` (a
+   * wizard step, an embedded panel) so the document outline stays valid.
+   */
+  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
   /**
    * Seam for the wrapper element's own margins. Merged AFTER the hard-coded
    * `mb-12` so a consumer utility (e.g. `mb-0`) wins via tailwind-merge.
@@ -105,19 +111,20 @@ export function PageHeaderInfoTitle({
   subtitle,
   className,
   containerClassName,
-  children
+  children,
+  as: Heading = 'h1'
 }: PageHeaderInfoTitleProps) {
   return (
     <div
       data-slot="page-header-info-title"
       className={cn('mb-12 flex flex-col gap-4', containerClassName)}
     >
-      <h1
+      <Heading
         className={cn('text-foreground text-4xl font-bold', className)}
         data-testid="title"
       >
         {title}
-      </h1>
+      </Heading>
 
       <div className="flex items-center gap-2">
         <p className="text-muted-foreground text-sm font-medium">{subtitle}</p>
@@ -211,7 +218,13 @@ export function PageHeaderCollapsibleInfo({
       <CollapsibleContent>
         <div className="flex w-full justify-between pt-6">
           <div className="mt-12 flex grow flex-col gap-3 pr-6">
-            <h1 className="text-foreground text-xl font-bold">{question}</h1>
+            {/*
+              An h2, NOT an h1: this panel opens underneath the page title, so a
+              second h1 gave one document two top-level headings. It stays a
+              heading — the question titles a real region and heading navigation
+              should reach it — at the level its position describes.
+            */}
+            <h2 className="text-foreground text-xl font-bold">{question}</h2>
 
             <p className="text-shadcn-500 text-sm leading-relaxed font-medium">
               {answer}
