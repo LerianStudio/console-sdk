@@ -14,22 +14,21 @@ const SIZES: FigureSize[] = [
 ]
 
 describe('FIGURE_CLASS', () => {
-  it('carries the mono + tabular invariants on every size', () => {
+  it('carries the tabular invariant on every size', () => {
     for (const size of SIZES) {
-      expect(FIGURE_CLASS[size]).toContain('font-mono')
       expect(FIGURE_CLASS[size]).toContain('tabular-nums')
     }
   })
 
   it('pins the canonical class strings (call sites compose these inline)', () => {
     expect(FIGURE_CLASS).toEqual({
-      hero: 'font-mono text-4xl font-semibold tracking-tight tabular-nums lg:text-5xl',
+      hero: 'text-4xl font-semibold tracking-tight tabular-nums lg:text-5xl',
       'money-hero':
-        'font-mono text-2xl font-semibold tracking-tight tabular-nums lg:text-3xl',
-      panel: 'font-mono text-3xl font-semibold tracking-tight tabular-nums',
-      count: 'font-mono text-2xl font-semibold tracking-tight tabular-nums',
-      row: 'font-mono text-sm tabular-nums',
-      tick: 'font-mono text-[10px] leading-none tabular-nums'
+        'text-2xl font-semibold tracking-tight tabular-nums lg:text-3xl',
+      panel: 'text-3xl font-semibold tracking-tight tabular-nums',
+      count: 'text-2xl font-semibold tracking-tight tabular-nums',
+      row: 'text-sm tabular-nums',
+      tick: 'text-xs leading-none tabular-nums'
     })
   })
 })
@@ -65,9 +64,36 @@ describe('Figure', () => {
       </Figure>
     )
     expect(container.firstElementChild).toHaveClass(
-      'font-mono',
+      'tabular-nums',
       'text-2xl',
       'text-credit'
     )
+  })
+})
+
+/**
+ * Every size was locked to `font-mono`, which put every number in the console
+ * on a different typeface from the text around it, and `tick` carried an
+ * arbitrary `text-[10px]` off the type ramp. Figures now render on the console's
+ * own Inter with `tabular-nums` still doing the column-alignment work Inter
+ * supports natively (`tnum`), and `tick` sits on the ramp at `text-xs`.
+ */
+describe('FIGURE_CLASS console voice', () => {
+  it('locks no size to the mono typeface', () => {
+    for (const size of SIZES) {
+      expect(FIGURE_CLASS[size]).not.toContain('font-mono')
+    }
+  })
+
+  it('keeps the tabular invariant that does the column alignment', () => {
+    for (const size of SIZES) {
+      expect(FIGURE_CLASS[size]).toContain('tabular-nums')
+    }
+  })
+
+  it('sizes every step on the Tailwind type ramp, never an arbitrary pixel', () => {
+    for (const size of SIZES) {
+      expect(FIGURE_CLASS[size]).not.toMatch(/text-\[\d+px\]/)
+    }
   })
 })

@@ -131,3 +131,20 @@ describe('StatCard', () => {
     expect(screen.getByText('11')).toBeInTheDocument()
   })
 })
+
+/**
+ * The delta line hand-rolled its own `font-mono` next to a hero `Figure` that
+ * no longer carries one, which would have put the two numbers of the same card
+ * on two different typefaces. Both now render on the console's Inter with
+ * `tabular-nums` doing the alignment.
+ */
+describe('StatCard figure voice', () => {
+  it('keeps the hero and the delta on the same typeface', () => {
+    render(<StatCard label="Rate" value="98%" delta="+0.6 pts" />)
+
+    for (const el of [screen.getByText('98%'), screen.getByText('+0.6 pts')]) {
+      expect(el).not.toHaveClass('font-mono')
+      expect(el).toHaveClass('tabular-nums')
+    }
+  })
+})

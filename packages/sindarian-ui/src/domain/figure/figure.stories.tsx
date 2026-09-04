@@ -1,5 +1,8 @@
 import { Meta, StoryObj } from '@storybook/nextjs'
 
+import { LABEL_VOICE_CLASS } from '@/lib/typography'
+import { cn } from '@/lib/utils'
+
 import { Figure, FigureProps, FigureSize } from '.'
 
 const meta: Meta<FigureProps> = {
@@ -35,9 +38,7 @@ export const Scale: Story = {
         ['hero', 'money-hero', 'panel', 'count', 'row', 'tick'] as FigureSize[]
       ).map((size) => (
         <div key={size} className="flex items-baseline gap-4">
-          <span className="text-muted-foreground w-24 text-[11px] tracking-[0.08em] uppercase">
-            {size}
-          </span>
+          <span className={cn(LABEL_VOICE_CLASS, 'w-24')}>{size}</span>
           <Figure size={size}>1.240.500,00</Figure>
         </div>
       ))}
