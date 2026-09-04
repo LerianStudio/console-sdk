@@ -17,6 +17,18 @@
  * `original` value, so screens compose money / date / status cells directly in
  * their column `cell` renderers.
  *
+ * Declared column sizing (see `./column-size`) does NOT mean the same thing in
+ * the kit's two table paths, because their layouts differ:
+ *   - DataTable renders real `<th>`/`<td>` under CSS AUTO table layout (the
+ *     `Table` primitive sets no `table-fixed`). There, `size` is a PREFERRED
+ *     width the browser may exceed to fit content, `minSize` acts as a floor,
+ *     and `maxSize` is ignored outright — Chrome and Firefox do not apply
+ *     `max-width` to table cells. A column declaring none keeps auto width.
+ *   - VirtualizedTable renders flex rows, where all three PIN: `size`,
+ *     `minSize` and `maxSize` are honoured exactly as declared.
+ * So a column that must not grow past a width belongs in VirtualizedTable, or
+ * in a cell renderer that truncates its own content.
+ *
  * Row selection is opt-in and controlled: pass `enableRowSelection` plus
  * `rowSelection` / `onRowSelectionChange` (TanStack-native types). When
  * enabled, a checkbox column is prepended — header checkbox selects the
@@ -61,6 +73,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { LABEL_VOICE_CLASS } from '@/lib/typography'
 import { cn } from '@/lib/utils'
 import { EmptyState, type EmptyStateProps } from '../empty-state'
+import { readPreferredColumnSize } from './column-size'
 
 /**
  * Per-column opt-in for ledger numeric alignment. Set `meta: { numeric: true }`
@@ -437,6 +450,9 @@ export function DataTable<TData>({
                   <TableHead
                     key={header.id}
                     align={numeric ? 'right' : undefined}
+                    // Only a column that DECLARED sizing gets an inline width;
+                    // everything else keeps the auto table layout it has today.
+                    style={readPreferredColumnSize(header.column)}
                     className={cn(
                       LABEL_VOICE_CLASS,
                       headDensityClass,
@@ -527,6 +543,7 @@ export function DataTable<TData>({
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
                     key={cell.id}
+                    style={readPreferredColumnSize(cell.column)}
                     className={cn(
                       cell.column.columnDef.meta?.numeric && NUMERIC_CELL_CLASS,
                       cellDensityClass,

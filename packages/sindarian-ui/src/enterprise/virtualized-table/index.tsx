@@ -37,10 +37,22 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
+import { LABEL_VOICE_CLASS } from '@/lib/typography'
 import { cn } from '@/lib/utils'
+import { readDeclaredColumnSize } from '../data-table/column-size'
 
 export type VirtualizedTableProps<TData> = {
-  /** Same shape as DataTable: standard TanStack `ColumnDef<T>`. */
+  /**
+   * Same shape as DataTable: standard TanStack `ColumnDef<T>`. A column that
+   * declares none keeps its equal share of the row.
+   *
+   * Declared sizing does NOT mean the same thing in the kit's two table paths.
+   * Here, flex rows PIN all three: `size`, `minSize` and `maxSize` are honoured
+   * exactly as declared. DataTable renders real `<th>`/`<td>` under CSS auto
+   * table layout, where `size` is only a PREFERRED width, `minSize` a floor,
+   * and `maxSize` is ignored outright. A column that must not grow past a width
+   * belongs here.
+   */
   columns: ColumnDef<TData, unknown>[]
   /** The full dataset, already in memory. Only the visible window renders. */
   data: TData[]
@@ -61,6 +73,12 @@ export type VirtualizedTableProps<TData> = {
   scrollAreaLabel?: string
   /** Applied to the outer wrapper (the scroll container's parent). */
   className?: string
+  /**
+   * Extra classes merged onto every header cell, after the kit label voice —
+   * the same seam DataTable exposes, so a screen that switches between the two
+   * render paths quiets both column heads with one prop instead of one.
+   */
+  headClassName?: string
 }
 
 /** Rows rendered just outside the viewport to keep fast scrolls smooth. */
@@ -72,7 +90,8 @@ export function VirtualizedTable<TData>({
   rowHeight = 40,
   maxHeight = 480,
   scrollAreaLabel = 'Scrollable table rows',
-  className
+  className,
+  headClassName
 }: VirtualizedTableProps<TData>) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [isScrollable, setIsScrollable] = useState(false)
@@ -178,6 +197,11 @@ export function VirtualizedTable<TData>({
                 const start = leafPosition.get(
                   firstLeaf?.id ?? header.column.id
                 )
+                // ponytail: sizing is read off the header's OWN column, so a
+                // spanning group cell keeps its colSpan share even when its
+                // leaves declare widths. Sum the leaves here if grouped-and-
+                // sized ever becomes a real configuration.
+                const size = readDeclaredColumnSize(header.column)
                 return (
                   <div
                     key={header.id}
@@ -189,11 +213,21 @@ export function VirtualizedTable<TData>({
                     aria-colspan={
                       header.colSpan > 1 ? header.colSpan : undefined
                     }
-                    style={{ flex: `${header.colSpan} 1 0%` }}
+                    // A declared width must not be flexed away; without one the
+                    // cell keeps its colSpan share of the row, as before.
+                    style={
+                      size?.width === undefined
+                        ? { flex: `${header.colSpan} 1 0%`, ...size }
+                        : { flex: '0 0 auto', ...size }
+                    }
                     // Header height is independent of rowHeight: pinning it to a
                     // small rowHeight (32) clipped the uppercase label against its
                     // own padding. Padding sizes it; min-h keeps a stable rule.
-                    className="text-muted-foreground min-h-10 px-4 py-2.5 text-left text-xs font-medium tracking-wide uppercase"
+                    className={cn(
+                      'min-h-10 px-4 py-2.5 text-left',
+                      LABEL_VOICE_CLASS,
+                      headClassName
+                    )}
                   >
                     {header.isPlaceholder
                       ? null
@@ -245,19 +279,30 @@ export function VirtualizedTable<TData>({
                     transform: `translateY(${virtualItem.start}px)`
                   }}
                 >
-                  {row.getVisibleCells().map((cell, i) => (
-                    <div
-                      key={cell.id}
-                      role="cell"
-                      aria-colindex={i + 1}
-                      className="flex-1 truncate px-4"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </div>
-                  ))}
+                  {row.getVisibleCells().map((cell, i) => {
+                    const size = readDeclaredColumnSize(cell.column)
+                    return (
+                      <div
+                        key={cell.id}
+                        role="cell"
+                        aria-colindex={i + 1}
+                        // An inline `flex` beats the class, so a sized column
+                        // stops flexing while every other column renders
+                        // exactly as it did before.
+                        style={
+                          size?.width === undefined
+                            ? size
+                            : { flex: '0 0 auto', ...size }
+                        }
+                        className="flex-1 truncate px-4"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )
             })}

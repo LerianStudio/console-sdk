@@ -51,3 +51,28 @@ export const ShortViewport: StoryObj<VirtualizedTableProps<Tick>> = {
 export const ViewportUnits: StoryObj<VirtualizedTableProps<Tick>> = {
   args: { columns, data, maxHeight: '60vh', rowHeight: 32 }
 }
+
+/**
+ * `#` is pinned narrow and the end-to-end id given a floor, so the long
+ * identifier stops squeezing the sequence column. Columns that declare no size
+ * keep their equal share of the row.
+ */
+export const SizedColumns: StoryObj<VirtualizedTableProps<Tick>> = {
+  args: {
+    data,
+    columns: [
+      { accessorKey: 'seq', header: '#', size: 64 },
+      { accessorKey: 'endToEndId', header: 'End-to-end id', minSize: 340 },
+      columns[2]
+    ]
+  }
+}
+
+/** The same override seam DataTable exposes: one prop quiets the column heads. */
+export const QuietHeader: StoryObj<VirtualizedTableProps<Tick>> = {
+  args: {
+    columns,
+    data,
+    headClassName: 'font-normal'
+  }
+}

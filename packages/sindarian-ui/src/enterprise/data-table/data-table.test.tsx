@@ -80,8 +80,15 @@ describe('DataTable', () => {
     render(<DataTable columns={columns} data={rows} getRowId={getRowId} />)
 
     const head = screen.getByRole('columnheader', { name: 'Name' })
-    expect(head).toHaveClass('tracking-[0.08em]', 'text-[11px]', 'uppercase')
-    expect(head).not.toHaveClass('tracking-wide')
+    expect(head).toHaveClass('text-sm', 'font-medium', 'text-muted-foreground')
+    // The retired Ledger register: 11px small-caps in a console whose siblings
+    // all speak sentence case.
+    expect(head).not.toHaveClass(
+      'uppercase',
+      'tracking-[0.08em]',
+      'text-[11px]',
+      'tracking-wide'
+    )
   })
 
   it('merges headClassName into every header cell', () => {
@@ -95,7 +102,7 @@ describe('DataTable', () => {
     )
 
     screen.getAllByRole('columnheader').forEach((head) => {
-      expect(head).toHaveClass('text-foreground', 'tracking-[0.08em]')
+      expect(head).toHaveClass('text-foreground', 'font-medium')
       expect(head).not.toHaveClass('text-muted-foreground')
     })
   })
@@ -394,5 +401,95 @@ describe('DataTable', () => {
 
     fireEvent.keyDown(screen.getAllByRole('row')[1], { key: ' ' })
     expect(onRowSelectionChange).toHaveBeenCalled()
+  })
+})
+
+/**
+ * `size` / `minSize` on a ColumnDef were inert: `<th>` and `<td>` rendered with
+ * no width at all, so a declared floor read as an enforced floor that never
+ * applied. TanStack fills every columnDef with its own defaults (size 150,
+ * minSize 20), so "declared" has to be told apart from "defaulted" — an
+ * undeclared column must keep the auto table layout it has today.
+ *
+ * `maxSize` stays unemitted on this path: auto table layout ignores
+ * `max-width` on a cell, so rendering it would promise a ceiling that never
+ * holds. VirtualizedTable's flex rows are where all three pin.
+ */
+describe('DataTable column sizing', () => {
+  const sizedColumns: ColumnDef<LedgerRow, unknown>[] = [
+    {
+      accessorKey: 'name',
+      header: 'Name',
+      size: 240,
+      minSize: 120,
+      maxSize: 320
+    },
+    { accessorKey: 'amount', header: 'Amount' }
+  ]
+
+  it('applies a declared size to the header cell', () => {
+    render(<DataTable columns={sizedColumns} data={rows} />)
+
+    const head = screen.getByRole('columnheader', { name: 'Name' })
+    expect(head).toHaveStyle({ width: '240px', minWidth: '120px' })
+    // `max-width` is inert on a cell under auto table layout, so this path
+    // must not advertise a ceiling it cannot hold.
+    expect(head.style.maxWidth).toBe('')
+  })
+
+  it('applies a declared size to the body cells of that column', () => {
+    render(<DataTable columns={sizedColumns} data={rows} />)
+
+    const cell = screen.getAllByRole('cell')[0]
+    expect(cell).toHaveStyle({ width: '240px', minWidth: '120px' })
+    expect(cell.style.maxWidth).toBe('')
+  })
+
+  it('emits nothing for a column declaring only the inert maxSize', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name', maxSize: 320 },
+          { accessorKey: 'amount', header: 'Amount' }
+        ]}
+        data={rows}
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Name' })
+    expect(head.style.width).toBe('')
+    expect(head.style.minWidth).toBe('')
+    expect(head.style.maxWidth).toBe('')
+  })
+
+  it('applies a lone minSize without pinning a width', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name', minSize: 180 },
+          { accessorKey: 'amount', header: 'Amount' }
+        ]}
+        data={rows}
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Name' })
+    expect(head).toHaveStyle({ minWidth: '180px' })
+    expect(head.style.width).toBe('')
+  })
+
+  it('leaves an undeclared column with no inline sizing at all', () => {
+    render(<DataTable columns={columns} data={rows} />)
+
+    for (const head of screen.getAllByRole('columnheader')) {
+      expect(head.style.width).toBe('')
+      expect(head.style.minWidth).toBe('')
+      expect(head.style.maxWidth).toBe('')
+    }
+    for (const cell of screen.getAllByRole('cell')) {
+      expect(cell.style.width).toBe('')
+      expect(cell.style.minWidth).toBe('')
+      expect(cell.style.maxWidth).toBe('')
+    }
   })
 })

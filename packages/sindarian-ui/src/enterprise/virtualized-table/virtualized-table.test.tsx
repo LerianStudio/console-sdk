@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { VirtualizedTable } from '.'
+import { LABEL_VOICE_CLASS } from '@/lib/typography'
 
 type Tick = { id: number; label: string; note: string }
 
@@ -334,5 +335,124 @@ describe('VirtualizedTable', () => {
       />
     )
     expect(spacer()).toHaveStyle({ height: `${5000 * 20}px` })
+  })
+})
+
+/**
+ * Both of the kit's table render paths must speak ONE column-head voice, with
+ * ONE override seam. DataTable already renders LABEL_VOICE_CLASS and takes
+ * `headClassName`; VirtualizedTable hard-coded `tracking-wide uppercase` on its
+ * `div[role=columnheader]` with no seam at all, so a screen that used both
+ * (entity-table switches between them) shouted in two different registers and
+ * could only quiet one of them. The shared voice is now product-console's
+ * table head, so the override that proves the seam swaps size and ink rather
+ * than case and tracking.
+ */
+describe('VirtualizedTable header voice', () => {
+  beforeAll(stubLayout)
+
+  it('speaks the shared label voice by default', () => {
+    render(<VirtualizedTable columns={columns} data={data} />)
+
+    expect(screen.getByRole('columnheader', { name: 'Id' })).toHaveClass(
+      ...LABEL_VOICE_CLASS.split(' ')
+    )
+  })
+
+  it('lets headClassName override the voice, as DataTable does', () => {
+    render(
+      <VirtualizedTable
+        columns={columns}
+        data={data}
+        headClassName="text-foreground text-base"
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Id' })
+    expect(head).toHaveClass('text-foreground', 'text-base')
+    // tailwind-merge drops the voice tokens the override replaces.
+    expect(head).not.toHaveClass('text-muted-foreground', 'text-sm')
+  })
+})
+
+/**
+ * `size` / `minSize` / `maxSize` on a ColumnDef were inert here: every column
+ * got an equal `flex` share regardless. A consumer that needed a floor on one
+ * column had no way to ask for it, and a declared `minSize` read as an enforced
+ * floor that was never applied.
+ */
+describe('VirtualizedTable column sizing', () => {
+  beforeAll(stubLayout)
+
+  const sizedColumns: ColumnDef<Tick, unknown>[] = [
+    { accessorKey: 'id', header: 'Id', size: 240, minSize: 120, maxSize: 320 },
+    { accessorKey: 'label', header: 'Label' }
+  ]
+
+  it('applies a declared size to the header cell', () => {
+    render(<VirtualizedTable columns={sizedColumns} data={data} />)
+
+    expect(screen.getByRole('columnheader', { name: 'Id' })).toHaveStyle({
+      width: '240px',
+      minWidth: '120px',
+      maxWidth: '320px'
+    })
+  })
+
+  it('applies a declared size to the body cells of that column', () => {
+    render(
+      <VirtualizedTable
+        columns={sizedColumns}
+        data={data}
+        rowHeight={ROW_HEIGHT}
+        maxHeight={VIEWPORT_HEIGHT}
+      />
+    )
+
+    expect(screen.getAllByRole('cell')[0]).toHaveStyle({
+      width: '240px',
+      minWidth: '120px',
+      maxWidth: '320px'
+    })
+  })
+
+  it('stops a sized column from flexing', () => {
+    render(<VirtualizedTable columns={sizedColumns} data={data} />)
+
+    expect(screen.getByRole('columnheader', { name: 'Id' })).toHaveStyle({
+      flex: '0 0 auto'
+    })
+  })
+
+  it('leaves an undeclared column on its equal flex share, unsized', () => {
+    render(
+      <VirtualizedTable
+        columns={sizedColumns}
+        data={data}
+        rowHeight={ROW_HEIGHT}
+        maxHeight={VIEWPORT_HEIGHT}
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Label' })
+    expect(head).toHaveStyle({ flex: '1 1 0%' })
+    expect(head.style.width).toBe('')
+    expect(head.style.minWidth).toBe('')
+    expect(head.style.maxWidth).toBe('')
+
+    const cell = screen.getAllByRole('cell')[1]
+    expect(cell).toHaveClass('flex-1')
+    expect(cell.style.width).toBe('')
+  })
+
+  it('renders a table of undeclared columns exactly as before', () => {
+    render(<VirtualizedTable columns={columns} data={data} />)
+
+    for (const head of screen.getAllByRole('columnheader')) {
+      expect(head).toHaveStyle({ flex: '1 1 0%' })
+      expect(head.style.width).toBe('')
+      expect(head.style.minWidth).toBe('')
+      expect(head.style.maxWidth).toBe('')
+    }
   })
 })
