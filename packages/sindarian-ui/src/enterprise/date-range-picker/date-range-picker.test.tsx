@@ -191,3 +191,34 @@ describe('DateRangePicker', () => {
     expect(screen.getByText('2026-02-31')).toBeInTheDocument()
   })
 })
+
+/**
+ * Both segment labels were painted with the kit's quiet-label voice
+ * (`text-[11px] uppercase tracking-[0.08em]`), which OVERRODE the console's own
+ * `Label` voice on the very primitive that defines it: these are field labels
+ * pointing at a control, not ledger column heads. Passing no className lets the
+ * `Label` primitive's `text-sm font-medium` through, so the picker's labels
+ * match every other labelled field in the console and the picker stops
+ * depending on the shared label constant at all.
+ */
+describe('DateRangePicker label voice', () => {
+  const labels = () => [screen.getByText('From'), screen.getByText('To')]
+
+  it('speaks the console field-label voice on both segments', () => {
+    setup({ from: '', to: '' })
+
+    for (const label of labels()) {
+      expect(label).toHaveClass('text-sm', 'font-medium')
+    }
+  })
+
+  it('no longer shouts the ledger column-head voice', () => {
+    setup({ from: '', to: '' })
+
+    for (const label of labels()) {
+      expect(label).not.toHaveClass('uppercase')
+      expect(label).not.toHaveClass('tracking-[0.08em]')
+      expect(label).not.toHaveClass('text-[11px]')
+    }
+  })
+})

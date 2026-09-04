@@ -17,9 +17,13 @@
  *   />
  *
  * The first token (`lead`) is `text-foreground font-medium`. Tape items are
- * dot-separated; an item with a `label` renders the uppercase label inline
- * before its value. Chips pin right via `ml-auto`; `alarm` escalates a chip to
- * destructive.
+ * dot-separated; an item with a `label` renders the label inline before its
+ * value, in the rail's own `font-medium`. Chips pin right via `ml-auto`;
+ * `alarm` escalates a chip to destructive.
+ *
+ * Labels carry weight only: the rail root already supplies size, family and
+ * ink (`font-mono text-xs text-muted-foreground`), so re-stating
+ * LABEL_VOICE_CLASS here would import a `text-sm` that fights the tape.
  */
 import { TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -29,7 +33,7 @@ import { cn } from '@/lib/utils'
 export type StatusRailItem = {
   /** Optional stable key for dynamic (reordered/filtered) rails; falls back to index. */
   id?: string
-  /** Optional uppercase label rendered inline before the value. */
+  /** Optional quiet label rendered inline before the value. */
   label?: ReactNode
   value: ReactNode
 }
@@ -86,7 +90,7 @@ export function StatusRail({
         <RailFragment key={item.id ?? i} hasLead={hasLead || i > 0}>
           {item.label != null ? (
             <span className="flex items-center gap-1.5">
-              <span className="tracking-[0.08em] uppercase">{item.label}</span>
+              <span className="font-medium">{item.label}</span>
               {item.value}
             </span>
           ) : (
@@ -102,7 +106,7 @@ export function StatusRail({
               key={chip.id ?? i}
               className="inline-flex items-center gap-1.5"
             >
-              <span className="tracking-[0.08em] uppercase">{chip.label}</span>
+              <span className="font-medium">{chip.label}</span>
               <span
                 className={cn(
                   // Tiny mono token: raised a hair off the sunken tape by the

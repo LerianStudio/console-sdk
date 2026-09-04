@@ -159,7 +159,7 @@ export function StatusBadge({
   const cue = withIcon ? SEVERITY_CUE[variant] : undefined
 
   return (
-    <Badge variant={variant} className={cn('gap-1', className)}>
+    <Badge variant={variant} className={className}>
       {cue ? (
         <>
           <cue.Icon aria-hidden className="size-3.5 shrink-0" />

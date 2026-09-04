@@ -110,6 +110,24 @@ export const Footed: StoryObj<DataTableProps<Settlement>> = {
   }
 }
 
+/**
+ * `Id` prefers 96px and `Status` gets a floor so its badge never wraps. Under
+ * auto table layout a preferred width is not a pin: the browser may exceed it
+ * to fit content. Columns that declare no size keep the auto table layout.
+ */
+export const SizedColumns: StoryObj<DataTableProps<Settlement>> = {
+  args: {
+    data,
+    getRowId: (row) => row.id,
+    columns: [
+      { ...columns[0], size: 96 },
+      columns[1],
+      { ...columns[2], minSize: 140 },
+      columns[3]
+    ]
+  }
+}
+
 export const RowSelection: StoryObj<DataTableProps<Settlement>> = {
   render: () => {
     const [rowSelection, setRowSelection] = React.useState<RowSelectionState>(

@@ -224,3 +224,119 @@ describe('sonner toast ink', () => {
     )
   })
 })
+
+/**
+ * The five tinted-pill families paint `text-system-<family>-text` on
+ * `bg-system-<family>-surface`. The `@theme inline` map used to hand the ink
+ * out at 70% opacity, which dropped every pill to between 3.1:1 and 3.5:1 —
+ * under AA — while the raw `--system-*-text` channels underneath were already
+ * chosen to clear it. The opacity was the whole defect, so the gate is two
+ * halves: the map must not dim the ink, and the resulting pair must clear AA.
+ */
+const SYSTEM_FAMILIES = ['success', 'alert', 'error', 'info', 'purple']
+
+describe('system text tokens', () => {
+  describe.each(SYSTEM_FAMILIES)('--color-system-%s-text', (family) => {
+    it('is mapped at full opacity', () => {
+      expect(themeInline).toMatch(
+        new RegExp(
+          `^\\s*--color-system-${family}-text:\\s*hsl\\(var\\(--system-${family}-text\\)\\);`,
+          'm'
+        )
+      )
+    })
+
+    it.each(['light', 'dark'] as const)(
+      'clears AA over its own surface in %s',
+      (theme) => {
+        const ratio = contrast(
+          tokenValue(`system-${family}-text`, theme),
+          tokenValue(`system-${family}-surface`, theme)
+        )
+
+        expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+      }
+    )
+  })
+})
+
+/**
+ * The destructive pair is the loudest fill in the kit: the Critical status
+ * badge and every `variant="destructive"` button paint
+ * `text-destructive-foreground` on `bg-destructive`, and the field/form error
+ * messages paint `--destructive` as plain body ink on `--card`. The dark theme
+ * was corrected to red/400 + red/950; light was left on red/500 with white,
+ * which is 3.78:1 — under AA in both roles. Both roles are gated here, in both
+ * themes, so a future hue tweak is re-measured rather than re-trusted.
+ */
+describe('destructive pair', () => {
+  it.each(['light', 'dark'] as const)(
+    'clears AA for its own foreground on its fill in %s',
+    (theme) => {
+      const ratio = contrast(
+        tokenValue('destructive', theme),
+        tokenValue('destructive-foreground', theme)
+      )
+
+      expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+    }
+  )
+
+  /**
+   * `--destructive` is also read as plain body ink — the field error message
+   * (`ui/field/index.tsx:219`), the form message (`ui/form.tsx:123`), the
+   * upload error (`ui/file-upload/index.tsx:337`), a negative `MoneyText`.
+   *
+   * Dark `--card` is deliberately absent: red/400 on the dark container
+   * surface measures 3.80:1, still under AA. That is NOT fixed by moving the
+   * token — `ui/form.tsx:204` already records the kit's rule that error TEXT
+   * belongs to `--system-error-text` and `--destructive` is the badge/fill
+   * token, so the dark gap is a call-site drift to migrate, not a hue to
+   * re-pick. Gating it here would freeze the wrong half of the pair.
+   */
+  it.each([
+    ['light', 'card'],
+    ['light', 'background'],
+    ['dark', 'background']
+  ] as const)('clears AA as body ink in %s over --%s', (theme, surface) => {
+    const ratio = contrast(
+      tokenValue('destructive', theme),
+      tokenValue(surface, theme)
+    )
+
+    expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+  })
+})
+
+/**
+ * Every animation the kit ships carries a `motion-safe:` variant, but that
+ * variant only becomes `@media (prefers-reduced-motion: no-preference)` after
+ * the CONSUMER compiles Tailwind over the kit's dist — a consumer whose content
+ * globs miss a file, or who writes `animate-in` itself, gets no guard at all.
+ * This sheet ships verbatim, so the floor belongs here: plain CSS, no variant,
+ * no build step between it and the reader who asked the OS to stop moving
+ * things.
+ */
+describe('reduced-motion floor', () => {
+  const guard = css.match(
+    /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\}/
+  )?.[0]
+
+  it('declares a plain-CSS reduce block', () => {
+    expect(guard).toBeDefined()
+  })
+
+  // Plain attribute/substring selectors, not Tailwind variants: the point of
+  // this block is to work without a Tailwind pass over the kit.
+  it.each([
+    "class\\*='animate-'",
+    "\\[data-state='open'\\]",
+    "\\[data-state='closed'\\]"
+  ])('neutralises %s', (selector) => {
+    expect(guard).toMatch(new RegExp(selector))
+  })
+
+  it('zeroes the animation rather than only shortening it', () => {
+    expect(guard).toMatch(/animation:\s*none/)
+  })
+})

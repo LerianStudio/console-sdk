@@ -195,6 +195,16 @@ describe('KeyId', () => {
     expect(screen.getByText('Pagador')).toBeInTheDocument()
   })
 
+  it('keeps the label no larger than the identifier it names', () => {
+    // The value is `font-mono text-xs`. A `text-sm` label beside it makes the
+    // quiet label the loudest thing in the pair — the wrong way round.
+    render(<KeyId value={CPF} kind="pix-cpf" label="Pagador" />)
+
+    const label = screen.getByText('Pagador')
+    expect(label).toHaveClass('text-xs')
+    expect(label).not.toHaveClass('text-sm')
+  })
+
   it('copies the RAW, unmasked value even when the display is masked', async () => {
     const writeText = jest.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', {

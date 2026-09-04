@@ -12,7 +12,7 @@
  * Renders `role="alert"`. Tones map to sindarian-ui's `system-*` semantic token
  * families, so they track the active light/dark palette automatically.
  */
-import type { ReactNode } from 'react'
+import type { ComponentPropsWithoutRef, ReactNode } from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -37,7 +37,12 @@ const TONE_TITLE: Record<AlertBannerTone, string> = {
   neutral: 'text-foreground'
 }
 
-export type AlertBannerProps = {
+/** `title` is widened to ReactNode, so the DOM `title` attribute (a string)
+ *  is omitted rather than conflicting. */
+export type AlertBannerProps = Omit<
+  ComponentPropsWithoutRef<'div'>,
+  'title'
+> & {
   tone?: AlertBannerTone
   /** Bold lead line, carries the tone color. */
   title?: ReactNode
@@ -56,10 +61,15 @@ export function AlertBanner({
   children,
   detail,
   icon,
-  className
+  className,
+  ...props
 }: AlertBannerProps) {
   return (
     <div
+      // Rest props go first so the caller can attach `data-testid`, `id` or an
+      // `aria-*` label, and last so `role` and the tone classes stay the
+      // component's own: an alert that loses `role="alert"` stops announcing.
+      {...props}
       role="alert"
       data-tone={tone}
       className={cn(

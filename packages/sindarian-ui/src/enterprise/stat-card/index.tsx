@@ -1,7 +1,7 @@
 /**
  * StatCard — a single headline-figure cell of the console.
  *
- * A `LedgerPanel` holding a recessive `SectionLabel`, the dominant mono
+ * A `LedgerPanel` holding a recessive `SectionLabel`, the dominant
  * `Figure`, an optional delta line, an optional inline trend, and optional
  * secondary `BlotterRow` key/value rows. Drop StatCards into a `LedgerSheet` so
  * they read as connected hairline-seamed panels rather than floating cards.
@@ -50,9 +50,9 @@ export type StatCardRow = {
 }
 
 export type StatCardProps = {
-  /** Recessive uppercase heading. */
+  /** Recessive heading, rendered through `SectionLabel`'s quiet label voice. */
   label: string
-  /** The dominant headline value — rendered in the hero mono figure. */
+  /** The dominant headline value — rendered in the hero figure. */
   value: ReactNode
   /** Optional delta line below the value (e.g. `+0.6 pts`, `-3`). Inherits the tone color. */
   delta?: ReactNode
@@ -159,7 +159,7 @@ export function StatCard({
           {value}
         </Figure>
         {delta !== undefined ? (
-          <p className={cn('font-mono text-xs tabular-nums', TONE_VALUE[tone])}>
+          <p className={cn('text-xs tabular-nums', TONE_VALUE[tone])}>
             {delta}
           </p>
         ) : null}

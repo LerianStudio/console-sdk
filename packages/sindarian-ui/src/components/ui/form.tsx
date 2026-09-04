@@ -53,13 +53,16 @@ const FormField = <
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext)
   const itemContext = React.useContext(FormItemContext)
-  const { getFieldState, formState } = useFormContext()
+  // `useFormContext()` is null outside a `<Form>` provider, and destructuring it
+  // threw — which is what made every Form primitive, and so every *Field built
+  // on them, unusable in a plain `useState` filter bar. Inside a provider
+  // nothing below changes; outside one, the field simply has no error state.
+  const form = useFormContext()
 
-  const fieldState = getFieldState(fieldContext.name, formState)
-
-  if (!fieldContext) {
-    throw new Error('useFormField should be used within <FormField>')
-  }
+  const fieldState =
+    form && fieldContext.name
+      ? form.getFieldState(fieldContext.name, form.formState)
+      : undefined
 
   const { id, required } = itemContext
 
@@ -198,7 +201,9 @@ const FormMessage = React.forwardRef<
     <p
       ref={ref}
       id={formMessageId}
-      className={cn('text-destructive text-sm font-medium', className)}
+      // The error TEXT token, not `text-destructive`: that is the badge/fill
+      // family and measures ~3.8:1 as ink, under AA. Validation copy is text.
+      className={cn('text-system-error-h1a text-sm font-medium', className)}
       {...props}
     >
       {body}

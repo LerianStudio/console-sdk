@@ -194,7 +194,7 @@ export function AgingBuckets({
               <span
                 className={cn(
                   LABEL_VOICE_CLASS,
-                  'text-foreground min-w-0 flex-1 tracking-normal normal-case'
+                  'text-foreground min-w-0 flex-1'
                 )}
               >
                 {bucket.label}
@@ -204,7 +204,10 @@ export function AgingBuckets({
                 <Figure size="row" className="text-foreground">
                   {formatCount(bucket.count, locale)}
                 </Figure>
-                <span className={cn(LABEL_VOICE_CLASS, 'mt-1')}>
+                {/* A caption UNDER the figure, not a peer of it: `text-xs`
+                    displaces the voice's `text-sm` so the number stays the
+                    loud half of the stack. */}
+                <span className={cn(LABEL_VOICE_CLASS, 'mt-1 text-xs')}>
                   {countLabel}
                 </span>
               </span>
@@ -222,7 +225,7 @@ export function AgingBuckets({
                     signColor={false}
                   />
                 </Figure>
-                <span className={cn(LABEL_VOICE_CLASS, 'mt-1')}>
+                <span className={cn(LABEL_VOICE_CLASS, 'mt-1 text-xs')}>
                   {totalLabel}
                 </span>
               </span>

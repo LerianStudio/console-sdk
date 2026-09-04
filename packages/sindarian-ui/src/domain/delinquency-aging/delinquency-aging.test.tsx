@@ -5,7 +5,7 @@
  * the bucket-band and grand-total math the composite delegates to.
  */
 import '@testing-library/jest-dom'
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 
 import { DelinquencyAging, delinquencyRate } from '.'
 import { bucketBand, sumBucketTotals } from './aging-buckets'
@@ -279,6 +279,25 @@ describe('DelinquencyAging', () => {
       />
     )
     expect(container.textContent).toContain('indeterminada')
+  })
+
+  it('keeps the per-bucket captions quieter than the figures they caption', () => {
+    render(
+      <DelinquencyAging buckets={PORTFOLIO} currency="BRL" locale="en-US" />
+    )
+
+    // 'Itens' / 'Total' sit UNDER a `Figure size="row"` (text-sm). At the same
+    // size the caption reads as a peer of the number instead of a note about it.
+    const captions = [
+      ...screen.getAllByText('Itens'),
+      ...screen.getAllByText('Total')
+    ]
+    expect(captions).toHaveLength(PORTFOLIO.length * 2)
+
+    for (const caption of captions) {
+      expect(caption).toHaveClass('text-xs')
+      expect(caption).not.toHaveClass('text-sm')
+    }
   })
 
   it('renders the money-math-exact grand total when showTotal is set', () => {

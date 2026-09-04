@@ -34,7 +34,6 @@ import {
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover'
-import { SECTION_LABEL_CLASS } from '@/lib/typography'
 import { cn } from '@/lib/utils'
 
 /**
@@ -186,9 +185,14 @@ export function DateRangePicker({
       onOpenChange={(next) => setOpenSegment(next ? segment : null)}
     >
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor={id} className={SECTION_LABEL_CLASS}>
-          {label}
-        </Label>
+        {/*
+          No className: these are field labels pointing at a control, so the
+          `Label` primitive's own `text-sm font-medium` IS the console voice.
+          They used to carry the kit's quiet-label cluster
+          (`text-[11px] uppercase tracking-[0.08em]`), which overrode that voice
+          on the primitive that defines it.
+        */}
+        <Label htmlFor={id}>{label}</Label>
         {/* No onClick: PopoverTrigger owns open/close. A manual `setOpen(true)`
             would race the outside-click dismissal — pointerdown closes, the
             click reopens, and the popover could never be dismissed by clicking

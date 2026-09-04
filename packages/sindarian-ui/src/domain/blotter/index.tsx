@@ -1,8 +1,8 @@
 /**
- * Blotter + BlotterRow — the mono key/value readout of the console.
+ * Blotter + BlotterRow — the key/value readout of the console.
  *
  * Clean key/value rows separated by hairline borders (`divide-y divide-border`)
- * — no zebra fills. Each row: an uppercase 11px sans label on the left, a mono
+ * — no zebra fills. Each row: a quiet sentence-case sans label on the left, a mono
  * `tabular-nums` value on the right, `hover:bg-body-surface` as the quiet row
  * affordance (the recessed page surface, one step behind `bg-card`, in both
  * themes). Escalate the value color (`text-credit`, `text-system-alert`) only

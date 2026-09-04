@@ -18,6 +18,11 @@ function SelectGroup({
   return <SelectPrimitive.Group data-slot="select-group" {...props} />
 }
 
+/**
+ * Radix strips `className` and `style` off its `Select.Value` before rendering
+ * the span, so this slot cannot be styled directly — it is styled from the
+ * trigger instead, see VALUE_OVERFLOW_CLASS.
+ */
 function SelectValue({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Value>) {
@@ -29,6 +34,26 @@ type SelectTriggerProps = React.ComponentProps<
 > & {
   readOnly?: boolean
 }
+
+/**
+ * Truncate the selected value instead of letting it wrap out of the trigger.
+ *
+ * `.select-trigger` is a fixed-height `flex w-full items-center justify-between`
+ * box, and a flex item never shrinks below its own min-content width: a long
+ * value broke to a second line and overflowed the box. `min-w-0` lets the value
+ * slot shrink, `truncate` ellipsises what no longer fits — the chevron keeps its
+ * place because the value absorbs all the shrinkage.
+ *
+ * Written as a child-scoped variant on the TRIGGER because Radix strips
+ * `className` off `Select.Value` itself; the `>` combinator holds because Radix
+ * renders that span as the trigger's direct child.
+ *
+ * Truncation hides text, so a trigger showing a long value should also carry
+ * `title` — on the trigger, never on the value slot, which Radix renders
+ * `pointer-events: none`.
+ */
+const VALUE_OVERFLOW_CLASS =
+  '[&>[data-slot=select-value]]:min-w-0 [&>[data-slot=select-value]]:truncate'
 
 function SelectTrigger({
   className,
@@ -42,6 +67,7 @@ function SelectTrigger({
       data-size="default"
       className={cn(
         'select-trigger select-read-only select-disabled',
+        VALUE_OVERFLOW_CLASS,
         className
       )}
       aria-readonly={readOnly}

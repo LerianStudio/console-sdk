@@ -56,3 +56,20 @@ export const Credit: StoryObj<BadgeProps> = {
     variant: 'credit'
   }
 }
+
+/**
+ * A label plus an element child. The base `gap-1` is what keeps this from
+ * reading `IDctx-123`: the newline between the two children survives neither
+ * JSX nor flex layout.
+ */
+export const WithElementChild: StoryObj<BadgeProps> = {
+  args: {
+    variant: 'outline',
+    children: (
+      <>
+        ID
+        <code>ctx-123</code>
+      </>
+    )
+  }
+}

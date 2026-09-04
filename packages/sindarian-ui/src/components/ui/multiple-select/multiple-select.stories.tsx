@@ -82,3 +82,39 @@ export const Disabled: StoryObj = {
   },
   render: (args) => <Component {...args} />
 }
+
+/**
+ * The controlled shape, rendered through the REAL props type rather than the
+ * `any` the other stories use. `MultipleSelectProps` spread cmdk's
+ * `ComponentPropsWithoutRef`, whose `value` is a `string`, and intersected it
+ * with `string[]` — so the declared `value?: string[]` resolved to
+ * `string & string[]`, which nothing can satisfy. This story is the type
+ * guard: it stops compiling if that intersection comes back.
+ */
+export const Controlled: StoryObj = {
+  render: () => {
+    const [value, setValue] = React.useState<string[]>(['next.js', 'remix'])
+
+    return (
+      <BaseLayout>
+        <MultipleSelect value={value} onValueChange={setValue} showValue>
+          <MultipleSelectTrigger>
+            <MultipleSelectValue placeholder="Select a framework..." />
+          </MultipleSelectTrigger>
+          <MultipleSelectContent>
+            <MultipleSelectEmpty>
+              <p className="text-muted-foreground text-sm">
+                No frameworks found
+              </p>
+            </MultipleSelectEmpty>
+            {frameworks.map((framework) => (
+              <MultipleSelectItem key={framework.value} value={framework.value}>
+                {framework.label}
+              </MultipleSelectItem>
+            ))}
+          </MultipleSelectContent>
+        </MultipleSelect>
+      </BaseLayout>
+    )
+  }
+}

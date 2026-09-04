@@ -1,14 +1,17 @@
 /**
- * SectionLabel — THE canonical uppercase tracked sans label of the console.
+ * SectionLabel — THE canonical quiet label of the console.
  *
- * Every panel heading, section title, and caption is uppercase, tracked
- * (0.08em) muted-foreground — the recessive foil that lets the mono figures be
- * loud. The class itself lives in `@/lib/typography` (`SECTION_LABEL_CLASS`,
- * an alias of `LABEL_VOICE_CLASS`) and is NEVER re-stated here, so the voice
- * cannot drift between this component and the `ui/` layer that shares it.
+ * Every panel heading, section title, and caption speaks product-console's
+ * table-head voice: sentence case, `text-sm`, medium weight, muted-foreground
+ * — the recessive foil that lets the figures be loud. The class itself
+ * lives in `@/lib/typography` (`SECTION_LABEL_CLASS`, an alias of
+ * `LABEL_VOICE_CLASS`) and is NEVER re-stated here, so the voice cannot drift
+ * between this component and the `ui/` layer that shares it.
  *
  * Renders an `<h2>` by default (the ledger-sheet cell heading), but `as` lets
- * it become a `<p>`/`<span>`/`<dt>` for captions and inline labels.
+ * it become a `<p>`/`<span>`/`<dt>` for captions and inline labels. For an
+ * EntityBox-scale panel TITLE, reach for `EntityBoxHeaderTitle` instead — that
+ * is the kit's `text-lg` heading voice.
  */
 import type { ElementType, HTMLAttributes, ReactNode } from 'react'
 
