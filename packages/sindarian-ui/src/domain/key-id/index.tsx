@@ -39,7 +39,7 @@ export interface KeyIdProps {
   value: string
   /** What the value is. Drives the mask shape and the default mask state. */
   kind?: KeyIdKind
-  /** Optional uppercase tag rendered before the value (e.g. 'Payer', 'E2E'). */
+  /** Optional quiet label rendered before the value (e.g. 'Payer', 'E2E'). */
   label?: string
   /** Override the per-kind mask default. PII kinds default true, ids default false. */
   mask?: boolean
@@ -177,7 +177,11 @@ export function KeyId({
   return (
     <span className={cn('inline-flex min-w-0 items-center gap-2', className)}>
       {label ? (
-        <span className={cn(LABEL_VOICE_CLASS, 'shrink-0')}>{label}</span>
+        // `text-xs` displaces the voice's `text-sm`: the value beside it is a
+        // 12px mono identifier, and a 14px label would outshout what it names.
+        <span className={cn(LABEL_VOICE_CLASS, 'shrink-0 text-xs')}>
+          {label}
+        </span>
       ) : null}
 
       <span

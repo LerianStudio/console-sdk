@@ -353,9 +353,7 @@ export function DelinquencyAging({
           // "NaN%" artifact. Indeterminate (an unparseable total) reads the same
           // no-value placeholder as a zero portfolio — neither is a real rate.
           <span className="text-muted-foreground inline-flex items-center gap-1.5">
-            <span
-              className={cn(LABEL_VOICE_CLASS, 'tracking-normal normal-case')}
-            >
+            <span className={LABEL_VOICE_CLASS}>
               {indeterminate ? indeterminateLabel : emptyLabel}
             </span>
             <Figure size="row" className="text-muted-foreground">

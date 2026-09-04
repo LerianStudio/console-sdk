@@ -52,7 +52,7 @@ describe('StatusRail', () => {
 
   it('renders an item label inline before its value', () => {
     render(<StatusRail items={[{ label: 'Updated', value: '12:04 UTC' }]} />)
-    expect(screen.getByText('Updated')).toHaveClass('uppercase')
+    expect(screen.getByText('Updated')).toHaveClass('font-medium')
     expect(screen.getByText('12:04 UTC')).toBeInTheDocument()
   })
 
@@ -61,8 +61,30 @@ describe('StatusRail', () => {
       <StatusRail chips={[{ label: 'Open', value: '12' }]} />
     )
     expect(container.querySelector('.ml-auto')).not.toBeNull()
-    expect(screen.getByText('Open')).toBeInTheDocument()
+    expect(screen.getByText('Open')).toHaveClass('font-medium')
     expect(screen.getByText('12')).toBeInTheDocument()
+  })
+
+  /**
+   * The rail hard-coded the retired Ledger register (`uppercase
+   * tracking-[0.08em]`) on both label spans, bypassing LABEL_VOICE_CLASS
+   * entirely — so after the kit moved to product-console's sentence-case voice
+   * these two were the only labels left shouting. The rail root already owns
+   * size, family and ink (`font-mono text-xs text-muted-foreground`), so the
+   * label carries just the constant's weight, not its size.
+   */
+  it.each(['item', 'chip'] as const)('speaks no retired %s voice', (kind) => {
+    render(
+      <StatusRail
+        items={kind === 'item' ? [{ label: 'Updated', value: '12:04' }] : []}
+        chips={kind === 'chip' ? [{ label: 'Updated', value: '12' }] : []}
+      />
+    )
+
+    expect(screen.getByText('Updated')).not.toHaveClass(
+      'uppercase',
+      'tracking-[0.08em]'
+    )
   })
 
   it('pairs an alarm chip with a non-color cue (WCAG 1.4.1)', () => {

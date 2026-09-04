@@ -22,9 +22,23 @@ describe('utility exports', () => {
   })
 
   describe('typography voice constants', () => {
-    it('LABEL_VOICE_CLASS is the quiet uppercase label cluster', () => {
+    /**
+     * The voice is product-console's table head, not the retired Ledger
+     * small-caps: `TableHead` paints `text-muted-foreground … font-medium`
+     * inside a `text-sm` `Table` (components/ui/table/index.tsx:20,90), and
+     * product-console renders its whole data table through that primitive
+     * (src/components/table/data-table.tsx:14). Sentence case, no tracking,
+     * no fixed pixel size.
+     */
+    it('LABEL_VOICE_CLASS is product-console table-head voice', () => {
       expect(LABEL_VOICE_CLASS).toBe(
-        'text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground'
+        'text-sm font-medium text-muted-foreground'
+      )
+    })
+
+    it('carries no retired Ledger small-caps token', () => {
+      expect(LABEL_VOICE_CLASS).not.toMatch(
+        /uppercase|tracking-\[|text-\[\d+px\]/
       )
     })
 
