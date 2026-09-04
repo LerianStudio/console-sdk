@@ -1,4 +1,5 @@
 import { Meta, StoryObj } from '@storybook/nextjs'
+import { useState } from 'react'
 import { SelectField, SelectFieldProps } from '.'
 import { useForm } from 'react-hook-form'
 import { Form } from '@/components/ui/form'
@@ -101,4 +102,30 @@ export const MultiSelectDisabled: StoryObj<SelectFieldProps> = {
     disabled: true
   },
   render: (args) => BaseComponentMultiSelect(args)
+}
+
+/** No `control`: the same select driven by plain state. */
+function StatefulComponent(args: Omit<SelectFieldProps, 'name' | 'control'>) {
+  const [rail, setRail] = useState('')
+
+  return (
+    <div className="w-1/2">
+      <SelectField
+        {...args}
+        label="Rail"
+        name="rail"
+        placeholder="Pick a rail"
+        value={rail}
+        onChange={(value) => setRail(value as string)}
+      >
+        <SelectItem value="pix">Pix</SelectItem>
+        <SelectItem value="ted">TED</SelectItem>
+      </SelectField>
+      <p className="text-muted-foreground mt-2 text-xs">Rail: {rail}</p>
+    </div>
+  )
+}
+
+export const WithoutReactHookForm: StoryObj<SelectFieldProps> = {
+  render: (args) => StatefulComponent(args)
 }

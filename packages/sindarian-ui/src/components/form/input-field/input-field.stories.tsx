@@ -1,4 +1,5 @@
 import { Meta, StoryObj } from '@storybook/nextjs'
+import { useState } from 'react'
 import { InputField, InputFieldProps } from '.'
 import { useForm } from 'react-hook-form'
 import { Form } from '@/components/ui/form'
@@ -82,4 +83,28 @@ export const Disabled: StoryObj<InputFieldProps> = {
     disabled: true
   },
   render: (args) => BaseComponent(args)
+}
+
+/** No `control`: a plain `useState` filter bar, which is what a form-less
+ *  surface (a blotter toolbar, a search header) actually has. */
+function StatefulComponent(args: Omit<InputFieldProps, 'name' | 'control'>) {
+  const [query, setQuery] = useState('')
+
+  return (
+    <div className="w-1/2">
+      <InputField
+        {...args}
+        label="Search"
+        name="query"
+        placeholder="Filter the blotter..."
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      <p className="text-muted-foreground mt-2 text-xs">Query: {query}</p>
+    </div>
+  )
+}
+
+export const WithoutReactHookForm: StoryObj<InputFieldProps> = {
+  render: (args) => StatefulComponent(args)
 }
