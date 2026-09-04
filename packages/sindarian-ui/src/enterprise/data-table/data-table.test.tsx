@@ -83,12 +83,13 @@ describe('DataTable', () => {
     expect(head).toHaveClass('text-sm', 'font-medium', 'text-muted-foreground')
     // The retired Ledger register: 11px small-caps in a console whose siblings
     // all speak sentence case.
-    expect(head).not.toHaveClass(
-      'uppercase',
-      'tracking-[0.08em]',
-      'text-[11px]',
-      'tracking-wide'
-    )
+    // One class per assertion: a multi-argument `not.toHaveClass` passes when
+    // ANY one of the names is missing, so a single call would go green with
+    // three of the four retired tokens still on the element.
+    expect(head).not.toHaveClass('uppercase')
+    expect(head).not.toHaveClass('tracking-[0.08em]')
+    expect(head).not.toHaveClass('text-[11px]')
+    expect(head).not.toHaveClass('tracking-wide')
   })
 
   it('merges headClassName into every header cell', () => {
@@ -407,9 +408,10 @@ describe('DataTable', () => {
 /**
  * `size` / `minSize` on a ColumnDef were inert: `<th>` and `<td>` rendered with
  * no width at all, so a declared floor read as an enforced floor that never
- * applied. TanStack fills every columnDef with its own defaults (size 150,
- * minSize 20), so "declared" has to be told apart from "defaulted" — an
- * undeclared column must keep the auto table layout it has today.
+ * applied. TanStack stamps its own defaults (size 150, minSize 20) onto every
+ * columnDef, so the table blanks them out via `defaultColumn` and a column
+ * declaring exactly the library default is honoured like any other — while an
+ * undeclared column keeps the auto table layout it has today.
  *
  * `maxSize` stays unemitted on this path: auto table layout ignores
  * `max-width` on a cell, so rendering it would promise a ceiling that never
@@ -475,6 +477,37 @@ describe('DataTable column sizing', () => {
 
     const head = screen.getByRole('columnheader', { name: 'Name' })
     expect(head).toHaveStyle({ minWidth: '180px' })
+    expect(head.style.width).toBe('')
+  })
+
+  it('honours a declared size that equals the library default', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name', size: 150 },
+          { accessorKey: 'amount', header: 'Amount' }
+        ]}
+        data={rows}
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Name' })
+    expect(head).toHaveStyle({ width: '150px' })
+  })
+
+  it('honours a declared minSize that equals the library default', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name', minSize: 20 },
+          { accessorKey: 'amount', header: 'Amount' }
+        ]}
+        data={rows}
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Name' })
+    expect(head).toHaveStyle({ minWidth: '20px' })
     expect(head.style.width).toBe('')
   })
 

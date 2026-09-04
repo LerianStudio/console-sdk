@@ -39,7 +39,11 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 
 import { LABEL_VOICE_CLASS } from '@/lib/typography'
 import { cn } from '@/lib/utils'
-import { readDeclaredColumnSize } from '../data-table/column-size'
+import {
+  readDeclaredColumnSize,
+  readDeclaredGroupSize,
+  UNSIZED_DEFAULT_COLUMN
+} from '../data-table/column-size'
 
 export type VirtualizedTableProps<TData> = {
   /**
@@ -103,6 +107,10 @@ export function VirtualizedTable<TData>({
   const table = useReactTable({
     data,
     columns,
+    // Keeps `columnDef.size`/`minSize`/`maxSize` meaning "declared" — see
+    // ../data-table/column-size. `getSize()` is unaffected; it falls back to
+    // the library defaults itself.
+    defaultColumn: UNSIZED_DEFAULT_COLUMN,
     getCoreRowModel: getCoreRowModel()
   })
 
@@ -197,11 +205,14 @@ export function VirtualizedTable<TData>({
                 const start = leafPosition.get(
                   firstLeaf?.id ?? header.column.id
                 )
-                // ponytail: sizing is read off the header's OWN column, so a
-                // spanning group cell keeps its colSpan share even when its
-                // leaves declare widths. Sum the leaves here if grouped-and-
-                // sized ever becomes a real configuration.
-                const size = readDeclaredColumnSize(header.column)
+                // A group header spans leaf columns whose body cells carry
+                // their own widths, so its size comes from those leaves, not
+                // from the group def (which declares nothing). A leaf header
+                // reads its own column, as before.
+                const size =
+                  header.subHeaders.length > 0
+                    ? readDeclaredGroupSize(header.column.getLeafColumns())
+                    : readDeclaredColumnSize(header.column)
                 return (
                   <div
                     key={header.id}

@@ -73,7 +73,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { LABEL_VOICE_CLASS } from '@/lib/typography'
 import { cn } from '@/lib/utils'
 import { EmptyState, type EmptyStateProps } from '../empty-state'
-import { readPreferredColumnSize } from './column-size'
+import { readPreferredColumnSize, UNSIZED_DEFAULT_COLUMN } from './column-size'
 
 /**
  * Per-column opt-in for ledger numeric alignment. Set `meta: { numeric: true }`
@@ -285,6 +285,10 @@ export function DataTable<TData>({
   const table = useReactTable({
     data,
     columns: tableColumns,
+    // Keeps `columnDef.size`/`minSize`/`maxSize` meaning "declared" — see
+    // ./column-size. `getSize()` is unaffected; it falls back to the library
+    // defaults itself.
+    defaultColumn: UNSIZED_DEFAULT_COLUMN,
     getCoreRowModel: getCoreRowModel(),
     getRowId,
     enableRowSelection,

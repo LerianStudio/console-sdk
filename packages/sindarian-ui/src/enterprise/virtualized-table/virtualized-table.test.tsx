@@ -371,7 +371,11 @@ describe('VirtualizedTable header voice', () => {
     const head = screen.getByRole('columnheader', { name: 'Id' })
     expect(head).toHaveClass('text-foreground', 'text-base')
     // tailwind-merge drops the voice tokens the override replaces.
-    expect(head).not.toHaveClass('text-muted-foreground', 'text-sm')
+    // One class per assertion: a multi-argument `not.toHaveClass` passes when
+    // ANY one of the names is missing, so a single call would go green with
+    // one of the two replaced tokens still on the element.
+    expect(head).not.toHaveClass('text-muted-foreground')
+    expect(head).not.toHaveClass('text-sm')
   })
 })
 
@@ -424,6 +428,37 @@ describe('VirtualizedTable column sizing', () => {
     })
   })
 
+  it('honours a declared size that equals the library default', () => {
+    render(
+      <VirtualizedTable
+        columns={[
+          { accessorKey: 'id', header: 'Id', size: 150 },
+          { accessorKey: 'label', header: 'Label' }
+        ]}
+        data={data}
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Id' })
+    expect(head).toHaveStyle({ width: '150px' })
+  })
+
+  it('honours a declared minSize that equals the library default', () => {
+    render(
+      <VirtualizedTable
+        columns={[
+          { accessorKey: 'id', header: 'Id', minSize: 20 },
+          { accessorKey: 'label', header: 'Label' }
+        ]}
+        data={data}
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Id' })
+    expect(head).toHaveStyle({ minWidth: '20px' })
+    expect(head.style.width).toBe('')
+  })
+
   it('leaves an undeclared column on its equal flex share, unsized', () => {
     render(
       <VirtualizedTable
@@ -454,5 +489,97 @@ describe('VirtualizedTable column sizing', () => {
       expect(head.style.minWidth).toBe('')
       expect(head.style.maxWidth).toBe('')
     }
+  })
+})
+
+/**
+ * A GROUP header cell used to read sizing off its OWN column def, which
+ * declares nothing — so it took a flex share of the row while the sized leaf
+ * cells beneath it took fixed widths, and the header rule stopped lining up
+ * with the columns it names. The header of a group is exactly as wide as the
+ * leaves it spans, so it can only be pinned when every one of them is.
+ */
+describe('VirtualizedTable grouped column sizing', () => {
+  beforeAll(stubLayout)
+
+  const sizedGroup: ColumnDef<Tick, unknown>[] = [
+    {
+      id: 'identity',
+      header: 'Identity',
+      columns: [
+        { accessorKey: 'id', header: 'Id', size: 240 },
+        { accessorKey: 'label', header: 'Label', size: 160 }
+      ]
+    },
+    {
+      id: 'meta',
+      header: 'Meta',
+      columns: [{ accessorKey: 'note', header: 'Note', size: 100 }]
+    }
+  ]
+
+  it('pins a fully sized group header to the sum of its leaf widths', () => {
+    render(<VirtualizedTable columns={sizedGroup} data={data} />)
+
+    const group = screen.getByRole('columnheader', { name: 'Identity' })
+    expect(group).toHaveStyle({ width: '400px', flex: '0 0 auto' })
+    expect(screen.getByRole('columnheader', { name: 'Meta' })).toHaveStyle({
+      width: '100px'
+    })
+  })
+
+  it('sums the leaf floors into the group floor', () => {
+    render(
+      <VirtualizedTable
+        columns={[
+          {
+            id: 'identity',
+            header: 'Identity',
+            columns: [
+              { accessorKey: 'id', header: 'Id', minSize: 120 },
+              { accessorKey: 'label', header: 'Label', minSize: 80 }
+            ]
+          }
+        ]}
+        data={data}
+      />
+    )
+
+    const group = screen.getByRole('columnheader', { name: 'Identity' })
+    expect(group).toHaveStyle({ minWidth: '200px' })
+    expect(group.style.width).toBe('')
+  })
+
+  it('leaves a partially sized group header on its colSpan share', () => {
+    render(
+      <VirtualizedTable
+        columns={[
+          {
+            id: 'identity',
+            header: 'Identity',
+            columns: [
+              { accessorKey: 'id', header: 'Id', size: 240 },
+              { accessorKey: 'label', header: 'Label' }
+            ]
+          }
+        ]}
+        data={data}
+      />
+    )
+
+    // One leaf declares nothing, so the group cannot be pinned honestly.
+    const group = screen.getByRole('columnheader', { name: 'Identity' })
+    expect(group).toHaveStyle({ flex: '2 1 0%' })
+    expect(group.style.width).toBe('')
+    expect(group.style.minWidth).toBe('')
+  })
+
+  it('leaves an undeclared group header exactly as before', () => {
+    render(<VirtualizedTable columns={groupedColumns} data={data} />)
+
+    const group = screen.getByRole('columnheader', { name: 'Identity' })
+    expect(group).toHaveStyle({ flex: '2 1 0%' })
+    expect(group.style.width).toBe('')
+    expect(group.style.minWidth).toBe('')
   })
 })
