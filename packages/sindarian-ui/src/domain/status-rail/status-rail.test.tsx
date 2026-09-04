@@ -81,10 +81,12 @@ describe('StatusRail', () => {
       />
     )
 
-    expect(screen.getByText('Updated')).not.toHaveClass(
-      'uppercase',
-      'tracking-[0.08em]'
-    )
+    // One class per assertion: a multi-argument `not.toHaveClass` passes when
+    // ANY one of the names is missing, so a single call would go green with
+    // one of the two retired tokens still on the label.
+    const label = screen.getByText('Updated')
+    expect(label).not.toHaveClass('uppercase')
+    expect(label).not.toHaveClass('tracking-[0.08em]')
   })
 
   it('pairs an alarm chip with a non-color cue (WCAG 1.4.1)', () => {
