@@ -11,8 +11,16 @@ import { Slot } from '@radix-ui/react-slot'
  * role as text over a tinted surface. Do not "fix" this into a solid
  * `bg-credit` fill — that renders red-on-red and is invisible.
  */
+/**
+ * `gap-1` is load-bearing, not decoration: a badge holding a label AND an
+ * element child (`ID<code>ctx-123</code>`) has nothing between them otherwise —
+ * JSX drops the newline-only text node and CSS drops the whitespace-only
+ * anonymous flex item — so the screen reads `IDctx-123`. Consumers were pasting
+ * `className="gap-1"` per call site; `cn` runs tailwind-merge, so an explicit
+ * `gap-2` still wins. Single-child badges are unaffected: gap needs two items.
+ */
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
     variants: {
       variant: {

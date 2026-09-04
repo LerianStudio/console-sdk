@@ -80,6 +80,11 @@ describe('Badge token hygiene', () => {
  * An omitted size — and an explicit `size="default"` — must reproduce them byte
  * for byte; that is the whole guarantee that adding the axis broke no consumer.
  *
+ * One deliberate edit since that capture: `gap-1` joined the base, because a
+ * badge with a label and an element child rendered them glued (see "Badge child
+ * separation" below). It is the only token added, and it is inert for the
+ * single-child badges these three fixtures render.
+ *
  * `cn` runs everything through tailwind-merge (see `src/lib/utils.ts`), which is
  * why the base `border-border` and `px-2.5 py-0.5` are absent from variants that
  * declare their own border color or padding: the merge already dropped them.
@@ -87,11 +92,11 @@ describe('Badge token hygiene', () => {
  */
 const BEFORE_SIZE_AXIS = {
   default:
-    'inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
+    'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
   credit:
-    'inline-flex items-center rounded-full border text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-credit/30 bg-credit/10 text-credit-foreground px-[10px] py-1',
+    'inline-flex items-center gap-1 rounded-full border text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-credit/30 bg-credit/10 text-credit-foreground px-[10px] py-1',
   outline:
-    'inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground'
+    'inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground'
 } as const
 
 describe('Badge default size', () => {
@@ -166,5 +171,38 @@ describe('Badge size="sm"', () => {
     const badge = screen.getByText('Credit sm')
     expect(badge).toHaveClass('text-[11px]', 'px-[10px]', 'py-1')
     expect(badge).not.toHaveClass('text-sm')
+  })
+})
+
+/**
+ * A `Badge` holding a label AND an element child rendered them glued —
+ * `IDctx-123` — because the base was `inline-flex items-center` with no `gap`:
+ * JSX drops the newline-only text node between the two children and CSS drops
+ * the whitespace-only anonymous flex item, so nothing separates them. Consumers
+ * were pasting `className="gap-1"` per call site to put the space back.
+ */
+describe('Badge child separation', () => {
+  it('separates a label from an element child by default', () => {
+    render(
+      <Badge data-testid="badge">
+        ID
+        <code>ctx-123</code>
+      </Badge>
+    )
+
+    expect(screen.getByTestId('badge')).toHaveClass('gap-1')
+  })
+
+  it('lets a consumer gap override the default through tailwind-merge', () => {
+    render(
+      <Badge data-testid="badge" className="gap-2">
+        ID
+        <code>ctx-123</code>
+      </Badge>
+    )
+
+    const badge = screen.getByTestId('badge')
+    expect(badge).toHaveClass('gap-2')
+    expect(badge).not.toHaveClass('gap-1')
   })
 })
