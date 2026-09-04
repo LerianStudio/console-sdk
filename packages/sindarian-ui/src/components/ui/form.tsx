@@ -198,7 +198,9 @@ const FormMessage = React.forwardRef<
     <p
       ref={ref}
       id={formMessageId}
-      className={cn('text-destructive text-sm font-medium', className)}
+      // The error TEXT token, not `text-destructive`: that is the badge/fill
+      // family and measures ~3.8:1 as ink, under AA. Validation copy is text.
+      className={cn('text-system-error-h1a text-sm font-medium', className)}
       {...props}
     >
       {body}
