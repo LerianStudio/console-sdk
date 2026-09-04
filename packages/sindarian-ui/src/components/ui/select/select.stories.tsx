@@ -56,6 +56,29 @@ export const ReadOnly: StoryObj<SelectProps> = {
   )
 }
 
+/**
+ * A value longer than the trigger. It truncates inside the fixed-height box
+ * instead of wrapping out of it; `title` on the trigger gives the full text
+ * back on hover, because Radix renders the value slot `pointer-events: none`.
+ */
+export const LongValue: StoryObj<SelectProps> = {
+  args: { value: 'settlement' },
+  render: (args) => (
+    <div className="w-56">
+      <Select {...args}>
+        <SelectTrigger title="Settlement context — Banco Alpha daily file">
+          <SelectValue placeholder="Select a context" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="settlement">
+            Settlement context — Banco Alpha daily file
+          </SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
 export const Disabled: StoryObj<SelectProps> = {
   render: (args) => (
     <Select {...args}>
