@@ -611,3 +611,31 @@
   mask: radial-gradient(21px 13px at 50% 102%, #0000 98%, #000) 50%
     calc(100% - 16px) / 64px 100% repeat-x;
 }
+
+/*
+  Reduced-motion floor.
+
+  Every animated surface in the kit already carries a `motion-safe:` variant,
+  but that variant is a Tailwind utility: it only becomes
+  `@media (prefers-reduced-motion: no-preference)` after the CONSUMER compiles
+  Tailwind over the kit's dist. A consumer whose content globs miss a file, one
+  on an older kit, or one who writes `animate-in` in its own code gets no guard
+  at all — which is why `grep prefers-reduced-motion` over the shipped
+  stylesheet found nothing to point at.
+
+  This block is plain CSS with no variant and no build step between it and the
+  reader, and it ships verbatim (`copy:styles` copies every .css under src).
+  Animation
+  is dropped rather than shortened, so an overlay renders its final geometry
+  immediately; Radix reads a computed `animation-name: none` as "nothing to wait
+  for" and unmounts on close instead of hanging on an `animationend` that never
+  fires. Transitions are deliberately left alone: hover and focus affordances
+  are feedback, not motion effects.
+*/
+@media (prefers-reduced-motion: reduce) {
+  [class*='animate-'],
+  [data-state='open'],
+  [data-state='closed'] {
+    animation: none !important;
+  }
+}
