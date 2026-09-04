@@ -1,3 +1,26 @@
+## [1.4.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.3...sindarian-ui-v1.4.0-beta.4) (2026-09-04)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** carry leaf max widths up to a grouped header ([375e1e2](https://github.com/LerianStudio/console-sdk/commit/375e1e2b28a3634a04d9e35bb0f1ce7bce7ecd8f))
+* **sindarian-ui:** darken light destructive to clear AA ([489b003](https://github.com/LerianStudio/console-sdk/commit/489b003421adb60d432bfebd519a9078ece7f851))
+* **sindarian-ui:** fix page header heading levels and action overflow ([9026b5e](https://github.com/LerianStudio/console-sdk/commit/9026b5e8c2160f9d83f866086d6d581e9667ae8d))
+* **sindarian-ui:** forward rest props from AlertBanner to its root ([c20ba3a](https://github.com/LerianStudio/console-sdk/commit/c20ba3a0224249b65d8e4e6ae3f80114e4bcd62c))
+* **sindarian-ui:** give the date picker labels the console voice ([235cd4e](https://github.com/LerianStudio/console-sdk/commit/235cd4eff196cf840c1a4ddff3845521d52a6f90))
+* **sindarian-ui:** keep explicit column sizes and size grouped headers ([41f433a](https://github.com/LerianStudio/console-sdk/commit/41f433a4704ab3e5ba77d312390b7779f8eb61c5))
+* **sindarian-ui:** let form fields work without react-hook-form ([d243fb4](https://github.com/LerianStudio/console-sdk/commit/d243fb4823760a38d93a3c7c5d01918054453c00))
+* **sindarian-ui:** make MultipleSelect controlled props satisfiable ([282b650](https://github.com/LerianStudio/console-sdk/commit/282b65096013aa68d86f65c849304f8e278a1449))
+* **sindarian-ui:** paint FormMessage with the error text token ([ecb865e](https://github.com/LerianStudio/console-sdk/commit/ecb865eaba94478797974ed9f0d9f226584ca2c4))
+* **sindarian-ui:** put figures on Inter and tick on the type ramp ([b79c298](https://github.com/LerianStudio/console-sdk/commit/b79c298b5ede19cae78d5d7b847935b5d20a2899))
+* **sindarian-ui:** separate badge children with a default gap ([dc8e118](https://github.com/LerianStudio/console-sdk/commit/dc8e1188c846819f10381a860234ca0032e5e761))
+* **sindarian-ui:** ship a plain-CSS reduced-motion floor ([96ea7ce](https://github.com/LerianStudio/console-sdk/commit/96ea7ce7eed1827e6b63979bd02b60977aa371b5))
+* **sindarian-ui:** size table columns and give VirtualizedTable a head seam ([a875d56](https://github.com/LerianStudio/console-sdk/commit/a875d56d1014390f94e80da7f47a0758f0443475))
+* **sindarian-ui:** speak product-console's table-head label voice ([f72048b](https://github.com/LerianStudio/console-sdk/commit/f72048b1c0141243e63bf329163f46d3fac2a42e))
+* **sindarian-ui:** stop dimming the system text tokens to 70% ([0c210ed](https://github.com/LerianStudio/console-sdk/commit/0c210ed0f9e157f7cce232ba13bc35e34b8dc854))
+* **sindarian-ui:** truncate a long select value in the trigger ([c927fde](https://github.com/LerianStudio/console-sdk/commit/c927fdeb592f2a4e122d2f700e5ac5f74ccf0f51))
+* **sindarian-ui:** type SelectField value and onChange by its multi flag ([f48eedc](https://github.com/LerianStudio/console-sdk/commit/f48eedc16dad936eaec191a3bfd466f104dce4d9))
+
 ## [1.4.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.2...sindarian-ui-v1.4.0-beta.3) (2026-09-03)
 
 
