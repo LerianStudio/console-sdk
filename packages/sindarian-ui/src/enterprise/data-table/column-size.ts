@@ -53,6 +53,13 @@ export function readDeclaredColumnSize<TData>(
  * the header rule still tracks the cells beneath it. Reading the group's own
  * ColumnDef instead would size the header against a declaration its body cells
  * never see.
+ *
+ * Every dimension the leaves agree on carries up, CEILING INCLUDED. This is
+ * VirtualizedTable's path, where flex rows honour `maxSize` on a leaf — so a
+ * group of capped leaves whose header carried no `maxWidth` was free to grow
+ * past every column it names, which is the same header-vs-cells drift the
+ * width sum exists to prevent. Each dimension is decided on its own: a group
+ * can be uncapped and still have a floor.
  */
 export function readDeclaredGroupSize<TData>(
   leaves: Column<TData, unknown>[]
@@ -63,18 +70,23 @@ export function readDeclaredGroupSize<TData>(
 
   const width = sum(sizes, 'width')
   const minWidth = sum(sizes, 'minWidth')
+  const maxWidth = sum(sizes, 'maxWidth')
 
-  if (width === undefined && minWidth === undefined) {
+  if (width === undefined && minWidth === undefined && maxWidth === undefined) {
     return undefined
   }
 
-  return { width, minWidth }
+  return { width, minWidth, maxWidth }
 }
 
-/** The total of one dimension, or `undefined` unless EVERY leaf declared it. */
+/**
+ * The total of one dimension, or `undefined` unless EVERY leaf declared it. One
+ * leaf short and the group has no honest total: an unsized leaf flexes, an
+ * unfloored one can shrink, and an uncapped one grows without limit.
+ */
 function sum(
   sizes: (DeclaredColumnSize | undefined)[],
-  key: 'width' | 'minWidth'
+  key: keyof DeclaredColumnSize
 ): number | undefined {
   let total = 0
 

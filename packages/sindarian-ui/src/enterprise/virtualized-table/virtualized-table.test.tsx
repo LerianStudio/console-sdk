@@ -582,4 +582,55 @@ describe('VirtualizedTable grouped column sizing', () => {
     expect(group.style.width).toBe('')
     expect(group.style.minWidth).toBe('')
   })
+
+  it('sums the leaf ceilings into the group ceiling', () => {
+    render(
+      <VirtualizedTable
+        columns={[
+          {
+            id: 'identity',
+            header: 'Identity',
+            columns: [
+              { accessorKey: 'id', header: 'Id', maxSize: 320 },
+              { accessorKey: 'label', header: 'Label', maxSize: 200 }
+            ]
+          }
+        ]}
+        data={data}
+      />
+    )
+
+    // Flex rows honour `maxSize` on a leaf, so leaving the ceiling off the
+    // group lets the header grow past every column it names.
+    const group = screen.getByRole('columnheader', { name: 'Identity' })
+    expect(group).toHaveStyle({ maxWidth: '520px' })
+    // A ceiling alone pins nothing, so the group keeps its colSpan share.
+    expect(group).toHaveStyle({ flex: '2 1 0%' })
+    expect(group.style.width).toBe('')
+    expect(group.style.minWidth).toBe('')
+  })
+
+  it('leaves the group ceiling off when one leaf declares none', () => {
+    render(
+      <VirtualizedTable
+        columns={[
+          {
+            id: 'identity',
+            header: 'Identity',
+            columns: [
+              { accessorKey: 'id', header: 'Id', maxSize: 320 },
+              { accessorKey: 'label', header: 'Label' }
+            ]
+          }
+        ]}
+        data={data}
+      />
+    )
+
+    // An uncapped leaf grows without limit, so no ceiling on the group would
+    // be honest.
+    const group = screen.getByRole('columnheader', { name: 'Identity' })
+    expect(group.style.maxWidth).toBe('')
+    expect(group).toHaveStyle({ flex: '2 1 0%' })
+  })
 })
