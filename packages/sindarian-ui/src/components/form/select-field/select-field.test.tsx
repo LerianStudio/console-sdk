@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { Form } from '@/components/ui/form'
 import { MultipleSelectItem } from '@/components/ui/multiple-select'
 import { SelectItem } from '@/components/ui/select'
-import { SelectField } from '.'
+import { SelectField, type SelectFieldProps } from '.'
 
 /** jsdom implements none of these, and Radix Select reaches for all three the
  *  moment its list opens. Without them the list never mounts, and a test that
@@ -194,5 +194,95 @@ describe('SelectField in multi mode', () => {
     await waitFor(() => expect(onChange).toHaveBeenCalledWith(['pix', 'ted']))
     // The caller's state won the round trip, so both chips are on the trigger.
     expect(screen.getByText('pix,ted')).toBeInTheDocument()
+  })
+})
+
+/**
+ * Typing `multi` as the discriminant has to leave room for the callers that
+ * only learn it at runtime. `multi={oneOrMany}` on the react-hook-form path
+ * drives value and onChange through `control`, so neither prop is at the call
+ * site to disambiguate with — TypeScript resolves the call by checking both
+ * values the boolean can take against the union, and it compiles as long as
+ * every other prop suits both branches. These pin that, and pin the pairing the
+ * discriminant exists to forbid: a value whose shape fits one branch and not
+ * the other stays an error whether `multi` is a literal or a runtime flag.
+ */
+describe('SelectField with a runtime multi flag', () => {
+  function DynamicHarness({ many }: { many: boolean }) {
+    const form = useForm<{ rails: string | string[] }>({
+      defaultValues: { rails: many ? [] : '' }
+    })
+
+    return (
+      <Form {...form}>
+        <SelectField
+          control={form.control}
+          name="rails"
+          label="Rails"
+          placeholder="Pick a rail"
+          multi={many}
+        >
+          {many ? (
+            <MultipleSelectItem value="pix">Pix</MultipleSelectItem>
+          ) : (
+            <SelectItem value="pix">Pix</SelectItem>
+          )}
+        </SelectField>
+      </Form>
+    )
+  }
+
+  it('drives the single select from a runtime false', () => {
+    render(<DynamicHarness many={false} />)
+
+    expect(screen.getByText('Pick a rail')).toBeInTheDocument()
+  })
+
+  it('drives the multi select from a runtime true', async () => {
+    render(<DynamicHarness many />)
+
+    fireEvent.click(screen.getByRole('combobox'))
+    expect(await screen.findByRole('option', { name: 'Pix' })).toBeVisible()
+  })
+
+  it('rejects a value whose shape only fits one branch', () => {
+    // The annotations ARE the assertion: `tsc` checks this file, so it fails
+    // the build the day an unmarked shape stops compiling, and fails it just
+    // as loudly the day a marked one starts.
+    const oneOrMany: boolean = true
+
+    // A runtime flag with no value and no onChange suits both branches.
+    const dynamic: SelectFieldProps = { name: 'rails', multi: oneOrMany }
+
+    // @ts-expect-error with a value at the call site the flag has to commit:
+    // a string suits the single branch and not the multi one, so neither
+    // branch can be assumed.
+    const dynamicWithValue: SelectFieldProps = {
+      name: 'rails',
+      multi: oneOrMany,
+      value: 'pix'
+    }
+
+    // @ts-expect-error the original defect: `multi` with a single string
+    // compiled and then rendered empty, because the multi path only
+    // understands arrays.
+    const multiWithString: SelectFieldProps = {
+      name: 'rails',
+      multi: true,
+      value: 'pix'
+    }
+
+    const multiWithArray: SelectFieldProps = {
+      name: 'rails',
+      multi: true,
+      value: ['pix']
+    }
+
+    expect([
+      dynamic,
+      dynamicWithValue,
+      multiWithString,
+      multiWithArray
+    ]).toHaveLength(4)
   })
 })
