@@ -243,7 +243,14 @@
     --muted-foreground: 240 5% 34%; /* base/600 = #52525B */
     --accent: 56 99% 50%; /* #FEED02 (sunglow) */
     --accent-foreground: 240 10% 4%; /* base/800 for contrast on yellow */
-    --destructive: 0 84% 60%; /* red/500 = #EF4444 */
+    /*
+      Shadcn — Destructive. Darkened one step to red/600. red/500 under white
+      was 3.78:1, under AA, for both roles this token plays: the fill beneath
+      `--destructive-foreground` (the Critical badge, every destructive
+      button) and the plain body ink of a field/form error message on white.
+      red/600 lifts both to 4.80:1. The hue is unchanged; only the step moved.
+    */
+    --destructive: 0 72% 51%; /* red/600 = #DC2626 */
     --destructive-foreground: 0 0% 100%; /* white */
     --border: 240 5% 90%; /* base/200 = #E4E4E7 */
     --input: 0 0% 100%; /* base/white */
