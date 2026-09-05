@@ -76,7 +76,6 @@ describe('PageHeaderInfoTitle container seam', () => {
     expect(wrapper(container)).toHaveClass(
       'mb-12',
       'flex',
-      'min-w-0',
       'flex-1',
       'flex-col',
       'gap-4'
@@ -229,7 +228,6 @@ describe('PageHeaderCollapsibleInfo heading level', () => {
  * its buttons stack instead of overflowing the viewport. The wrapper and the
  * action row keep their beta.4 classes; only the title box changed. jsdom does
  * not lay out; geometry is verified downstream by Matcher's Playwright suite.
- * An unbreakable token still overflows the box; nothing truncates.
  */
 describe('PageHeaderActionButtons overflow', () => {
   const row = (container: HTMLElement) =>
@@ -275,7 +273,7 @@ describe('PageHeaderActionButtons overflow', () => {
       container
         .querySelector('[data-slot="page-header-info-title"]')
         ?.getAttribute('class')
-    ).toBe('mb-12 flex min-w-0 flex-1 flex-col gap-4')
+    ).toBe('mb-12 flex flex-1 flex-col gap-4')
   })
 
   it('keeps the established gap and cross-axis alignment', () => {
@@ -290,5 +288,97 @@ describe('PageHeaderActionButtons overflow', () => {
     const el = row(container)
     expect(el).toHaveClass('gap-2')
     expect(el).not.toHaveClass('gap-8')
+  })
+})
+
+/**
+ * Basis 0 with `min-w-0` is only half a contract: it stops a long subtitle from
+ * starving the action slot (#170) and then lets the reverse happen. When the
+ * action slot's content is wider than the free space, every pixel of that free
+ * space goes to the only growable item and the title box keeps the remainder,
+ * measured at 68px on Matcher's exception-detail masthead, where the `h1`
+ * paints straight out of the box and over the action row. Dropping `min-w-0`
+ * is the other half: a flex item's automatic minimum size is its own
+ * min-content, so the box now stops at its longest word and nothing overflows
+ * horizontally at any width. A fixed floor was rejected because any `sm:` gate
+ * keys on the viewport while the overflow condition is the masthead width.
+ * `children` moving to their own row is the rest of it: they used to share the
+ * subtitle's line, so a consumer that moved its identity chips into this slot
+ * squeezed its own subtitle to one word per line. jsdom does not lay out; the
+ * widths are verified downstream.
+ */
+describe('PageHeaderInfoTitle minimum width and children row', () => {
+  const wrapper = (container: HTMLElement) =>
+    container.querySelector('[data-slot="page-header-info-title"]')
+
+  const subtitleRow = (container: HTMLElement) =>
+    container.querySelector('p')?.parentElement ?? null
+
+  it('does not carry min-w-0, so the box keeps its min-content minimum', () => {
+    const { container } = render(<PageHeaderInfoTitle title="Ledgers" />)
+
+    expect(wrapper(container)).not.toHaveClass('min-w-0')
+  })
+
+  it('lets containerClassName put min-w-0 back for a caller that wants it', () => {
+    const { container } = render(
+      <PageHeaderInfoTitle title="Ledgers" containerClassName="min-w-0" />
+    )
+
+    expect(wrapper(container)).toHaveClass('min-w-0')
+  })
+
+  it('renders children in a wrapping row after the subtitle row', () => {
+    const { container } = render(
+      <PageHeaderInfoTitle title="Ledgers" subtitle="Ledger overview">
+        <span data-testid="chip">exc-123</span>
+      </PageHeaderInfoTitle>
+    )
+
+    const row = subtitleRow(container)
+    const chip = screen.getByTestId('chip')
+
+    expect(row).not.toContainElement(chip)
+    expect(chip.parentElement).toHaveClass(
+      'flex',
+      'flex-wrap',
+      'items-center',
+      'gap-2'
+    )
+    expect(row?.nextElementSibling).toBe(chip.parentElement)
+  })
+
+  it('keeps the subtitle row holding the paragraph alone', () => {
+    const { container } = render(
+      <PageHeaderInfoTitle title="Ledgers" subtitle="Ledger overview">
+        <span>exc-123</span>
+      </PageHeaderInfoTitle>
+    )
+
+    expect(subtitleRow(container)?.childElementCount).toBe(1)
+  })
+
+  it('renders no children row at all when there are no children', () => {
+    const { container } = render(
+      <PageHeaderInfoTitle title="Ledgers" subtitle="Ledger overview" />
+    )
+
+    const row = subtitleRow(container)
+    expect(row?.nextElementSibling).toBeNull()
+    expect(wrapper(container)?.childElementCount).toBe(2)
+  })
+
+  it('renders no children row for an empty children array either', () => {
+    // `[]` is truthy, so a consumer mapping an empty list of chips into this
+    // slot used to get an empty row plus the wrapper's own `gap-4` under the
+    // subtitle: a gap with nothing in it.
+    const { container } = render(
+      <PageHeaderInfoTitle title="Ledgers" subtitle="Ledger overview">
+        {[]}
+      </PageHeaderInfoTitle>
+    )
+
+    expect(subtitleRow(container)?.nextElementSibling).toBeNull()
+    expect(wrapper(container)?.childElementCount).toBe(2)
   })
 })

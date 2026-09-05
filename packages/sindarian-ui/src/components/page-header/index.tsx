@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { createContext, ReactNode, useContext, useState } from 'react'
+import { Children, createContext, ReactNode, useContext, useState } from 'react'
 import {
   Collapsible,
   CollapsibleContent,
@@ -101,8 +101,21 @@ export type PageHeaderInfoTitleProps = {
   /**
    * Seam for the wrapper element's own margins. Merged AFTER the hard-coded
    * `mb-12` so a consumer utility (e.g. `mb-0`) wins via tailwind-merge.
+   *
+   * It is also the way back to the old shrink-to-zero title box:
+   * `containerClassName="min-w-0"` simply lands, because the base string
+   * declares no `min-w-*` for tailwind-merge to weigh it against. Pass it only
+   * if a title box that a wide action slot can squeeze past its longest word
+   * is what the surface actually wants.
    */
   containerClassName?: string
+  /**
+   * Rendered as their own row under the subtitle, wrapping, so a long identity
+   * tape never competes with the subtitle for the same line. This is the slot
+   * for things that IDENTIFY the record (short id, status, severity, counts),
+   * not for controls: buttons belong in the header's action slot, where the
+   * wrapper's `justify-between` keeps them right-aligned.
+   */
   children?: ReactNode
 }
 
@@ -117,10 +130,37 @@ export function PageHeaderInfoTitle({
   return (
     <div
       data-slot="page-header-info-title"
-      className={cn(
-        'mb-12 flex min-w-0 flex-1 flex-col gap-4',
-        containerClassName
-      )}
+      /*
+        Two utilities and one deliberate absence.
+
+        `flex-1` (basis 0) is #170: flex shrinking is shared in proportion to
+        flex-basis, so a title box at basis auto (its max-content width, which
+        a long subtitle inflates) absorbed almost none of the overflow and
+        starved the action row into one button per line. At basis 0 the line's
+        hypothetical size is the action row alone, so the row keeps its natural
+        width and the title grows into what is left, wrapping at spaces.
+
+        NO `min-w-0` is #174, and the absence is the fix. A flex item's
+        automatic minimum size is its own min-content, so left alone the box
+        cannot be squeezed below its longest word (of the title, the subtitle,
+        or a child chip) and nothing can overflow horizontally at any width.
+        beta.5 carried `min-w-0`, which waives that minimum: on Matcher's
+        exception-detail masthead the box collapsed to 68px and the `h1`
+        painted straight out of it and across the action row. That is gone.
+
+        A fixed floor was the other candidate and is wrong: any `sm:` gate keys
+        on the VIEWPORT while the overflow condition is the MASTHEAD width, so
+        a 1024px viewport with a 320px side panel open (a ~332px masthead)
+        would keep a 320px floor and scroll the body sideways.
+
+        The measured trade: on a masthead carrying a 520px action row the title
+        box shrinks to its longest word and the subtitle wraps to about three
+        lines. The remedy there is fewer controls in the action slot, not a
+        wider floor. A consumer that wants the collapse back passes
+        `containerClassName="min-w-0"`. jsdom does not lay out, so the geometry
+        is verified downstream.
+      */
+      className={cn('mb-12 flex flex-1 flex-col gap-4', containerClassName)}
     >
       <Heading
         className={cn('text-foreground text-4xl font-bold', className)}
@@ -131,8 +171,14 @@ export function PageHeaderInfoTitle({
 
       <div className="flex items-center gap-2">
         <p className="text-muted-foreground text-sm font-medium">{subtitle}</p>
-        {children}
       </div>
+
+      {/* `Children.count`, not truthiness: `children={[]}` (a `.map()` over an
+          empty list of chips) is truthy and rendered an empty row that still
+          collected the parent's `gap-4` as a phantom gap under the subtitle. */}
+      {Children.count(children) > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">{children}</div>
+      ) : null}
     </div>
   )
 }
