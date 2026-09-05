@@ -35,6 +35,11 @@
  * page (indeterminate for partial), checkbox-cell clicks never bubble to
  * row-level handlers. With the flag off (the default), nothing changes.
  *
+ * Sorting is opt-in and controlled too: pass `enableSorting` plus `sorting` /
+ * `onSortingChange`. Rows are never reordered client-side (`manualSorting`, no
+ * sorted row model); what the flag buys is `aria-sort` on each sortable `th`.
+ * With the flag off (the default), no header carries the attribute.
+ *
  * Keyboard navigation is opt-in via `onRowActivate`: when present, rows get
  * a roving tabindex (Tab enters the table once at the anchor row; the next
  * Tab moves to the row's first tabbable child if it has one, otherwise out
@@ -52,11 +57,13 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  type Column,
   type ColumnDef,
   type OnChangeFn,
   type Row,
   type RowData,
   type RowSelectionState,
+  type SortingState,
   type Table as TanstackTable
 } from '@tanstack/react-table'
 
@@ -120,6 +127,42 @@ type RowSelectionProps<TData> =
       getRowSelectionLabel?: (row: TData) => string
     }
 
+/**
+ * Sorting is CONTROLLED-ONLY and OPT-IN, mirroring the row-selection contract
+ * above: the table sets `manualSorting` and adds no sorted row model, so it
+ * never reorders rows. The consumer owns the order (it usually comes back
+ * sorted from the server); what the table owns is announcing the state in the
+ * one place ARIA defines for it, `aria-sort` on the `th`. Header content is
+ * typically a `<button>`, and `aria-sort` is not allowed on a button, so a
+ * consumer cannot put it there without failing axe `aria-allowed-attr`.
+ *
+ * GOTCHA, TanStack's own rule, not a new one: `getCanSort()` is
+ * `(columnDef.enableSorting ?? true) && (options.enableSorting ?? true) &&
+ * !!column.accessorFn`. A display column (an `id` plus a `cell`, no
+ * `accessorKey` or `accessorFn`) has no accessor, so it can never sort and
+ * gets no `aria-sort`. That is right for an actions column and surprising for
+ * a computed column: give a column you want announced an accessor, and give a
+ * column you want excluded `enableSorting: false`.
+ */
+type SortingProps =
+  | {
+      enableSorting?: false
+      sorting?: never
+      onSortingChange?: never
+    }
+  | {
+      enableSorting: true
+      /**
+       * Controlled sort state (TanStack `SortingState`). Single-entry:
+       * `aria-sort` is defined for one sorted header at a time, so a
+       * multi-entry `SortingState` is the consumer's responsibility and yields
+       * several non-`none` values.
+       */
+      sorting: SortingState
+      /** Controlled sort updater (TanStack `OnChangeFn`). */
+      onSortingChange: OnChangeFn<SortingState>
+    }
+
 type DataTableBaseProps<TData> = {
   columns: ColumnDef<TData, unknown>[]
   data: TData[]
@@ -178,7 +221,8 @@ type DataTableBaseProps<TData> = {
 }
 
 export type DataTableProps<TData> = DataTableBaseProps<TData> &
-  RowSelectionProps<TData>
+  RowSelectionProps<TData> &
+  SortingProps
 
 const SELECTION_COLUMN_ID = '__select__'
 
@@ -205,6 +249,24 @@ const ROW_FOCUS_CLASS =
 
 function stopPropagation(event: React.MouseEvent) {
   event.stopPropagation()
+}
+
+/**
+ * ARIA sort state for one header cell. `undefined` (attribute omitted) on a
+ * column that cannot sort, which covers both sorting-off tables and columns
+ * that opted out, so the attribute never claims a control the user does not
+ * have.
+ */
+function ariaSortFor<TData>(
+  column: Column<TData, unknown>
+): 'ascending' | 'descending' | 'none' | undefined {
+  if (!column.getCanSort()) return undefined
+
+  const sorted = column.getIsSorted()
+  if (sorted === 'asc') return 'ascending'
+  if (sorted === 'desc') return 'descending'
+
+  return 'none'
 }
 
 function SelectAllCheckbox<TData>({ table }: { table: TanstackTable<TData> }) {
@@ -268,6 +330,9 @@ export function DataTable<TData>({
   rowSelection,
   onRowSelectionChange,
   getRowSelectionLabel,
+  enableSorting = false,
+  sorting,
+  onSortingChange,
   onRowActivate,
   rowHref,
   className,
@@ -297,8 +362,16 @@ export function DataTable<TData>({
     // types make the TS path require the controlled pair whenever selection is
     // enabled, so the dead-checkbox configuration is now unrepresentable.
     onRowSelectionChange: enableRowSelection ? onRowSelectionChange : undefined,
+    // Controlled-only as well, and deliberately without `getSortedRowModel`:
+    // `manualSorting` tells TanStack the rows arrive in the order the consumer
+    // already chose, so enabling sorting changes what the header ANNOUNCES,
+    // never what the body shows.
+    manualSorting: true,
+    enableSorting,
+    onSortingChange: enableSorting ? onSortingChange : undefined,
     state: {
-      rowSelection: enableRowSelection ? (rowSelection ?? {}) : undefined
+      rowSelection: enableRowSelection ? (rowSelection ?? {}) : undefined,
+      sorting: enableSorting ? (sorting ?? []) : undefined
     }
   })
 
@@ -454,6 +527,14 @@ export function DataTable<TData>({
                   <TableHead
                     key={header.id}
                     align={numeric ? 'right' : undefined}
+                    // A placeholder `th` is the empty cell react-table renders
+                    // under a grouped header; it labels nothing, so it must not
+                    // announce its leaf column's sort state as well.
+                    aria-sort={
+                      header.isPlaceholder
+                        ? undefined
+                        : ariaSortFor(header.column)
+                    }
                     // Only a column that DECLARED sizing gets an inline width;
                     // everything else keeps the auto table layout it has today.
                     style={readPreferredColumnSize(header.column)}

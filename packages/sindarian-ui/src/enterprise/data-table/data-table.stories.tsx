@@ -1,6 +1,10 @@
 import * as React from 'react'
 import { Meta, StoryObj } from '@storybook/nextjs'
-import type { ColumnDef, RowSelectionState } from '@tanstack/react-table'
+import type {
+  ColumnDef,
+  RowSelectionState,
+  SortingState
+} from '@tanstack/react-table'
 import { DataTable, DataTableProps } from '.'
 import { StatusBadge } from '../status-badge'
 
@@ -141,6 +145,63 @@ export const RowSelection: StoryObj<DataTableProps<Settlement>> = {
         enableRowSelection
         rowSelection={rowSelection}
         onRowSelectionChange={setRowSelection}
+      />
+    )
+  }
+}
+
+/**
+ * Sorting is controlled and manual: the table reorders nothing, it announces.
+ * Each sortable `th` carries `aria-sort`, so a screen reader reads the state
+ * from the column header itself instead of from the button's accessible name,
+ * where `aria-sort` is not allowed. `Status` and `Amount` opt out with
+ * `enableSorting: false` and carry no attribute at all.
+ */
+export const Sortable: StoryObj<DataTableProps<Settlement>> = {
+  render: () => {
+    const [sorting, setSorting] = React.useState<SortingState>([
+      { id: 'counterparty', desc: false }
+    ])
+    const active = sorting[0]
+    const header = (id: string, label: string) => () => (
+      <button
+        type="button"
+        onClick={() =>
+          setSorting([{ id, desc: active?.id === id ? !active.desc : false }])
+        }
+      >
+        {label}
+        {active?.id === id ? (active.desc ? ' \u2193' : ' \u2191') : ''}
+      </button>
+    )
+
+    const sortableColumns: ColumnDef<Settlement, unknown>[] = [
+      { accessorKey: 'id', header: header('id', 'Id') },
+      {
+        accessorKey: 'counterparty',
+        header: header('counterparty', 'Counterparty')
+      },
+      { ...columns[2], enableSorting: false },
+      { ...columns[3], enableSorting: false }
+    ]
+
+    // The consumer owns the order, exactly as a server-driven list does.
+    const ordered = [...data].sort(
+      (a, b) =>
+        (active?.desc ? -1 : 1) *
+        (active?.id === 'id'
+          ? a.id.localeCompare(b.id)
+          : a.counterparty.localeCompare(b.counterparty))
+    )
+
+    return (
+      <DataTable
+        columns={sortableColumns}
+        data={ordered}
+        getRowId={(row) => row.id}
+        enableSorting
+        sorting={sorting}
+        onSortingChange={setSorting}
       />
     )
   }

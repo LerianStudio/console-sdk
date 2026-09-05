@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import type { ColumnDef } from '@tanstack/react-table'
-import { DataTable } from '.'
+import type { ColumnDef, SortingState } from '@tanstack/react-table'
+import { DataTable, type DataTableProps } from '.'
 
 type LedgerRow = {
   id: string
@@ -524,5 +524,156 @@ describe('DataTable column sizing', () => {
       expect(cell.style.minWidth).toBe('')
       expect(cell.style.maxWidth).toBe('')
     }
+  })
+})
+
+/**
+ * The table renders every header cell itself, so it is the only place that can
+ * put the sort state where ARIA defines it. Before this, a consumer's only
+ * channels were `ColumnMeta.numeric` and `headClassName`, neither of which
+ * reaches an attribute, so the state ended up on the header `<button>` where
+ * `aria-sort` is not allowed and axe `aria-allowed-attr` fails at critical on
+ * every sortable column. Sorting stays controlled and manual: the attribute
+ * reports the consumer's order, the body never reorders itself.
+ */
+describe('DataTable aria-sort', () => {
+  const sortableColumns: ColumnDef<LedgerRow, unknown>[] = [
+    { accessorKey: 'name', header: 'Name' },
+    { accessorKey: 'amount', header: 'Amount', enableSorting: false },
+    { id: 'actions', header: 'Actions', cell: () => <button>Open</button> }
+  ]
+
+  const renderSorted = (sorting: SortingState) =>
+    render(
+      <DataTable
+        columns={sortableColumns}
+        data={rows}
+        getRowId={getRowId}
+        enableSorting
+        sorting={sorting}
+        onSortingChange={jest.fn()}
+      />
+    )
+
+  it('announces the sorted column and follows the direction it is given', () => {
+    const { rerender } = renderSorted([{ id: 'name', desc: true }])
+
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute(
+      'aria-sort',
+      'descending'
+    )
+
+    rerender(
+      <DataTable
+        columns={sortableColumns}
+        data={rows}
+        getRowId={getRowId}
+        enableSorting
+        sorting={[{ id: 'name', desc: false }]}
+        onSortingChange={jest.fn()}
+      />
+    )
+
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute(
+      'aria-sort',
+      'ascending'
+    )
+  })
+
+  it('marks a sortable but unsorted column as none', () => {
+    renderSorted([])
+
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute(
+      'aria-sort',
+      'none'
+    )
+  })
+
+  it('omits the attribute on an opted-out column and on a display column', () => {
+    renderSorted([{ id: 'name', desc: true }])
+
+    expect(
+      screen.getByRole('columnheader', { name: 'Amount' })
+    ).not.toHaveAttribute('aria-sort')
+    // No accessor, so TanStack can never sort it: an actions column stays
+    // silent rather than advertising a control that does not exist.
+    expect(
+      screen.getByRole('columnheader', { name: 'Actions' })
+    ).not.toHaveAttribute('aria-sort')
+  })
+
+  it('adds no aria-sort anywhere with sorting off, the default', () => {
+    const { container } = render(
+      <DataTable columns={sortableColumns} data={rows} getRowId={getRowId} />
+    )
+
+    expect(container.querySelectorAll('[aria-sort]')).toHaveLength(0)
+  })
+
+  it('ignores a controlled pair passed without the flag', () => {
+    // The prop types forbid this, but a JS consumer can still write it. Half
+    // enabling sorting would announce a state the table is not tracking.
+    const props = {
+      columns: sortableColumns,
+      data: rows,
+      getRowId,
+      sorting: [{ id: 'name', desc: true }],
+      onSortingChange: jest.fn()
+    } as unknown as DataTableProps<LedgerRow>
+
+    const { container } = render(<DataTable {...props} />)
+
+    expect(container.querySelectorAll('[aria-sort]')).toHaveLength(0)
+  })
+
+  it('puts aria-sort on the th and nowhere else', () => {
+    renderSorted([{ id: 'name', desc: true }])
+
+    const marked = Array.from(document.querySelectorAll('[aria-sort]'))
+    expect(marked).toHaveLength(1)
+    marked.forEach((el) => expect(el.tagName).toBe('TH'))
+  })
+
+  it('leaves the row order to the consumer when sorting is enabled', () => {
+    renderSorted([{ id: 'name', desc: true }])
+
+    const cells = screen.getAllByRole('cell').map((cell) => cell.textContent)
+    expect(cells[0]).toBe('Alpha')
+  })
+
+  it('leaves a placeholder cell under a column group unannounced', () => {
+    // Mixing a grouped column with an ungrouped one makes react-table pad the
+    // shallower column with an empty placeholder `th`. It labels nothing, so
+    // announcing its leaf column's sort state there would report the same sort
+    // twice, once from a cell with no header text at all.
+    const groupedColumns: ColumnDef<LedgerRow, unknown>[] = [
+      {
+        id: 'identity',
+        header: 'Group',
+        columns: [{ accessorKey: 'name', header: 'Name' }]
+      },
+      { accessorKey: 'amount', header: 'Amount' }
+    ]
+
+    const { container } = render(
+      <DataTable
+        columns={groupedColumns}
+        data={rows}
+        getRowId={getRowId}
+        enableSorting
+        sorting={[{ id: 'amount', desc: false }]}
+        onSortingChange={jest.fn()}
+      />
+    )
+
+    const placeholders = Array.from(container.querySelectorAll('th')).filter(
+      (th) => th.textContent === ''
+    )
+
+    expect(placeholders).toHaveLength(1)
+    expect(placeholders[0]).not.toHaveAttribute('aria-sort')
+    expect(
+      screen.getByRole('columnheader', { name: 'Amount' })
+    ).toHaveAttribute('aria-sort', 'ascending')
   })
 })

@@ -313,3 +313,93 @@ describe('DateRangePicker required', () => {
     }
   })
 })
+
+/**
+ * A surface that suspends its own date window (Matcher's unmatched workbench in
+ * "show all" mode) had no way to say so through the library and wrapped the
+ * picker in a native disabled `<fieldset>` instead. `disabled` is the seam. It
+ * is the native attribute on both triggers, not `aria-disabled`: that is what
+ * takes them out of the tab order and, because `PopoverContent` is portaled to
+ * `document.body`, a shut popover is the only thing keeping the calendar's
+ * Clear button out of reach.
+ */
+describe('DateRangePicker disabled', () => {
+  const triggers = () => [
+    screen.getByLabelText('From'),
+    screen.getByLabelText('To')
+  ]
+
+  it('disables both trigger segments natively', () => {
+    setup({ from: '2026-01-05', to: '2026-01-20' }, jest.fn(), {
+      disabled: true
+    })
+
+    for (const trigger of triggers()) {
+      expect(trigger).toBeDisabled()
+      // aria-disabled would leave the trigger focusable and clickable, so the
+      // popover (and the Clear button inside it) would stay reachable.
+      expect(trigger).not.toHaveAttribute('aria-disabled')
+    }
+  })
+
+  it('opens nothing when a disabled trigger is clicked', () => {
+    setup({ from: '', to: '' }, jest.fn(), { disabled: true })
+
+    fireEvent.click(screen.getByLabelText('From'))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('From')).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    )
+  })
+
+  it('leaves the triggers untouched when the prop is absent', () => {
+    setup({ from: '2026-01-05', to: '2026-01-20' })
+
+    for (const trigger of triggers()) {
+      expect(trigger).not.toHaveAttribute('disabled')
+      expect(trigger).toBeEnabled()
+      expect(trigger).not.toHaveClass('cursor-not-allowed')
+      expect(trigger).not.toHaveClass('opacity-50')
+    }
+  })
+
+  it('still opens the calendar with the prop absent', () => {
+    setup({ from: '', to: '' })
+
+    fireEvent.click(screen.getByLabelText('From'))
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('does not reopen the calendar when disabled is lifted again', () => {
+    // The open segment used to survive the suspension: `disabled` only gated
+    // the `open` prop, so lifting it re-satisfied the same condition and the
+    // portaled calendar came back with no user gesture, taking focus with it.
+    const view = (disabled: boolean) => (
+      <DateRangePicker
+        value={{ from: '', to: '' }}
+        onValueChange={jest.fn()}
+        fromId="date-from"
+        toId="date-to"
+        fromLabel="From"
+        toLabel="To"
+        disabled={disabled}
+      />
+    )
+
+    const { rerender } = render(view(false))
+    fireEvent.click(screen.getByLabelText('From'))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    rerender(view(true))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    rerender(view(false))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    for (const trigger of triggers()) {
+      expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    }
+  })
+})
