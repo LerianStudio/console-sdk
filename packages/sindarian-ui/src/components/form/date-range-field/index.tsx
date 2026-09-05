@@ -20,9 +20,17 @@ import { cn } from '@/lib/utils'
 import dayjs from 'dayjs'
 import { CalendarIcon } from 'lucide-react'
 import * as React from 'react'
-import { ReactNode } from 'react'
+import { type ComponentProps, ReactNode } from 'react'
 import { type DateRange } from 'react-day-picker'
+import { enUS } from 'react-day-picker/locale'
 import { Control, FieldValues, Path } from 'react-hook-form'
+
+/**
+ * The calendar's locale type, taken straight off the Calendar props so the
+ * public signature stays the react-day-picker/date-fns `Locale` without this
+ * package taking a direct date-fns dependency.
+ */
+type CalendarLocale = ComponentProps<typeof Calendar>['locale']
 
 export type DateRangeFieldProps<T extends FieldValues = FieldValues> = {
   name: string
@@ -38,6 +46,8 @@ export type DateRangeFieldProps<T extends FieldValues = FieldValues> = {
   numberOfMonths?: number
   dateFormat?: string
   align?: 'start' | 'center' | 'end'
+  /** date-fns locale for the calendar. Defaults to en-US. */
+  locale?: CalendarLocale
   'data-testid'?: string
 }
 
@@ -55,6 +65,7 @@ export const DateRangeField = <T extends FieldValues = FieldValues>({
   numberOfMonths = 2,
   dateFormat = 'MMM DD, YYYY',
   align = 'start',
+  locale = enUS,
   ...others
 }: DateRangeFieldProps<T>) => {
   const [open, setOpen] = React.useState(false)
@@ -119,6 +130,7 @@ export const DateRangeField = <T extends FieldValues = FieldValues>({
                   onSelect={field.onChange}
                   numberOfMonths={numberOfMonths}
                   disabled={disabled || readOnly}
+                  locale={locale}
                 />
               </PopoverContent>
             </Popover>
