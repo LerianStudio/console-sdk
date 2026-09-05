@@ -117,7 +117,10 @@ export function PageHeaderInfoTitle({
   return (
     <div
       data-slot="page-header-info-title"
-      className={cn('mb-12 flex flex-col gap-4', containerClassName)}
+      className={cn(
+        'mb-12 flex min-w-0 flex-1 flex-col gap-4',
+        containerClassName
+      )}
     >
       <Heading
         className={cn('text-foreground text-4xl font-bold', className)}

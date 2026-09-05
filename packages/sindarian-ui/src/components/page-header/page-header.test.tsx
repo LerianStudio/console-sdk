@@ -73,7 +73,14 @@ describe('PageHeaderInfoTitle container seam', () => {
   it('keeps the default bottom margin when no seam is passed', () => {
     const { container } = render(<PageHeaderInfoTitle title="Ledgers" />)
 
-    expect(wrapper(container)).toHaveClass('mb-12', 'flex', 'flex-col', 'gap-4')
+    expect(wrapper(container)).toHaveClass(
+      'mb-12',
+      'flex',
+      'min-w-0',
+      'flex-1',
+      'flex-col',
+      'gap-4'
+    )
   })
 
   it('lets containerClassName override the default bottom margin', () => {
@@ -209,25 +216,66 @@ describe('PageHeaderCollapsibleInfo heading level', () => {
 })
 
 /**
- * `flex items-center gap-8` with no `wrap` and no `min-w-0`: a flex item never
- * shrinks below its own min-content, so a wide control in the action row pushed
- * the row past the content column instead of wrapping — measured as a viewport
- * overflow at 768px and 1280px. `flex-wrap` gives the row somewhere to go and
- * `min-w-0` lets the row itself shrink inside the header's own flex parent. The
- * gap is deliberately unchanged.
+ * The header row is a non-wrapping flex line: the title box and the action
+ * row share it. Flex shrinking is distributed in proportion to each item's
+ * flex-basis, so a title box with basis auto (its max-content width, a long
+ * subtitle) absorbed almost none of the overflow and starved the action row
+ * into a one-button-per-line stack (#170). The fix is a basis, not a shrink
+ * rule: with `flex-1` the title box has basis 0, so the line's hypothetical
+ * size is the action row alone. Whenever the row fits, nothing shrinks, the
+ * row keeps its natural width and the title grows into what is left, wrapping
+ * its text at spaces. Narrower than the row, the title (basis 0) absorbs no
+ * shrink and the row itself shrinks, where `min-w-0 flex-wrap` (#168) makes
+ * its buttons stack instead of overflowing the viewport. The wrapper and the
+ * action row keep their beta.4 classes; only the title box changed. jsdom does
+ * not lay out; geometry is verified downstream by Matcher's Playwright suite.
+ * An unbreakable token still overflows the box; nothing truncates.
  */
 describe('PageHeaderActionButtons overflow', () => {
   const row = (container: HTMLElement) =>
     container.querySelector('[data-slot="page-header-action-buttons"]')
 
-  it('wraps and shrinks instead of overflowing the content column', () => {
+  it('keeps the beta.4 classes: shrinkable, stacking, no shrink lock', () => {
     const { container } = render(
       <PageHeaderActionButtons>
         <button>Act</button>
       </PageHeaderActionButtons>
     )
 
-    expect(row(container)).toHaveClass('flex', 'flex-wrap', 'min-w-0')
+    expect(row(container)?.getAttribute('class')).toBe(
+      'flex min-w-0 flex-wrap items-center gap-8'
+    )
+  })
+
+  it('leaves the wrapper as one non-wrapping line, unchanged', () => {
+    const { container } = render(
+      <PageHeaderWrapper>
+        <PageHeaderInfoTitle title="Ledgers" />
+        <PageHeaderActionButtons>
+          <button>Act</button>
+        </PageHeaderActionButtons>
+      </PageHeaderWrapper>
+    )
+
+    expect(
+      container
+        .querySelector('[data-slot="page-header-wrapper"]')
+        ?.getAttribute('class')
+    ).toBe('flex items-start justify-between')
+  })
+
+  it('gives the title box a zero basis so it never pushes the row down', () => {
+    const { container } = render(
+      <PageHeaderWrapper>
+        <PageHeaderInfoTitle title="Ledgers" />
+      </PageHeaderWrapper>
+    )
+
+    expect(
+      container
+        .querySelector('[data-slot="page-header-info-title"]')
+        ?.getAttribute('class')
+    ).toBe('mb-12 flex min-w-0 flex-1 flex-col gap-4')
   })
 
   it('keeps the established gap and cross-axis alignment', () => {
