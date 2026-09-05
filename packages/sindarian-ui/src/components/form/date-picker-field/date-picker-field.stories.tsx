@@ -1,4 +1,5 @@
 import { Meta, StoryObj } from '@storybook/nextjs'
+import { ptBR } from 'react-day-picker/locale'
 import { DatePickerField, DatePickerFieldProps } from '.'
 import { useForm } from 'react-hook-form'
 import { Form } from '@/components/ui/form'
@@ -88,6 +89,13 @@ export const WithDescription: StoryObj<DatePickerFieldProps> = {
 export const Disabled: StoryObj<DatePickerFieldProps> = {
   args: {
     disabled: true
+  },
+  render: (args) => BaseComponentWithValue(args)
+}
+
+export const BrazilianLocale: StoryObj<DatePickerFieldProps> = {
+  args: {
+    locale: ptBR
   },
   render: (args) => BaseComponentWithValue(args)
 }

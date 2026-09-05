@@ -49,6 +49,10 @@ export const Invalid: StoryObj<DateRangePickerProps> = {
   )
 }
 
+export const Required: StoryObj<DateRangePickerProps> = {
+  render: () => <Harness {...base} required />
+}
+
 export const BrazilianLocale: StoryObj<DateRangePickerProps> = {
   render: () => (
     <Harness

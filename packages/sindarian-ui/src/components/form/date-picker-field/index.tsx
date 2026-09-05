@@ -20,8 +20,16 @@ import { cn } from '@/lib/utils'
 import dayjs from 'dayjs'
 import { CalendarIcon } from 'lucide-react'
 import * as React from 'react'
-import { ReactNode } from 'react'
+import { ComponentProps, ReactNode } from 'react'
+import { enUS } from 'react-day-picker/locale'
 import { Control, FieldValues, Path } from 'react-hook-form'
+
+/**
+ * The calendar's locale type, taken straight off the Calendar props so the
+ * public signature stays the react-day-picker/date-fns `Locale` without this
+ * package taking a direct date-fns dependency.
+ */
+type CalendarLocale = ComponentProps<typeof Calendar>['locale']
 
 export type DatePickerFieldProps<T extends FieldValues = FieldValues> = {
   name: string
@@ -38,6 +46,8 @@ export type DatePickerFieldProps<T extends FieldValues = FieldValues> = {
   align?: 'start' | 'center' | 'end'
   'data-testid'?: string
   valueAsString?: boolean
+  /** date-fns locale for the calendar. Defaults to en-US. */
+  locale?: CalendarLocale
 }
 
 export const DatePickerField = <T extends FieldValues = FieldValues>({
@@ -54,6 +64,7 @@ export const DatePickerField = <T extends FieldValues = FieldValues>({
   dateFormat = 'MMM DD, YYYY',
   align = 'start',
   valueAsString,
+  locale = enUS,
   ...others
 }: DatePickerFieldProps<T>) => {
   const [open, setOpen] = React.useState(false)
@@ -132,10 +143,15 @@ export const DatePickerField = <T extends FieldValues = FieldValues>({
               <PopoverContent className="w-auto p-0" align={align}>
                 <Calendar
                   mode="single"
+                  // `required` mirrors the field's own required: a required
+                  // field is not emptied by a re-click; an optional one keeps
+                  // react-day-picker's clear gesture.
+                  required={required}
                   defaultMonth={value}
                   selected={value}
                   onSelect={handleSelect}
                   disabled={disabled || readOnly}
+                  locale={locale}
                 />
               </PopoverContent>
             </Popover>

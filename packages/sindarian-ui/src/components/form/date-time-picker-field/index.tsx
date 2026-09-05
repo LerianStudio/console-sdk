@@ -21,8 +21,16 @@ import { cn } from '@/lib/utils'
 import dayjs from 'dayjs'
 import { CalendarIcon, XIcon } from 'lucide-react'
 import * as React from 'react'
-import { type ReactNode } from 'react'
+import { type ComponentProps, type ReactNode } from 'react'
+import { enUS } from 'react-day-picker/locale'
 import { Control, FieldValues, Path } from 'react-hook-form'
+
+/**
+ * The calendar's locale type, taken straight off the Calendar props so the
+ * public signature stays the react-day-picker/date-fns `Locale` without this
+ * package taking a direct date-fns dependency.
+ */
+type CalendarLocale = ComponentProps<typeof Calendar>['locale']
 
 export type DateTimePickerFieldProps<T extends FieldValues = FieldValues> = {
   name: string
@@ -37,6 +45,8 @@ export type DateTimePickerFieldProps<T extends FieldValues = FieldValues> = {
   required?: boolean
   dateFormat?: string
   align?: 'start' | 'center' | 'end'
+  /** date-fns locale for the calendar. Defaults to en-US. */
+  locale?: CalendarLocale
   'data-testid'?: string
   minDate?: Date
   maxDate?: Date
@@ -56,6 +66,7 @@ export const DateTimePickerField = <T extends FieldValues = FieldValues>({
   required,
   dateFormat = 'MMM DD, YYYY HH:mm',
   align = 'start',
+  locale = enUS,
   minDate,
   maxDate,
   defaultTime = '00:00',
@@ -184,6 +195,7 @@ export const DateTimePickerField = <T extends FieldValues = FieldValues>({
                     }
                     selected={validCurrent ? validCurrent.toDate() : undefined}
                     onSelect={handleDateSelect}
+                    locale={locale}
                     disabled={(date) => {
                       if (disabled || readOnly) return true
                       if (
