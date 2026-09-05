@@ -3,7 +3,7 @@
 /**
  * DateRangePicker — a two-segment popover range control.
  *
- * Two labelled mono trigger segments (from / to) each open the SAME two-month
+ * Two labelled trigger segments (from / to) each open the SAME two-month
  * react-day-picker range calendar over the same range selection. The external
  * contract is plain YYYY-MM-DD strings (empty string = unset) so state shapes
  * that speak `date_from`/`date_to` stay untouched. The picker guarantees
@@ -59,6 +59,13 @@ export type DateRangePickerProps = {
   fromLabel: ReactNode
   toLabel: ReactNode
   invalid?: boolean
+  /**
+   * Marks the range as mandatory. Renders the library's required marker: the
+   * literal ' *' appended to both labels, exactly as `FormLabel` does. It is
+   * deliberately NOT mirrored as `aria-required` on the triggers: ARIA does not
+   * allow that attribute on `role="button"`.
+   */
+  required?: boolean
   /** Wired as aria-describedby on both triggers while `invalid` is set. */
   errorId?: string
   /** Trigger placeholder when unset. */
@@ -111,6 +118,7 @@ export function DateRangePicker({
   fromLabel,
   toLabel,
   invalid = false,
+  required = false,
   errorId,
   placeholder = 'Any date',
   ariaLabel = 'Select date range',
@@ -140,7 +148,12 @@ export function DateRangePicker({
   }
 
   const triggerClass = cn(
-    'border-input bg-card hover:bg-secondary focus-visible:ring-ring flex h-9 items-center gap-2 rounded-md border px-3 text-left font-mono text-sm tabular-nums transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none sm:w-40',
+    // border-shadcn-400, not border-input: `--input` is a SURFACE token and is
+    // white in the light theme, so the trigger had no visible edge next to the
+    // Input and Select it sits with. font-sans, not font-mono: the dates are
+    // figures in the body face with tabular figures, like every other figure in
+    // the console.
+    'border-shadcn-400 bg-card hover:bg-secondary focus-visible:ring-ring flex h-9 items-center gap-2 rounded-md border px-3 text-left font-sans text-sm tabular-nums transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none sm:w-40',
     invalid && 'border-destructive'
   )
 
@@ -192,7 +205,12 @@ export function DateRangePicker({
           (`text-[11px] uppercase tracking-[0.08em]`), which overrode that voice
           on the primitive that defines it.
         */}
-        <Label htmlFor={id}>{label}</Label>
+        {/* The required marker is the library's own: the literal ' *' after
+            the label text, the same shape `FormLabel` renders. */}
+        <Label htmlFor={id}>
+          {label}
+          {required ? ' *' : ''}
+        </Label>
         {/* No onClick: PopoverTrigger owns open/close. A manual `setOpen(true)`
             would race the outside-click dismissal — pointerdown closes, the
             click reopens, and the popover could never be dismissed by clicking
@@ -212,9 +230,7 @@ export function DateRangePicker({
           {dateValue ? (
             <span>{dateValue}</span>
           ) : (
-            <span className="text-muted-foreground font-sans">
-              {placeholder}
-            </span>
+            <span className="text-muted-foreground">{placeholder}</span>
           )}
         </PopoverTrigger>
       </div>

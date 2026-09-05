@@ -1,7 +1,15 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { DateRangePicker, type DateRangeValue } from '.'
+import {
+  DateRangePicker,
+  type DateRangePickerProps,
+  type DateRangeValue
+} from '.'
 
-function setup(value: DateRangeValue, onValueChange = jest.fn()) {
+function setup(
+  value: DateRangeValue,
+  onValueChange = jest.fn(),
+  extra: Partial<DateRangePickerProps> = {}
+) {
   const { container } = render(
     <DateRangePicker
       value={value}
@@ -10,6 +18,7 @@ function setup(value: DateRangeValue, onValueChange = jest.fn()) {
       toId="date-to"
       fromLabel="From"
       toLabel="To"
+      {...extra}
     />
   )
   return { container, onValueChange }
@@ -169,10 +178,13 @@ describe('DateRangePicker', () => {
     const { onValueChange } = setup({ from: '2026-03-10', to: '' })
 
     fireEvent.click(screen.getByLabelText('From'))
-    // Query the day by the name a screen-reader user would hear, so the test
-    // fails if the calendar ever stops announcing its days. (By label, not by
-    // role+name: the day's <td> inherits the same name from this button.)
-    fireEvent.click(screen.getByLabelText('Thursday, March 12th, 2026'))
+    // Query the day by the role and the name a screen-reader user would hear,
+    // so the test fails if the calendar ever stops announcing its days. The
+    // name resolves to exactly one node now that the day button no longer
+    // carries a duplicate gridcell role alongside its own <td>.
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Thursday, March 12th, 2026' })
+    )
 
     expect(onValueChange).toHaveBeenCalledTimes(1)
     const emitted = onValueChange.mock.calls[0][0] as DateRangeValue
@@ -219,6 +231,85 @@ describe('DateRangePicker label voice', () => {
       expect(label).not.toHaveClass('uppercase')
       expect(label).not.toHaveClass('tracking-[0.08em]')
       expect(label).not.toHaveClass('text-[11px]')
+    }
+  })
+})
+
+/**
+ * The trigger sat on `border-input`, a SURFACE token that is white in the light
+ * theme, so the control had no visible edge while the `Input` and `Select` next
+ * to it did. It also printed the dates in the code face, which no other figure
+ * in the console uses. The border now matches what `Input`, `Select` and
+ * `DatePickerField` already resolve to (`--color-shadcn-400`), and the dates
+ * render in the body face with tabular figures, the same shape the `Figure`
+ * domain component is pinned to.
+ */
+describe('DateRangePicker trigger', () => {
+  const triggers = () => [
+    screen.getByLabelText('From'),
+    screen.getByLabelText('To')
+  ]
+
+  it('draws a visible border in both themes', () => {
+    setup({ from: '2026-01-05', to: '2026-01-20' })
+
+    for (const trigger of triggers()) {
+      expect(trigger).toHaveClass('border-shadcn-400')
+      expect(trigger).not.toHaveClass('border-input')
+    }
+  })
+
+  it('prints the dates in the body face with tabular figures', () => {
+    setup({ from: '2026-01-05', to: '2026-01-20' })
+
+    for (const trigger of triggers()) {
+      expect(trigger).toHaveClass('font-sans', 'text-sm', 'tabular-nums')
+      expect(trigger).not.toHaveClass('font-mono')
+    }
+  })
+
+  it('still turns the border destructive while invalid', () => {
+    setup({ from: '', to: '' }, jest.fn(), { invalid: true })
+
+    for (const trigger of triggers()) {
+      expect(trigger).toHaveClass('border-destructive')
+    }
+  })
+})
+
+/**
+ * A mandatory window could not announce itself. The marker is the library's
+ * own: the literal ' *' appended to the label text, exactly as `FormLabel`
+ * renders it, so a required range reads the same as every required form field
+ * in the console. It deliberately does NOT become `aria-required` on the
+ * triggers: ARIA does not allow that attribute on `role="button"`, and axe
+ * `aria-allowed-attr` flags it.
+ */
+describe('DateRangePicker required', () => {
+  const labelFor = (container: HTMLElement, id: string) =>
+    container.querySelector(`label[for="${id}"]`)
+
+  it('appends the library required marker to both labels', () => {
+    const { container } = setup({ from: '', to: '' }, jest.fn(), {
+      required: true
+    })
+
+    expect(labelFor(container, 'date-from')?.textContent).toBe('From *')
+    expect(labelFor(container, 'date-to')?.textContent).toBe('To *')
+  })
+
+  it('leaves both labels unmarked without required', () => {
+    const { container } = setup({ from: '', to: '' })
+
+    expect(labelFor(container, 'date-from')?.textContent).toBe('From')
+    expect(labelFor(container, 'date-to')?.textContent).toBe('To')
+  })
+
+  it('puts no aria-required on the triggers', () => {
+    setup({ from: '', to: '' }, jest.fn(), { required: true })
+
+    for (const name of ['From *', 'To *']) {
+      expect(screen.getByLabelText(name)).not.toHaveAttribute('aria-required')
     }
   })
 })
