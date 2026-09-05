@@ -76,6 +76,17 @@ export type DateRangePickerProps = {
   clearLabel?: string
   /** date-fns locale for the calendar. Defaults to en-US. */
   locale?: CalendarLocale
+  /**
+   * Suspends the control. Both segments get the NATIVE `disabled` attribute,
+   * not an `aria-disabled` substitute: a trigger whose only job is to open a
+   * popover has no state worth keeping focusable, and native `disabled` is
+   * what takes it out of the tab order AND keeps the popover shut. That last
+   * part matters more than it looks: `PopoverContent` is portaled to
+   * `document.body`, so the calendar's Clear button is outside any wrapper a
+   * consumer could disable, and the closed popover is the only thing keeping
+   * it out of reach.
+   */
+  disabled?: boolean
 }
 
 /** Leading YYYY-MM-DD of an ISO date (or date-time) string. */
@@ -123,7 +134,8 @@ export function DateRangePicker({
   placeholder = 'Any date',
   ariaLabel = 'Select date range',
   clearLabel = 'Clear',
-  locale = enUS
+  locale = enUS,
+  disabled = false
 }: DateRangePickerProps) {
   // Which segment's popover is open, if any. One root per segment means one open
   // state per segment; holding the identity of the open one here keeps them
@@ -154,7 +166,11 @@ export function DateRangePicker({
     // figures in the body face with tabular figures, like every other figure in
     // the console.
     'border-shadcn-400 bg-card hover:bg-secondary focus-visible:ring-ring flex h-9 items-center gap-2 rounded-md border px-3 text-left font-sans text-sm tabular-nums transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none sm:w-40',
-    invalid && 'border-destructive'
+    invalid && 'border-destructive',
+    // Conditional rather than `disabled:` variants, matching how this file
+    // already applies `border-destructive`: with the prop absent the class
+    // string stays byte-identical to what consumers render today.
+    disabled && 'cursor-not-allowed opacity-50'
   )
 
   // The one calendar, rendered inside whichever segment's popover is open. Both
@@ -194,7 +210,10 @@ export function DateRangePicker({
     // still the direct flex child of the row — the layout is byte-identical.
     <Popover
       key={segment}
-      open={openSegment === segment}
+      // A disabled trigger cannot open a popover, but a surface that suspends
+      // itself WHILE one is open (a filter bar flipping to "show all") would
+      // otherwise leave the portaled calendar on screen with no way back to it.
+      open={!disabled && openSegment === segment}
       onOpenChange={(next) => setOpenSegment(next ? segment : null)}
     >
       <div className="flex flex-col gap-1.5">
@@ -220,6 +239,7 @@ export function DateRangePicker({
           type="button"
           id={id}
           className={triggerClass}
+          disabled={disabled}
           aria-invalid={invalid || undefined}
           aria-describedby={invalid ? errorId : undefined}
         >
