@@ -173,10 +173,14 @@ export function PageHeaderInfoTitle({
         <p className="text-muted-foreground text-sm font-medium">{subtitle}</p>
       </div>
 
-      {/* `Children.count`, not truthiness: `children={[]}` (a `.map()` over an
-          empty list of chips) is truthy and rendered an empty row that still
-          collected the parent's `gap-4` as a phantom gap under the subtitle. */}
-      {Children.count(children) > 0 ? (
+      {/* `Children.toArray`, not truthiness and not `Children.count`:
+          `children={[]}` (a `.map()` over an empty list of chips) is truthy,
+          and `count` counts `null`, `undefined` and booleans as nodes, so
+          `children={[cond && <Chip />]}` with `cond` false measured as one
+          child too. Either way an empty row rendered and still collected the
+          parent's `gap-4` as a phantom gap under the subtitle. `toArray` drops
+          those empty nodes, so the row exists only when something paints. */}
+      {Children.toArray(children).length > 0 ? (
         <div className="flex flex-wrap items-center gap-2">{children}</div>
       ) : null}
     </div>

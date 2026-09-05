@@ -381,4 +381,54 @@ describe('PageHeaderInfoTitle minimum width and children row', () => {
     expect(subtitleRow(container)?.nextElementSibling).toBeNull()
     expect(wrapper(container)?.childElementCount).toBe(2)
   })
+
+  it('renders no children row for a list holding only an empty node', () => {
+    // `Children.count` counts `null`, `undefined` and booleans as nodes, so a
+    // list built by a `.map()` that yields nothing still measured as one child
+    // and painted the empty row. `Children.toArray` drops them.
+    const { container } = render(
+      <PageHeaderInfoTitle title="Ledgers" subtitle="Ledger overview">
+        {[null]}
+      </PageHeaderInfoTitle>
+    )
+
+    expect(subtitleRow(container)?.nextElementSibling).toBeNull()
+    expect(wrapper(container)?.childElementCount).toBe(2)
+  })
+
+  it('renders no children row for a false conditional child', () => {
+    // The `children={[cond && <Chip />]}` shape with `cond` false: the array
+    // holds one `false`, which is not a rendered node.
+    const { container } = render(
+      <PageHeaderInfoTitle title="Ledgers" subtitle="Ledger overview">
+        {[false]}
+      </PageHeaderInfoTitle>
+    )
+
+    expect(subtitleRow(container)?.nextElementSibling).toBeNull()
+    expect(wrapper(container)?.childElementCount).toBe(2)
+  })
+
+  it('still renders the row when one real child survives the conditional', () => {
+    const { container } = render(
+      <PageHeaderInfoTitle title="Ledgers" subtitle="Ledger overview">
+        {[
+          false,
+          <span key="chip" data-testid="chip">
+            exc-123
+          </span>,
+          null
+        ]}
+      </PageHeaderInfoTitle>
+    )
+
+    const chip = screen.getByTestId('chip')
+    expect(chip.parentElement).toHaveClass(
+      'flex',
+      'flex-wrap',
+      'items-center',
+      'gap-2'
+    )
+    expect(wrapper(container)?.childElementCount).toBe(3)
+  })
 })
