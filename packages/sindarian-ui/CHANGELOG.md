@@ -1,3 +1,13 @@
+## [1.4.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.4...sindarian-ui-v1.4.0-beta.5) (2026-09-05)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** add locale to date fields and pin required picks ([322031e](https://github.com/LerianStudio/console-sdk/commit/322031edaa1027ff1ea9d3e3962b2cd92f9c5494)), closes [#171](https://github.com/LerianStudio/console-sdk/issues/171)
+* **sindarian-ui:** give the range trigger a border, body face and marker ([f0bb149](https://github.com/LerianStudio/console-sdk/commit/f0bb149c2ea808252b89f46f9f58805ae72304fa)), closes [#171](https://github.com/LerianStudio/console-sdk/issues/171)
+* **sindarian-ui:** hand the day button ARIA back to react-day-picker ([aa09402](https://github.com/LerianStudio/console-sdk/commit/aa09402df3cadf07e3090b904b7c48757c1ccd27)), closes [#171](https://github.com/LerianStudio/console-sdk/issues/171)
+* **sindarian-ui:** let the page header title yield to the action row ([ac006ee](https://github.com/LerianStudio/console-sdk/commit/ac006eed8e9283246cbf61dcee807f94c13d7c42)), closes [#170](https://github.com/LerianStudio/console-sdk/issues/170) [#168](https://github.com/LerianStudio/console-sdk/issues/168) [#170](https://github.com/LerianStudio/console-sdk/issues/170)
+
 ## [1.4.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.3...sindarian-ui-v1.4.0-beta.4) (2026-09-04)
 
 
