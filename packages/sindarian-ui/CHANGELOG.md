@@ -1,3 +1,14 @@
+## [1.4.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.5...sindarian-ui-v1.4.0-beta.6) (2026-09-05)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** add a disabled prop to DateRangePicker ([c34dc87](https://github.com/LerianStudio/console-sdk/commit/c34dc87f8a731141b3a42adb90f6b3c04a298361)), closes [#171](https://github.com/LerianStudio/console-sdk/issues/171)
+* **sindarian-ui:** announce data table sort state with aria-sort ([a0d629e](https://github.com/LerianStudio/console-sdk/commit/a0d629e063def140e43e9812a9f363d3d4669656)), closes [#173](https://github.com/LerianStudio/console-sdk/issues/173)
+* **sindarian-ui:** clear the open segment when the date picker is disabled ([c0f5f67](https://github.com/LerianStudio/console-sdk/commit/c0f5f673a890e833b044be6d5064c09e9d7ef485))
+* **sindarian-ui:** keep the page header title at its min-content width ([5eda20b](https://github.com/LerianStudio/console-sdk/commit/5eda20be7dc2d3f4b23c3ab2b24320757ba7516f)), closes [#174](https://github.com/LerianStudio/console-sdk/issues/174)
+* **sindarian-ui:** skip the page header children row for empty nodes ([00f319b](https://github.com/LerianStudio/console-sdk/commit/00f319ba9981e120f11080989d07ae86485a0985))
+
 ## [1.4.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.4...sindarian-ui-v1.4.0-beta.5) (2026-09-05)
 
 
