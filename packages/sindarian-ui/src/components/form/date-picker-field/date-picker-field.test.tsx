@@ -75,16 +75,16 @@ describe('DatePickerField re-click on the selected day', () => {
     // react-day-picker stamps the ISO day on the <td>; the button inside it is
     // the interactive target. Built from local getters so the runner's ICU
     // locale plays no part.
-    const todayIso = () => {
+    // Captured once, so a midnight between the two clicks cannot move the
+    // target to the next day.
+    const todayIso = (() => {
       const now = new Date()
       const mm = String(now.getMonth() + 1).padStart(2, '0')
       const dd = String(now.getDate()).padStart(2, '0')
       return `${now.getFullYear()}-${mm}-${dd}`
-    }
+    })()
     const todayCell = () =>
-      document.querySelector<HTMLElement>(
-        `td[data-day="${todayIso()}"] button`
-      )!
+      document.querySelector<HTMLElement>(`td[data-day="${todayIso}"] button`)!
 
     render(<Harness />)
     fireEvent.click(screen.getByTestId('day-trigger'))
