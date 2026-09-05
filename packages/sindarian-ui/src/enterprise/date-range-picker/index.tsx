@@ -20,7 +20,7 @@
  * popover closed. Each segment is now a real `PopoverTrigger` button: focusable,
  * correctly named, and the element Radix returns focus to on dismissal.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ComponentProps, ReactNode } from 'react'
 import { CalendarDays } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
@@ -142,6 +142,16 @@ export function DateRangePicker({
   // mutually exclusive, so clicking "to" while "from" is open swaps the anchor
   // instead of stacking two calendars.
   const [openSegment, setOpenSegment] = useState<'from' | 'to' | null>(null)
+
+  // Suspending the control must FORGET which segment was open, not just hide
+  // it. The `open` prop below already shuts the popover in the same frame
+  // `disabled` flips, but a controlled Radix root never calls `onOpenChange`
+  // for a prop-driven close, so the identity survived: lifting `disabled`
+  // re-satisfied the same condition and the portaled calendar reopened with no
+  // user gesture, pulling focus into it.
+  useEffect(() => {
+    if (disabled) setOpenSegment(null)
+  }, [disabled])
 
   const fromDate = parseDay(value.from)
   const toDate = parseDay(value.to)

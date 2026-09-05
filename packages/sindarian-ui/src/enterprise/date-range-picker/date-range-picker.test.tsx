@@ -372,4 +372,34 @@ describe('DateRangePicker disabled', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
+
+  it('does not reopen the calendar when disabled is lifted again', () => {
+    // The open segment used to survive the suspension: `disabled` only gated
+    // the `open` prop, so lifting it re-satisfied the same condition and the
+    // portaled calendar came back with no user gesture, taking focus with it.
+    const view = (disabled: boolean) => (
+      <DateRangePicker
+        value={{ from: '', to: '' }}
+        onValueChange={jest.fn()}
+        fromId="date-from"
+        toId="date-to"
+        fromLabel="From"
+        toLabel="To"
+        disabled={disabled}
+      />
+    )
+
+    const { rerender } = render(view(false))
+    fireEvent.click(screen.getByLabelText('From'))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    rerender(view(true))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    rerender(view(false))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    for (const trigger of triggers()) {
+      expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    }
+  })
 })
