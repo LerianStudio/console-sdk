@@ -195,10 +195,6 @@ function CalendarDayButton({
     if (modifiers.focused) ref.current?.focus()
   }, [modifiers.focused])
 
-  const dayNumber = day.date.getDate()
-  const monthName = day.date.toLocaleDateString('en', { month: 'long' })
-  const year = day.date.getFullYear()
-
   return (
     <Button
       ref={ref}
@@ -215,13 +211,11 @@ function CalendarDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       data-today={modifiers.today && !modifiers.range_middle}
-      // Enhanced accessibility attributes
-      aria-label={`${monthName} ${dayNumber}, ${year}`}
-      aria-selected={modifiers.selected}
+      // react-day-picker owns the role, the accessible name, the tab order and
+      // the selected/disabled state of the day button; the <td> around it is
+      // the gridcell that carries aria-selected. aria-current is ours because
+      // RDP sets none, and it is a global state legal on a plain button.
       aria-current={modifiers.today ? 'date' : undefined}
-      aria-disabled={modifiers.disabled}
-      role="gridcell"
-      tabIndex={modifiers.focused ? 0 : -1}
       className={cn(
         'data-[today=true]:bg-accent data-[today=true]:text-accent-foreground data-[selected-single=true]:bg-accent data-[selected-single=true]:text-accent-foreground data-[range-middle=true]:bg-accent-mute data-[range-middle=true]:text-foreground data-[range-start=true]:bg-accent data-[range-start=true]:text-accent-foreground data-[range-end=true]:bg-accent data-[range-end=true]:text-accent-foreground focus-visible:border-accent focus-visible:ring-accent/50 relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 border-0 leading-none font-normal focus-visible:ring-[3px] focus-visible:outline-none data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-r-(--cell-radius) data-[range-end=true]:font-bold data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-l-(--cell-radius) data-[range-start=true]:font-bold data-[selected-single=true]:font-bold data-[today=true]:font-bold [&>span]:text-xs [&>span]:opacity-70',
         defaultClassNames.day,
