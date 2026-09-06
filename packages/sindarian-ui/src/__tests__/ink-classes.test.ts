@@ -73,6 +73,16 @@ describe('the placeholder token', () => {
   it('is never bypassed for a raw palette step', () => {
     expect(hits(/placeholder:text-shadcn-\d/)).toEqual([])
   })
+
+  it('is applied to the MultipleSelect input that renders the placeholder', () => {
+    const source = paint(join(SRC, 'components/ui/multiple-select/index.tsx'))
+    const input = source.match(
+      /<CommandPrimitive\.Input[\s\S]*?className=\{cn\([\s\S]*?\)\}/
+    )?.[0]
+
+    expect(input).toContain('placeholder:text-input-placeholder')
+    expect(input).not.toContain('placeholder:text-muted-foreground')
+  })
 })
 
 /**

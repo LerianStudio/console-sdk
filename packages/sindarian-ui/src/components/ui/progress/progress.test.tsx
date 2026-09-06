@@ -227,4 +227,24 @@ describe('Progress out of range', () => {
     expect(indicator().style.transform).toBe('translateX(-100%)')
     expect(consoleError).not.toHaveBeenCalled()
   })
+
+  it('treats a non-finite value as indeterminate without invalid geometry', () => {
+    render(<Progress value={Number.NaN} />)
+
+    const bar = screen.getByRole('progressbar')
+
+    expect(bar).toHaveAttribute('data-state', 'indeterminate')
+    expect(bar).not.toHaveAttribute('aria-valuenow')
+    expect(indicator().style.transform).toBe('translateX(-100%)')
+  })
+
+  it('falls back to the default scale for a non-finite max', () => {
+    render(<Progress value={40} max={Number.POSITIVE_INFINITY} />)
+
+    const bar = screen.getByRole('progressbar')
+
+    expect(bar).toHaveAttribute('aria-valuemax', '100')
+    expect(bar).toHaveAttribute('aria-valuenow', '40')
+    expect(indicator().style.transform).toBe('translateX(-60%)')
+  })
 })

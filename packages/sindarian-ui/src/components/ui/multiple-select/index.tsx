@@ -192,7 +192,7 @@ export const MultipleSelectValue = React.forwardRef<
         ref={inputRef}
         disabled={disabled}
         className={cn(
-          'placeholder:text-muted-foreground bg-transparent outline-hidden focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 disabled:placeholder:opacity-0',
+          'placeholder:text-input-placeholder bg-transparent outline-hidden focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 disabled:placeholder:opacity-0',
           className
         )}
       />

@@ -30,11 +30,14 @@ function Progress({
   indicatorColor = 'bg-primary',
   ...props
 }: ProgressProps) {
-  const scale = typeof max === 'number' && max > 0 ? max : 100
+  const scale = Number.isFinite(max) && max! > 0 ? max! : 100
   // Bound against `scale`, not against the rejected `max`: with `max={0}` the
   // scale is already 100, and clamping to 0 would report a finished bar empty.
-  const bounded =
-    typeof value === 'number' ? Math.min(scale, Math.max(0, value)) : value
+  // Non-finite values are indeterminate, matching Radix without producing an
+  // invalid CSS transform.
+  const bounded = Number.isFinite(value)
+    ? Math.min(scale, Math.max(0, value!))
+    : null
   const percent = ((bounded ?? 0) / scale) * 100
 
   return (
