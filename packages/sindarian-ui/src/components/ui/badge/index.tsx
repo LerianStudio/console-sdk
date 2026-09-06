@@ -76,8 +76,9 @@ function Badge({ className, variant, size, asChild, ...props }: BadgeProps) {
    * generic element: a caller's `aria-label` was dropped by assistive tech and
    * flagged by axe as `aria-prohibited-attr`. `role="img"` is the smallest role
    * that permits the name and lets it stand in for the visible text, which is
-   * exactly what a labelled badge wants. Unlabelled badges stay generic, and a
-   * caller's own `role` still wins because it arrives with the spread below.
+   * exactly what a labelled span badge wants. Unlabelled badges stay generic;
+   * `asChild` keeps the child's native role; and a caller's own `role` still wins
+   * because it arrives with the spread below.
    */
   const labelled =
     props['aria-label'] !== undefined || props['aria-labelledby'] !== undefined
@@ -85,7 +86,7 @@ function Badge({ className, variant, size, asChild, ...props }: BadgeProps) {
   return (
     <Comp
       data-slot="badge"
-      role={labelled ? 'img' : undefined}
+      role={!asChild && labelled ? 'img' : undefined}
       className={cn(badgeVariants({ variant, size }), className)}
       {...props}
     />

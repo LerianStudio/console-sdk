@@ -253,4 +253,16 @@ describe('Badge accessible name', () => {
 
     expect(screen.getByTestId('badge')).toHaveAttribute('role', 'status')
   })
+
+  it('preserves an asChild link role when labelled', () => {
+    render(
+      <Badge asChild aria-label="Open overdue items">
+        <a href="/overdue">Overdue</a>
+      </Badge>
+    )
+
+    expect(
+      screen.getByRole('link', { name: 'Open overdue items' })
+    ).toBeInTheDocument()
+  })
 })
