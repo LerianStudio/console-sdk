@@ -376,7 +376,7 @@ describe('ConfirmationDialog rich copy', () => {
     expect(screen.getByText('Main ledger').tagName).toBe('EM')
   })
 
-  it.each([false, ''])(
+  it.each([false, '', true])(
     'keeps the fallback accessible name for an empty title value (%p)',
     (title) => {
       render(
