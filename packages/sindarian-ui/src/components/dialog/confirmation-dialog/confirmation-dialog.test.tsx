@@ -376,6 +376,24 @@ describe('ConfirmationDialog rich copy', () => {
     expect(screen.getByText('Main ledger').tagName).toBe('EM')
   })
 
+  it.each([false, ''])(
+    'keeps the fallback accessible name for an empty title value (%p)',
+    (title) => {
+      render(
+        <ConfirmationDialog
+          open
+          onOpenChange={jest.fn()}
+          title={title}
+          confirmLabel="Delete"
+        />
+      )
+
+      expect(
+        screen.getByRole('alertdialog', { name: 'Delete' })
+      ).toBeInTheDocument()
+    }
+  )
+
   it('keeps an accessible name without optional copy', () => {
     render(<ConfirmationDialog open onOpenChange={jest.fn()} />)
 
