@@ -8,15 +8,23 @@
  * preserve that guarantee.
  *
  * The currency code is shown as a suffix rather than a symbol so mixed-currency
- * ledgers stay unambiguous. Negative amounts get the destructive color;
+ * ledgers stay unambiguous. Negative amounts get the error sign color;
  * null/undefined/empty render the muted no-value placeholder.
  *
- * SIGN COLOR IS NOT THE CREDIT ROLE. `--destructive` marks a negative/alarm
+ * SIGN COLOR IS NOT THE CREDIT ROLE. The sign ink marks a negative/alarm
  * amount; `--credit` is the accounting reading of a credit amount. They are two
  * roles, and a consumer layers the credit role on top (matcher's fork passes
  * `signColor={false}` with `tone="credit"` precisely so the two never fight).
- * Collapsing the sign color into `text-credit` would erase that distinction —
- * this class stays `text-destructive`, as in sindarian-x@0.15.0.
+ * Collapsing the sign color into `text-credit` would erase that distinction.
+ *
+ * THE SIGN INK IS THE `system-error` H1A INK, not `--destructive`. A signed
+ * amount is TEXT, so it answers to WCAG AA on whatever surface holds it, and
+ * `--destructive` is a FILL family (buttons, badges, tinted chips) whose dark
+ * value reads 3.80:1 as ink on `--card`, an axe finding on a live console.
+ * `--system-error-h1a` is the error INK of the same family and reads 8.28:1
+ * light / 7.12:1 dark on that surface. `__tests__/tokens-contract.test.ts`
+ * re-measures whichever token this line applies, so the pairing is measured
+ * rather than trusted.
  */
 import { cn } from '@/lib/utils'
 
@@ -145,7 +153,7 @@ export function MoneyText({
     <span
       className={cn(
         'tabular-nums',
-        signColor && negative && 'text-destructive',
+        signColor && negative && 'text-system-error-h1a',
         className
       )}
     >

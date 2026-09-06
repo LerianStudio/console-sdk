@@ -285,7 +285,9 @@ describe('destructive pair', () => {
   /**
    * `--destructive` is also read as plain body ink — the field error message
    * (`ui/field/index.tsx:219`), the form message (`ui/form.tsx:123`), the
-   * upload error (`ui/file-upload/index.tsx:337`), a negative `MoneyText`.
+   * upload error (`ui/file-upload/index.tsx:337`). A negative `MoneyText` was
+   * on that list and left it: its sign ink is `--system-error-h1a` now, gated
+   * just below.
    *
    * Dark `--card` is deliberately absent: red/400 on the dark container
    * surface measures 3.80:1, still under AA. That is NOT fixed by moving the
@@ -305,6 +307,63 @@ describe('destructive pair', () => {
     )
 
     expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+  })
+})
+
+/**
+ * A negative amount is TEXT, so its sign color answers to the AA text floor on
+ * whatever ground holds it. It used to be painted `text-destructive`, which is
+ * the FILL family: dark red/400 reads 3.80:1 on `--card`, and an axe crawl of
+ * a consumer console (br-sfn cockpit, `/slc/clearing`) found exactly that on
+ * `.text-destructive.tabular-nums`. Three consoles had already routed around
+ * it by hand rather than fixing the kit.
+ *
+ * The token is READ OUT OF THE COMPONENT rather than named here, so a future
+ * edit that swaps the class is re-measured instead of silently escaping the
+ * gate, and the extraction throwing is what guards the guard.
+ */
+const MONEY_TEXT_SOURCE = resolve(
+  __dirname,
+  '..',
+  'domain',
+  'money-text',
+  'index.tsx'
+)
+const moneyText = readFileSync(MONEY_TEXT_SOURCE, 'utf8')
+
+/** The token behind the `text-*` class MoneyText applies under `negative`. */
+function signInkToken(): string {
+  for (const line of moneyText.split('\n')) {
+    if (!/\bnegative\s*&&/.test(line)) continue
+
+    const ink = line.match(/'text-([\w-]+)'/)
+    if (ink) return ink[1]
+  }
+
+  throw new Error('MoneyText applies no `text-*` class under `negative`')
+}
+
+describe('MoneyText sign ink', () => {
+  const ink = signInkToken()
+
+  describe.each(['card', 'background'])('over --%s', (surface) => {
+    it.each(['light', 'dark'] as const)(
+      'clears AA for normal text in %s',
+      (theme) => {
+        const ratio = contrast(
+          tokenValue(ink, theme),
+          tokenValue(surface, theme)
+        )
+
+        expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+      }
+    )
+  })
+
+  // The fill token cannot come back through any other line either: a tinted
+  // chip or a border on this component would reintroduce the same 3.80:1 ink.
+  it('spends no `text-destructive` anywhere in the component', () => {
+    expect(moneyText).not.toContain('text-destructive')
   })
 })
 
