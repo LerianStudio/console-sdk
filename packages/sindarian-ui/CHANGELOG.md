@@ -1,3 +1,10 @@
+## [1.4.0-beta.7](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.6...sindarian-ui-v1.4.0-beta.7) (2026-09-06)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** lift dark muted ink to clear AA ([8d44835](https://github.com/LerianStudio/console-sdk/commit/8d44835cd159959109302b1a9e6ceb4a2d59e397)), closes [#A1A1](https://github.com/LerianStudio/console-sdk/issues/A1A1) [#C9C9](https://github.com/LerianStudio/console-sdk/issues/C9C9)
+
 ## [1.4.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.5...sindarian-ui-v1.4.0-beta.6) (2026-09-05)
 
 
