@@ -57,14 +57,32 @@ const useAutocomplete = () => {
   return context
 }
 
+/**
+ * The text a value reads as.
+ *
+ * An item registers a label only when it HAS one to give: a string child, or an
+ * explicit `label` when its children are markup. Everything downstream renders
+ * this map as text (the input's value, a chip's `aria-label`), so a value with
+ * no registered label falls back to the value itself. The alternatives are both
+ * defects that shipped: `undefined` drops a controlled input to uncontrolled,
+ * and a React element interpolates into a template literal as "[object
+ * Object]".
+ */
+function labelOf(options: Record<string, string>, value: string): string {
+  return options[value] ?? value
+}
+
 export type AutocompleteTriggerProps = React.ComponentProps<'div'> & {
   onClear?: () => void
+  /** Accessible label for the clear button. */
+  clearLabel?: string
 }
 
 export function AutocompleteTrigger({
   ref,
   className,
   onClear,
+  clearLabel = 'Clear',
   children
 }: AutocompleteTriggerProps) {
   const _ref = React.useRef<HTMLDivElement>(null)
@@ -79,7 +97,11 @@ export function AutocompleteTrigger({
     <div
       ref={_ref}
       className={cn(
-        'bg-background ring-offset-background placeholder:text-shadcn-400 data-[disabled=true]:bg-shadcn-100 data-[read-only=true]:bg-shadcn-100 border-input flex rounded-md border text-sm focus:outline-hidden focus-visible:outline-hidden data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50 data-[read-only=true]:opacity-50 md:text-sm [&>span]:line-clamp-1',
+        // `border-input-border`, NOT `border-input`: `--input` is a SURFACE
+        // token and is white in light, so the border it paints is invisible
+        // against the field's own `bg-background`. This is the same edge
+        // MultipleSelect and DateRangePicker draw, and the same token.
+        'bg-background ring-offset-background placeholder:text-input-placeholder data-[disabled=true]:bg-shadcn-100 data-[read-only=true]:bg-shadcn-100 border-input-border flex rounded-md border text-sm focus:outline-hidden focus-visible:outline-hidden data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50 data-[read-only=true]:opacity-50 md:text-sm [&>span]:line-clamp-1',
         {
           'h-9': value.length === 0,
           'min-h-9': value.length > 0,
@@ -106,15 +128,30 @@ export function AutocompleteTrigger({
     >
       <div className="flex grow flex-wrap gap-1 px-3 py-2">{children}</div>
       <div className="flex shrink-0 items-center justify-end">
-        <button type="button" className={cn(isNoSelection && 'hidden')}>
-          <X
-            className="text-muted-foreground mx-2 h-4 cursor-pointer"
-            onClick={(event) => {
+        {/* The handler and the name belong to the BUTTON, not to the svg
+            inside it. On the icon the control was mouse-only (an svg takes no
+            focus, so Enter and Space reached nothing) and anonymous to a
+            screen reader: SC 2.1.1 and SC 4.1.2, console-sdk#152. */}
+        <button
+          type="button"
+          aria-label={clearLabel}
+          className={cn('cursor-pointer', isNoSelection && 'hidden')}
+          onKeyDown={(event) => {
+            // cmdk's Command root calls preventDefault() on EVERY Enter that
+            // reaches it, which cancels this button's implicit activation, so
+            // the keydown must not get there. Enter only: the root's other
+            // keys (Escape, the arrows) still belong to the panel.
+            if (event.key === 'Enter') {
               event.stopPropagation()
-              handleClear()
-              onClear?.()
-            }}
-          />
+            }
+          }}
+          onClick={(event) => {
+            event.stopPropagation()
+            handleClear()
+            onClear?.()
+          }}
+        >
+          <X aria-hidden className="text-muted-foreground mx-2 h-4" />
         </button>
         <Separator
           orientation="vertical"
@@ -157,7 +194,7 @@ export function AutocompleteValue({
       return
     }
 
-    handleValueChange(showValue ? v : options[v])
+    handleValueChange(showValue ? v : labelOf(options, v))
   }
 
   const handleValueChange = (value: string) => {
@@ -181,7 +218,7 @@ export function AutocompleteValue({
       return
     }
 
-    setSearch(showValue ? v : options[v])
+    setSearch(showValue ? v : labelOf(options, v))
   }, [options])
 
   React.useEffect(() => {
@@ -205,11 +242,19 @@ export function AutocompleteValue({
   )
 }
 
+export type AutocompleteMultipleValueProps = React.ComponentProps<
+  typeof CommandPrimitive.Input
+> & {
+  /** Accessible label for each chip's remove button, prefixed to its value. */
+  clearLabel?: string
+}
+
 export function AutocompleteMultipleValue({
   ref,
   className,
+  clearLabel = 'Clear',
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Input>) {
+}: AutocompleteMultipleValueProps) {
   const { value, disabled, handleChange, options, showValue, inputRef } =
     useAutocomplete()
 
@@ -226,20 +271,34 @@ export function AutocompleteMultipleValue({
               'data-disabled:bg-muted-foreground data-fixed:bg-muted-foreground data-disabled:text-muted data-fixed:text-muted data-disabled:hover:bg-muted-foreground data-fixed:hover:bg-muted-foreground'
             )}
           >
-            {showValue ? value : options[value]}
+            {showValue ? value : labelOf(options, value)}
+            {/* Same repair as the trigger's clear button: the handler and the
+                name sit on the button. The name carries the chip's own label,
+                so a screen reader hears which value it removes. */}
             <button
               type="button"
+              aria-label={`${clearLabel} ${showValue ? value : labelOf(options, value)}`}
               className={cn(
                 'ring-offset-background focus:ring-ring ml-1 rounded-full outline-hidden focus:ring-2 focus:ring-offset-2',
                 disabled && 'hidden'
               )}
+              onKeyDown={(event) => {
+                // cmdk's Command root calls preventDefault() on EVERY Enter that
+                // reaches it, which cancels this button's implicit activation, so
+                // the keydown must not get there. Enter only: the root's other
+                // keys (Escape, the arrows) still belong to the panel.
+                if (event.key === 'Enter') {
+                  event.stopPropagation()
+                }
+              }}
+              onClick={(event) => {
+                event.stopPropagation()
+                handleChange(value)
+              }}
             >
               <X
+                aria-hidden
                 className="text-muted-foreground hover:text-foreground h-3 w-3"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  handleChange(value)
-                }}
               />
             </button>
           </Badge>
@@ -360,9 +419,11 @@ export function AutocompleteContent({
     React.Children.forEach(React.Children.toArray(children), (child) => {
       // If child is already invalid, like pure string, dismiss
       if (
-        !React.isValidElement<{ value: string; children: React.ReactNode }>(
-          child
-        )
+        !React.isValidElement<{
+          value: string
+          label?: string
+          children: React.ReactNode
+        }>(child)
       ) {
         return
       }
@@ -374,9 +435,18 @@ export function AutocompleteContent({
       ) {
         // Check if the item was proper filled with a value prop
         if (child.props.value) {
-          addOption({
-            [child.props.value]: child.props.children as string
-          })
+          // NOT `children as string`. That cast is how a React ELEMENT got into
+          // a map every reader treats as text. An item with markup children
+          // registers nothing unless it declares a `label`, and `labelOf` reads
+          // the absence as "use the value".
+          const { label, children: itemChildren } = child.props
+          const text =
+            label ??
+            (typeof itemChildren === 'string' ? itemChildren : undefined)
+
+          if (text !== undefined) {
+            addOption({ [child.props.value]: text })
+          }
         }
         return
       }
@@ -466,12 +536,25 @@ export function AutocompleteGroup({
   )
 }
 
+export type AutocompleteItemProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.Item
+> & {
+  /** Text this option reads as wherever it is rendered outside the list (the
+   *  input, a chip and its remove button). Required only when the children are
+   *  markup rather than a plain string, which cannot be read as text. */
+  label?: string
+}
+
 export function AutocompleteItem({
   className,
   value,
+  // Read off the element by `AutocompleteContent._searchChildren`, never
+  // rendered: destructured here only to keep it out of `...props` and off the
+  // div cmdk spreads them onto.
+  label: _label,
   onSelect,
   ...props
-}: React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>) {
+}: AutocompleteItemProps) {
   const { handleChange } = useAutocomplete()
 
   return (
@@ -495,11 +578,36 @@ export function AutocompleteItem({
   )
 }
 
-export type AutocompleteProps = React.ComponentProps<
-  typeof CommandPrimitive
+/**
+ * ⛔ LOAD-BEARING, NOT A DEBUG LABEL. `AutocompleteContent._searchChildren`
+ * recognises an option by `child.type.displayName === 'AutocompleteItem'`, and
+ * a function component carries no displayName unless it is assigned one. It
+ * never was, so the walk matched nothing and the option registry stayed empty
+ * for every consumer: a multiple-select chip rendered `options[value]` as
+ * `undefined` (an empty chip), and `AutocompleteValue.updateSearch` set the
+ * input to `undefined` on every selection outside `showValue` mode.
+ */
+AutocompleteItem.displayName = 'AutocompleteItem'
+
+/**
+ * ⛔ THE THREE OMITS ARE THE POINT. cmdk's `Command` types `value`,
+ * `defaultValue` and `onValueChange` for a single-select command palette: bare
+ * `string`, and `(value: string) => void`. Intersecting rather than omitting
+ * collapsed each one to the cmdk half — `string & (string | string[])` is
+ * `string` — so `defaultValue={['next']}` was a type error on a component whose
+ * whole `multiple` mode passes arrays, and every consumer reached it through a
+ * cast.
+ *
+ * These are exactly the three this component destructures and re-implements
+ * below, so none of them reaches `CommandPrimitive` through `...props` and
+ * omitting them drops no behaviour.
+ */
+export type AutocompleteProps = Omit<
+  React.ComponentProps<typeof CommandPrimitive>,
+  'value' | 'defaultValue' | 'onValueChange'
 > & {
-  value?: string | string[] | []
-  defaultValue?: string | string[] | []
+  value?: string | string[]
+  defaultValue?: string | string[]
   onValueChange?: (values: string | string[]) => void
   onClear?: () => void
 
