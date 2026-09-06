@@ -180,7 +180,7 @@ function DropdownMenuLabel({
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
-        'hover:bg-shadcn-100 text-muted-foreground flex items-center gap-3 px-3 py-2 text-sm font-bold transition-colors',
+        'hover:bg-shadcn-100 hover:text-accent-foreground text-muted-foreground flex items-center gap-3 px-3 py-2 text-sm font-bold transition-colors',
         className
       )}
       {...props}
@@ -236,7 +236,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        'focus:bg-shadcn-100 data-[state=open]:bg-accent text-muted-foreground flex cursor-default items-center gap-3 px-3 py-2 text-sm font-medium outline-hidden select-none',
+        'focus:bg-shadcn-100 focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground text-muted-foreground flex cursor-default items-center gap-3 px-3 py-2 text-sm font-medium outline-hidden select-none',
         className
       )}
       {...props}
