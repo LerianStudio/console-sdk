@@ -376,10 +376,12 @@ describe('ConfirmationDialog rich copy', () => {
     expect(screen.getByText('Main ledger').tagName).toBe('EM')
   })
 
-  it('renders nothing for an omitted title and description', () => {
+  it('keeps an accessible name without optional copy', () => {
     render(<ConfirmationDialog open onOpenChange={jest.fn()} />)
 
-    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    const dialog = screen.getByRole('alertdialog', { name: 'Confirm' })
+
+    expect(dialog).not.toHaveAttribute('aria-describedby')
   })
 
   it('declares both copy slots as nodes, not strings', () => {

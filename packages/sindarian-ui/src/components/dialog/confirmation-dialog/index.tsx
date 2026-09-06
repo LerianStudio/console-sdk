@@ -162,8 +162,16 @@ export function ConfirmationDialog({
         <AlertDialogHeader className="flex-row items-center">
           <ConfirmationDialogIcon variant={variant} />
           <div className="flex flex-col gap-4">
-            <AlertDialogTitle>{title}</AlertDialogTitle>
-            <AlertDialogDescription>{description}</AlertDialogDescription>
+            {title == null ? (
+              <AlertDialogTitle className="sr-only">
+                {confirmLabel || 'Confirm'}
+              </AlertDialogTitle>
+            ) : (
+              <AlertDialogTitle>{title}</AlertDialogTitle>
+            )}
+            {description == null ? null : (
+              <AlertDialogDescription>{description}</AlertDialogDescription>
+            )}
           </div>
         </AlertDialogHeader>
 
