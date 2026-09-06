@@ -43,7 +43,7 @@ describe('formatMoneyParts', () => {
 
   // CodeRabbit #6 — DELIBERATE DIVERGENCE from sindarian-x@0.15.0, which
   // reported these as { formatted: '-0.00', negative: true }, painting a zero
-  // balance in the destructive sign color.
+  // balance in the sign color.
   it('normalizes an exact signed zero to unsigned', () => {
     for (const zero of ['-0', '-0.00', '(0)', '(0.00)', '−0.00']) {
       expect(formatMoneyParts(zero, 2, 'en-US')).toEqual({
@@ -96,12 +96,16 @@ describe('MoneyText', () => {
     expect(container.textContent).toBe('1,250.00BRL')
   })
 
-  it('renders a negative amount in the destructive sign color', () => {
+  // The sign ink is the `system-error` H1A INK, never the `--destructive` FILL
+  // token: a signed amount is text and has to clear AA on a card in both
+  // themes, which dark `--destructive` does not (3.80:1).
+  it('renders a negative amount in the error sign color', () => {
     const { container } = render(
       <MoneyText amount="-45.50" currency="BRL" locale="en-US" />
     )
     expect(container.textContent).toBe('-45.50BRL')
-    expect(container.firstElementChild).toHaveClass('text-destructive')
+    expect(container.firstElementChild).toHaveClass('text-system-error-h1a')
+    expect(container.firstElementChild).not.toHaveClass('text-destructive')
   })
 
   // The load-bearing distinction: sign color and the accounting CREDIT role are
@@ -115,6 +119,7 @@ describe('MoneyText', () => {
 
   it('does not color a positive amount', () => {
     const { container } = render(<MoneyText amount="45.50" locale="en-US" />)
+    expect(container.firstElementChild).not.toHaveClass('text-system-error-h1a')
     expect(container.firstElementChild).not.toHaveClass('text-destructive')
   })
 
@@ -122,12 +127,14 @@ describe('MoneyText', () => {
     const { container } = render(
       <MoneyText amount="-45.50" signColor={false} locale="en-US" />
     )
+    expect(container.firstElementChild).not.toHaveClass('text-system-error-h1a')
     expect(container.firstElementChild).not.toHaveClass('text-destructive')
   })
 
   it('renders zero without the sign color', () => {
     const { container } = render(<MoneyText amount="0.00" locale="en-US" />)
     expect(container.textContent).toBe('0.00')
+    expect(container.firstElementChild).not.toHaveClass('text-system-error-h1a')
     expect(container.firstElementChild).not.toHaveClass('text-destructive')
   })
 
@@ -136,6 +143,9 @@ describe('MoneyText', () => {
     for (const zero of [-0, '-0', '-0.00', '(0)'] as const) {
       const { container } = render(<MoneyText amount={zero} locale="en-US" />)
       expect(container.textContent).toBe('0.00')
+      expect(container.firstElementChild).not.toHaveClass(
+        'text-system-error-h1a'
+      )
       expect(container.firstElementChild).not.toHaveClass('text-destructive')
     }
   })
