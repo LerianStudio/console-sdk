@@ -129,23 +129,27 @@ const BAND: Record<
 > = {
   low: {
     Icon: ShieldCheck,
-    tint: 'text-system-success',
+    tint: 'text-system-success-h1a',
     word: 'Dentro do limite'
   },
   warn: {
     Icon: TriangleAlert,
-    tint: 'text-system-alert',
+    tint: 'text-system-alert-h1a',
     word: 'Próximo do limite'
   },
   breach: {
     Icon: OctagonX,
-    tint: 'text-destructive',
+    tint: 'text-system-error-h1a',
     word: 'Limite ultrapassado'
   }
 }
 
-/** Track fill tint per band — kept distinct from the glyph tint so the bar can
- *  use the softer wash while the glyph carries the full tint. */
+/** Track fill tint per band, and the reason it is a SEPARATE map from the
+ *  tint above: these are the fill tokens, and a fill answers to no text floor.
+ *  The tint above is painted on the band glyph AND on the `Figure`, so it has
+ *  to be the ink family. Light `--system-alert` is #EAB308, about 1.9:1 on
+ *  white, and `--system-success` about 3.3:1 — both were readable only as a
+ *  bar wash, never as the number the reader is here to read. */
 const BAND_FILL: Record<GaugeBand, string> = {
   low: 'bg-system-success',
   warn: 'bg-system-alert',

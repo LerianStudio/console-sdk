@@ -5,8 +5,10 @@
  * — no zebra fills. Each row: a quiet sentence-case sans label on the left, a mono
  * `tabular-nums` value on the right, `hover:bg-body-surface` as the quiet row
  * affordance (the recessed page surface, one step behind `bg-card`, in both
- * themes). Escalate the value color (`text-credit`, `text-system-alert`) only
- * when a metric crosses a threshold.
+ * themes). Escalate the value color (`text-credit`, `text-system-alert-h1a`)
+ * only when a metric crosses a threshold — the INK tokens, never the bare
+ * `text-system-*` fills, which are picked to carry white and read as low as
+ * 1.78:1 on this surface in light.
  *
  *   <Blotter>
  *     <BlotterRow label="Resolved on time" value="128" />

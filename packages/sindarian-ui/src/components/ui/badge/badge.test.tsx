@@ -206,3 +206,63 @@ describe('Badge child separation', () => {
     expect(badge).not.toHaveClass('gap-1')
   })
 })
+
+/**
+ * A `Badge` renders a role-less `span`, and ARIA prohibits an accessible name
+ * on a generic element. A caller's `aria-label` was therefore both ignored by
+ * assistive tech and reported by axe as `aria-prohibited-attr`: one consumer
+ * measured 46 such nodes across three screens. A labelled badge now takes
+ * `role="img"`, the role the kit already uses for a graphic that carries its
+ * meaning in its label, so the name is permitted and replaces the visible text.
+ */
+describe('Badge accessible name', () => {
+  it('takes a role that permits a name when the caller labels it', () => {
+    render(<Badge aria-label="Status: overdue">Overdue</Badge>)
+
+    expect(screen.getByLabelText('Status: overdue')).toHaveAttribute(
+      'role',
+      'img'
+    )
+  })
+
+  it('takes the same role for a labelledby reference', () => {
+    render(
+      <>
+        <span id="badge-label">Status: overdue</span>
+        <Badge data-testid="badge" aria-labelledby="badge-label">
+          Overdue
+        </Badge>
+      </>
+    )
+
+    expect(screen.getByTestId('badge')).toHaveAttribute('role', 'img')
+  })
+
+  it('leaves an unlabelled badge generic', () => {
+    render(<Badge data-testid="badge">Overdue</Badge>)
+
+    expect(screen.getByTestId('badge')).not.toHaveAttribute('role')
+  })
+
+  it('lets a caller-supplied role win over the labelled default', () => {
+    render(
+      <Badge data-testid="badge" role="status" aria-label="Syncing">
+        Syncing
+      </Badge>
+    )
+
+    expect(screen.getByTestId('badge')).toHaveAttribute('role', 'status')
+  })
+
+  it('preserves an asChild link role when labelled', () => {
+    render(
+      <Badge asChild aria-label="Open overdue items">
+        <a href="/overdue">Overdue</a>
+      </Badge>
+    )
+
+    expect(
+      screen.getByRole('link', { name: 'Open overdue items' })
+    ).toBeInTheDocument()
+  })
+})

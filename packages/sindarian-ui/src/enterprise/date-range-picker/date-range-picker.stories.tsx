@@ -42,7 +42,7 @@ export const Invalid: StoryObj<DateRangePickerProps> = {
   render: () => (
     <>
       <Harness {...base} invalid errorId="range-error" />
-      <p id="range-error" className="text-destructive mt-2 text-xs">
+      <p id="range-error" className="text-system-error-h1a mt-2 text-xs">
         Pick a range no wider than 90 days.
       </p>
     </>

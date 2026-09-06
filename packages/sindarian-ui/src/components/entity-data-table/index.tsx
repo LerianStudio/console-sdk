@@ -32,7 +32,10 @@ function EntityDataTableFooterText({
   return (
     <p
       data-slot="data-table-footer-text"
-      className={cn('text-shadcn-400 text-sm leading-8 italic', className)}
+      className={cn(
+        'text-muted-foreground text-sm leading-8 italic',
+        className
+      )}
       {...props}
     />
   )

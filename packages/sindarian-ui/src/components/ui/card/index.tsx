@@ -38,10 +38,7 @@ function CardTitle({ className, as: Comp = 'h3', ...props }: CardTitleProps) {
   return (
     <Comp
       data-slot="card-title"
-      className={cn(
-        'text-sm leading-none font-medium tracking-tight',
-        className
-      )}
+      className={cn('text-sm leading-none font-medium', className)}
       {...props}
     />
   )

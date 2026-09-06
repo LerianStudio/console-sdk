@@ -1,17 +1,28 @@
 import '@testing-library/jest-dom'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { ConfirmationDialog, ConfirmationDialogProps } from '.'
 
+/**
+ * The cast is the price of the override bag. `Partial` makes `loading` and
+ * `pendingLabel` independently optional, which is precisely the correlation the
+ * props union exists to forbid, so no `Partial`-shaped parameter can satisfy
+ * it. The union itself is asserted directly, at a real call site, in
+ * "ConfirmationDialog pending typing" at the bottom of this file.
+ */
 function renderDialog(props: Partial<ConfirmationDialogProps> = {}) {
   const onOpenChange = jest.fn()
 
   const view = render(
     <ConfirmationDialog
-      open
-      onOpenChange={onOpenChange}
-      title="Delete the ledger?"
-      description="This cannot be undone."
-      {...props}
+      {...({
+        open: true,
+        onOpenChange,
+        title: 'Delete the ledger?',
+        description: 'This cannot be undone.',
+        ...props
+      } as ConfirmationDialogProps)}
     />
   )
 
@@ -67,7 +78,10 @@ describe('ConfirmationDialog', () => {
 
   it('disables both actions and reports a pending status while confirming', async () => {
     const { promise, resolve } = deferred()
-    const { onOpenChange } = renderDialog({ onConfirm: () => promise })
+    const { onOpenChange } = renderDialog({
+      onConfirm: () => promise,
+      pendingLabel: 'Processing'
+    })
 
     expect(screen.getByRole('status')).toBeEmptyDOMElement()
 
@@ -122,7 +136,10 @@ describe('ConfirmationDialog', () => {
 
   it('stays open and clears the pending state when confirm rejects', async () => {
     const { promise, reject } = deferred()
-    const { onOpenChange } = renderDialog({ onConfirm: () => promise })
+    const { onOpenChange } = renderDialog({
+      onConfirm: () => promise,
+      pendingLabel: 'Processing'
+    })
 
     fireEvent.click(screen.getByTestId('confirm'))
 
@@ -174,7 +191,7 @@ describe('ConfirmationDialog', () => {
   })
 
   it('keeps honouring the caller-driven loading prop', () => {
-    renderDialog({ loading: true })
+    renderDialog({ loading: true, pendingLabel: 'Processing' })
 
     expect(screen.getByRole('status')).toHaveTextContent('Processing')
     expect(screen.getByTestId('confirm')).toBeDisabled()
@@ -234,5 +251,166 @@ describe('ConfirmationDialog', () => {
 
       unmount()
     })
+  })
+})
+
+/**
+ * The pending region is announced through `role="status"`, so its text is read
+ * aloud. A hard-coded English default meant a Portuguese console announced
+ * "Processing" over its own copy, and the caller had no way to know it was
+ * happening: the string is invisible on screen. The region is now mounted only
+ * when the caller supplies the label, so an unlocalized dialog announces
+ * nothing rather than announcing the wrong language.
+ */
+describe('ConfirmationDialog pending announcement', () => {
+  it('announces nothing when the caller supplies no pending label', async () => {
+    const { promise, resolve } = deferred()
+    renderDialog({ onConfirm: () => promise })
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('confirm'))
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+
+    await act(async () => {
+      resolve()
+    })
+  })
+
+  it('mounts the region empty so the label change is what fires', () => {
+    renderDialog({ pendingLabel: 'Processando' })
+
+    expect(screen.getByRole('status')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+  })
+
+  it('keeps the visible action labels defaulted in English', () => {
+    // Deliberately unchanged: a caller SEES these two and overrides them, so
+    // dropping the defaults would blank the buttons of every existing consumer.
+    renderDialog()
+
+    expect(screen.getByText('Cancel')).toBeInTheDocument()
+    expect(screen.getByText('Confirm')).toBeInTheDocument()
+  })
+})
+
+/**
+ * The busy prop and the announcement are one decision, so the type says so.
+ * Wave 1 dropped the English default for `pendingLabel` and stopped mounting
+ * the `role="status"` region without it, which is right for a translated
+ * console and silent for the 73 consumer call sites that pass `loading` alone:
+ * nothing on screen changes when the announcement disappears. `loading` now
+ * requires the label, so those call sites fail the build instead.
+ *
+ * The annotations ARE the assertion, the way `select-field.test.tsx` pins its
+ * own discriminant: `tsc -p tsconfig.storybook.json` checks this file, so it
+ * fails the day an unmarked shape stops compiling and just as loudly the day a
+ * marked one starts.
+ */
+describe('ConfirmationDialog pending typing', () => {
+  it('requires a pending label wherever the busy prop is passed', () => {
+    const noBusyState: ConfirmationDialogProps = {
+      open: true,
+      onOpenChange: jest.fn()
+    }
+
+    // Optional while nothing drives the busy state from outside.
+    const labelWithoutBusyState: ConfirmationDialogProps = {
+      open: true,
+      onOpenChange: jest.fn(),
+      pendingLabel: 'Processando'
+    }
+
+    const busyStateWithLabel: ConfirmationDialogProps = {
+      open: true,
+      onOpenChange: jest.fn(),
+      loading: true,
+      pendingLabel: 'Processando'
+    }
+
+    // @ts-expect-error the silent case: `loading` drives a pending state that
+    // has no announcement without the label.
+    const busyStateWithoutLabel: ConfirmationDialogProps = {
+      open: true,
+      onOpenChange: jest.fn(),
+      loading: true
+    }
+
+    expect([
+      noBusyState,
+      labelWithoutBusyState,
+      busyStateWithLabel,
+      busyStateWithoutLabel
+    ]).toHaveLength(4)
+  })
+})
+
+/**
+ * `title` and `description` were typed `string`, so a caller could not put a
+ * bold entity name or a link inside the copy without forking the component.
+ * Both Radix slots have always accepted arbitrary children.
+ */
+describe('ConfirmationDialog rich copy', () => {
+  it('renders an element inside the description', () => {
+    renderDialog({
+      description: (
+        <span>
+          This deletes <strong>every</strong> entry.
+        </span>
+      )
+    })
+
+    expect(screen.getByText('every').tagName).toBe('STRONG')
+  })
+
+  it('renders an element inside the title', () => {
+    renderDialog({
+      title: (
+        <span>
+          Delete <em>Main ledger</em>?
+        </span>
+      )
+    })
+
+    expect(screen.getByText('Main ledger').tagName).toBe('EM')
+  })
+
+  it.each([false, '', true])(
+    'keeps the fallback accessible name for an empty title value (%p)',
+    (title) => {
+      render(
+        <ConfirmationDialog
+          open
+          onOpenChange={jest.fn()}
+          title={title}
+          confirmLabel="Delete"
+        />
+      )
+
+      expect(
+        screen.getByRole('alertdialog', { name: 'Delete' })
+      ).toBeInTheDocument()
+    }
+  )
+
+  it('keeps an accessible name without optional copy', () => {
+    render(<ConfirmationDialog open onOpenChange={jest.fn()} />)
+
+    const dialog = screen.getByRole('alertdialog', { name: 'Confirm' })
+
+    expect(dialog).not.toHaveAttribute('aria-describedby')
+  })
+
+  it('declares both copy slots as nodes, not strings', () => {
+    // The two tests above pass either way, because React renders whatever it is
+    // handed no matter what the prop type claims. Nothing type-checks a test
+    // file in this package (tsconfig excludes them and ts-jest transpiles), so
+    // the widened signature is asserted against the source, the way
+    // "Badge token hygiene" asserts its own.
+    const source = readFileSync(join(__dirname, 'index.tsx'), 'utf8')
+
+    expect(source).toMatch(/title\?: React\.ReactNode/)
+    expect(source).toMatch(/description\?: React\.ReactNode/)
   })
 })

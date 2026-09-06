@@ -325,13 +325,17 @@ describe('DelinquencyAging', () => {
     const rateReadout = (container: HTMLElement) =>
       container.querySelectorAll('header > span')[1]
 
+    // The tint is the `-h1a` INK token, not the bare fill: it is painted on the
+    // rate `Figure` as well as on the glyph, and the bare `--system-success`
+    // reads 3.35:1 on the card in light. `__tests__/ink-classes.test.ts` bans
+    // the bare token kit-wide.
     it('tints the healthy band ambient green by default', () => {
       const { container } = render(
         <DelinquencyAging buckets={HEALTHY} currency="BRL" locale="en-US" />
       )
-      expect(rateReadout(container)).toHaveClass('text-system-success')
+      expect(rateReadout(container)).toHaveClass('text-system-success-h1a')
       expect(container.querySelector('li svg')).toHaveClass(
-        'text-system-success'
+        'text-system-success-h1a'
       )
     })
 
@@ -344,7 +348,10 @@ describe('DelinquencyAging', () => {
           healthyTone="ink"
         />
       )
-      expect(container.querySelector('.text-system-success')).toBeNull()
+      // The class the tint moved TO. A stale `.text-system-success` here would
+      // match nothing whatever the component paints, so this assertion would
+      // pass on the very drift it exists to catch.
+      expect(container.querySelector('.text-system-success-h1a')).toBeNull()
       expect(rateReadout(container)).toHaveClass('text-foreground')
       expect(container.querySelector('li svg')).toHaveClass('text-foreground')
     })
@@ -364,7 +371,7 @@ describe('DelinquencyAging', () => {
         />
       )
       expect(container.textContent).toContain('Elevada')
-      expect(rateReadout(container)).toHaveClass('text-system-alert')
+      expect(rateReadout(container)).toHaveClass('text-system-alert-h1a')
       expect(container.querySelector('li:last-child svg')).toHaveClass(
         'text-credit'
       )

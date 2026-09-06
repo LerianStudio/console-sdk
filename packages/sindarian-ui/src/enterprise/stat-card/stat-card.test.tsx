@@ -21,11 +21,17 @@ describe('StatCard', () => {
     expect(screen.getByText('+0.6 pts')).toBeInTheDocument()
   })
 
+  // One family for all three, and it is the one gated against `--card` and
+  // `--background`. `--system-*-text` belongs to the tinted pill, where it is
+  // measured against its own surface; on this panel it is a step off its `-h1a`
+  // sibling in dark, so a mixed table weighted the three deltas differently on
+  // one surface. `--destructive` is the badge/button FILL and measures 3.80:1
+  // as ink on the dark card, which is why none of them reads it.
   it.each([
     ['default', 'text-foreground'],
-    ['success', 'text-system-success-text'],
-    ['warning', 'text-system-alert-text'],
-    ['destructive', 'text-destructive']
+    ['success', 'text-system-success-h1a'],
+    ['warning', 'text-system-alert-h1a'],
+    ['destructive', 'text-system-error-h1a']
   ] as const)('escalates the %s tone onto its token', (tone, expected) => {
     render(
       <StatCard

@@ -216,13 +216,20 @@ export function PageHeaderInfoTooltip({
             arrowPadding={0}
           >
             {/*
-              shadcn-400 is correct HERE and must not be swapped for
+              A RAW STEP IS CORRECT HERE and must not be swapped for
               --muted-foreground: this surface is bg-shadcn-600 (#27272A), fixed
               dark in BOTH themes, so this is a deliberate light-on-dark pairing
-              at 5.81:1 — the same one the base Tooltip primitive uses.
-              --muted-foreground would read 1.93:1 against it in the light theme.
+              — the same one the base Tooltip primitive uses.
+              --muted-foreground would read 1.94:1 against it in the light theme.
+
+              base/400 read 5.81:1 here and was never the defect; it moved one
+              step because that class is banned kit-wide in
+              `__tests__/ink-classes.test.ts` (2.56:1 on every LIGHT ground, and
+              the fixed-dark-fill exception had leaked into slots that were not
+              one). base/300 reads 10.08:1 on this fill and stays quieter than
+              the white line below it.
             */}
-            <p className="text-shadcn-400 text-sm font-medium">{subtitle}</p>
+            <p className="text-shadcn-300 text-sm font-medium">{subtitle}</p>
             <p className="text-center text-white">Click to copy</p>
             <Arrow height={8} width={15} />
           </TooltipContent>
@@ -288,7 +295,7 @@ export function PageHeaderCollapsibleInfo({
                     target="_blank"
                     rel="noopener noreferrer"
                     href={href}
-                    className="text-shadcn-600 dark:text-shadcn-400 font-medium"
+                    className="text-muted-foreground font-medium"
                   >
                     <span className="underline underline-offset-4">
                       {seeMore}

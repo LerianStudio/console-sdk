@@ -88,14 +88,19 @@ export interface AgingBucketsProps {
 
 /** Band → glyph + tint + accessible word. The glyph (and the sr-only word) is
  *  the load-bearing severity cue; the tint only reinforces it, so the
- *  escalation survives grayscale and color-vision deficiency. */
+ *  escalation survives grayscale and color-vision deficiency.
+ *
+ *  The tint is an INK token (`-h1a`). A load-bearing glyph answers to the 3:1
+ *  floor of SC 1.4.11, and the bare fill token `--system-alert` reads 1.78:1 on
+ *  `--card` and 1.62:1 on `--body-surface` in light — the cue was invisible on
+ *  the row it escalates. */
 const BAND: Record<
   AgingBand,
   { Icon: LucideIcon; tint: string; word: string }
 > = {
   current: {
     Icon: CircleDot,
-    tint: 'text-system-success',
+    tint: 'text-system-success-h1a',
     word: 'Em dia'
   },
   recent: {
@@ -105,7 +110,7 @@ const BAND: Record<
   },
   aging: {
     Icon: AlertTriangle,
-    tint: 'text-system-alert',
+    tint: 'text-system-alert-h1a',
     word: 'Em atraso'
   },
   overdue: { Icon: AlertOctagon, tint: 'text-credit', word: 'Vencido' }

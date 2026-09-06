@@ -152,14 +152,28 @@ function tokenValue(name: string, theme: 'light' | 'dark'): string {
   }
 }
 
-/** `H S% L%` to sRGB in 0..1. Alpha is rejected: WCAG contrast for a
- * translucent color depends on what sits behind it, so it must be composited
- * before it reaches this gate — a silent strip would report a wrong ratio. */
+/** `H S% L%` or `#rrggbb` to sRGB in 0..1. The sheet carries both shapes: the
+ * semantic tokens are bare HSL channels behind `hsl(var(--x))`, while the raw
+ * palette scales (`--color-shadcn-*` and the named ramps) are flat hex in
+ * `@theme`, which is what makes them theme-independent.
+ *
+ * Alpha is rejected: WCAG contrast for a translucent color depends on what sits
+ * behind it, so it must be composited before it reaches this gate — a silent
+ * strip would report a wrong ratio. */
 function toRgb(declaration: string): [number, number, number] {
   if (declaration.includes('/')) {
     throw new Error(
       `alpha channels require composited contrast: ${declaration}`
     )
+  }
+
+  const hex = declaration.trim().match(/^#([0-9a-f]{6})$/i)
+  if (hex) {
+    return [0, 2, 4].map((i) => parseInt(hex[1].slice(i, i + 2), 16) / 255) as [
+      number,
+      number,
+      number
+    ]
   }
 
   const [h, s, l] = declaration
@@ -257,6 +271,115 @@ describe('system text tokens', () => {
         expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
       }
     )
+  })
+})
+
+/**
+ * The `-h1a` inks on the PLAIN grounds, which is a different pairing from the
+ * one above: `--system-*-text` is measured against its own tinted surface,
+ * because a pill brings its own fill. The `-h1a` ink is what a component reads
+ * when there is no pill — a band glyph, a gauge figure, a copied-state check —
+ * so the ground is the page or the card, and nothing else in this file measured
+ * that.
+ *
+ * It is the destination of every site the kit-wide ban in
+ * `__tests__/ink-classes.test.ts` moved, so the two gates are halves of one
+ * rule: that file says the bare fill token is never ink, this one says the ink
+ * it must be replaced with is readable. Without this, the ban could be
+ * satisfied by a token that is no better.
+ *
+ * The bare fills are why the ban exists. As ink on `--card` in light they read
+ * 1.78:1 (`--system-alert`), 3.35:1 (`--system-success`), 3.78:1
+ * (`--system-error`), 5.20:1 (`--system-info`) and 5.39:1
+ * (`--system-purple`). The alert one is under even the 3:1 floor a load-bearing
+ * glyph answers to, and the two that clear AA in light drop to 4.14:1 and
+ * 3.91:1 on the dark card.
+ *
+ * ALL FIVE FAMILIES, purple included. It was the one exception here, and it had
+ * no measurement behind it: purple's `-h1a` is in fact the strongest of the
+ * five (7.75:1 at its worst ground). The only thing the exception tracked was
+ * that no site had been moved to it yet, which is the reason an exception rots.
+ * The family list now matches the ban in `__tests__/ink-classes.test.ts` on
+ * both sides.
+ */
+const H1A_GROUNDS = ['background', 'card']
+
+describe('system h1a ink', () => {
+  describe.each(SYSTEM_FAMILIES)('--system-%s-h1a', (family) => {
+    describe.each(H1A_GROUNDS)('over --%s', (surface) => {
+      it.each(['light', 'dark'] as const)(
+        'clears AA for normal text in %s',
+        (theme) => {
+          const ratio = contrast(
+            tokenValue(`system-${family}-h1a`, theme),
+            tokenValue(surface, theme)
+          )
+
+          expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+        }
+      )
+    })
+  })
+})
+
+/**
+ * The tooltip is the kit's one INVERTED surface, and the only pair in this file
+ * where neither half is a theme token: `--color-shadcn-600` is flat hex in
+ * `@theme`, so the fill stays #27272A under both themes and the ink has to be
+ * theme-independent with it. That rules out the obvious light inks —
+ * `--primary-foreground` and `--background` both invert, and both land on
+ * 1.00:1 against this fill in dark.
+ *
+ * Both halves are READ OUT OF THE COMPONENT rather than named here, so swapping
+ * either class is re-measured instead of re-trusted, and the extraction
+ * throwing is what guards the guard.
+ */
+function tooltipPair(): { fill: string; ink: string } {
+  const source = readFileSync(
+    resolve(__dirname, '..', 'components', 'ui', 'tooltip', 'index.tsx'),
+    'utf8'
+  )
+
+  const content = source.match(
+    /data-slot="tooltip-content"[\s\S]*?className=\{cn\(\s*'([^']+)'/
+  )?.[1]
+  if (!content) throw new Error('TooltipContent paints no class string')
+
+  const pick = (prefix: string) => {
+    const step = content.match(
+      new RegExp(`(?<![\\w-])${prefix}-(shadcn-\\d+)(?![\\w-])`)
+    )?.[1]
+    if (!step) throw new Error(`TooltipContent paints no ${prefix}-shadcn-*`)
+
+    const value = themeInline.match(
+      new RegExp(`^\\s*--color-${step}:\\s*([^;]+);`, 'm')
+    )?.[1]
+    if (!value) throw new Error(`--color-${step} is undefined`)
+
+    return value.trim()
+  }
+
+  return { fill: pick('bg'), ink: pick('text') }
+}
+
+describe('tooltip ink', () => {
+  const { fill, ink } = tooltipPair()
+
+  // One assertion, not one per theme: both halves are flat hex, so the pair
+  // does not move between themes. Asserting it twice would only pretend to
+  // measure something the values cannot express.
+  it('clears AA for normal text on its own fill', () => {
+    expect(contrast(ink, fill)).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+  })
+
+  // The pair is only theme-independent while BOTH halves are raw steps. A half
+  // that resolved through `hsl(var(--x))` would invert with the theme and the
+  // single assertion above would be measuring one theme and reporting two.
+  it.each([
+    ['fill', fill],
+    ['ink', ink]
+  ])('takes its %s from a theme-independent step', (_half, value) => {
+    expect(value).toMatch(/^#[0-9a-f]{6}$/i)
   })
 })
 
@@ -505,5 +628,55 @@ describe('reduced-motion floor', () => {
 
   it('zeroes the animation rather than only shortening it', () => {
     expect(guard).toMatch(/animation:\s*none/)
+  })
+})
+
+/**
+ * The focus ring is a non-text indicator, so it answers to the 3:1 floor of
+ * SC 1.4.11 against whatever it sits on, not to the 4.5:1 text floor.
+ *
+ * It shipped at base/400 for both themes, which reads 2.55:1 on white and
+ * 2.33:1 on `--body-surface`: under the floor on every light ground, for the
+ * one token that tells a keyboard user where they are. Two of the kit's own
+ * focus treatments put the ring straight onto the page ground with nothing
+ * between: `ui/input/styles.css` paints `border-ring` on `:focus-within` and
+ * applies its ring at `ring-offset-0`.
+ *
+ * No single value clears both themes with margin, and none is a palette step.
+ * base/500 fixes light (4.84:1 on white) and fails dark (2.16:1 on the
+ * container surface); base/400 is the reverse. An off-scale 240 5% 57% does
+ * clear 3:1 on all four grounds, but by 0.04 on two of them. So the value is
+ * per theme, sitting at 4.4+ light and 4.0+ dark, and this gate measures each
+ * one against the grounds a focused control actually sits on.
+ *
+ * `--muted` is left out on purpose: it is a disabled/skeleton fill, and
+ * SC 1.4.11 exempts inactive controls. Gating it would freeze a pair no
+ * focused element renders.
+ */
+const NON_TEXT_CONTRAST = 3
+
+const FOCUS_GROUNDS = ['background', 'card', 'popover', 'body-surface']
+
+describe('focus ring', () => {
+  describe.each(FOCUS_GROUNDS)('over --%s', (surface) => {
+    it.each(['light', 'dark'] as const)(
+      'clears the non-text indicator floor in %s',
+      (theme) => {
+        const ratio = contrast(
+          tokenValue('ring', theme),
+          tokenValue(surface, theme)
+        )
+
+        expect(ratio).toBeGreaterThanOrEqual(NON_TEXT_CONTRAST)
+      }
+    )
+  })
+
+  // The themes disagree, so the dark block must carry its own declaration
+  // rather than inherit: `tokenValue` falls back to `:root` silently, and that
+  // fallback is exactly how the light-only value would slip back in.
+  it('is declared separately in each theme', () => {
+    expect(root).toMatch(/^\s*--ring:\s*\S/m)
+    expect(dark).toMatch(/^\s*--ring:\s*\S/m)
   })
 })

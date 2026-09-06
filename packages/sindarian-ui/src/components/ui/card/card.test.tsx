@@ -1,8 +1,14 @@
 import { render } from '@testing-library/react'
 import { CardDescription, CardTitle } from '.'
 
-/** Today's rendered class string. Frozen: `as` must not change it. */
-const TITLE_CLASSES = 'text-sm leading-none font-medium tracking-tight'
+/**
+ * Today's rendered class string. Frozen: `as` must not change it.
+ *
+ * No `tracking-tight`: the type ramp declares no tracking at this size, and
+ * the hard-coded one made the card heading the only text in the kit that
+ * disagreed with the ramp.
+ */
+const TITLE_CLASSES = 'text-sm leading-none font-medium'
 
 describe('CardTitle — heading level', () => {
   it('renders an <h3> with data-slot="card-title" and the frozen classes when `as` is omitted', () => {

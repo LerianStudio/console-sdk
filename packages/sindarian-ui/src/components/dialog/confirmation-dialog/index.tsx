@@ -55,15 +55,14 @@ const ConfirmationDialogIcon = ({
   </span>
 )
 
-export type ConfirmationDialogProps = {
+type ConfirmationDialogSharedProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  title?: string
-  description?: string
+  title?: React.ReactNode
+  description?: React.ReactNode
   /** @deprecated dead prop, removed in the next major */
   ledgerName?: string
   variant?: 'default' | 'warning' | 'destructive' | 'success'
-  loading?: boolean
   /**
    * Awaited. While it is in flight the dialog reports a pending status, both
    * actions are disabled and dismissal is blocked; it closes on resolve. A
@@ -73,22 +72,58 @@ export type ConfirmationDialogProps = {
   onCancel?: () => void
   confirmLabel?: string
   cancelLabel?: string
-  /** Announced to screen readers while a confirm is in flight. */
-  pendingLabel?: string
 }
+
+/**
+ * ⛔ `loading` IS THE DISCRIMINANT: driving the dialog's busy state from the
+ * outside requires `pendingLabel`, because the announcement region only mounts
+ * when that label exists and a `loading` dialog without one is silently
+ * unannounced.
+ *
+ * The rule is compile-time on purpose. `pendingLabel` had an English default
+ * until it was removed for reading "Processing" aloud over translated copy, and
+ * 73 consumer call sites pass `loading` with no label: every one of them would
+ * have lost its pending announcement on a silent bump, with nothing visible on
+ * screen to betray it.
+ *
+ * A dialog that drives its busy state from `onConfirm` alone is untouched:
+ * `pendingLabel` stays optional there, and omitting it still means the dialog
+ * announces nothing rather than announcing the wrong language.
+ */
+type ConfirmationDialogPendingProps =
+  | {
+      loading: boolean
+      /**
+       * Announced to screen readers while a confirm is in flight.
+       * Caller-supplied and already localized: this string is never visible, so
+       * a default here would read English aloud over a translated dialog. The
+       * visible `confirmLabel` / `cancelLabel` keep their English defaults,
+       * because a caller sees those and overrides them.
+       */
+      pendingLabel: string
+    }
+  | {
+      loading?: undefined
+      /** As above, and optional while nothing drives the busy state from
+       *  outside: omit it and an awaited `onConfirm` announces nothing. */
+      pendingLabel?: string
+    }
+
+export type ConfirmationDialogProps = ConfirmationDialogSharedProps &
+  ConfirmationDialogPendingProps
 
 export function ConfirmationDialog({
   open,
   onOpenChange,
-  title = '',
-  description = '',
+  title = null,
+  description = null,
   variant = 'default',
   loading,
   onConfirm = () => {},
   onCancel = () => {},
   confirmLabel,
   cancelLabel,
-  pendingLabel = 'Processing…'
+  pendingLabel
 }: ConfirmationDialogProps) {
   const [pending, setPending] = React.useState(false)
   const busy = Boolean(loading) || pending
@@ -127,16 +162,29 @@ export function ConfirmationDialog({
         <AlertDialogHeader className="flex-row items-center">
           <ConfirmationDialogIcon variant={variant} />
           <div className="flex flex-col gap-4">
-            <AlertDialogTitle>{title}</AlertDialogTitle>
-            <AlertDialogDescription>{description}</AlertDialogDescription>
+            {title == null || title === false || title === true || title === '' ? (
+              <AlertDialogTitle className="sr-only">
+                {confirmLabel || 'Confirm'}
+              </AlertDialogTitle>
+            ) : (
+              <AlertDialogTitle>{title}</AlertDialogTitle>
+            )}
+            {description == null ? null : (
+              <AlertDialogDescription>{description}</AlertDialogDescription>
+            )}
           </div>
         </AlertDialogHeader>
 
         {/* Mounted empty so the announcement fires on the text change, not on
-            the region appearing. The visible pending cue is the button spinner. */}
-        <span role="status" className="sr-only">
-          {busy ? pendingLabel : ''}
-        </span>
+            the region appearing. The visible pending cue is the button spinner.
+            No label means no region at all: an invisible default would announce
+            English over a translated dialog, and the caller could not see it
+            happening. */}
+        {pendingLabel ? (
+          <span role="status" className="sr-only">
+            {busy ? pendingLabel : ''}
+          </span>
+        ) : null}
 
         <AlertDialogFooter className="gap-4">
           {/*

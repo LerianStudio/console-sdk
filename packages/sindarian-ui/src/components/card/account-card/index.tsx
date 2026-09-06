@@ -205,7 +205,10 @@ export function AccountBalanceCardUpdateButton({
         {!loading && updated && updatedLabel}
       </p>
       {!loading && updated && (
-        <CheckCircle2 className="text-system-success h-4 w-4" />
+        // The ink token, not the fill: this glyph is the only carrier of the
+        // "updated" state, and the bare `--system-success` reads 3.35:1 on the
+        // card in light.
+        <CheckCircle2 className="text-system-success-h1a h-4 w-4" />
       )}
       {(!updated || loading) && (
         <Button

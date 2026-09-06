@@ -120,7 +120,9 @@ const FormLabel = React.forwardRef<
       ref={ref}
       className={cn(
         'text-muted-foreground flex justify-between text-sm font-semibold',
-        error && 'text-destructive',
+        // The error TEXT token, matching FormMessage below: `--destructive`
+        // is the badge/fill family and reads 3.80:1 as ink on the dark card.
+        error && 'text-system-error-h1a',
         className
       )}
       htmlFor={formItemId}
@@ -179,7 +181,7 @@ const FormDescription = React.forwardRef<
     <p
       ref={ref}
       id={formDescriptionId}
-      className={cn('text-shadcn-400 text-xs font-medium', className)}
+      className={cn('text-muted-foreground text-xs font-medium', className)}
       {...props}
     />
   )

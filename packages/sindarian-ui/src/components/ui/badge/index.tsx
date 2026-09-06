@@ -71,10 +71,22 @@ export type BadgeProps = React.ComponentProps<'span'> &
 
 function Badge({ className, variant, size, asChild, ...props }: BadgeProps) {
   const Comp = asChild ? Slot : 'span'
+  /**
+   * A bare `span` is generic, and ARIA prohibits an accessible name on a
+   * generic element: a caller's `aria-label` was dropped by assistive tech and
+   * flagged by axe as `aria-prohibited-attr`. `role="img"` is the smallest role
+   * that permits the name and lets it stand in for the visible text, which is
+   * exactly what a labelled span badge wants. Unlabelled badges stay generic;
+   * `asChild` keeps the child's native role; and a caller's own `role` still wins
+   * because it arrives with the spread below.
+   */
+  const labelled =
+    props['aria-label'] !== undefined || props['aria-labelledby'] !== undefined
 
   return (
     <Comp
       data-slot="badge"
+      role={!asChild && labelled ? 'img' : undefined}
       className={cn(badgeVariants({ variant, size }), className)}
       {...props}
     />
