@@ -216,10 +216,33 @@
 
     /* Application tokens (from Figma ring-tokens) */
     --body-surface: 240 5% 96%; /* base/100 = #F4F4F5 */
-    --body-text: 240 4% 46%; /* base/500 = #71717A */
+    /*
+      --body-text and --container-text below both step one notch off base/500.
+      base/500 clears AA on white (4.86:1) but not on --body-surface, the
+      recessed page ground, where it read 4.43:1. That ground is exactly where
+      the components carrying these two tokens sit: the resting tabs trigger
+      (text-sm font-medium, and its hover fill is --card precisely because the
+      resting ground is not white), the breadcrumb page and separator, the
+      stepper item text and description. An axe crawl of the br-sfn cockpit
+      flagged .text-body-text on 2026-09-06; the ratio it printed does not
+      reproduce here, and the measured pair on this token's own ground is
+      4.40:1 at 8-bit precision (4.43:1 in float).
+
+      45% is the smallest step that clears it: 4.59:1 on --body-surface, up
+      from 4.43:1, and 5.04:1 on white. Both stay eleven notches clear of
+      --container-title (base/600), so the text-versus-title step holds.
+
+      Deliberately not stepped far enough to clear --muted (#E4E4E7), which
+      would take base/500 minus five notches and visibly darken tabs,
+      breadcrumbs and steppers. No component in THIS kit paints either token on
+      that fill. A consumer that does is a call-site fix on its side, not a
+      clean bill from here: product-console's extract-table pairs bg-muted with
+      text-body-text and reads 3.98:1 in light.
+    */
+    --body-text: 240 4% 45%; /* one notch off base/500: #6E6E77, AA on body-surface */
     --body-title: 240 5% 26%; /* base/700 = #3F3F46 */
     --container-surface: 0 0% 100%; /* base/white = #FFFFFF */
-    --container-text: 240 4% 46%; /* base/500 = #71717A */
+    --container-text: 240 4% 45%; /* one notch off base/500: #6E6E77, AA on body-surface */
     --container-title: 240 5% 34%; /* base/600 = #52525B */
     --container-border: 0 0% 100%; /* #FFFFFF */
     --link: 240 4% 16%; /* base/800 = #27272A */
@@ -232,7 +255,14 @@
     --background: 0 0% 100%; /* base/white = #FFFFFF */
     --foreground: 240 5% 26%; /* base/700 = #3F3F46 */
     --card: 0 0% 100%; /* = container-surface (white) */
-    --card-foreground: 240 4% 46%; /* = container-text (base/500) */
+    /* Held at base/500, the step --container-text just moved off: this token's
+       own ground is --card (white), where base/500 clears AA at 4.86:1. It
+       measures 3.84:1 over --muted, but no component in this kit renders it
+       there: the data table pins its own inks rather than inheriting this one
+       (`ui/table/index.tsx`: cells take text-foreground, heads take
+       text-muted-foreground), so the hovered-row ground never sits under this
+       token. */
+    --card-foreground: 240 4% 46%; /* base/500 = #71717A */
     --popover: 0 0% 100%; /* base/white */
     --popover-foreground: 240 5% 34%; /* base/600 = #52525B */
     --primary: 240 4% 16%; /* base/800 = #27272A */
@@ -254,10 +284,16 @@
     --destructive-foreground: 0 0% 100%; /* white */
     --border: 240 5% 90%; /* base/200 = #E4E4E7 */
     --input: 0 0% 100%; /* base/white */
-    /* One step lighter than --muted-foreground, which is also the label colour:
-       a placeholder that matches its own label has no hierarchy left to give.
-       Still 4.4:1 on the shadcn-100 field, so it stays legible as a hint. */
-    --input-placeholder: 240 4% 46%; /* base/500 = #71717A */
+    /* Lighter than --muted-foreground, which is also the label colour: a
+       placeholder that matches its own label has no hierarchy left to give.
+       Stepped off base/500 with --body-text, and for the same reason. The
+       field paints no fill of its own (`input/styles.css`: .input-wrapper is
+       border-only, .input-base is bg-transparent), so the hint sits on
+       whatever ground contains the form, and on --body-surface base/500 read
+       4.40:1. 45% brings that to 4.59:1 and 5.04:1 on white. The retired note
+       here claimed 4.4:1 was acceptable "on the shadcn-100 field", which named
+       a fill the component never paints. */
+    --input-placeholder: 240 4% 45%; /* one notch off base/500: #6E6E77, AA on body-surface */
     --ring: 240 5% 65%; /* focus ring */
     --radius: 0.5rem;
 
@@ -349,7 +385,36 @@
     --background: 240 4% 16%; /* base/800 = #27272A */
     --foreground: 240 5% 96%; /* base/100 = #F4F4F5 */
     --muted: 240 5% 34%; /* base/600 = #52525B */
-    --muted-foreground: 240 5% 65%; /* base/400 = #A1A1AA */
+    /*
+      Lifted off the base scale. base/400 read 4.09:1 on --container-surface
+      (which --card aliases) and 3.01:1 on --muted, both under the 4.5 AA floor
+      for normal text, and this is the kit's universal secondary ink: every
+      TableHead column label (text-sm font-medium inside a text-sm Table),
+      every empty-state line, every form label through LABEL_VOICE_CLASS, every
+      MoneyText caption. An axe crawl of the br-sfn cockpit measured both pairs
+      on 2026-09-06; every console on this library inherited them.
+
+      80% is the smallest round step that clears both: 6.36:1 on
+      --container-surface and 4.68:1 on --muted. base/300 is the nearest scale
+      step that would also clear, but it is byte-identical to this theme's
+      --body-text, so adopting it would collapse the muted-versus-body step the
+      two tokens exist to express. Staying on the scale is worth less than
+      keeping that step, so the value leaves the scale instead.
+
+      That step is now thin, and the trade was made with eyes open: 80% sits at
+      L* 81 against --body-text at L* 85, so the two inks are 1.12:1 apart and
+      barely separable side by side. Legibility won because the weight is all
+      on one side: this token has 86 call sites and is read as prose on every
+      surface, while --body-text has one (an uppercase sidebar group label) plus
+      two derived theme keys. A reader who needs the step to be visible should
+      move --body-text, which is cheap to reposition, rather than push this one
+      back under the AA floor.
+
+      Repairs a fourth pair on the way: the disabled chip in autocomplete and
+      multiple-select paints text-muted on bg-muted-foreground, 3.01:1 before
+      and 4.68:1 now.
+    */
+    --muted-foreground: 240 5% 80%; /* between base/400 and base/300: #C9C9CF, AA on container-surface and muted */
     --card: var(--container-surface);
     --card-foreground: var(--container-text);
     --popover: 240 4% 16%; /* base/800 = #27272A */
@@ -359,7 +424,7 @@
     /* Held at base/400 rather than stepped down with the light theme: on the
        dark field that is already only 5.8:1, and going lighter here means
        darker, which would push the hint under the AA floor. */
-    --input-placeholder: 240 5% 65%; /* base/400 = #A1A1AA */
+    --input-placeholder: 240 5% 80%; /* between base/400 and base/300: #C9C9CF, AA on card (6.3:1); base/400 read 4.07:1 there */
     --primary: 240 5% 96%; /* base/100 = #F4F4F5 */
     --primary-foreground: 240 4% 16%; /* base/800 = #27272A */
     --secondary: 240 4% 16%; /* base/800 = #27272A */

@@ -309,6 +309,114 @@ describe('destructive pair', () => {
 })
 
 /**
+ * Text ink over the surfaces it is designed to sit on, both themes.
+ *
+ * This exists because the dark secondary ink shipped under AA to every console
+ * on this library and was only caught by an axe crawl of a consumer (br-sfn
+ * cockpit, 2026-09-06): `--muted-foreground` at base/400 read 4.09:1 on
+ * `--container-surface` and 3.01:1 on `--muted`. Nothing in the kit measured
+ * it, because the surrounding gates each own one narrow pairing (a toast fill,
+ * a tinted pill, the destructive pair) and the plain body inks had none.
+ *
+ * Two shapes:
+ *  - generic ink, read across the whole kit, gated against every generic
+ *    surface a component actually puts it on;
+ *  - ink that names its own surface, gated against that surface.
+ *
+ * Deliberate absences, each a call-site pairing rather than a value to re-pick,
+ * so gating them would freeze the wrong half:
+ *
+ *  - `--muted-foreground` over `--accent`. Sunglow is not a surface this grey
+ *    can be read on from either side: 1.67:1 in dark at base/400, 1.07:1 after
+ *    the lift. The one call site that paired them, the open dropdown
+ *    sub-trigger, now pairs `bg-accent` with `text-accent-foreground` instead
+ *    (12.97:1 dark, 16.38:1 light), matching every other `bg-accent` in the
+ *    kit. `__tests__/accent-ink-pairing.test.ts` keeps that pairing from
+ *    regressing; the pair stays out of this gate because the answer is the ink
+ *    the call site picks, not the value of `--muted-foreground`.
+ *  - `--body-text` and `--container-text` over `--muted`. 3.98:1 in light, and
+ *    clearing it would take five more notches off base/500, visibly darkening
+ *    tabs, breadcrumbs and steppers. No component in THIS kit paints either
+ *    token on that fill. That is not a clean bill for the fleet: a consumer
+ *    that pairs them is a call-site fix on its side, and product-console's
+ *    `extract-table.tsx:254` does exactly that (`bg-muted text-body-text`,
+ *    3.98:1 light).
+ *  - `--card-foreground` over `--muted`. 3.84:1 in light, but no kit component
+ *    renders it there: the data table pins its own inks instead of inheriting
+ *    this one (`ui/table/index.tsx:118` cells take `text-foreground`, `:91`
+ *    heads take `text-muted-foreground`), so the hovered-row fill never sits
+ *    under this token.
+ */
+const GENERIC_SURFACES = [
+  'background',
+  'card',
+  'popover',
+  'muted',
+  'container-surface',
+  'body-surface'
+]
+
+const WITHOUT_MUTED = GENERIC_SURFACES.filter((s) => s !== 'muted')
+
+const GENERIC_INKS: Array<[string, string[]]> = [
+  ['foreground', GENERIC_SURFACES],
+  ['muted-foreground', GENERIC_SURFACES],
+  ['body-title', GENERIC_SURFACES],
+  ['container-title', GENERIC_SURFACES],
+  ['body-text', WITHOUT_MUTED],
+  ['container-text', WITHOUT_MUTED]
+]
+
+/**
+ * Ink that names the surface it belongs to.
+ *
+ * `--input-placeholder` is deliberately NOT gated against `--input`. The field
+ * paints no fill of its own (`ui/input/styles.css`: `.input-wrapper` is
+ * border-only, `.input-base` is `bg-transparent`), so `--input` is a value
+ * nothing renders and gating it would have measured a pair no user can see.
+ * The hint sits on whatever ground contains the form, so it is gated against
+ * `--body-surface` (the page ground) and `--background` (white in light).
+ *
+ * A form inside a Card sits on `--card`, so the hint is gated against it too:
+ * dark `--input-placeholder` was base/400 and read 4.07:1 there, the same
+ * defect at the same value as `--muted-foreground`, and it moved with it.
+ */
+const OWN_SURFACE_PAIRS: Array<[string, string]> = [
+  ['card-foreground', 'card'],
+  ['popover-foreground', 'popover'],
+  ['accent-foreground', 'accent'],
+  ['primary-foreground', 'primary'],
+  ['secondary-foreground', 'secondary'],
+  ['button-primary-text', 'button-primary-surface'],
+  ['input-placeholder', 'body-surface'],
+  ['input-placeholder', 'background'],
+  ['input-placeholder', 'card']
+]
+
+describe('text ink over its surfaces', () => {
+  const generic = GENERIC_INKS.flatMap(([ink, surfaces]) =>
+    surfaces.map((surface) => [ink, surface] as [string, string])
+  )
+
+  describe.each([...generic, ...OWN_SURFACE_PAIRS])(
+    '--%s on --%s',
+    (ink, surface) => {
+      it.each(['light', 'dark'] as const)(
+        'clears AA for normal text in %s',
+        (theme) => {
+          const ratio = contrast(
+            tokenValue(ink, theme),
+            tokenValue(surface, theme)
+          )
+
+          expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+        }
+      )
+    }
+  )
+})
+
+/**
  * Every animation the kit ships carries a `motion-safe:` variant, but that
  * variant only becomes `@media (prefers-reduced-motion: no-preference)` after
  * the CONSUMER compiles Tailwind over the kit's dist — a consumer whose content
