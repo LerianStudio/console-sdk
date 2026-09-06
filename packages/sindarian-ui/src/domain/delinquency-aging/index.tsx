@@ -228,13 +228,18 @@ function exactBand(
 /** Band → glyph + tint + accessible word. The glyph and sr-only word are the
  *  load-bearing cue; the tint only reinforces, so the band survives grayscale
  *  and color-vision deficiency. Mirrors the gauge's three-band canon, renamed
- *  to the delinquency vocabulary. */
+ *  to the delinquency vocabulary.
+ *
+ *  The tint is an INK token (`-h1a`), because it is painted on the `Figure`
+ *  below as well as on the glyph. The bare fill tokens read 1.78:1
+ *  (`--system-alert`) and 3.35:1 (`--system-success`) on every light surface in
+ *  the kit — the alert one under even the 3:1 floor a glyph answers to. */
 const RATE_BAND: Record<
   GaugeBand,
   { Icon: LucideIcon; tint: string; word: string }
 > = {
-  low: { Icon: ShieldCheck, tint: 'text-system-success', word: 'Saudável' },
-  warn: { Icon: TriangleAlert, tint: 'text-system-alert', word: 'Elevada' },
+  low: { Icon: ShieldCheck, tint: 'text-system-success-h1a', word: 'Saudável' },
+  warn: { Icon: TriangleAlert, tint: 'text-system-alert-h1a', word: 'Elevada' },
   breach: { Icon: AlertOctagon, tint: 'text-credit', word: 'Em estresse' }
 }
 

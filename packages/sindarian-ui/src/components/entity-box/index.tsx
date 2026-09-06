@@ -112,7 +112,7 @@ function EntityBoxHeaderTitle({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <CircleHelp className="pointer text-shadcn-400 h-5 w-5" />
+                <CircleHelp className="pointer text-muted-foreground h-5 w-5" />
               </TooltipTrigger>
               <TooltipContent
                 side="right"

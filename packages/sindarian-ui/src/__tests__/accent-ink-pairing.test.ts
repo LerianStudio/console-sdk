@@ -28,12 +28,22 @@ import { extname, join, resolve } from 'path'
  * `DropdownMenuItem` (`:82`) is the pattern this copies.
  *
  * Scoped to these two fills rather than "every fill needs accent ink", so it
- * carries no exception list to rot. Out of scope by construction, and
- * reportable rather than gated:
- *  - `ui/sidebar/sidebar-expand-button.tsx` paints `hover:bg-accent` with
- *    `text-shadcn-400`, and its only child icon overrides to `text-white` on
- *    hover. Different ink token, and an icon answers to the 3:1 non-text floor.
- *    That override is itself only 1.53:1 in dark, which is its own fix.
+ * carries no exception list to rot.
+ *
+ * `ui/sidebar/sidebar-expand-button.tsx` is the CROSS-ELEMENT site: the trigger
+ * paints `hover:bg-accent` and the glyph one element down carries its own hover
+ * ink, so that half of the pair is never a token of the same line. It gets a
+ * named case at the bottom of this file. Its glyph used to override to
+ * `text-white` on hover, roughly 1.2:1 on sunglow.
+ *
+ * The trigger line itself IS reached by the walk now, and only because its base
+ * ink changed: it used to read `text-shadcn-400`, a raw step no rule pairs with
+ * anything, so the walk passed over the line without looking. Moving it to the
+ * muted token (base/400 is 2.56:1 on the light sidebar) put a real ink on a
+ * lightening fill, and the walk asked for the pair — correctly, since the muted
+ * token reads 1.07:1 on sunglow.
+ *
+ * Still out of scope by construction, and reportable rather than gated:
  *  - `ui/table/index.tsx` paints an active row `bg-accent/50`, an alpha fill
  *    that has to be composited before any ratio means anything.
  */
@@ -146,5 +156,23 @@ describe('accent ink pairing', () => {
       'data-[state=open]:text-accent-foreground'
     )
     expect(subTrigger?.tokens).toContain('focus:text-accent-foreground')
+  })
+
+  /**
+   * The cross-element case: the sunglow fill is on the tooltip trigger and the
+   * ink is on the glyph nested inside it, so the pair spans two lines and two
+   * elements.
+   */
+  it('pins the sidebar expand glyph to accent ink on hover', () => {
+    const source = readFileSync(
+      join(SOURCE_DIR, 'components/ui/sidebar/sidebar-expand-button.tsx'),
+      'utf8'
+    )
+
+    // Guards the guard: if the fill ever leaves, this case is measuring nothing.
+    expect(source).toContain('hover:bg-accent')
+
+    expect(source).toContain('group-hover/expand-button:text-accent-foreground')
+    expect(source).not.toContain('group-hover/expand-button:text-white')
   })
 })

@@ -294,7 +294,26 @@
        here claimed 4.4:1 was acceptable "on the shadcn-100 field", which named
        a fill the component never paints. */
     --input-placeholder: 240 4% 45%; /* one notch off base/500: #6E6E77, AA on body-surface */
-    --ring: 240 5% 65%; /* focus ring */
+    /*
+      Focus ring. base/400 read 2.55:1 on white and 2.33:1 on --body-surface,
+      under the 3:1 floor a focus indicator answers to (SC 1.4.11), and this is
+      the ring every input, button and trigger in the kit paints: the wrapper
+      border on :focus-within, and the ring itself at ring-offset-0, both of
+      which touch the page ground directly. base/500 clears it on every light
+      ground: 4.84:1 on white (which is also --card and --popover here) and
+      4.40:1 on --body-surface.
+
+      It does NOT serve both themes. On the dark container surface base/500
+      measures 2.16:1, so .dark keeps the old channel as its own declaration,
+      where it reads 5.81:1 on --background and 4.08:1 on --card.
+
+      No single value clears both themes with margin, and none is a palette
+      step: the best one channel does is an off-scale 240 5% 57%, which clears
+      3:1 on all four grounds but by 0.04 on two of them. The per-theme pair
+      sits at 4.4+ light and 4.0+ dark, each half gated in
+      `__tests__/tokens-contract.test.ts`.
+    */
+    --ring: 240 4% 46%; /* base/500 = #71717A */
     --radius: 0.5rem;
 
     /* Accent variants */
@@ -425,6 +444,10 @@
        dark field that is already only 5.8:1, and going lighter here means
        darker, which would push the hint under the AA floor. */
     --input-placeholder: 240 5% 80%; /* between base/400 and base/300: #C9C9CF, AA on card (6.3:1); base/400 read 4.07:1 there */
+    /* Held at base/400, which light had to leave: on this ground the two
+       directions disagree. base/400 reads 5.81:1 on --background and 4.08:1 on
+       --card here, while light's base/500 would read 2.16:1 on --card. */
+    --ring: 240 5% 65%; /* base/400 = #A1A1AA */
     --primary: 240 5% 96%; /* base/100 = #F4F4F5 */
     --primary-foreground: 240 4% 16%; /* base/800 = #27272A */
     --secondary: 240 4% 16%; /* base/800 = #27272A */

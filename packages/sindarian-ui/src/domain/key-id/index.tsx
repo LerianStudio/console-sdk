@@ -236,7 +236,10 @@ function CopyValue({ value }: { value: string }) {
       className="text-muted-foreground hover:text-foreground focus:ring-ring inline-flex size-5 shrink-0 items-center justify-center rounded-sm transition-colors duration-150 ease-out focus:ring-2 focus:outline-none"
     >
       {copied ? (
-        <Check aria-hidden className="text-system-success size-3" />
+        // The ink token, not the fill: the copied state is carried by this
+        // glyph, and the bare `--system-success` reads 3.35:1 on the card and
+        // 2.64:1 on `--muted` in light.
+        <Check aria-hidden className="text-system-success-h1a size-3" />
       ) : (
         <Copy aria-hidden className="size-3" />
       )}

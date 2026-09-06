@@ -334,7 +334,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
           <p
             id={errorId}
             role="alert"
-            className="text-destructive text-xs font-medium"
+            className="text-system-error-h1a text-xs font-medium"
           >
             {errorMessage(error)}
           </p>

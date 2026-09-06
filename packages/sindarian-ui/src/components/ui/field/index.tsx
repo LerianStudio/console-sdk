@@ -52,7 +52,7 @@ function FieldGroup({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 const fieldVariants = cva(
-  'data-[invalid=true]:text-destructive gap-2 group/field flex w-full',
+  'data-[invalid=true]:text-system-error-h1a gap-2 group/field flex w-full',
   {
     variants: {
       orientation: {
@@ -216,7 +216,9 @@ function FieldError({
     <div
       role="alert"
       data-slot="field-error"
-      className={cn('text-destructive text-sm font-normal', className)}
+      // The error TEXT token, not `text-destructive`: that is the badge/fill
+      // family and measures 3.80:1 as ink on the dark card, under AA.
+      className={cn('text-system-error-h1a text-sm font-normal', className)}
       {...props}
     >
       {content}

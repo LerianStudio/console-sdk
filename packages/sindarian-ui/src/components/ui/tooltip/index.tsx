@@ -61,6 +61,21 @@ function TooltipTrigger({
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
 }
 
+/**
+ * The fill is a RAW palette step, not a theme token: `--color-shadcn-600` is a
+ * flat hex, so an inverted tooltip stays #27272A under both themes. The ink has
+ * to be theme-fixed too, which rules out `--primary-foreground` and
+ * `--background`: both invert, and both land on 1.00:1 against this fill in
+ * dark.
+ *
+ * base/400 was not unreadable here (5.81:1 on this fill; the 2.56:1 figure that
+ * class earns elsewhere is against a LIGHT ground, which this is not). It moved
+ * one step to base/300 because base/400 is banned kit-wide in
+ * `__tests__/ink-classes.test.ts`: its only safe ground is a fixed-dark fill,
+ * and that narrow exception had already leaked into eight slots that were not
+ * one. base/300 reads 10.08:1 here, and keeps this line quieter than the
+ * `text-white` a consumer puts beside it (`page-header/index.tsx:226`).
+ */
 function TooltipContent({
   className,
   sideOffset = 0,
@@ -73,7 +88,7 @@ function TooltipContent({
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
-          'bg-shadcn-600 text-shadcn-400 motion-safe:animate-in fade-in-0 zoom-in-95 motion-safe:data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 rounded-md px-3 py-1.5 text-sm shadow-md',
+          'bg-shadcn-600 text-shadcn-300 motion-safe:animate-in fade-in-0 zoom-in-95 motion-safe:data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 rounded-md px-3 py-1.5 text-sm shadow-md',
           className
         )}
         {...props}

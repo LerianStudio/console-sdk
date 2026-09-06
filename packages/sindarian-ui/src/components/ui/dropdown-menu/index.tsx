@@ -95,7 +95,9 @@ function DropdownMenuItemIcon({
   return (
     <span
       data-slot="dropdown-menu-item-icon"
-      className={cn('text-shadcn-400', className)}
+      // A meaningful glyph inside an interactive item answers to the 3:1 floor
+      // of SC 1.4.11. base/400 reads 2.56:1 on the popover surface in light.
+      className={cn('text-muted-foreground', className)}
       {...props}
     >
       {React.Children.map(React.Children.toArray(children), (child) =>

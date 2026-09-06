@@ -132,7 +132,7 @@ export function EntityCardIcon({
     <span
       data-slot="entity-card-icon"
       className={cn(
-        'text-shadcn-400 size-8 [&>svg]:size-8 [&>svg]:stroke-[1.5]',
+        'text-muted-foreground size-8 [&>svg]:size-8 [&>svg]:stroke-[1.5]',
         className
       )}
       {...props}
@@ -186,7 +186,7 @@ export function EntityCardDescription({
   return (
     <p
       data-slot="entity-card-description"
-      className={cn('text-shadcn-400 text-xs font-medium', className)}
+      className={cn('text-muted-foreground text-xs font-medium', className)}
       {...props}
     />
   )
@@ -217,7 +217,7 @@ export function EntityCardFooter({
     <div
       data-slot="entity-card-footer"
       className={cn(
-        'text-shadcn-400 flex flex-col gap-2 text-xs font-medium',
+        'text-muted-foreground flex flex-col gap-2 text-xs font-medium',
         className
       )}
       {...props}

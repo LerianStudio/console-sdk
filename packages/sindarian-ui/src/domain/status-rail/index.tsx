@@ -113,7 +113,7 @@ export function StatusRail({
                   // card surface + whisper shadow.
                   'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 shadow-sm',
                   chip.alarm
-                    ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                    ? 'border-destructive/40 bg-destructive/10 text-system-error-h1a'
                     : 'border-border bg-card text-foreground'
                 )}
               >

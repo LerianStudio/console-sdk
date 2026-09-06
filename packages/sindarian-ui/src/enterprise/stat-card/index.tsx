@@ -27,12 +27,20 @@ import { cn } from '@/lib/utils'
 export type StatCardTone = 'default' | 'success' | 'warning' | 'destructive'
 
 /** Value/delta color per tone. `default` keeps the high-contrast foreground;
- *  the rest escalate to a semantic theme token that tracks light/dark. */
+ *  the rest escalate to a semantic theme token that tracks light/dark.
+ *
+ *  All three escalations read the `-h1a` family, not a mix of `-h1a` and
+ *  `-text`. `--system-*-text` is the ink of a tinted PILL, measured against its
+ *  own surface; this card paints on the panel, and `-h1a` is the family gated
+ *  against `--card` and `--background` in `__tests__/tokens-contract.test.ts`.
+ *  The two differ by one palette step in dark, so a mixed table gave the three
+ *  deltas three different weights on the same surface for no reason a reader
+ *  could see. */
 const TONE_VALUE: Record<StatCardTone, string> = {
   default: 'text-foreground',
-  success: 'text-system-success-text',
-  warning: 'text-system-alert-text',
-  destructive: 'text-destructive'
+  success: 'text-system-success-h1a',
+  warning: 'text-system-alert-h1a',
+  destructive: 'text-system-error-h1a'
 }
 
 /** Trend stroke color per tone. Resolved through the `--color-*` wrappers (the
