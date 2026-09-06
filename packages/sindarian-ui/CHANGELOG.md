@@ -1,3 +1,25 @@
+## [2.0.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.8...sindarian-ui-v2.0.0-beta.1) (2026-09-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sindarian-ui:** ConfirmationDialog requires `pendingLabel` whenever `loading`
+is passed; the implicit "Processing..." default is gone.
+
+### Bug Fixes
+
+* apply the repair the steward validated on this head ([7447721](https://github.com/LerianStudio/console-sdk/commit/74477216e0f6876ff0d746ba9f3e337f8cfa524a))
+* apply the repair the steward validated on this head ([436b4c5](https://github.com/LerianStudio/console-sdk/commit/436b4c593b00634dcc4863a3d2f08a3cd770af28))
+* apply the repair the steward validated on this head ([337c60f](https://github.com/LerianStudio/console-sdk/commit/337c60f9fa4c793208b415572d1dc18a1f4ff1a5))
+* apply the repair the steward validated on this head ([ed3ca04](https://github.com/LerianStudio/console-sdk/commit/ed3ca04d16c56b17a69106cebe4a68bb8cedcfcb))
+* apply the repair the steward validated on this head ([0a4e6cc](https://github.com/LerianStudio/console-sdk/commit/0a4e6cc3fac2d052bcb1ab6d14e1fe3487d22b1a))
+* **sindarian-ui:** accept rich confirmation copy, require pendingLabel ([2d80366](https://github.com/LerianStudio/console-sdk/commit/2d803660ff4f0b3670195d43b249e1d366de6fbc))
+* **sindarian-ui:** drop the tight tracking from CardTitle ([1f03bd0](https://github.com/LerianStudio/console-sdk/commit/1f03bd07e59d1e6d409707684732248c8f3696cb))
+* **sindarian-ui:** expose a labelled Badge as an image to assistive tech ([3cadcb4](https://github.com/LerianStudio/console-sdk/commit/3cadcb4de946b5a6c4053c5cf01da3a9751665c1))
+* **sindarian-ui:** forward value and max to Progress ([d7474ad](https://github.com/LerianStudio/console-sdk/commit/d7474ade989b35e503e889a2a40fe2bdd44d8db5))
+* **sindarian-ui:** paint kit inks with AA tokens and lift the focus ring ([da61447](https://github.com/LerianStudio/console-sdk/commit/da61447f383c2127e0df1cf940ae12e9b25d82bb))
+* **sindarian-ui:** register Autocomplete items, label the clear button ([69266ee](https://github.com/LerianStudio/console-sdk/commit/69266eec9ab879cbd907a682c2ea2fd93831549c))
+
 ## [1.4.0-beta.8](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.7...sindarian-ui-v1.4.0-beta.8) (2026-09-06)
 
 
