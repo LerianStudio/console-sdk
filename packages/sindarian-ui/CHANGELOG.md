@@ -1,3 +1,10 @@
+## [1.4.0-beta.8](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.7...sindarian-ui-v1.4.0-beta.8) (2026-09-06)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** paint a negative money amount with the error ink ([560faae](https://github.com/LerianStudio/console-sdk/commit/560faae8001ebf627d48b9151bb1c9063d010756))
+
 ## [1.4.0-beta.7](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.6...sindarian-ui-v1.4.0-beta.7) (2026-09-06)
 
 
