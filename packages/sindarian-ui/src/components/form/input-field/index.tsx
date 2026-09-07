@@ -172,7 +172,13 @@ export const InputField = <T extends FieldValues = FieldValues>({
   const composedRef = useMemo(
     () =>
       ref ? fanOutRef<InputRef>((node) => formRef.current?.(node), ref) : ref,
-    [ref]
+    // `others.name` belongs here, and leaving it out is not a lint nit.
+    // react-hook-form hands a fresh `field.ref` for every name, and that ref
+    // only receives the element when React reattaches, which it does only when
+    // this callback's identity changes. Memoised on `ref` alone, one identity
+    // survived a name change, the new field never got its element, and
+    // `form.setFocus(newName)` then found nothing to focus and said nothing.
+    [ref, others.name]
   )
 
   const renderItem = (binding: Binding) => (
