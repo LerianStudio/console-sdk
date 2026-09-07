@@ -384,6 +384,53 @@ describe('InputField forwards ARIA, bounds, maxLength and ref', () => {
     expect(cleanup).toHaveBeenCalledTimes(1)
   })
 
+  it('lets the form focus the field after its name changes', async () => {
+    // The composed ref below is memoised so an ordinary rerender does not
+    // detach the box. Keyed on the consumer ref ALONE, a name change kept one
+    // callback identity, React never reattached, and the ref the form hands out
+    // for the NEW name never received the node. `setFocus` then had nothing to
+    // focus and said nothing: no error, no warning, the caret simply does not
+    // arrive. Measured both ways in this harness, `[ref]` alone focuses before
+    // the rename and fails after it, and only when a consumer ref is present;
+    // with no consumer ref the form's own ref goes straight through and both
+    // pass. That asymmetry is the whole defect.
+    //
+    // The `await` is not decoration. react-hook-form 7.71 defers the focus into
+    // a `setTimeout`, so a synchronous assertion here reads `document.body` on
+    // a WORKING component and this case passes on anything.
+    const ref = jest.fn()
+
+    function Harness() {
+      const [name, setName] = useState<'first' | 'second'>('first')
+      const form = useForm<{ first: string; second: string }>({
+        defaultValues: { first: '', second: '' }
+      })
+      return (
+        <Form {...form}>
+          <InputField
+            control={form.control}
+            name={name}
+            label="Field"
+            ref={ref}
+          />
+          <button type="button" onClick={() => setName('second')}>
+            Rename
+          </button>
+          <button type="button" onClick={() => form.setFocus(name)}>
+            Focus
+          </button>
+        </Form>
+      )
+    }
+
+    const { container } = render(<Harness />)
+    fireEvent.click(screen.getByText('Rename'))
+    fireEvent.click(screen.getByText('Focus'))
+    await waitFor(() =>
+      expect(document.activeElement).toBe(realInput(container))
+    )
+  })
+
   it('leaves the form-derived aria-invalid in charge when the prop is omitted', async () => {
     // Omitting the prop must not paint aria-invalid="false" over a real
     // react-hook-form error.
