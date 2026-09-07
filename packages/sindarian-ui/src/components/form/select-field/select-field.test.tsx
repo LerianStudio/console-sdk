@@ -286,3 +286,88 @@ describe('SelectField with a runtime multi flag', () => {
     ]).toHaveLength(4)
   })
 })
+
+/**
+ * L4 — layout and copy. A consumer could neither place the field in a grid
+ * (no `className` at all: "Property 'className' does not exist on type
+ * SelectFieldProps") nor see any coverage of the empty-list seam.
+ */
+describe('SelectField className', () => {
+  it('lands the class on the field root, so a grid can place it', () => {
+    // The grid ITEM is the field's own box. A class on the trigger cannot span
+    // columns, which is what made consumers wrap the field in a spare div.
+    const { container } = render(
+      <SelectField name="rail" label="Rail" className="col-span-2" />
+    )
+
+    const root = container.querySelector('.col-span-2')
+    expect(root).not.toBeNull()
+    // The label lives inside the field root, so the placed element really is
+    // the whole field and not some inner fragment of it.
+    expect(root).toContainElement(screen.getByText('Rail'))
+  })
+
+  it('keeps the root spacing it already had', () => {
+    // `cn` merge, not replace: a consumer class must not silently strip the
+    // field's own vertical rhythm.
+    const { container } = render(
+      <SelectField name="rail" label="Rail" className="col-span-2" />
+    )
+
+    expect(container.querySelector('.col-span-2')).toHaveClass('space-y-2')
+  })
+
+  it('reaches the root on the react-hook-form path too', () => {
+    function Harness() {
+      const form = useForm<{ rail: string }>({ defaultValues: { rail: '' } })
+      return (
+        <Form {...form}>
+          <SelectField
+            control={form.control}
+            name="rail"
+            label="Rail"
+            className="col-span-2"
+          />
+        </Form>
+      )
+    }
+
+    const { container } = render(<Harness />)
+    expect(container.querySelector('.col-span-2')).not.toBeNull()
+  })
+})
+
+describe('SelectField emptyMessage', () => {
+  it('shows the consumer message when the list has no options', async () => {
+    render(<SelectField name="rail" label="Rail" emptyMessage="Sem opções" />)
+
+    fireEvent.keyDown(screen.getByRole('combobox'), { key: 'ArrowDown' })
+
+    expect(await screen.findByText('Sem opções')).toBeInTheDocument()
+    expect(screen.queryByText('No options found.')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the English default when none is passed', async () => {
+    render(<SelectField name="rail" label="Rail" />)
+
+    fireEvent.keyDown(screen.getByRole('combobox'), { key: 'ArrowDown' })
+
+    expect(await screen.findByText('No options found.')).toBeInTheDocument()
+  })
+})
+
+describe('SelectField className on the multi branch', () => {
+  it('reaches the same field root when multi is set', () => {
+    // Both branches share one FormItem, but `multi` is a distinct public mode
+    // and a consumer laying out a multi-select needs the same guarantee.
+    const { container } = render(
+      <SelectField multi name="rails" label="Rails" className="col-span-2">
+        <MultipleSelectItem value="pix">Pix</MultipleSelectItem>
+      </SelectField>
+    )
+
+    const root = container.querySelector('.col-span-2')
+    expect(root).not.toBeNull()
+    expect(root).toContainElement(screen.getByText('Rails'))
+  })
+})

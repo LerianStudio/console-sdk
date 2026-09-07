@@ -12,7 +12,11 @@ import {
   FormMessage,
   FormTooltip
 } from '@/components/ui/form'
-import { FileUpload, type FileUploadResult } from '@/components/ui/file-upload'
+import {
+  FileUpload,
+  type FileUploadLabels,
+  type FileUploadResult
+} from '@/components/ui/file-upload'
 import {
   hasRenderableLabel,
   type RenderableLabel
@@ -33,6 +37,13 @@ type FileUploadFieldOwnProps<T extends FieldValues = FieldValues> = {
   maxSizeBytes?: number
   disabled?: boolean
   className?: string
+  /**
+   * Override the picker's user-visible copy. Threaded straight to FileUpload;
+   * omitted fields keep the English defaults. Note `labels.error` governs the
+   * PICKER's own size/type/read refusal only — resolver messages still come
+   * from the schema through FormMessage.
+   */
+  labels?: FileUploadLabels
   /** Optional escape hatch to also observe the picked File/clear alongside the form's text value. */
   onSelect?: (result: FileUploadResult | null) => void
 }
@@ -75,6 +86,7 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
   maxSizeBytes,
   disabled,
   className,
+  labels,
   onSelect,
   'aria-label': ariaLabelProp
 }: FileUploadFieldProps<T>) => {
@@ -135,6 +147,7 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
                 name={field.name}
                 onBlur={field.onBlur}
                 aria-label={ariaLabel}
+                labels={labels}
                 accept={accept}
                 maxSizeBytes={maxSizeBytes}
                 disabled={disabled}

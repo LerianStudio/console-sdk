@@ -1,11 +1,18 @@
 'use client'
 
 /**
- * FileUpload — a controlled "pick a file, read it to text, hand back the text"
- * primitive. The defining job: select one file (by click, keyboard, or
- * drag-and-drop), validate it against an accept filter + a byte ceiling, read
- * it as UTF-8 via FileReader.readAsText, and emit `{ file, text }`. Binary/DER
- * (.pfx/.p12) is explicitly OUT of scope — readAsText only.
+ * FileUpload — a controlled "pick a file, hand it back" primitive. The defining
+ * job: select one file (by click, keyboard, or drag-and-drop), validate it
+ * against an accept filter + a byte ceiling, and emit `{ file, text }`.
+ *
+ * `readAs` decides whether the bytes are decoded on the way through. `'text'`
+ * (the default) reads UTF-8 via FileReader.readAsText, which is what a PEM/CSV
+ * host wants. `'none'` hands the `File` over untouched and is the only mode a
+ * BINARY file can use: a PDF, XLSX or PFX put through readAsText decodes into
+ * replacement-character garbage, and that garbage string is then retained for
+ * as long as the host holds the value — 20 MiB of PDF became a useless 20 MiB
+ * string, and the host still had to read the file a second time to get at the
+ * real bytes.
  *
  * The real `<input type="file">` IS the accessible control: it is `sr-only`
  * (visually hidden) but focusable and labelable — never `aria-hidden`, never
@@ -26,6 +33,11 @@
  * a value, so it cannot masquerade as valid. `accept` is validated against
  * BOTH extension and MIME because the native `accept` attribute is only a
  * browser hint and is bypassable via drag-drop.
+ *
+ * A host that already announces the rejection itself — a toast in its own
+ * locale, driven off `onError` — silences this one by returning nothing from
+ * `labels.error`. Two announcements for one event, in two languages, is the
+ * accessibility defect; the wording is not.
  */
 import * as React from 'react'
 import { Upload, X } from 'lucide-react'
@@ -40,6 +52,35 @@ export type FileUploadError =
   | { kind: 'wrong-type'; file: File; accept: string }
   | { kind: 'read-failed'; file: File }
 
+/** How the picked file's bytes are handled on the way to `onSelect`. */
+export type FileUploadReadAs = 'text' | 'none'
+
+/**
+ * Overrides for the fixed English copy. Every field is optional and defaults to
+ * the current value, so a consumer that passes nothing renders exactly as
+ * before. These four strings were the whole of the component's user-visible
+ * text, and none of them was reachable — a pt-BR console rendered an English
+ * affordance and handed a screen reader an English accessible name.
+ */
+export interface FileUploadLabels {
+  /** Emphasised call to action in the empty zone. Defaults to "Choose a file". */
+  action?: string
+  /** Trailing hint after the action. Defaults to "or drag and drop". */
+  hint?: string
+  /** Accessible name of the clear button. Defaults to "Remove file". */
+  remove?: string
+  /**
+   * Copy for the component's own `role="alert"` refusal. Receives the rejection
+   * so the message can interpolate the cap or the accept filter; use the
+   * exported `humanizeSize` to format `maxSizeBytes` the way the chip does.
+   *
+   * Return `null`, `undefined` or `''` to stay SILENT and leave the
+   * announcement to the host's own `onError` handling. Defaults to the
+   * built-in English messages.
+   */
+  error?: (error: FileUploadError) => string | null | undefined
+}
+
 export type FileUploadProps = {
   /** Comma-separated accept filter, e.g. ".pem,.key" or "text/plain". Mirrors the native input accept. */
   accept?: string
@@ -47,7 +88,18 @@ export type FileUploadProps = {
   maxSizeBytes?: number
   /** Controlled selection. `null` = empty. The host owns state. */
   value?: FileUploadResult | null
-  /** Fires on accept (with {file,text}) or clear (null). Reads UTF-8 via FileReader.readAsText. */
+  /**
+   * How the accepted file is handed over.
+   * - `'text'` (default): decode as UTF-8 via FileReader.readAsText and emit
+   *   `{ file, text }`. Unchanged behaviour for every existing consumer.
+   * - `'none'`: skip decoding entirely and emit `{ file, text: '' }`. The mode
+   *   for BINARY files (PDF, XLSX, PFX/DER): the host gets the `File` intact
+   *   and `text` carries nothing, so do not read it in this mode.
+   */
+  readAs?: FileUploadReadAs
+  /** Override the fixed English copy. Omitted fields keep their defaults. */
+  labels?: FileUploadLabels
+  /** Fires on accept (with the result) or clear (null). See `readAs` for whether `text` is populated. */
   onSelect: (result: FileUploadResult | null) => void
   /** Fires when a pick is rejected (size/type/read). Optional — the component also shows its own inline error. */
   onError?: (error: FileUploadError) => void
@@ -68,6 +120,14 @@ export type FileUploadProps = {
   | 'onChange'
   | 'onSelect'
   | 'className'
+  // React declares its own `onError` on every DOM element. Left in, it
+  // INTERSECTS with the rejection callback above into
+  // `((e: FileUploadError) => void) & ReactEventHandler<HTMLInputElement>`,
+  // which no concretely typed handler can satisfy — the only thing TypeScript
+  // accepted was an untyped one, so the callback looked wired and the
+  // documented `'kind' in failure` guard was written against a parameter that
+  // was really `FileUploadError | SyntheticEvent`.
+  | 'onError'
   // Single-file by contract: the component only ever reads `files[0]`.
   | 'multiple'
 >
@@ -112,8 +172,12 @@ function matchesAccept(file: File, accept: string): boolean {
     })
 }
 
-/** Humanize a byte count for the selected-file chip. Binary units, 1 decimal. */
-function humanizeSize(bytes: number): string {
+/**
+ * Humanize a byte count for the selected-file chip. Binary units, 1 decimal.
+ * Exported so a `labels.error` override can format `maxSizeBytes` exactly the
+ * way the chip and the default message do, instead of re-deriving binary units.
+ */
+export function humanizeSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   const units = ['KB', 'MB', 'GB']
   let size = bytes / 1024
@@ -125,8 +189,8 @@ function humanizeSize(bytes: number): string {
   return `${size.toFixed(1)} ${units[unit]}`
 }
 
-/** A human-readable announcement for each rejection kind. */
-function errorMessage(error: FileUploadError): string {
+/** The default English announcement for each rejection kind. */
+function defaultErrorMessage(error: FileUploadError): string {
   switch (error.kind) {
     case 'too-large':
       return `File is too large (max ${humanizeSize(error.maxSizeBytes)}).`
@@ -143,6 +207,8 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
       accept,
       maxSizeBytes,
       value,
+      readAs = 'text',
+      labels,
       onSelect,
       onError,
       disabled = false,
@@ -174,13 +240,23 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
     // as invalid even outside a form.
     const invalid = ariaInvalid || error !== null
 
+    // Resolve the announcement BEFORE deciding whether the alert exists: a
+    // consumer that returns nothing is opting out of this surface entirely,
+    // and an association pointing at an unrendered node is worse than none.
+    const resolved = error
+      ? labels?.error
+        ? labels.error(error)
+        : defaultErrorMessage(error)
+      : null
+    const errorText = resolved ? resolved : null
+
     // Radix Slot OVERWRITES aria-describedby (it does not merge), so merge the
     // primitive's own role=alert error id with the FormControl-injected one so
     // both associations coexist on the input. A plain join, never `cn` —
     // tailwind-merge treats these as class names and would drop an id that
     // happens to look like a conflicting utility.
     const describedBy =
-      [ariaDescribedby, error ? errorId : undefined]
+      [ariaDescribedby, errorText ? errorId : undefined]
         .filter(Boolean)
         .join(' ') || undefined
 
@@ -195,6 +271,15 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
       if (validationError) {
         setError(validationError)
         onError?.(validationError)
+        return
+      }
+      // Binary path: no decode, no reader, no retained garbage string. The
+      // stale-rejection clear still has to happen here — the alert is this
+      // component's own state and a good pick must retire it.
+      if (readAs === 'none') {
+        readerRef.current = null
+        setError(null)
+        onSelect({ file, text: '' })
         return
       }
       const reader = new FileReader()
@@ -313,7 +398,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
                 variant="plain"
                 size="small"
                 disabled={disabled}
-                aria-label="Remove file"
+                aria-label={labels?.remove ?? 'Remove file'}
                 onClick={(event) => {
                   // Don't bubble to the zone's openPicker and re-open the dialog.
                   event.stopPropagation()
@@ -325,18 +410,20 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
             </>
           ) : (
             <span className="text-muted-foreground">
-              <span className="text-foreground font-medium">Choose a file</span>{' '}
-              or drag and drop
+              <span className="text-foreground font-medium">
+                {labels?.action ?? 'Choose a file'}
+              </span>{' '}
+              {labels?.hint ?? 'or drag and drop'}
             </span>
           )}
         </div>
-        {error ? (
+        {errorText ? (
           <p
             id={errorId}
             role="alert"
             className="text-system-error-h1a text-xs font-medium"
           >
-            {errorMessage(error)}
+            {errorText}
           </p>
         ) : null}
       </div>

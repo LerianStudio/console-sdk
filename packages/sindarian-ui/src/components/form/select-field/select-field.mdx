@@ -13,6 +13,34 @@ import * as Story from './select-field.stories'
 
 An implementation for easy use of Select component.
 
+## Layout and copy
+
+`className` lands on the field's own root box, merged with its spacing rather
+than replacing it. The root is the element a parent grid positions, so a field
+can span columns directly instead of being wrapped in a spare div.
+
+**This differs from `InputField`, `TextareaField` and `FileUploadField`, whose
+`className` lands on the inner control.** Here it lands on the field root,
+because the measured need was grid placement and a class on a Radix
+`SelectTrigger` cannot span a column. So `className="col-span-2"` works and
+`className="w-32"` will size the whole field rather than shrinking the trigger.
+
+```tsx
+<div className="grid grid-cols-3 gap-4">
+  <SelectField control={form.control} name="rail" label="Rail" />
+  <SelectField
+    control={form.control}
+    name="counterparty"
+    label="Counterparty"
+    className="col-span-2"
+  />
+</div>
+```
+
+`emptyMessage` is the copy for the "nothing to pick" row and defaults to
+`No options found.`. It applies to the single-select branch; the `multi` branch
+renders no empty row at all.
+
 ### Basic
 
 <Canvas of={Story.Primary} />

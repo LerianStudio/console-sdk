@@ -8,14 +8,52 @@ import {
   FormMessage,
   FormTooltip
 } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { HTMLInputTypeAttribute, ReactNode } from 'react'
+import { Input, type InputRef } from '@/components/ui/input'
+import { HTMLInputTypeAttribute, ReactNode, Ref } from 'react'
 import { Control, FieldPathValue, FieldValues, Path } from 'react-hook-form'
 
 export type InputFieldProps<T extends FieldValues = FieldValues> = {
   className?: string
   name: string
   type?: HTMLInputTypeAttribute
+  /**
+   * Announce the field's own invalidity. Reaches the rendered control on BOTH
+   * branches, so a field with no `control` — and therefore no react-hook-form
+   * error state — can still tell a screen reader it is invalid.
+   *
+   * ORed with the form's error, never overriding it: `false` here cannot
+   * suppress a live resolver error. Nobody asked to mute a real validation
+   * failure, and on a financial console a muted one is a wrong number reaching
+   * a money path.
+   *
+   * TypeScript exempts hyphenated JSX attributes from excess-property
+   * checking, so passing this used to compile and then vanish.
+   */
+  'aria-invalid'?: boolean
+  /** Lower bound, forwarded to the single-line control on both branches. */
+  min?: number | string
+  /** Upper bound, forwarded to the single-line control on both branches. */
+  max?: number | string
+  /** Increment, forwarded to the single-line control on both branches. */
+  step?: number | string
+  /** Character ceiling, forwarded on both branches (single-line and textarea). */
+  maxLength?: number
+  /** Browser autofill hint. `"off"` is the one a money field usually wants. */
+  autoComplete?: React.HTMLInputAutoCompleteAttribute
+  /** Virtual-keyboard hint, e.g. `"numeric"` or `"decimal"`. Both branches. */
+  inputMode?: React.HTMLAttributes<HTMLElement>['inputMode']
+  /** Native validation regex. Single-line only — a textarea has no `pattern`. */
+  pattern?: string
+  /** Focus the control on mount. React focuses the node rather than emitting an attribute. */
+  autoFocus?: boolean
+  /**
+   * Imperative handle on the rendered control: `focus()`/`blur()` on the
+   * single-line branch, the textarea node on the `textArea` branch (which
+   * satisfies the same shape). COMPOSED with react-hook-form's own ref when
+   * `control` is present, never replacing it — the form keeps the node it
+   * needs for `shouldFocusError`.
+   */
+  ref?: Ref<InputRef>
   label?: ReactNode
   tooltip?: string
   labelExtra?: ReactNode
@@ -60,6 +98,24 @@ type Binding = {
   ref?: React.Ref<never>
 }
 
+/**
+ * Fan one node out to several refs. React hands a node to ONE ref, so a
+ * consumer ref and react-hook-form's `field.ref` cannot both be passed
+ * directly — one silently wins. Only used when the consumer actually supplied
+ * a ref, so a field without one keeps `field.ref`'s own identity and React
+ * never re-attaches it.
+ */
+function fanOutRef<T>(
+  ...refs: (Ref<T> | undefined)[]
+): (node: T | null) => void {
+  return (node) => {
+    for (const ref of refs) {
+      if (typeof ref === 'function') ref(node)
+      else if (ref) (ref as { current: T | null }).current = node
+    }
+  }
+}
+
 export const InputField = <T extends FieldValues = FieldValues>({
   className,
   type,
@@ -78,8 +134,28 @@ export const InputField = <T extends FieldValues = FieldValues>({
   defaultValue,
   value,
   onChange,
+  min,
+  max,
+  step,
+  maxLength,
+  autoComplete,
+  inputMode,
+  pattern,
+  autoFocus,
+  ref,
+  'aria-invalid': ariaInvalid,
   ...others
 }: InputFieldProps<T>) => {
+  // OR with the form's error, expressed through the Slot merge rather than by
+  // reading the form: FormControl already injects `aria-invalid={!!error}`, and
+  // a child prop only wins that merge when the KEY is present. So emit the key
+  // only for an explicit `true`, and let FormControl answer for every other
+  // case. `true || error` is true; `false || error` is whatever the form says,
+  // which is the whole point — an explicit `false` cannot mute a live error.
+  // With no `control` there is no error to OR against, so FormControl injects
+  // `false` and today's behaviour is unchanged.
+  const ariaInvalidProp = ariaInvalid ? { 'aria-invalid': true } : undefined
+
   const renderItem = (binding: Binding) => (
     <FormItem required={required}>
       {label && (
@@ -97,7 +173,12 @@ export const InputField = <T extends FieldValues = FieldValues>({
             readOnly={readOnly}
             minHeight={minHeight}
             maxHeight={maxHeight}
+            maxLength={maxLength}
+            autoComplete={autoComplete}
+            inputMode={inputMode}
+            autoFocus={autoFocus}
             data-testid={others['data-testid']}
+            {...ariaInvalidProp}
             {...binding}
           />
         ) : (
@@ -108,7 +189,19 @@ export const InputField = <T extends FieldValues = FieldValues>({
             readOnly={readOnly}
             startAdornment={startAdornment}
             endAdornment={endAdornment}
+            // Bounds belong to the single-line control only: `min`/`max`/`step`
+            // mean nothing on a textarea and would render as invalid markup.
+            min={min}
+            max={max}
+            step={step}
+            maxLength={maxLength}
+            autoComplete={autoComplete}
+            inputMode={inputMode}
+            // Single-line only: `<textarea pattern>` is not a thing.
+            pattern={pattern}
+            autoFocus={autoFocus}
             data-testid={others['data-testid']}
+            {...ariaInvalidProp}
             {...binding}
           />
         )}
@@ -125,7 +218,10 @@ export const InputField = <T extends FieldValues = FieldValues>({
       // Controlled when the caller holds the value, uncontrolled when it only
       // seeds one — supplying both is what React warns about.
       ...(value !== undefined ? { value } : { defaultValue }),
-      onChange: (e) => onChange?.(e)
+      onChange: (e) => onChange?.(e),
+      // Nothing else claims the node on this branch, so the consumer ref goes
+      // straight through. Without it there was no node to focus at all.
+      ref: ref as React.Ref<never> | undefined
     })
   }
 
@@ -149,7 +245,8 @@ export const InputField = <T extends FieldValues = FieldValues>({
           onChange: (e) => {
             field.onChange(e)
             onChange?.(e)
-          }
+          },
+          ref: (ref ? fanOutRef(field.ref, ref) : field.ref) as React.Ref<never>
         })
       }
     />

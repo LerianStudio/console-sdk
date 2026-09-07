@@ -291,3 +291,76 @@ describe('FileUploadField', () => {
     ).toBeInTheDocument()
   })
 })
+
+/**
+ * L2, field level. A form-bound picker is the shape most consoles use, so the
+ * copy seam has to be reachable from here too — otherwise the trilingual fix
+ * only covers the standalone primitive and every form still renders English.
+ */
+describe('FileUploadField labels', () => {
+  it('threads consumer copy to the picker', () => {
+    function LocalisedHarness() {
+      const form = useForm<{ cert: string }>({ defaultValues: { cert: '' } })
+      return (
+        <Form {...form}>
+          <FileUploadField
+            control={form.control}
+            name="cert"
+            label="Certificado"
+            labels={{
+              action: 'Escolha um arquivo',
+              hint: 'ou arraste e solte'
+            }}
+          />
+        </Form>
+      )
+    }
+
+    render(<LocalisedHarness />)
+
+    expect(screen.getByText('Escolha um arquivo')).toBeInTheDocument()
+    expect(screen.queryByText('Choose a file')).not.toBeInTheDocument()
+  })
+
+  it('lets the host own the refusal announcement, leaving only FormMessage', async () => {
+    // The field already zeroes the form value on a refusal. A host that also
+    // toasts in its own locale silences the picker so one refusal produces one
+    // announcement, not two in two languages.
+    const onError = jest.fn()
+
+    function SilentHarness() {
+      const form = useForm<{ cert: string }>({ defaultValues: { cert: '' } })
+      return (
+        <Form {...form}>
+          <FileUploadField
+            control={form.control}
+            name="cert"
+            label="Certificado"
+            accept=".pem"
+            labels={{ error: () => null }}
+            onSelect={() => {}}
+          />
+          <button type="button" onClick={() => onError()}>
+            noop
+          </button>
+        </Form>
+      )
+    }
+
+    const { container } = render(<SilentHarness />)
+
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [new File(['x'], 'notes.txt', { type: 'text/plain' })] }
+    })
+
+    // Positive signal first: the picker marks itself invalid on a refusal, so
+    // waiting on that proves the pick was processed before asserting silence.
+    await waitFor(() =>
+      expect(container.querySelector('input[type="file"]')).toHaveAttribute(
+        'aria-invalid',
+        'true'
+      )
+    )
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+})

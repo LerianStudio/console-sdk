@@ -5,14 +5,83 @@ import * as Story from './file-upload.stories'
 
 # FileUpload
 
-Pick one text file — by click, keyboard, or drag-and-drop — validate it, read it
-as UTF-8, and hand back `{ file, text }`.
+Pick one file — by click, keyboard, or drag-and-drop — validate it, and hand
+back `{ file, text }`.
 
-Controlled: the host owns `value` and receives every accept (`{ file, text }`)
-or clear (`null`) through `onSelect`. A pick that fails the `accept` filter or
-the `maxSizeBytes` ceiling never produces a value — it is announced inline via
-`role="alert"` and reported through `onError`. Because the file is read with
-`FileReader.readAsText`, binary formats (`.pfx`, `.p12`) are out of scope.
+Controlled: the host owns `value` and receives every accept or clear (`null`)
+through `onSelect`. A pick that fails the `accept` filter or the `maxSizeBytes`
+ceiling never produces a value — it is announced inline via `role="alert"` and
+reported through `onError`.
+
+## Text or binary: `readAs`
+
+| `readAs` | What `onSelect` receives | Use for |
+| --- | --- | --- |
+| `'text'` (default) | `{ file, text }`, decoded UTF-8 | PEM, CSV, JSON, XML |
+| `'none'` | `{ file, text: '' }`, bytes untouched | PDF, XLSX, PFX, anything binary |
+
+Binary formats need `readAs="none"`. Put a PDF through `'text'` and it decodes
+into replacement-character garbage, that garbage is retained for as long as the
+host holds the value, and the host still has to read the file a second time to
+reach the real bytes. In `'none'` mode nothing is read at all — `onSelect` fires
+synchronously with the `File` intact, and `text` carries nothing, so do not
+read it.
+
+```tsx
+<FileUpload
+  readAs="none"
+  accept=".pdf"
+  maxSizeBytes={20 * 1024 * 1024}
+  value={picked}
+  onSelect={(result) => {
+    setPicked(result)
+    if (result) upload(result.file) // the File, undecoded
+  }}
+/>
+```
+
+## Copy: `labels`
+
+Every user-visible string is overridable and defaults to the English above, so
+an existing consumer renders unchanged.
+
+| Field | Default |
+| --- | --- |
+| `labels.action` | `Choose a file` |
+| `labels.hint` | `or drag and drop` |
+| `labels.remove` | `Remove file` (accessible name of the clear button) |
+| `labels.error` | the built-in refusal messages |
+
+`labels.error` receives the rejection, so a message can interpolate the cap or
+the accept filter; `humanizeSize` is exported to format `maxSizeBytes` the way
+the file chip does.
+
+A host that already announces the refusal itself — a toast driven off `onError`,
+in its own locale — should return nothing from `labels.error`. One refusal then
+produces ONE announcement instead of two in two languages, which is the
+accessibility defect the seam exists to fix. The zone still reads as invalid;
+only the copy goes away.
+
+```tsx
+<FileUpload
+  accept=".pem"
+  maxSizeBytes={maxBytes}
+  labels={{
+    action: intl.formatMessage({ id: 'upload.action' }),
+    hint: intl.formatMessage({ id: 'upload.hint' }),
+    remove: intl.formatMessage({ id: 'upload.remove' }),
+    // The host toasts from onError, so the picker stays quiet.
+    error: () => null
+  }}
+  onError={(failure) => toastRejection(failure)}
+  value={picked}
+  onSelect={setPicked}
+/>
+```
+
+`onError` is typed as `(error: FileUploadError) => void` and discriminates on
+`error.kind`: `'too-large'` carries `maxSizeBytes`, `'wrong-type'` carries
+`accept`, `'read-failed'` carries only the file.
 
 `validateFile(file, { accept, maxSizeBytes })` is exported so a host can
 pre-validate a file before handing it over. `accept` is matched against BOTH the
