@@ -398,7 +398,9 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
                 variant="plain"
                 size="small"
                 disabled={disabled}
-                aria-label={labels?.remove ?? 'Remove file'}
+                aria-label={
+                  labels?.remove?.trim() ? labels.remove : 'Remove file'
+                }
                 onClick={(event) => {
                   // Don't bubble to the zone's openPicker and re-open the dialog.
                   event.stopPropagation()

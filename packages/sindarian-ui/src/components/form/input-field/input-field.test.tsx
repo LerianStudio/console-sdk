@@ -324,6 +324,35 @@ describe('InputField forwards ARIA, bounds, maxLength and ref', () => {
     expect(ref.current).not.toBeNull()
   })
 
+  it('runs a consumer callback-ref cleanup on unmount', () => {
+    const cleanups: jest.Mock[] = []
+    const ref = jest.fn(() => {
+      const cleanup = jest.fn()
+      cleanups.push(cleanup)
+      return cleanup
+    })
+
+    function Harness() {
+      const form = useForm<{ note: string }>({ defaultValues: { note: '' } })
+      return (
+        <Form {...form}>
+          <InputField
+            control={form.control}
+            name="note"
+            label="Note"
+            ref={ref}
+          />
+        </Form>
+      )
+    }
+
+    const view = render(<Harness />)
+    view.unmount()
+
+    expect(cleanups.length).toBeGreaterThan(0)
+    cleanups.forEach((cleanup) => expect(cleanup).toHaveBeenCalledTimes(1))
+  })
+
   it('leaves the form-derived aria-invalid in charge when the prop is omitted', async () => {
     // Omitting the prop must not paint aria-invalid="false" over a real
     // react-hook-form error.

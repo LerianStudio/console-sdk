@@ -231,4 +231,24 @@ describe('ToggleGroup selection follows focus', () => {
 
     expect(onValueChange).not.toHaveBeenCalled()
   })
+
+  it('clears arrow-key state when the window loses focus', () => {
+    const onValueChange = jest.fn()
+    render(
+      <ToggleGroup type="single" onValueChange={onValueChange}>
+        <ToggleGroupItem value="day">Day</ToggleGroupItem>
+        <ToggleGroupItem value="week">Week</ToggleGroupItem>
+      </ToggleGroup>
+    )
+
+    const day = screen.getByRole('radio', { name: 'Day' })
+    const week = screen.getByRole('radio', { name: 'Week' })
+
+    focus(day)
+    fireEvent.keyDown(day, { key: 'ArrowRight' })
+    fireEvent.blur(window)
+    focus(week)
+
+    expect(onValueChange).not.toHaveBeenCalled()
+  })
 })
