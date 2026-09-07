@@ -583,6 +583,19 @@ describe('FileUpload labels', () => {
  * which is exactly why the intersection shipped. These two hold it down: the
  * type-level one fails to COMPILE if the intersection comes back, the runtime
  * one proves the documented `'kind' in failure` guard actually enters.
+ *
+ * There is deliberately NO third case asserting the callback stays off the
+ * native input. A DOM-attribute check is vacuous, because React 19 never
+ * serialises an `onerror` attribute for any element. Dispatching the event
+ * instead is vacuous for the same reason in reverse: React attaches a
+ * non-delegated `error` listener only to media-ish elements, so a plain
+ * `<input onError={spy} />` never calls the spy. Measured, all three shapes,
+ * in this jsdom: `fireEvent.error`, `fireEvent.error(..., {bubbles: true})`
+ * and a native bubbling `dispatchEvent` all report zero calls. Every such
+ * assertion therefore passes on a component that DOES leak, which was checked
+ * by spreading `onError={onError}` onto the input and watching nothing turn
+ * red. The contract here is a type contract, and the case above is what holds
+ * it.
  */
 const typedRejectionHandler = (failure: FileUploadError): string => failure.kind
 
@@ -618,17 +631,6 @@ describe('FileUpload onError is reachable', () => {
     pick(container, fakeFile('notes.txt', 'text/plain', 10))
 
     await waitFor(() => expect(seen).toEqual(['wrong-type']))
-  })
-
-  it('does not leak the callback onto the native input as a DOM handler', () => {
-    // `onError` is the component's contract, not the input's. If it stopped
-    // being destructured it would ride `...rest` onto the file input and fire
-    // on unrelated DOM error events.
-    const { container } = render(
-      <FileUpload onSelect={jest.fn()} onError={typedRejectionHandler} />
-    )
-    const input = container.querySelector('input[type="file"]')!
-    expect(input).not.toHaveAttribute('onerror')
   })
 })
 
