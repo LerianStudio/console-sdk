@@ -9,7 +9,7 @@ import {
   FormTooltip
 } from '@/components/ui/form'
 import { Input, type InputRef } from '@/components/ui/input'
-import { HTMLInputTypeAttribute, ReactNode, Ref } from 'react'
+import { HTMLInputTypeAttribute, ReactNode, Ref, useMemo, useRef } from 'react'
 import { Control, FieldPathValue, FieldValues, Path } from 'react-hook-form'
 
 export type InputFieldProps<T extends FieldValues = FieldValues> = {
@@ -114,9 +114,7 @@ function fanOutRef<T>(
     for (const ref of refs) {
       if (typeof ref === 'function') {
         const cleanup = ref(node)
-        cleanups.push(
-          typeof cleanup === 'function' ? cleanup : () => ref(null)
-        )
+        cleanups.push(typeof cleanup === 'function' ? cleanup : () => ref(null))
       } else if (ref) {
         ;(ref as { current: T | null }).current = node
         cleanups.push(() => {
@@ -168,6 +166,14 @@ export const InputField = <T extends FieldValues = FieldValues>({
   // With no `control` there is no error to OR against, so FormControl injects
   // `false` and today's behaviour is unchanged.
   const ariaInvalidProp = ariaInvalid ? { 'aria-invalid': true } : undefined
+  const formRef = useRef<((node: InputRef | null) => void) | undefined>(
+    undefined
+  )
+  const composedRef = useMemo(
+    () =>
+      ref ? fanOutRef<InputRef>((node) => formRef.current?.(node), ref) : ref,
+    [ref]
+  )
 
   const renderItem = (binding: Binding) => (
     <FormItem required={required}>
@@ -247,8 +253,9 @@ export const InputField = <T extends FieldValues = FieldValues>({
       // form still submits nothing for that name. Controller seeds its own
       // state from this, so `field.value` carries the seed on both branches.
       defaultValue={defaultValue as FieldPathValue<T, Path<T>>}
-      render={({ field }) =>
-        renderItem({
+      render={({ field }) => {
+        formRef.current = field.ref
+        return renderItem({
           ...field,
           // Controlled from mount. react-hook-form hands `undefined` for any
           // name the form declares no default for; React then mounts the box
@@ -259,9 +266,9 @@ export const InputField = <T extends FieldValues = FieldValues>({
             field.onChange(e)
             onChange?.(e)
           },
-          ref: (ref ? fanOutRef(field.ref, ref) : field.ref) as React.Ref<never>
+          ref: (ref ? composedRef : field.ref) as React.Ref<never>
         })
-      }
+      }}
     />
   )
 }
