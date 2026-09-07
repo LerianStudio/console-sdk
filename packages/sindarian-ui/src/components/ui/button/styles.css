@@ -34,7 +34,12 @@
   }
 
   .button-plain {
-    @apply bg-transparent text-inherit shadow-none hover:bg-black/5;
+    /* The dark counterpart is not optional: black/5 over a dark ground is
+       invisible, so the hover affordance simply vanished in dark mode. Same
+       /5-light, /10-dark pairing the kit already uses for translucent state
+       fills (`ui/field`: `has-data-checked:bg-primary/5
+       dark:has-data-checked:bg-primary/10`). */
+    @apply bg-transparent text-inherit shadow-none hover:bg-black/5 dark:hover:bg-white/10;
   }
 
   .button-primary {
@@ -61,6 +66,31 @@
 
   .button-link {
     @apply !text-button-link !h-4 !p-0 !px-0 !py-0 underline shadow-none;
+  }
+
+  /*
+    WCAG 2.5.8 (AA) asks a pointer target for 24 by 24 CSS px. This variant pins
+    its box at 16, and pins it with `!important` on the height and all three
+    padding axes — so unlike an ordinary too-small target, no consumer can
+    correct it at the call site. That is what makes it a library defect rather
+    than a call-site one; the 16px itself is not new.
+
+    The hit area grows instead of the box. `.button-base` is already
+    `position: relative`, so an inset pseudo-element takes the target to 24px
+    tall at zero layout cost: the element's own box, and every line box around
+    it, stay at 16. Growing the box was the alternative and it was rejected —
+    link buttons sit inside running text, where a taller box reflows the
+    sentence, and in table cells and filter bars, where it shifts the row.
+
+    Horizontal size is left to the label. SC 2.5.8 exempts a target whose size
+    is constrained by the line-height of the text around it, and stealing
+    horizontal space from adjacent words would take clicks that belong to them.
+
+    Overridable: Tailwind's `utilities` layer wins over `components`, so a
+    consumer that needs the band gone writes `before:inset-y-0`.
+  */
+  .button-link::before {
+    @apply absolute inset-x-0 -inset-y-1 content-[''];
   }
 
   .button-disabled {

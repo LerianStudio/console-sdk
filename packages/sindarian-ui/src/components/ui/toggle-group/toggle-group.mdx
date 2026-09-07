@@ -13,6 +13,12 @@ items stay on. `variant` and `size` set on the group flow down to every item.
 `spacing` (default `0`) welds the items into one segmented bar; a positive value
 separates them.
 
+**Keyboard.** A single-select group is an ARIA radio group, so it takes one tab
+stop and selection follows focus: an arrow key moves focus and checks the item
+it lands on, wrapping at the ends. Tabbing in, or focusing the group from code,
+selects nothing. A multi-select group is a toolbar of pressed buttons, where
+arrow keys move focus and Space or Enter presses.
+
 ### Primary
 
 <Canvas of={Story.Primary} />
