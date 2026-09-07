@@ -1,6 +1,13 @@
 import '@testing-library/jest-dom'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { FileUpload, validateFile, type FileUploadResult } from '.'
+import {
+  FileUpload,
+  humanizeSize,
+  validateFile,
+  type FileUploadError,
+  type FileUploadProps,
+  type FileUploadResult
+} from '.'
 
 /** Construct a File with a controlled `.size` for the byte-cap path. */
 function fakeFile(name: string, type: string, size: number): File {
@@ -362,6 +369,299 @@ describe('FileUpload read failures and out-of-order reads', () => {
     expect((onSelect.mock.calls[0][0] as FileUploadResult).text).toBe('SECOND')
     expect((onSelect.mock.calls[0][0] as FileUploadResult).file.name).toBe(
       'second.pem'
+    )
+  })
+})
+
+/**
+ * L1 — binary files. `readAs="none"` is the mode a PDF/XLSX/PFX needs: hand the
+ * File over with the bytes untouched. The assertion is on what reaches the
+ * CONSUMER (the exact File instance, and no reader constructed at all), not on
+ * which FileReader method got called.
+ */
+describe('FileUpload readAs', () => {
+  const RealFileReader = global.FileReader
+
+  beforeEach(() => {
+    ControllableFileReader.instances = []
+    global.FileReader = ControllableFileReader as unknown as typeof FileReader
+  })
+
+  afterEach(() => {
+    global.FileReader = RealFileReader
+  })
+
+  function select(container: HTMLElement, file: File) {
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [file] }
+    })
+  }
+
+  it('hands the File over undecoded and never constructs a reader', () => {
+    const onSelect = jest.fn()
+    const pdf = fakeFile('statement.pdf', 'application/pdf', 20 * 1024 * 1024)
+    const { container } = render(
+      <FileUpload readAs="none" onSelect={onSelect} />
+    )
+
+    select(container, pdf)
+
+    // Synchronous: nothing is read, so there is nothing to await. A component
+    // that still decoded would have deferred this to a reader callback.
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect((onSelect.mock.calls[0][0] as FileUploadResult).file).toBe(pdf)
+    expect(ControllableFileReader.instances).toHaveLength(0)
+  })
+
+  it('still validates size and type before handing the File over', () => {
+    const onSelect = jest.fn()
+    const onError = jest.fn()
+    const { container } = render(
+      <FileUpload
+        readAs="none"
+        accept=".pdf"
+        maxSizeBytes={1024}
+        onSelect={onSelect}
+        onError={onError}
+      />
+    )
+
+    select(container, fakeFile('big.pdf', 'application/pdf', 2048))
+
+    expect(onSelect).not.toHaveBeenCalled()
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onError.mock.calls[0][0].kind).toBe('too-large')
+  })
+
+  it('decodes as UTF-8 by default, so an existing consumer is untouched', () => {
+    const onSelect = jest.fn()
+    const { container } = render(<FileUpload onSelect={onSelect} />)
+
+    select(container, new File(['PEM'], 'cert.pem', { type: 'text/plain' }))
+    expect(ControllableFileReader.instances).toHaveLength(1)
+    ControllableFileReader.instances[0].succeed('PEM')
+
+    expect((onSelect.mock.calls[0][0] as FileUploadResult).text).toBe('PEM')
+  })
+
+  it('clears a stale rejection when a later readAs="none" pick is accepted', () => {
+    // The refusal alert is the primitive's own state. A mode that returns early
+    // must still retire it, or the zone shows a red error over a good file.
+    const onSelect = jest.fn()
+    const { container } = render(
+      <FileUpload readAs="none" accept=".pdf" onSelect={onSelect} />
+    )
+
+    select(container, fakeFile('notes.txt', 'text/plain', 10))
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+
+    select(container, fakeFile('ok.pdf', 'application/pdf', 10))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(onSelect).toHaveBeenCalledTimes(1)
+  })
+})
+
+/**
+ * L2 — every user-visible string is the consumer's. Lerian consoles are
+ * trilingual, and these three were the last English text a pt-BR operator
+ * could not translate.
+ */
+describe('FileUpload labels', () => {
+  it('renders consumer copy for the affordance instead of the English default', () => {
+    render(
+      <FileUpload
+        onSelect={jest.fn()}
+        labels={{ action: 'Escolha um arquivo', hint: 'ou arraste e solte' }}
+      />
+    )
+
+    expect(screen.getByText('Escolha um arquivo')).toBeInTheDocument()
+    expect(screen.getByText(/ou arraste e solte/)).toBeInTheDocument()
+    expect(screen.queryByText('Choose a file')).not.toBeInTheDocument()
+  })
+
+  it('names the clear button with consumer copy', () => {
+    render(
+      <FileUpload
+        value={{ file: fakeFile('cert.pem', 'text/plain', 10), text: 'PEM' }}
+        onSelect={jest.fn()}
+        labels={{ remove: 'Remover arquivo' }}
+      />
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Remover arquivo' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Remove file' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('announces a refusal in consumer copy, with the payload to interpolate', async () => {
+    const onSelect = jest.fn()
+    const { container } = render(
+      <FileUpload
+        accept=".pem"
+        maxSizeBytes={1024}
+        onSelect={onSelect}
+        labels={{
+          error: (failure) =>
+            failure.kind === 'too-large'
+              ? `Arquivo grande demais (máx ${humanizeSize(failure.maxSizeBytes)}).`
+              : 'Recusado.'
+        }}
+      />
+    )
+
+    pick(container, fakeFile('big.pem', 'text/plain', 4096))
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Arquivo grande demais (máx 1.0 KB).'
+      )
+    )
+  })
+
+  it('stays silent when the host announces the refusal itself', async () => {
+    // Two announcements in two languages for one event is the accessibility
+    // defect. A host that toasts in its own locale opts the library out.
+    const onError = jest.fn()
+    const { container } = render(
+      <FileUpload
+        accept=".pem"
+        onSelect={jest.fn()}
+        onError={onError}
+        labels={{ error: () => null }}
+      />
+    )
+
+    pick(container, fakeFile('notes.txt', 'text/plain', 10))
+
+    // Wait on the positive signal — asserting only the absent alert would pass
+    // before the pick was even processed.
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    // Silence must not leave a dangling association pointing at nothing.
+    const input = container.querySelector('input[type="file"]')!
+    const describedBy = input.getAttribute('aria-describedby')
+    expect(describedBy).toBeNull()
+
+    // Still reads as invalid: the pick was refused, silence is only about copy.
+    expect(input).toHaveAttribute('aria-invalid', 'true')
+  })
+
+  it('keeps the English defaults when no labels are passed', () => {
+    render(<FileUpload onSelect={jest.fn()} />)
+    expect(screen.getByText('Choose a file')).toBeInTheDocument()
+  })
+})
+
+/**
+ * L3 — `onError` was missing from the props `Omit` list, so it intersected with
+ * React's own `onError` DOM handler and no concretely typed handler could be
+ * assigned. Measured before the fix:
+ *
+ *   Type '(failure: FileUploadError) => void' is not assignable to type
+ *   '((error: FileUploadError) => void) & ReactEventHandler<HTMLInputElement>'
+ *
+ * Every existing test passed `jest.fn()`, which is assignable to anything —
+ * which is exactly why the intersection shipped. These two hold it down: the
+ * type-level one fails to COMPILE if the intersection comes back, the runtime
+ * one proves the documented `'kind' in failure` guard actually enters.
+ */
+const typedRejectionHandler = (failure: FileUploadError): string => failure.kind
+
+describe('FileUpload onError is reachable', () => {
+  it('accepts a concretely typed handler at the type level', () => {
+    // Both assignment directions. Either one stops compiling if `onError`
+    // re-collides with the DOM handler.
+    const asProp: NonNullable<FileUploadProps['onError']> =
+      typedRejectionHandler
+    const inObject: FileUploadProps = {
+      onSelect: () => {},
+      onError: typedRejectionHandler
+    }
+
+    expect(typeof asProp).toBe('function')
+    expect(inObject.onError).toBe(typedRejectionHandler)
+  })
+
+  it('runs the documented discriminant guard at runtime', async () => {
+    const seen: string[] = []
+    const { container } = render(
+      <FileUpload
+        accept=".pem"
+        onSelect={jest.fn()}
+        onError={(failure) => {
+          // The guard the docs prescribe. Contextually typed as the error union
+          // and nothing else, so `.kind` resolves without a cast.
+          if ('kind' in failure) seen.push(failure.kind)
+        }}
+      />
+    )
+
+    pick(container, fakeFile('notes.txt', 'text/plain', 10))
+
+    await waitFor(() => expect(seen).toEqual(['wrong-type']))
+  })
+
+  it('does not leak the callback onto the native input as a DOM handler', () => {
+    // `onError` is the component's contract, not the input's. If it stopped
+    // being destructured it would ride `...rest` onto the file input and fire
+    // on unrelated DOM error events.
+    const { container } = render(
+      <FileUpload onSelect={jest.fn()} onError={typedRejectionHandler} />
+    )
+    const input = container.querySelector('input[type="file"]')!
+    expect(input).not.toHaveAttribute('onerror')
+  })
+})
+
+describe('FileUpload silence edge cases', () => {
+  it('treats an empty-string label as silence, not as an empty alert', async () => {
+    // A formatter that has no message for a kind returns ''. Rendering an
+    // empty role="alert" would announce nothing while still claiming a live
+    // region, and would point aria-describedby at blank text.
+    const onError = jest.fn()
+    const { container } = render(
+      <FileUpload
+        accept=".pem"
+        onSelect={jest.fn()}
+        onError={onError}
+        labels={{ error: () => '' }}
+      />
+    )
+
+    pick(container, fakeFile('notes.txt', 'text/plain', 10))
+
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(container.querySelector('input[type="file"]')).not.toHaveAttribute(
+      'aria-describedby'
+    )
+  })
+
+  it('keeps a FormControl-injected describedby when the label is silent', async () => {
+    // Silencing the primitive's own copy must not take the form's description
+    // and message associations with it.
+    const onError = jest.fn()
+    const { container } = render(
+      <FileUpload
+        accept=".pem"
+        aria-describedby="cert-hint"
+        onSelect={jest.fn()}
+        onError={onError}
+        labels={{ error: () => null }}
+      />
+    )
+
+    pick(container, fakeFile('notes.txt', 'text/plain', 10))
+
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1))
+    expect(container.querySelector('input[type="file"]')).toHaveAttribute(
+      'aria-describedby',
+      'cert-hint'
     )
   })
 })

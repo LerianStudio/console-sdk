@@ -43,7 +43,15 @@ type SelectFieldSharedProps<T extends FieldValues = FieldValues> =
      *  with `value` + `onChange`. */
     control?: Control<T>
     required?: boolean
+    /** Copy for the "nothing to pick" row. Defaults to "No options found." */
     emptyMessage?: string
+    /**
+     * Placed on the field's own root box, merged with its spacing rather than
+     * replacing it. The root is the element a parent grid positions, so
+     * without this a consumer had to wrap the field in a spare div just to
+     * span a column.
+     */
+    className?: string
     'data-testid'?: string
   }
 
@@ -99,6 +107,7 @@ export const SelectField = <T extends FieldValues = FieldValues>({
   value,
   children,
   emptyMessage = 'No options found.',
+  className,
   onChange,
   ...others
 }: SelectFieldProps<T>) => {
@@ -111,7 +120,7 @@ export const SelectField = <T extends FieldValues = FieldValues>({
 
   const renderItem = (field: Binding) => {
     return (
-      <FormItem required={required}>
+      <FormItem required={required} className={className}>
         {label && (
           <FormLabel
             extra={tooltip ? <FormTooltip>{tooltip}</FormTooltip> : labelExtra}

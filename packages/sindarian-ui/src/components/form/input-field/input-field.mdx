@@ -13,6 +13,49 @@ import * as Story from './input-field.stories'
 
 An implementation for easy use of Input component.
 
+## Attributes forwarded to the control
+
+These reach the rendered control on BOTH branches, whether or not a
+react-hook-form `control` is supplied.
+
+| Prop | Reaches |
+| --- | --- |
+| `aria-invalid` | input and textarea |
+| `maxLength` | input and textarea |
+| `autoComplete` / `inputMode` | input and textarea |
+| `autoFocus` | input and textarea (React focuses the node, it emits no attribute) |
+| `min` / `max` / `step` | input only (meaningless on a textarea) |
+| `pattern` | input only (a textarea has no `pattern`) |
+| `ref` | input (`focus`/`blur` handle) and textarea (the node) |
+
+`placeholder` and `readOnly` were already forwarded on both branches and are
+unchanged.
+
+`aria-invalid` is **ORed** with react-hook-form's error, never overriding it.
+Pass `true` when the field knows it is invalid on its own — without a `control`
+there is no error state, so this is the only way an unbound field can announce
+invalidity to a screen reader. Passing `false` cannot suppress a live resolver
+error: muting a real validation failure is not a capability, and on a money
+path it is a liability.
+
+`ref` is COMPOSED with react-hook-form's own ref when `control` is present,
+never replacing it, so the form keeps the node it needs for `shouldFocusError`.
+
+```tsx
+const amountRef = useRef<InputRef>(null)
+
+<InputField
+  control={form.control}
+  name="amount"
+  label="Amount"
+  type="number"
+  min={0}
+  max={1_000_000}
+  step={0.01}
+  ref={amountRef}
+/>
+```
+
 ### Basic
 
 <Canvas of={Story.Primary} />
