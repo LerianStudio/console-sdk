@@ -64,7 +64,7 @@ const useFormField = () => {
       ? form.getFieldState(fieldContext.name, form.formState)
       : undefined
 
-  const { id, required } = itemContext
+  const { id, required, described, onDescribedChange } = itemContext
 
   return {
     id,
@@ -73,18 +73,52 @@ const useFormField = () => {
     formDescriptionId: `${id}-form-item-description`,
     formMessageId: `${id}-form-item-message`,
     required,
+    described,
+    onDescribedChange,
     ...fieldState
   }
 }
 
+/** The two slots that can describe a control, in the order a reader hears them. */
+type DescribingSlot = 'message' | 'description'
+
 type FormItemContextValue = {
   id: string
   required?: boolean
+  /**
+   * Which describing slots have actually rendered. `FormControl` cannot see its
+   * own siblings, so they announce themselves and it points only at ids that
+   * exist. Before this it named the description id unconditionally, and every
+   * field built on these primitives renders that slot conditionally
+   * (`{description && <FormDescription>…}`) — so a field without a description
+   * shipped an `aria-describedby` pointing at nothing.
+   */
+  described?: Record<DescribingSlot, boolean>
+  onDescribedChange?: (slot: DescribingSlot, rendered: boolean) => void
 }
 
 const FormItemContext = React.createContext<FormItemContextValue>(
   {} as FormItemContextValue
 )
+
+/**
+ * Announce that this slot is on the page, for as long as it is.
+ *
+ * `rendered` is a parameter rather than a caller-side condition because
+ * `FormMessage` returns null when it has nothing to say, and a hook cannot sit
+ * behind that early return.
+ */
+function useDescribingSlot(slot: DescribingSlot, rendered: boolean) {
+  const { onDescribedChange } = React.useContext(FormItemContext)
+
+  React.useEffect(() => {
+    if (!rendered) return
+
+    onDescribedChange?.(slot, true)
+
+    return () => onDescribedChange?.(slot, false)
+  }, [onDescribedChange, slot, rendered])
+}
 
 export type FormItemProps = React.HTMLAttributes<HTMLDivElement> & {
   required?: boolean
@@ -93,9 +127,26 @@ export type FormItemProps = React.HTMLAttributes<HTMLDivElement> & {
 const FormItem = React.forwardRef<HTMLDivElement, FormItemProps>(
   ({ className, required, ...props }, ref) => {
     const id = React.useId()
+    const [described, setDescribed] = React.useState<
+      Record<DescribingSlot, boolean>
+    >({ message: false, description: false })
+
+    // Keeps the object identity when nothing moved, so a slot re-registering
+    // does not re-render the item for no reason.
+    const onDescribedChange = React.useCallback(
+      (slot: DescribingSlot, rendered: boolean) =>
+        setDescribed((current) =>
+          current[slot] === rendered
+            ? current
+            : { ...current, [slot]: rendered }
+        ),
+      []
+    )
 
     return (
-      <FormItemContext.Provider value={{ id, required }}>
+      <FormItemContext.Provider
+        value={{ id, required, described, onDescribedChange }}
+      >
         <div ref={ref} className={cn('space-y-2', className)} {...props} />
       </FormItemContext.Provider>
     )
@@ -153,17 +204,30 @@ const FormControl = React.forwardRef<
   React.ElementRef<typeof Slot>,
   React.ComponentPropsWithoutRef<typeof Slot>
 >(({ ...props }, ref) => {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+  const { error, formItemId, formDescriptionId, formMessageId, described } =
+    useFormField()
+
+  // Only ids that resolve. A screen reader drops a dangling IDREF silently, so
+  // the barrier this removes is diagnostic rather than operational: a form with
+  // thirteen broken associations is a form where a real one cannot be spotted.
+  //
+  // Message first: a reader hears the error before the hint. `undefined` when
+  // both slots are empty, which drops the attribute — and, because Radix Slot
+  // OVERWRITES rather than merges, still lets the wrapped element carry its own
+  // (`ui/file-upload` merges the injected id with its own error id that way).
+  const describedBy =
+    [
+      described?.message ? formMessageId : undefined,
+      described?.description ? formDescriptionId : undefined
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined
 
   return (
     <Slot
       ref={ref}
       id={formItemId}
-      aria-describedby={
-        !error
-          ? `${formDescriptionId}`
-          : `${formDescriptionId} ${formMessageId}`
-      }
+      aria-describedby={describedBy}
       aria-invalid={!!error}
       {...props}
     />
@@ -176,6 +240,8 @@ const FormDescription = React.forwardRef<
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => {
   const { formDescriptionId } = useFormField()
+
+  useDescribingSlot('description', true)
 
   return (
     <p
@@ -194,6 +260,12 @@ const FormMessage = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   const { error, formMessageId } = useFormField()
   const body = error ? String(error?.message) : children
+
+  // Registered on `body`, not on `error`: a message given plain children
+  // renders copy that the control has to point at too. The old expression only
+  // added the message id when react-hook-form reported an error, so a
+  // standalone message was rendered and never associated.
+  useDescribingSlot('message', Boolean(body))
 
   if (!body) {
     return null

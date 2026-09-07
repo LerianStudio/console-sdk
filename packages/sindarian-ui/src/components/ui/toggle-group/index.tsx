@@ -33,14 +33,60 @@ const toggleVariants = cva(
   }
 )
 
+const ARROW_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
+
+/**
+ * Is an arrow key down right now?
+ *
+ * This is how an item tells keyboard navigation apart from a pointer press or a
+ * programmatic focus, and it is the seam Radix uses for the same job in its own
+ * `RadioGroup`. It works because `RovingFocusGroup` defers the focus move to a
+ * `setTimeout`: the keydown has already bubbled to `document` and set the flag
+ * by the time the item receives `focus`.
+ *
+ * The distinction is not cosmetic. A pointer press focuses BEFORE the click
+ * lands, so selecting on every focus would turn one click into
+ * select-then-deselect and break mouse selection outright.
+ *
+ * Returns null when disabled, so `type="multiple"` carries no flag to read.
+ */
+function useArrowKeyPressed(enabled: boolean) {
+  const arrowKeyPressed = React.useRef(false)
+
+  React.useEffect(() => {
+    if (!enabled) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (ARROW_KEYS.includes(event.key)) arrowKeyPressed.current = true
+    }
+    const onKeyUp = () => {
+      arrowKeyPressed.current = false
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('keyup', onKeyUp)
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('keyup', onKeyUp)
+      // A group unmounted mid-keystroke never sees the keyup.
+      arrowKeyPressed.current = false
+    }
+  }, [enabled])
+
+  return enabled ? arrowKeyPressed : null
+}
+
 const ToggleGroupContext = React.createContext<
   VariantProps<typeof toggleVariants> & {
     spacing?: number
+    arrowKeyPressed?: React.RefObject<boolean> | null
   }
 >({
   size: 'default',
   variant: 'default',
-  spacing: 0
+  spacing: 0,
+  arrowKeyPressed: null
 })
 
 function ToggleGroup({
@@ -55,6 +101,11 @@ function ToggleGroup({
   VariantProps<typeof toggleVariants> & {
     spacing?: number
   }) {
+  // Read, never destructured: `type` is the discriminant of the Radix props
+  // union, and pulling it out then spreading it back widens the union so the
+  // single/multiple props stop resolving.
+  const arrowKeyPressed = useArrowKeyPressed(props.type === 'single')
+
   return (
     <ToggleGroupPrimitive.Root
       data-slot="toggle-group"
@@ -73,7 +124,9 @@ function ToggleGroup({
       )}
       {...props}
     >
-      <ToggleGroupContext.Provider value={{ variant, size, spacing }}>
+      <ToggleGroupContext.Provider
+        value={{ variant, size, spacing, arrowKeyPressed }}
+      >
         {children}
       </ToggleGroupContext.Provider>
     </ToggleGroupPrimitive.Root>
@@ -85,10 +138,36 @@ function ToggleGroupItem({
   children,
   variant,
   size,
+  onFocus,
   ...props
 }: React.ComponentProps<typeof ToggleGroupPrimitive.Item> &
   VariantProps<typeof toggleVariants>) {
   const context = React.useContext(ToggleGroupContext)
+
+  /**
+   * Selection follows focus, which is what `role="radio"` promises.
+   *
+   * With `type="single"` Radix puts the group on the ARIA radio pattern: the
+   * root is a `radiogroup`, each item a `radio` with `aria-checked`. Under that
+   * pattern an arrow key both moves focus and checks the item it lands on.
+   * Radix only moves focus, so a screen-reader operator used to arrow across
+   * "radio, not checked, 2 of 3" with nothing ever selected.
+   *
+   * `type="multiple"` is a `toolbar` of `aria-pressed` buttons and keeps its
+   * current behavior, where moving focus without pressing is correct: the flag
+   * is null there.
+   *
+   * Clicking the element rather than writing the value keeps a single
+   * activation path, so Radix's own toggle and any caller `onClick` both fire
+   * exactly as they do for a real click.
+   */
+  const handleFocus = (event: React.FocusEvent<HTMLButtonElement>) => {
+    onFocus?.(event)
+
+    if (context.arrowKeyPressed?.current) {
+      event.currentTarget.click()
+    }
+  }
 
   return (
     <ToggleGroupPrimitive.Item
@@ -106,6 +185,7 @@ function ToggleGroupItem({
         className
       )}
       {...props}
+      onFocus={handleFocus}
     >
       {children}
     </ToggleGroupPrimitive.Item>
