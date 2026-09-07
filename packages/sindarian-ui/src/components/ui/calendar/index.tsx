@@ -3,6 +3,7 @@
 import * as React from 'react'
 import {
   DayPicker,
+  defaultDateLib,
   getDefaultClassNames,
   type DayButton
 } from 'react-day-picker'
@@ -40,8 +41,14 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) =>
-          date.toLocaleString('default', { month: 'short' }),
+        // react-day-picker's own default is dateLib.format(month, 'LLLL'), the
+        // full month name in the locale it was given. Shortening it has to go
+        // through the same dateLib: Date.toLocaleString('default') reads the
+        // runtime locale instead, so the dropdown fell back to English while
+        // the weekdays and the caption around it stayed in the consumer's
+        // language. 'LLL' is the abbreviated form of the same standalone month.
+        formatMonthDropdown: (month, dateLib = defaultDateLib) =>
+          dateLib.format(month, 'LLL'),
         ...formatters
       }}
       classNames={{
