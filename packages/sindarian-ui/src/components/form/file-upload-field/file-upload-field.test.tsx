@@ -102,11 +102,31 @@ describe('FileUploadField', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ cert: '' }))
   })
 
-  it('drops an empty-file chip when the next pick is rejected', async () => {
-    const { container } = render(<Harness />)
+  it('drops an empty-file chip and notifies consumers when the next pick is rejected', async () => {
+    const onSelect = jest.fn()
+
+    function SelectionHarness() {
+      const form = useForm<{ cert: string }>({ defaultValues: { cert: '' } })
+      return (
+        <Form {...form}>
+          <FileUploadField
+            control={form.control}
+            name="cert"
+            label="Certificate"
+            accept=".pem"
+            onSelect={onSelect}
+          />
+        </Form>
+      )
+    }
+
+    const { container } = render(<SelectionHarness />)
 
     pick(container, new File([], 'empty.pem', { type: 'text/plain' }))
     expect(await screen.findByText('empty.pem')).toBeInTheDocument()
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ file: expect.any(File), text: '' })
+    )
 
     pick(container, new File(['x'], 'notes.txt', { type: 'text/plain' }))
 
@@ -115,6 +135,7 @@ describe('FileUploadField', () => {
     )
     expect(screen.queryByText('empty.pem')).not.toBeInTheDocument()
     expect(screen.getByText('Choose a file')).toBeInTheDocument()
+    expect(onSelect).toHaveBeenLastCalledWith(null)
   })
 
   it('drops the chip when the form value is reset externally', async () => {
