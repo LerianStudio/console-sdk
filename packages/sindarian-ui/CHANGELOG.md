@@ -1,3 +1,20 @@
+## [2.0.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.1...sindarian-ui-v2.0.0-beta.2) (2026-09-07)
+
+
+### Features
+
+* **sindarian-ui:** forward what the form fields were dropping ([ff1279e](https://github.com/LerianStudio/console-sdk/commit/ff1279e80289764a2ea51dff2aad3adc337b8112))
+
+
+### Bug Fixes
+
+* apply the repair the steward validated on this head ([4e39399](https://github.com/LerianStudio/console-sdk/commit/4e3939931a3764df868f216294cae355e61553db))
+* apply the repair the steward validated on this head ([324114b](https://github.com/LerianStudio/console-sdk/commit/324114b1498b39c46057d22e40923287a8abdc26))
+* apply the repair the steward validated on this head ([6963524](https://github.com/LerianStudio/console-sdk/commit/69635245b592ecc8798b8aa26f2789b1aa38c358))
+* **sindarian-ui:** keep the ARIA, focus and describedby promises ([fb7f128](https://github.com/LerianStudio/console-sdk/commit/fb7f1286949b8dea246cdaab1a96d3feb77a0707))
+* **sindarian-ui:** label the month dropdown in the calendar's own locale ([f766078](https://github.com/LerianStudio/console-sdk/commit/f7660782fd35376c1107d2fc415b5cb896553860))
+* **sindarian-ui:** reattach the field ref when the field name changes ([1738ce9](https://github.com/LerianStudio/console-sdk/commit/1738ce96fd75613c303328975a07829cd7ccf286))
+
 ## [2.0.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v1.4.0-beta.8...sindarian-ui-v2.0.0-beta.1) (2026-09-06)
 
 
