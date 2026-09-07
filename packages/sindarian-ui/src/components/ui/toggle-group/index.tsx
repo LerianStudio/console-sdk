@@ -65,10 +65,12 @@ function useArrowKeyPressed(enabled: boolean) {
 
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onKeyUp)
 
     return () => {
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onKeyUp)
       // A group unmounted mid-keystroke never sees the keyup.
       arrowKeyPressed.current = false
     }

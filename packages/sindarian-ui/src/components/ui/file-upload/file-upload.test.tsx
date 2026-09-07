@@ -497,6 +497,20 @@ describe('FileUpload labels', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('falls back to the default clear-button name for a blank label', () => {
+    render(
+      <FileUpload
+        value={{ file: fakeFile('cert.pem', 'text/plain', 10), text: 'PEM' }}
+        onSelect={jest.fn()}
+        labels={{ remove: '   ' }}
+      />
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Remove file' })
+    ).toBeInTheDocument()
+  })
+
   it('announces a refusal in consumer copy, with the payload to interpolate', async () => {
     const onSelect = jest.fn()
     const { container } = render(

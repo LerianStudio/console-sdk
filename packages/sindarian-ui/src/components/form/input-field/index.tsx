@@ -107,12 +107,25 @@ type Binding = {
  */
 function fanOutRef<T>(
   ...refs: (Ref<T> | undefined)[]
-): (node: T | null) => void {
+): (node: T | null) => void | (() => void) {
   return (node) => {
+    const cleanups: (() => void)[] = []
+
     for (const ref of refs) {
-      if (typeof ref === 'function') ref(node)
-      else if (ref) (ref as { current: T | null }).current = node
+      if (typeof ref === 'function') {
+        const cleanup = ref(node)
+        cleanups.push(
+          typeof cleanup === 'function' ? cleanup : () => ref(null)
+        )
+      } else if (ref) {
+        ;(ref as { current: T | null }).current = node
+        cleanups.push(() => {
+          ;(ref as { current: T | null }).current = null
+        })
+      }
     }
+
+    return () => cleanups.forEach((cleanup) => cleanup())
   }
 }
 

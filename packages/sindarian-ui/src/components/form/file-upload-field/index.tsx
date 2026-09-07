@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/form'
 import {
   FileUpload,
+  type FileUploadError,
   type FileUploadLabels,
   type FileUploadResult
 } from '@/components/ui/file-upload'
@@ -44,6 +45,8 @@ type FileUploadFieldOwnProps<T extends FieldValues = FieldValues> = {
    * from the schema through FormMessage.
    */
   labels?: FileUploadLabels
+  /** Observe size, type, and read failures after the form value is cleared. */
+  onError?: (error: FileUploadError) => void
   /** Optional escape hatch to also observe the picked File/clear alongside the form's text value. */
   onSelect?: (result: FileUploadResult | null) => void
 }
@@ -87,6 +90,7 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
   disabled,
   className,
   labels,
+  onError,
   onSelect,
   'aria-label': ariaLabelProp
 }: FileUploadFieldProps<T>) => {
@@ -158,7 +162,10 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
                   field.onChange(result?.text ?? '')
                   onSelect?.(result)
                 }}
-                onError={() => field.onChange('')}
+                onError={(error) => {
+                  field.onChange('')
+                  onError?.(error)
+                }}
               />
             </FormControl>
             <FormMessage />

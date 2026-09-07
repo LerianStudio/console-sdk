@@ -322,7 +322,7 @@ describe('FileUploadField labels', () => {
     expect(screen.queryByText('Choose a file')).not.toBeInTheDocument()
   })
 
-  it('lets the host own the refusal announcement, leaving only FormMessage', async () => {
+  it('lets the host own the refusal announcement through onError', async () => {
     // The field already zeroes the form value on a refusal. A host that also
     // toasts in its own locale silences the picker so one refusal produces one
     // announcement, not two in two languages.
@@ -339,10 +339,8 @@ describe('FileUploadField labels', () => {
             accept=".pem"
             labels={{ error: () => null }}
             onSelect={() => {}}
+            onError={onError}
           />
-          <button type="button" onClick={() => onError()}>
-            noop
-          </button>
         </Form>
       )
     }
@@ -360,6 +358,9 @@ describe('FileUploadField labels', () => {
         'aria-invalid',
         'true'
       )
+    )
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'wrong-type' })
     )
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
