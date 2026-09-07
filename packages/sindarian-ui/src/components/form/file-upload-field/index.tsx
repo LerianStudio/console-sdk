@@ -163,6 +163,7 @@ export const FileUploadField = <T extends FieldValues = FieldValues>({
                   onSelect?.(result)
                 }}
                 onError={(error) => {
+                  setLocalValue(null)
                   field.onChange('')
                   onError?.(error)
                 }}

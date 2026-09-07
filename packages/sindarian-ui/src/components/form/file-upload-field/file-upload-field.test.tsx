@@ -102,6 +102,21 @@ describe('FileUploadField', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ cert: '' }))
   })
 
+  it('drops an empty-file chip when the next pick is rejected', async () => {
+    const { container } = render(<Harness />)
+
+    pick(container, new File([], 'empty.pem', { type: 'text/plain' }))
+    expect(await screen.findByText('empty.pem')).toBeInTheDocument()
+
+    pick(container, new File(['x'], 'notes.txt', { type: 'text/plain' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'File type not allowed'
+    )
+    expect(screen.queryByText('empty.pem')).not.toBeInTheDocument()
+    expect(screen.getByText('Choose a file')).toBeInTheDocument()
+  })
+
   it('drops the chip when the form value is reset externally', async () => {
     let form!: UseFormReturn<{ cert: string }>
     const { container } = render(<Harness formRef={(f) => (form = f)} />)
