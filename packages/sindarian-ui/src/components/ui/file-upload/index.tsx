@@ -434,3 +434,513 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
 )
 
 FileUpload.displayName = 'FileUpload'
+
+/**
+ * A rejection from `MultipleFileUpload`: every rejection the single-file
+ * sibling can produce, plus the one only a plural selection has — the cap.
+ */
+export type MultipleFileUploadError =
+  FileUploadError | { kind: 'too-many'; file: File; maxFiles: number }
+
+/** Overrides for the fixed English copy. Every field is optional. */
+export interface MultipleFileUploadLabels {
+  /** Emphasised call to action in the empty zone. Defaults to "Choose files". */
+  action?: string
+  /** Trailing hint after the action. Defaults to "or drag and drop". */
+  hint?: string
+  /** Zone copy once `maxFiles` is reached. Receives the cap to interpolate. */
+  full?: (maxFiles: number) => string
+  /**
+   * Accessible name of a row's remove control. Receives that row's file, so the
+   * name identifies it. Defaults to `Remove <filename>`.
+   */
+  remove?: (file: File) => string
+  /**
+   * Copy for one rejection. Called once per rejection in a batch; use the
+   * exported `humanizeSize` to format `maxSizeBytes`. Return `null`,
+   * `undefined` or `''` to stay SILENT and leave the announcement to the host's
+   * own `onError` handling. A batch whose every message is silent renders no
+   * alert at all.
+   */
+  error?: (error: MultipleFileUploadError) => string | null | undefined
+}
+
+export type MultipleFileUploadProps = {
+  /** Comma-separated accept filter. Applied to every file, extension or MIME. */
+  accept?: string
+  /** Inclusive per-file byte ceiling. Applied to each file independently. */
+  maxSizeBytes?: number
+  /** Ceiling on the TOTAL selection. Omitted means unbounded. */
+  maxFiles?: number
+  /** Controlled selection. The host owns state; defaults to empty. */
+  value?: FileUploadResult[]
+  /**
+   * How each accepted file is handed over. `'text'` (default) decodes UTF-8
+   * and populates `text`; `'none'` skips decoding entirely and is the mode
+   * BINARY files need. See FileUpload's `readAs` for why.
+   */
+  readAs?: FileUploadReadAs
+  /** Override the fixed English copy. Omitted fields keep their defaults. */
+  labels?: MultipleFileUploadLabels
+  /** Fires with the WHOLE next selection whenever files are added or removed. */
+  onValueChange: (values: FileUploadResult[]) => void
+  /** Fires once per rejected file. A batch can produce several. */
+  onError?: (error: MultipleFileUploadError) => void
+  disabled?: boolean
+  id?: string
+  className?: string
+  'aria-invalid'?: boolean
+  'aria-required'?: boolean
+  'aria-describedby'?: string
+  'aria-label'?: string
+} & Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  // Owned by the primitive, exactly as in the single-file sibling. `multiple`
+  // is set by the component itself here rather than stripped as unsupported.
+  | 'type'
+  | 'accept'
+  | 'value'
+  | 'disabled'
+  | 'onChange'
+  | 'onSelect'
+  | 'className'
+  | 'multiple'
+  // React declares its own `onError` on every DOM element; left in, it
+  // intersects with the rejection callback into something no concretely typed
+  // handler can satisfy. Same defect the sibling documents.
+  | 'onError'
+>
+
+/** The default English announcement for each rejection kind. */
+function defaultMultipleErrorMessage(error: MultipleFileUploadError): string {
+  if (error.kind === 'too-many') {
+    return `Too many files (max ${error.maxFiles}). ${error.file.name} was not added.`
+  }
+  return defaultErrorMessage(error)
+}
+
+/** The default zone copy once the cap is reached, in grammatical English. */
+function defaultFullMessage(maxFiles: number): string {
+  return maxFiles === 1
+    ? 'Maximum of 1 file reached.'
+    : `Maximum of ${maxFiles} files reached.`
+}
+
+/**
+ * MultipleFileUpload: the plural sibling of FileUpload. Pick SEVERAL files,
+ * accumulate them across repeated picks, validate each one, cap the total, and
+ * hand back `FileUploadResult[]`.
+ *
+ * A SIBLING COMPONENT, not a `multiple` flag. This library already answers
+ * "this one takes many" that way (`Select` / `MultipleSelect`), and FileUpload
+ * strips `'multiple'` from its props on purpose: single-file is its contract,
+ * not a default it happens to have. A boolean would have forced every prop
+ * here into a union that means one thing when the flag is set and another when
+ * it is not: `value` as `Result | Result[] | null`, a `maxFiles` that is
+ * meaningless in half the configurations, and a remove control whose
+ * accessible name is fixed copy in one mode and per-file in the other. The
+ * plural props follow the house shape for plural components: `value?: T[]`
+ * with `onValueChange?: (values: T[]) => void`.
+ *
+ * WHERE THE LINE SITS: this component owns SELECTION and nothing after it.
+ * Choosing, validating, capping, listing and removing are its job; uploading
+ * is not. That split is not squeamishness about scope, it is where the
+ * knowledge actually lives. An upload needs an endpoint, an auth scheme, a
+ * concurrency policy, a retry policy and, very often, a parent id that does
+ * not exist yet when the files are chosen: the motivating host stages evidence
+ * files while a form is being filled and can only upload them against the id
+ * that its create call returns afterwards. None of that is knowable from
+ * inside a library primitive, and a component that guessed would have to be
+ * fought rather than used. So the host keeps its own per-file record with
+ * status and retry, and this component keeps the part a form can hold and
+ * validate: the chosen files. `FileUploadResult[]` is a value; an upload state
+ * machine is not.
+ *
+ * ACCUMULATION is the defining behaviour. A second pick ADDS to the selection
+ * rather than replacing it, because a user assembling five documents does it
+ * in two or three trips to the file dialog, not one. Everything else follows
+ * from that: room is measured against what is already selected, and the batch
+ * that overflows the cap still contributes the files that fit.
+ *
+ * A BATCH SURVIVES ITS OWN CASUALTIES. One file rejected for type, size or a
+ * failed read does not discard the rest of the batch, and it does not consume
+ * a slot either: validation runs over the WHOLE batch before the cap is
+ * applied, so a file that was never eligible cannot cost an eligible one its
+ * place, and `'too-many'` always names a file a slot would genuinely have
+ * taken. The alternative punishes
+ * a user for a mistake in one file by throwing away four good ones, and hands
+ * back no way to tell which was which. Every rejection is reported through
+ * `onError` and announced together in one `role="alert"`.
+ *
+ * Accessibility follows the sibling BELOW THE CAP: the real `<input
+ * type="file">` is `sr-only` but focusable and labelable, and never
+ * `aria-hidden`, so FormControl-injected ARIA and react-hook-form's focus on
+ * error both work while the picker is enabled. At the cap that changes, and
+ * the paragraph below says how.
+ * The file list sits OUTSIDE the click zone, so activating a remove control
+ * cannot also reopen the picker, and each remove control is named after its
+ * own file: a column of identical "Remove file" buttons tells a screen-reader
+ * user nothing about which row they are on.
+ *
+ * AT THE CAP the picker takes the native `disabled` attribute, and that DOES
+ * take it out of the tab order. This is the one state in which the input is
+ * not a focus target, and the one state in which focus-on-error cannot land on
+ * it, so it is a real cost rather than a free win. The cap has no counterpart
+ * in the single-file sibling, so the precedent followed here is
+ * `DateRangePicker`'s trigger: a control whose only job is to open a dialog has
+ * no state worth keeping focusable, and native `disabled` is what both removes
+ * it from the tab order and keeps the dialog shut. The alternative, an enabled
+ * picker that opens the file dialog and then refuses every file with
+ * `too-many`, is a control that lies about being available. What keeps the cap
+ * from being a dead end is the escape hatch: the remove controls answer to
+ * `disabled` alone and NEVER to the cap, so they stay focusable and removing
+ * one file reopens the picker.
+ */
+export const MultipleFileUpload = React.forwardRef<
+  HTMLInputElement,
+  MultipleFileUploadProps
+>(function MultipleFileUpload(
+  {
+    accept,
+    maxSizeBytes,
+    maxFiles,
+    value = [],
+    readAs = 'text',
+    labels,
+    onValueChange,
+    onError,
+    disabled = false,
+    id,
+    className,
+    'aria-invalid': ariaInvalid,
+    'aria-required': ariaRequired,
+    'aria-describedby': ariaDescribedby,
+    'aria-label': ariaLabel,
+    ...rest
+  },
+  ref
+) {
+  const internalRef = React.useRef<HTMLInputElement>(null)
+  React.useImperativeHandle(ref, () => internalRef.current as HTMLInputElement)
+
+  const reactId = React.useId()
+  const inputId = id ?? reactId
+  const errorId = `${inputId}-file-upload-error`
+
+  const [dragActive, setDragActive] = React.useState(false)
+  const [errors, setErrors] = React.useState<MultipleFileUploadError[]>([])
+
+  // The authoritative base for the next append. Props win on every render, so
+  // the host stays in control; the commit below also writes through, so a
+  // second batch that settles before the host has re-rendered still appends to
+  // the first batch's result instead of overwriting it.
+  const valueRef = React.useRef(value)
+  React.useEffect(() => {
+    valueRef.current = value
+  })
+
+  // Superseding is NOT the contract here the way it is in the single-file
+  // sibling — batches accumulate, so an in-flight read is never stale. The
+  // readers are tracked for the one case that does have to stop them: an
+  // unmount. A read that lands afterwards would settle its batch and commit,
+  // calling the host's `onValueChange` for a component that no longer exists.
+  const readersRef = React.useRef(new Set<FileReader>())
+  React.useEffect(
+    () => () => {
+      for (const reader of readersRef.current) reader.abort()
+      readersRef.current.clear()
+    },
+    []
+  )
+
+  const invalid = ariaInvalid || errors.length > 0
+
+  // Resolve the announcements BEFORE deciding whether the alert exists: a
+  // consumer that returns nothing for every rejection is opting out of this
+  // surface, and an association pointing at an unrendered node is worse than
+  // none.
+  const messages = errors
+    .map((failure) =>
+      labels?.error
+        ? labels.error(failure)
+        : defaultMultipleErrorMessage(failure)
+    )
+    .filter((message): message is string => Boolean(message))
+
+  // A plain join, never `cn`: tailwind-merge treats these as class names and
+  // would drop an id that happens to look like a conflicting utility.
+  const describedBy =
+    [ariaDescribedby, messages.length > 0 ? errorId : undefined]
+      .filter(Boolean)
+      .join(' ') || undefined
+
+  const full = maxFiles !== undefined && value.length >= maxFiles
+  // Removing must stay possible at the cap, so only the PICKER closes.
+  const pickerDisabled = disabled || full
+
+  const roomFor = (selected: number) =>
+    maxFiles === undefined
+      ? Number.POSITIVE_INFINITY
+      : Math.max(maxFiles - selected, 0)
+
+  // The cap is enforced HERE, at the only place that appends, because only the
+  // commit knows the base it lands on. `ingest` measures room too, but for an
+  // asynchronous batch it measures it BEFORE any read settles: two overlapping
+  // batches both see the pre-commit selection and would each believe they fit.
+  const commit = (
+    accepted: FileUploadResult[],
+    rejections: MultipleFileUploadError[]
+  ) => {
+    const room = roomFor(valueRef.current.length)
+    const fitting = accepted.slice(0, room)
+    const overflow = accepted[room]
+    const failures =
+      overflow !== undefined && maxFiles !== undefined
+        ? [
+            ...rejections,
+            { kind: 'too-many' as const, file: overflow.file, maxFiles }
+          ]
+        : rejections
+    setErrors(failures)
+    for (const rejection of failures) onError?.(rejection)
+    if (fitting.length === 0) return
+    const next = [...valueRef.current, ...fitting]
+    valueRef.current = next
+    onValueChange(next)
+  }
+
+  const ingest = (incoming: File[]) => {
+    if (incoming.length === 0) return
+
+    const room = roomFor(valueRef.current.length)
+
+    const rejections: MultipleFileUploadError[] = []
+
+    // Validate EVERY file BEFORE the cap is applied. Slicing to the remaining
+    // room first would let a file that was never eligible consume a slot a
+    // good file could have used — one bad pick costing a good one, which is
+    // the opposite of a batch surviving its own casualties — and it would
+    // leave every file past the slice window neither validated nor reported.
+    // Validation is pure metadata (size and accept), so running it over files
+    // that may not fit costs nothing.
+    const eligible: File[] = []
+    for (const file of incoming) {
+      const rejection = validateFile(file, { accept, maxSizeBytes })
+      // Continue rather than abort: one bad file must not cost the good ones.
+      if (rejection) {
+        rejections.push(rejection)
+        continue
+      }
+      eligible.push(file)
+    }
+
+    // The cap then applies to the SURVIVORS. One rejection for the batch,
+    // naming the FIRST eligible file that did not fit: naming one already
+    // refused for its size or type would blame the cap for the wrong thing,
+    // and repeating it per overflowing file buries the actionable part.
+    if (eligible.length > room && maxFiles !== undefined) {
+      rejections.push({ kind: 'too-many', file: eligible[room], maxFiles })
+    }
+
+    const candidates = eligible.slice(0, room)
+
+    // Binary path: no decode, no reader, no retained garbage string.
+    if (readAs === 'none') {
+      commit(
+        candidates.map((file) => ({ file, text: '' })),
+        rejections
+      )
+      return
+    }
+
+    if (candidates.length === 0) {
+      commit([], rejections)
+      return
+    }
+
+    // Slot-per-candidate so the emitted batch keeps PICK order regardless of
+    // the order the reads settle in. A null slot is a read that failed; the
+    // batch commits once every read has settled, one way or the other.
+    const slots: (FileUploadResult | null)[] = new Array(
+      candidates.length
+    ).fill(null)
+    let remaining = candidates.length
+    const settle = () => {
+      remaining -= 1
+      if (remaining > 0) return
+      const accepted: FileUploadResult[] = []
+      const readFailures: MultipleFileUploadError[] = []
+      slots.forEach((slot, index) => {
+        if (slot) accepted.push(slot)
+        else readFailures.push({ kind: 'read-failed', file: candidates[index] })
+      })
+      commit(accepted, [...rejections, ...readFailures])
+    }
+
+    candidates.forEach((file, index) => {
+      const reader = new FileReader()
+      readersRef.current.add(reader)
+      // Deliberately no `onabort` handler: an aborted read must NOT settle,
+      // or the batch would commit at exactly the moment we are stopping it.
+      reader.onload = () => {
+        readersRef.current.delete(reader)
+        slots[index] = { file, text: String(reader.result ?? '') }
+        settle()
+      }
+      reader.onerror = () => {
+        readersRef.current.delete(reader)
+        settle()
+      }
+      reader.readAsText(file)
+    })
+  }
+
+  const onInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? [])
+    // Release the FileList the moment it has been read, or re-picking the same
+    // file is silently a no-op: the browser fires `change` only when the
+    // selection DIFFERS from what the input already holds.
+    event.target.value = ''
+    ingest(files)
+  }
+
+  const onDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return
+    event.preventDefault()
+    setDragActive(true)
+  }
+
+  const onDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setDragActive(false)
+  }
+
+  const onDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return
+    event.preventDefault()
+    setDragActive(false)
+    // Deliberately NOT gated on `full`: a drop onto a full zone is answered
+    // with the too-many rejection, which says why, instead of nothing at all.
+    ingest(Array.from(event.dataTransfer.files ?? []))
+  }
+
+  // Mouse convenience only. A click that ORIGINATED on the input already opens
+  // the picker natively and bubbles up here, so ignore it or it opens twice.
+  const openPicker = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (pickerDisabled || event.target === internalRef.current) return
+    internalRef.current?.click()
+  }
+
+  const removeAt = (index: number) => {
+    // By index, not by name: two files can share a filename and identity is
+    // what the row actually stands for.
+    const next = valueRef.current.filter((_, position) => position !== index)
+    valueRef.current = next
+    onValueChange(next)
+  }
+
+  return (
+    <div className={cn('space-y-2', className)}>
+      <div
+        onClick={openPicker}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        className={cn(
+          'border-input bg-card focus-within:ring-ring focus-within:ring-offset-background aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-within:ring-destructive flex w-full items-center gap-3 rounded-md border px-3 py-4 text-sm shadow-xs transition-colors focus-within:ring-2 focus-within:ring-offset-1 focus-within:outline-none',
+          dragActive &&
+            'border-ring ring-ring ring-offset-background ring-2 ring-offset-1',
+          pickerDisabled
+            ? 'border-muted bg-muted/30 cursor-not-allowed shadow-none'
+            : 'cursor-pointer'
+        )}
+        aria-invalid={invalid || undefined}
+      >
+        {/* The real, labelable file source: visually hidden, focusable, the
+            accessible source of truth. */}
+        <input
+          ref={internalRef}
+          id={inputId}
+          type="file"
+          multiple
+          accept={accept}
+          disabled={pickerDisabled}
+          className="sr-only"
+          aria-invalid={invalid || undefined}
+          aria-required={ariaRequired || undefined}
+          aria-describedby={describedBy}
+          aria-label={ariaLabel}
+          onChange={onInputChange}
+          {...rest}
+        />
+        <Upload
+          className="text-muted-foreground size-4 shrink-0"
+          aria-hidden="true"
+        />
+        {full && maxFiles !== undefined ? (
+          <span className="text-muted-foreground">
+            {labels?.full
+              ? labels.full(maxFiles)
+              : defaultFullMessage(maxFiles)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">
+            <span className="text-foreground font-medium">
+              {labels?.action ?? 'Choose files'}
+            </span>{' '}
+            {labels?.hint ?? 'or drag and drop'}
+          </span>
+        )}
+      </div>
+      {value.length > 0 ? (
+        // OUTSIDE the zone on purpose: inside it, every click on a row would
+        // bubble into openPicker and reopen the file dialog.
+        <ul className="space-y-1">
+          {value.map((entry, index) => (
+            <li
+              key={`${entry.file.name}-${index}`}
+              className="flex items-center gap-3 text-sm"
+            >
+              <span className="min-w-0 flex-1 truncate">
+                <span className="text-foreground font-medium">
+                  {entry.file.name}
+                </span>{' '}
+                <span className="text-muted-foreground tabular-nums">
+                  {humanizeSize(entry.file.size)}
+                </span>
+              </span>
+              <IconButton
+                type="button"
+                variant="plain"
+                size="small"
+                disabled={disabled}
+                aria-label={
+                  labels?.remove
+                    ? labels.remove(entry.file)
+                    : `Remove ${entry.file.name}`
+                }
+                onClick={() => removeAt(index)}
+              >
+                <X className="size-4" aria-hidden="true" />
+              </IconButton>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {messages.length > 0 ? (
+        <div id={errorId} role="alert" className="space-y-1">
+          {messages.map((message, index) => (
+            <p
+              key={index}
+              className="text-system-error-h1a text-xs font-medium"
+            >
+              {message}
+            </p>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+})
+
+MultipleFileUpload.displayName = 'MultipleFileUpload'
