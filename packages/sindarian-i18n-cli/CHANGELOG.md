@@ -1,3 +1,72 @@
+## [2.0.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-i18n-cli-v1.2.0-beta.1...sindarian-i18n-cli-v2.0.0-beta.1) (2026-09-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sindarian-ui:** ConfirmationDialog requires `pendingLabel` whenever `loading`
+is passed; the implicit "Processing..." default is gone.
+
+### Features
+
+* **sindarian-ui:** add MultipleFileUpload beside the single-file one ([a28035e](https://github.com/LerianStudio/console-sdk/commit/a28035e125df2b524c76009b0b29a345c84712e3))
+* **sindarian-ui:** forward what the form fields were dropping ([ff1279e](https://github.com/LerianStudio/console-sdk/commit/ff1279e80289764a2ea51dff2aad3adc337b8112))
+
+
+### Bug Fixes
+
+* apply the repair the steward validated on this head ([4e39399](https://github.com/LerianStudio/console-sdk/commit/4e3939931a3764df868f216294cae355e61553db))
+* apply the repair the steward validated on this head ([324114b](https://github.com/LerianStudio/console-sdk/commit/324114b1498b39c46057d22e40923287a8abdc26))
+* apply the repair the steward validated on this head ([6963524](https://github.com/LerianStudio/console-sdk/commit/69635245b592ecc8798b8aa26f2789b1aa38c358))
+* apply the repair the steward validated on this head ([7447721](https://github.com/LerianStudio/console-sdk/commit/74477216e0f6876ff0d746ba9f3e337f8cfa524a))
+* apply the repair the steward validated on this head ([436b4c5](https://github.com/LerianStudio/console-sdk/commit/436b4c593b00634dcc4863a3d2f08a3cd770af28))
+* apply the repair the steward validated on this head ([337c60f](https://github.com/LerianStudio/console-sdk/commit/337c60f9fa4c793208b415572d1dc18a1f4ff1a5))
+* apply the repair the steward validated on this head ([ed3ca04](https://github.com/LerianStudio/console-sdk/commit/ed3ca04d16c56b17a69106cebe4a68bb8cedcfcb))
+* apply the repair the steward validated on this head ([0a4e6cc](https://github.com/LerianStudio/console-sdk/commit/0a4e6cc3fac2d052bcb1ab6d14e1fe3487d22b1a))
+* **file-upload:** hold the cap and abandon reads on unmount ([c97ad4c](https://github.com/LerianStudio/console-sdk/commit/c97ad4c7537f7bd92aea0319b79d628ac670077d))
+* **file-upload:** validate the batch before applying the cap ([720678d](https://github.com/LerianStudio/console-sdk/commit/720678db8410f8550ee74a9cb98781f907fa29b4))
+* **logs:** reach for the error code when the message is empty ([dc5336f](https://github.com/LerianStudio/console-sdk/commit/dc5336f23a3caab545e84bd02ef7c024a7c05862))
+* **sindarian-logs:** stop logging the whole upstream body ([8e22900](https://github.com/LerianStudio/console-sdk/commit/8e229001d008ad507f5b1d61cc731c811161610a))
+* **sindarian-ui:** accept rich confirmation copy, require pendingLabel ([2d80366](https://github.com/LerianStudio/console-sdk/commit/2d803660ff4f0b3670195d43b249e1d366de6fbc))
+* **sindarian-ui:** add a disabled prop to DateRangePicker ([c34dc87](https://github.com/LerianStudio/console-sdk/commit/c34dc87f8a731141b3a42adb90f6b3c04a298361)), closes [#171](https://github.com/LerianStudio/console-sdk/issues/171)
+* **sindarian-ui:** add locale to date fields and pin required picks ([322031e](https://github.com/LerianStudio/console-sdk/commit/322031edaa1027ff1ea9d3e3962b2cd92f9c5494)), closes [#171](https://github.com/LerianStudio/console-sdk/issues/171)
+* **sindarian-ui:** announce data table sort state with aria-sort ([a0d629e](https://github.com/LerianStudio/console-sdk/commit/a0d629e063def140e43e9812a9f363d3d4669656)), closes [#173](https://github.com/LerianStudio/console-sdk/issues/173)
+* **sindarian-ui:** cancel the browser drop on a disabled zone ([c414f52](https://github.com/LerianStudio/console-sdk/commit/c414f52536348741d26ed92a2cc439bfe6d23ec0))
+* **sindarian-ui:** carry leaf max widths up to a grouped header ([375e1e2](https://github.com/LerianStudio/console-sdk/commit/375e1e2b28a3634a04d9e35bb0f1ce7bce7ecd8f))
+* **sindarian-ui:** clear the open segment when the date picker is disabled ([c0f5f67](https://github.com/LerianStudio/console-sdk/commit/c0f5f673a890e833b044be6d5064c09e9d7ef485))
+* **sindarian-ui:** darken light destructive to clear AA ([489b003](https://github.com/LerianStudio/console-sdk/commit/489b003421adb60d432bfebd519a9078ece7f851))
+* **sindarian-ui:** default EntityBoxHeaderTitle to h2 and lift subtitle contrast to AA ([54eb1c1](https://github.com/LerianStudio/console-sdk/commit/54eb1c1777888755e78f5e8a79a440dfb9142489)), closes [#27272](https://github.com/LerianStudio/console-sdk/issues/27272)
+* **sindarian-ui:** drop the tight tracking from CardTitle ([1f03bd0](https://github.com/LerianStudio/console-sdk/commit/1f03bd07e59d1e6d409707684732248c8f3696cb))
+* **sindarian-ui:** expose a labelled Badge as an image to assistive tech ([3cadcb4](https://github.com/LerianStudio/console-sdk/commit/3cadcb4de946b5a6c4053c5cf01da3a9751665c1))
+* **sindarian-ui:** fix page header heading levels and action overflow ([9026b5e](https://github.com/LerianStudio/console-sdk/commit/9026b5e8c2160f9d83f866086d6d581e9667ae8d))
+* **sindarian-ui:** forward rest props from AlertBanner to its root ([c20ba3a](https://github.com/LerianStudio/console-sdk/commit/c20ba3a0224249b65d8e4e6ae3f80114e4bcd62c))
+* **sindarian-ui:** forward value and max to Progress ([d7474ad](https://github.com/LerianStudio/console-sdk/commit/d7474ade989b35e503e889a2a40fe2bdd44d8db5))
+* **sindarian-ui:** give the date picker labels the console voice ([235cd4e](https://github.com/LerianStudio/console-sdk/commit/235cd4eff196cf840c1a4ddff3845521d52a6f90))
+* **sindarian-ui:** give the range trigger a border, body face and marker ([f0bb149](https://github.com/LerianStudio/console-sdk/commit/f0bb149c2ea808252b89f46f9f58805ae72304fa)), closes [#171](https://github.com/LerianStudio/console-sdk/issues/171)
+* **sindarian-ui:** hand the day button ARIA back to react-day-picker ([aa09402](https://github.com/LerianStudio/console-sdk/commit/aa09402df3cadf07e3090b904b7c48757c1ccd27)), closes [#171](https://github.com/LerianStudio/console-sdk/issues/171)
+* **sindarian-ui:** keep explicit column sizes and size grouped headers ([41f433a](https://github.com/LerianStudio/console-sdk/commit/41f433a4704ab3e5ba77d312390b7779f8eb61c5))
+* **sindarian-ui:** keep the ARIA, focus and describedby promises ([fb7f128](https://github.com/LerianStudio/console-sdk/commit/fb7f1286949b8dea246cdaab1a96d3feb77a0707))
+* **sindarian-ui:** keep the page header title at its min-content width ([5eda20b](https://github.com/LerianStudio/console-sdk/commit/5eda20be7dc2d3f4b23c3ab2b24320757ba7516f)), closes [#174](https://github.com/LerianStudio/console-sdk/issues/174)
+* **sindarian-ui:** label the month dropdown in the calendar's own locale ([f766078](https://github.com/LerianStudio/console-sdk/commit/f7660782fd35376c1107d2fc415b5cb896553860))
+* **sindarian-ui:** let form fields work without react-hook-form ([d243fb4](https://github.com/LerianStudio/console-sdk/commit/d243fb4823760a38d93a3c7c5d01918054453c00))
+* **sindarian-ui:** let the page header title yield to the action row ([ac006ee](https://github.com/LerianStudio/console-sdk/commit/ac006eed8e9283246cbf61dcee807f94c13d7c42)), closes [#170](https://github.com/LerianStudio/console-sdk/issues/170) [#168](https://github.com/LerianStudio/console-sdk/issues/168) [#170](https://github.com/LerianStudio/console-sdk/issues/170)
+* **sindarian-ui:** lift dark muted ink to clear AA ([8d44835](https://github.com/LerianStudio/console-sdk/commit/8d44835cd159959109302b1a9e6ceb4a2d59e397)), closes [#A1A1](https://github.com/LerianStudio/console-sdk/issues/A1A1) [#C9C9](https://github.com/LerianStudio/console-sdk/issues/C9C9)
+* **sindarian-ui:** make MultipleSelect controlled props satisfiable ([282b650](https://github.com/LerianStudio/console-sdk/commit/282b65096013aa68d86f65c849304f8e278a1449))
+* **sindarian-ui:** paint a negative money amount with the error ink ([560faae](https://github.com/LerianStudio/console-sdk/commit/560faae8001ebf627d48b9151bb1c9063d010756))
+* **sindarian-ui:** paint FormMessage with the error text token ([ecb865e](https://github.com/LerianStudio/console-sdk/commit/ecb865eaba94478797974ed9f0d9f226584ca2c4))
+* **sindarian-ui:** paint kit inks with AA tokens and lift the focus ring ([da61447](https://github.com/LerianStudio/console-sdk/commit/da61447f383c2127e0df1cf940ae12e9b25d82bb))
+* **sindarian-ui:** put figures on Inter and tick on the type ramp ([b79c298](https://github.com/LerianStudio/console-sdk/commit/b79c298b5ede19cae78d5d7b847935b5d20a2899))
+* **sindarian-ui:** reattach the field ref when the field name changes ([1738ce9](https://github.com/LerianStudio/console-sdk/commit/1738ce96fd75613c303328975a07829cd7ccf286))
+* **sindarian-ui:** register Autocomplete items, label the clear button ([69266ee](https://github.com/LerianStudio/console-sdk/commit/69266eec9ab879cbd907a682c2ea2fd93831549c))
+* **sindarian-ui:** remove dead cmdk-input-wrapper selector from CommandDialog ([158c76c](https://github.com/LerianStudio/console-sdk/commit/158c76ce055724648346444d543e4d626fee7479))
+* **sindarian-ui:** separate badge children with a default gap ([dc8e118](https://github.com/LerianStudio/console-sdk/commit/dc8e1188c846819f10381a860234ca0032e5e761))
+* **sindarian-ui:** ship a plain-CSS reduced-motion floor ([96ea7ce](https://github.com/LerianStudio/console-sdk/commit/96ea7ce7eed1827e6b63979bd02b60977aa371b5))
+* **sindarian-ui:** size table columns and give VirtualizedTable a head seam ([a875d56](https://github.com/LerianStudio/console-sdk/commit/a875d56d1014390f94e80da7f47a0758f0443475))
+* **sindarian-ui:** skip the page header children row for empty nodes ([00f319b](https://github.com/LerianStudio/console-sdk/commit/00f319ba9981e120f11080989d07ae86485a0985))
+* **sindarian-ui:** speak product-console's table-head label voice ([f72048b](https://github.com/LerianStudio/console-sdk/commit/f72048b1c0141243e63bf329163f46d3fac2a42e))
+* **sindarian-ui:** stop dimming the system text tokens to 70% ([0c210ed](https://github.com/LerianStudio/console-sdk/commit/0c210ed0f9e157f7cce232ba13bc35e34b8dc854))
+* **sindarian-ui:** truncate a long select value in the trigger ([c927fde](https://github.com/LerianStudio/console-sdk/commit/c927fdeb592f2a4e122d2f700e5ac5f74ccf0f51))
+* **sindarian-ui:** type SelectField value and onChange by its multi flag ([f48eedc](https://github.com/LerianStudio/console-sdk/commit/f48eedc16dad936eaec191a3bfd466f104dce4d9))
+
 ## [1.2.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-i18n-cli-v1.1.0...sindarian-i18n-cli-v1.2.0-beta.1) (2026-09-02)
 
 
