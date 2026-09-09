@@ -240,6 +240,34 @@ describe('FileUpload', () => {
     expect(container.querySelector('input[type="file"]')).toBeDisabled()
   })
 
+  /**
+   * The refusal an operator never sees, and the one that costs them work.
+   *
+   * A disabled zone must not accept the file, which is obvious, and must ALSO
+   * cancel the browser's own action for it, which is not: an uncancelled file
+   * drop navigates the window to the file and takes every unsaved edit on the
+   * page with it. `fireEvent` returns false exactly when a handler called
+   * `preventDefault`, so the two assertions below measure the cancellation
+   * itself rather than a proxy for it.
+   */
+  it('cancels the browser drop on a disabled zone and still refuses the file', () => {
+    const onSelect = jest.fn()
+    const { container } = render(<FileUpload disabled onSelect={onSelect} />)
+
+    const target = container.querySelector('input[type="file"]')!
+      .parentElement as HTMLElement
+
+    expect(
+      fireEvent.dragOver(target, { dataTransfer: { dropEffect: '' } })
+    ).toBe(false)
+    expect(
+      fireEvent.drop(target, {
+        dataTransfer: { files: [new File(['X'], 'cert.pem')] }
+      })
+    ).toBe(false)
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
   it('accepts a dropped file through the same validate-and-read path', async () => {
     const onSelect = jest.fn()
     const { container } = render(

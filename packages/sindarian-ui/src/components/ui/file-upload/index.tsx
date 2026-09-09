@@ -311,9 +311,21 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
       handleFile(file)
     }
 
+    // `preventDefault` FIRST, and unconditionally. Returning before it does
+    // not merely refuse the drop: nothing cancels the browser's OWN action for
+    // a dropped file, so the window navigates to the file and whatever the
+    // page held unsaved is gone. A zone the host turned off has to swallow the
+    // drop, never hand it back to the browser. `dropEffect` says so to the
+    // cursor while the file is still in the air.
     const onDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-      if (disabled) return
       event.preventDefault()
+
+      if (disabled) {
+        event.dataTransfer.dropEffect = 'none'
+
+        return
+      }
+
       setDragActive(true)
     }
 
@@ -323,9 +335,14 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
     }
 
     const onDrop = (event: React.DragEvent<HTMLDivElement>) => {
-      if (disabled) return
       event.preventDefault()
+      // Cleared before the gate, not after, so a host that disables the zone
+      // mid-drag does not leave it highlighted for a drag that can no longer
+      // land.
       setDragActive(false)
+
+      if (disabled) return
+
       handleFile(event.dataTransfer.files?.[0])
     }
 
@@ -804,9 +821,21 @@ export const MultipleFileUpload = React.forwardRef<
     ingest(files)
   }
 
+  // `preventDefault` FIRST, and unconditionally. Returning before it does
+  // not merely refuse the drop: nothing cancels the browser's OWN action for
+  // a dropped file, so the window navigates to the file and whatever the
+  // page held unsaved is gone. A zone the host turned off has to swallow the
+  // drop, never hand it back to the browser. `dropEffect` says so to the
+  // cursor while the file is still in the air.
   const onDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    if (disabled) return
     event.preventDefault()
+
+    if (disabled) {
+      event.dataTransfer.dropEffect = 'none'
+
+      return
+    }
+
     setDragActive(true)
   }
 
@@ -816,9 +845,14 @@ export const MultipleFileUpload = React.forwardRef<
   }
 
   const onDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    if (disabled) return
     event.preventDefault()
+    // Cleared before the gate, not after, so a host that disables the zone
+    // mid-drag does not leave it highlighted for a drag that can no longer
+    // land.
     setDragActive(false)
+
+    if (disabled) return
+
     // Deliberately NOT gated on `full`: a drop onto a full zone is answered
     // with the too-many rejection, which says why, instead of nothing at all.
     ingest(Array.from(event.dataTransfer.files ?? []))

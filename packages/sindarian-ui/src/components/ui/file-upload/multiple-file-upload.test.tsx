@@ -110,6 +110,30 @@ describe('MultipleFileUpload accessibility', () => {
     expect(container.querySelectorAll('[aria-invalid="true"]')).toHaveLength(2)
   })
 
+  /**
+   * A disabled zone must not accept the files, which is obvious, and must ALSO
+   * cancel the browser's own action for them, which is not: an uncancelled
+   * file drop navigates the window to the file and takes every unsaved edit on
+   * the page with it. `fireEvent` returns false exactly when a handler called
+   * `preventDefault`, so this measures the cancellation and not a proxy.
+   */
+  it('cancels the browser drop on a disabled zone and still refuses the files', () => {
+    const onValueChange = jest.fn()
+    const { container } = render(
+      <MultipleFileUpload disabled onValueChange={onValueChange} />
+    )
+
+    expect(
+      fireEvent.dragOver(zone(container), { dataTransfer: { dropEffect: '' } })
+    ).toBe(false)
+    expect(
+      fireEvent.drop(zone(container), {
+        dataTransfer: { files: [pdf('dropped.pdf')] }
+      })
+    ).toBe(false)
+    expect(onValueChange).not.toHaveBeenCalled()
+  })
+
   it('disables the native input when disabled', () => {
     const { container } = render(
       <MultipleFileUpload disabled onValueChange={jest.fn()} />
