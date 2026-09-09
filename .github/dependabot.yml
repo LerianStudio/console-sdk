@@ -1,0 +1,86 @@
+# Dependabot version updates for console-sdk.
+#
+# Security ALERTS were already on for this repo, but without this file no
+# version-update PR ever opened, so alerts accumulated with nothing to close
+# them: 103 open alerts and zero Dependabot PRs on the day this file was
+# written. Every entry below targets `develop`, the trunk.
+#
+# No `registries:` block. This repository consumes no private Lerian package,
+# and it carries no .npmrc: the `@lerianstudio/sindarian-*` requirements it
+# does declare are its OWN workspaces, published to the public npm registry.
+# So there is no Dependabot secret to grant and nothing here goes inert.
+#
+# No `labels:` key on purpose. This repository carries only GitHub's default
+# label set, and a label Dependabot cannot find is a silent no-op rather than
+# an error, so naming one here would look like organisation that is not
+# happening. Dependabot applies its own `dependencies` label, creating it on
+# first use.
+version: 2
+
+updates:
+  # The workspace root. `workspaces: ["packages/*"]` means the single root
+  # package-lock.json resolves every one of the five packages, so one entry
+  # covers them all and a per-package entry would find no lockfile to read.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "America/Sao_Paulo"
+    target-branch: "develop"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    # The sibling workspaces are published by this repo's own semantic-release
+    # run, and the ranges pointing at them (`>=1.1.0`, `^1.2.0-beta.9`) are
+    # release decisions rather than dependency drift. A Dependabot PR bumping
+    # them would race the release pipeline for the same line.
+    ignore:
+      - dependency-name: "@lerianstudio/*"
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+      development-dependencies:
+        dependency-type: "development"
+
+  # sindarian-server's test fixture carries its own lockfile, outside the
+  # workspace graph, so the root entry above never reaches it.
+  - package-ecosystem: "npm"
+    directory: "/packages/sindarian-server/test"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "America/Sao_Paulo"
+    target-branch: "develop"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    ignore:
+      - dependency-name: "@lerianstudio/*"
+    groups:
+      server-test-fixture:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "America/Sao_Paulo"
+    target-branch: "develop"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    # The shared workflows are versioned by tier tag (`@tier-1`), not by
+    # release, so Dependabot has no newer version to offer and any PR it
+    # opened against them would be wrong.
+    ignore:
+      - dependency-name: "LerianStudio/*"
+    groups:
+      actions-core:
+        patterns:
+          - "*"
