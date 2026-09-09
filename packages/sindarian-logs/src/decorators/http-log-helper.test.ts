@@ -106,7 +106,10 @@ describe('logHttpEvent', () => {
       )
     })
 
-    it('should JSON-stringify error when no message property', () => {
+    // Was `stringContaining('VALIDATION_ERROR')`, which passed for the bare
+    // identifier AND for the whole serialised body, so it could not see the
+    // difference between the two. The exact string is what makes it see.
+    it('falls back to the identifier alone when the body has no message', () => {
       const request = new Request('https://api.example.com/users', {
         method: 'GET'
       })
@@ -121,8 +124,34 @@ describe('logHttpEvent', () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'UserService.catch',
-        expect.stringContaining('VALIDATION_ERROR')
+        'GET https://api.example.com/users → 400: VALIDATION_ERROR'
       )
+    })
+
+    it('keeps an unnamed body out of the line entirely', () => {
+      const request = new Request('https://api.example.com/users', {
+        method: 'POST'
+      })
+      const response = new Response(null, { status: 502 })
+      const error = {
+        fields: { cardNumber: '4111111111111111', taxId: '12345678901' },
+        queryParams: { status: 'must be one of: OPEN, CLOSED' }
+      }
+
+      logHttpEvent(mockLogger as any, 'UserService', 'catch', [
+        request,
+        response,
+        error
+      ])
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'UserService.catch',
+        'POST https://api.example.com/users → 502'
+      )
+
+      const logged = JSON.stringify(mockLogger.error.mock.calls)
+      expect(logged).not.toContain('4111111111111111')
+      expect(logged).not.toContain('12345678901')
     })
   })
 
