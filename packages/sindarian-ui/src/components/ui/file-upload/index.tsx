@@ -436,56 +436,8 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
 FileUpload.displayName = 'FileUpload'
 
 /**
- * MultipleFileUpload: the plural sibling of FileUpload. Pick SEVERAL files,
- * accumulate them across repeated picks, validate each one, cap the total, and
- * hand back `FileUploadResult[]`.
- *
- * A SIBLING COMPONENT, not a `multiple` flag. This library already answers
- * "this one takes many" that way (`Select` / `MultipleSelect`), and FileUpload
- * strips `'multiple'` from its props on purpose: single-file is its contract,
- * not a default it happens to have. A boolean would have forced every prop
- * here into a union that means one thing when the flag is set and another when
- * it is not: `value` as `Result | Result[] | null`, a `maxFiles` that is
- * meaningless in half the configurations, and a remove control whose
- * accessible name is fixed copy in one mode and per-file in the other. The
- * plural props follow the house shape for plural components: `value?: T[]`
- * with `onValueChange?: (values: T[]) => void`.
- *
- * WHERE THE LINE SITS: this component owns SELECTION and nothing after it.
- * Choosing, validating, capping, listing and removing are its job; uploading
- * is not. That split is not squeamishness about scope, it is where the
- * knowledge actually lives. An upload needs an endpoint, an auth scheme, a
- * concurrency policy, a retry policy and, very often, a parent id that does
- * not exist yet when the files are chosen: the motivating host stages evidence
- * files while a form is being filled and can only upload them against the id
- * that its create call returns afterwards. None of that is knowable from
- * inside a library primitive, and a component that guessed would have to be
- * fought rather than used. So the host keeps its own per-file record with
- * status and retry, and this component keeps the part a form can hold and
- * validate: the chosen files. `FileUploadResult[]` is a value; an upload state
- * machine is not.
- *
- * ACCUMULATION is the defining behaviour. A second pick ADDS to the selection
- * rather than replacing it, because a user assembling five documents does it
- * in two or three trips to the file dialog, not one. Everything else follows
- * from that: room is measured against what is already selected, and the batch
- * that overflows the cap still contributes the files that fit.
- *
- * A BATCH SURVIVES ITS OWN CASUALTIES. One file rejected for type, size or a
- * failed read does not discard the rest of the batch. The alternative punishes
- * a user for a mistake in one file by throwing away four good ones, and hands
- * back no way to tell which was which. Every rejection is reported through
- * `onError` and announced together in one `role="alert"`.
- *
- * Accessibility follows the sibling exactly: the real `<input type="file">` is
- * `sr-only` but focusable and labelable, never `aria-hidden` and never removed
- * from the tab order, so FormControl-injected ARIA and react-hook-form's focus
- * on error both work. The file list sits OUTSIDE the click zone, so activating
- * a remove control cannot also reopen the picker, and each remove control is
- * named after its own file: a column of identical "Remove file" buttons tells a
- * screen-reader user nothing about which row they are on. At the cap the input
- * is DISABLED rather than unmounted, because unmounting a focused control drops
- * focus to `<body>` silently.
+ * A rejection from `MultipleFileUpload`: every rejection the single-file
+ * sibling can produce, plus the one only a plural selection has — the cap.
  */
 export type MultipleFileUploadError =
   FileUploadError | { kind: 'too-many'; file: File; maxFiles: number }
@@ -574,6 +526,58 @@ function defaultFullMessage(maxFiles: number): string {
     : `Maximum of ${maxFiles} files reached.`
 }
 
+/**
+ * MultipleFileUpload: the plural sibling of FileUpload. Pick SEVERAL files,
+ * accumulate them across repeated picks, validate each one, cap the total, and
+ * hand back `FileUploadResult[]`.
+ *
+ * A SIBLING COMPONENT, not a `multiple` flag. This library already answers
+ * "this one takes many" that way (`Select` / `MultipleSelect`), and FileUpload
+ * strips `'multiple'` from its props on purpose: single-file is its contract,
+ * not a default it happens to have. A boolean would have forced every prop
+ * here into a union that means one thing when the flag is set and another when
+ * it is not: `value` as `Result | Result[] | null`, a `maxFiles` that is
+ * meaningless in half the configurations, and a remove control whose
+ * accessible name is fixed copy in one mode and per-file in the other. The
+ * plural props follow the house shape for plural components: `value?: T[]`
+ * with `onValueChange?: (values: T[]) => void`.
+ *
+ * WHERE THE LINE SITS: this component owns SELECTION and nothing after it.
+ * Choosing, validating, capping, listing and removing are its job; uploading
+ * is not. That split is not squeamishness about scope, it is where the
+ * knowledge actually lives. An upload needs an endpoint, an auth scheme, a
+ * concurrency policy, a retry policy and, very often, a parent id that does
+ * not exist yet when the files are chosen: the motivating host stages evidence
+ * files while a form is being filled and can only upload them against the id
+ * that its create call returns afterwards. None of that is knowable from
+ * inside a library primitive, and a component that guessed would have to be
+ * fought rather than used. So the host keeps its own per-file record with
+ * status and retry, and this component keeps the part a form can hold and
+ * validate: the chosen files. `FileUploadResult[]` is a value; an upload state
+ * machine is not.
+ *
+ * ACCUMULATION is the defining behaviour. A second pick ADDS to the selection
+ * rather than replacing it, because a user assembling five documents does it
+ * in two or three trips to the file dialog, not one. Everything else follows
+ * from that: room is measured against what is already selected, and the batch
+ * that overflows the cap still contributes the files that fit.
+ *
+ * A BATCH SURVIVES ITS OWN CASUALTIES. One file rejected for type, size or a
+ * failed read does not discard the rest of the batch. The alternative punishes
+ * a user for a mistake in one file by throwing away four good ones, and hands
+ * back no way to tell which was which. Every rejection is reported through
+ * `onError` and announced together in one `role="alert"`.
+ *
+ * Accessibility follows the sibling exactly: the real `<input type="file">` is
+ * `sr-only` but focusable and labelable, never `aria-hidden` and never removed
+ * from the tab order, so FormControl-injected ARIA and react-hook-form's focus
+ * on error both work. The file list sits OUTSIDE the click zone, so activating
+ * a remove control cannot also reopen the picker, and each remove control is
+ * named after its own file: a column of identical "Remove file" buttons tells a
+ * screen-reader user nothing about which row they are on. At the cap the input
+ * is DISABLED rather than unmounted, because unmounting a focused control drops
+ * focus to `<body>` silently.
+ */
 export const MultipleFileUpload = React.forwardRef<
   HTMLInputElement,
   MultipleFileUploadProps
@@ -617,6 +621,20 @@ export const MultipleFileUpload = React.forwardRef<
     valueRef.current = value
   })
 
+  // Superseding is NOT the contract here the way it is in the single-file
+  // sibling — batches accumulate, so an in-flight read is never stale. The
+  // readers are tracked for the one case that does have to stop them: an
+  // unmount. A read that lands afterwards would settle its batch and commit,
+  // calling the host's `onValueChange` for a component that no longer exists.
+  const readersRef = React.useRef(new Set<FileReader>())
+  React.useEffect(
+    () => () => {
+      for (const reader of readersRef.current) reader.abort()
+      readersRef.current.clear()
+    },
+    []
+  )
+
   const invalid = ariaInvalid || errors.length > 0
 
   // Resolve the announcements BEFORE deciding whether the alert exists: a
@@ -642,14 +660,33 @@ export const MultipleFileUpload = React.forwardRef<
   // Removing must stay possible at the cap, so only the PICKER closes.
   const pickerDisabled = disabled || full
 
+  const roomFor = (selected: number) =>
+    maxFiles === undefined
+      ? Number.POSITIVE_INFINITY
+      : Math.max(maxFiles - selected, 0)
+
+  // The cap is enforced HERE, at the only place that appends, because only the
+  // commit knows the base it lands on. `ingest` measures room too, but for an
+  // asynchronous batch it measures it BEFORE any read settles: two overlapping
+  // batches both see the pre-commit selection and would each believe they fit.
   const commit = (
     accepted: FileUploadResult[],
     rejections: MultipleFileUploadError[]
   ) => {
-    setErrors(rejections)
-    for (const rejection of rejections) onError?.(rejection)
-    if (accepted.length === 0) return
-    const next = [...valueRef.current, ...accepted]
+    const room = roomFor(valueRef.current.length)
+    const fitting = accepted.slice(0, room)
+    const overflow = accepted[room]
+    const failures =
+      overflow !== undefined && maxFiles !== undefined
+        ? [
+            ...rejections,
+            { kind: 'too-many' as const, file: overflow.file, maxFiles }
+          ]
+        : rejections
+    setErrors(failures)
+    for (const rejection of failures) onError?.(rejection)
+    if (fitting.length === 0) return
+    const next = [...valueRef.current, ...fitting]
     valueRef.current = next
     onValueChange(next)
   }
@@ -657,10 +694,7 @@ export const MultipleFileUpload = React.forwardRef<
   const ingest = (incoming: File[]) => {
     if (incoming.length === 0) return
 
-    const room =
-      maxFiles === undefined
-        ? Number.POSITIVE_INFINITY
-        : Math.max(maxFiles - valueRef.current.length, 0)
+    const room = roomFor(valueRef.current.length)
 
     const rejections: MultipleFileUploadError[] = []
     // One rejection for the batch, naming the FIRST file that did not fit:
@@ -715,11 +749,18 @@ export const MultipleFileUpload = React.forwardRef<
 
     candidates.forEach((file, index) => {
       const reader = new FileReader()
+      readersRef.current.add(reader)
+      // Deliberately no `onabort` handler: an aborted read must NOT settle,
+      // or the batch would commit at exactly the moment we are stopping it.
       reader.onload = () => {
+        readersRef.current.delete(reader)
         slots[index] = { file, text: String(reader.result ?? '') }
         settle()
       }
-      reader.onerror = () => settle()
+      reader.onerror = () => {
+        readersRef.current.delete(reader)
+        settle()
+      }
       reader.readAsText(file)
     })
   }

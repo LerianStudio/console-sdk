@@ -564,6 +564,11 @@ class ControllableFileReader {
 
   abort() {
     this.aborted = true
+    // A real reader that has been aborted reaches DONE and never fires load
+    // or error afterwards, so drop the handlers or the fake would let an
+    // aborted read still settle its batch.
+    this.onload = null
+    this.onerror = null
   }
 
   succeed(text: string) {
@@ -603,8 +608,9 @@ describe('MultipleFileUpload readAs', () => {
 
   it('decodes as UTF-8 by default and emits the batch in pick order', () => {
     const onChange = jest.fn()
-    const { container } = render(<Harness readAs={undefined} />)
-    void onChange
+    const { container } = render(
+      <Harness readAs={undefined} onChange={onChange} />
+    )
 
     pick(container, [
       new File(['A'], 'a.txt', { type: 'text/plain' }),
@@ -616,8 +622,18 @@ describe('MultipleFileUpload readAs', () => {
     ControllableFileReader.instances[1].succeed('B')
     ControllableFileReader.instances[0].succeed('A')
 
-    expect(screen.getByText('a.txt')).toBeInTheDocument()
-    expect(screen.getByText('b.txt')).toBeInTheDocument()
+    // The EMITTED batch, not the rendered names: a DOM presence check passes
+    // for either order, which is the one thing this test exists to pin. Each
+    // file must also carry its own decoded text, not its neighbour's.
+    expect(
+      onChange.mock.calls[0][0].map((v: FileUploadResult) => [
+        v.file.name,
+        v.text
+      ])
+    ).toEqual([
+      ['a.txt', 'A'],
+      ['b.txt', 'B']
+    ])
   })
 
   it('keeps the readable files when one file in the batch fails to read', () => {
@@ -638,6 +654,28 @@ describe('MultipleFileUpload readAs', () => {
     expect(names(onChange.mock.calls[0][0])).toEqual(['b.txt'])
     expect(onError).toHaveBeenCalledTimes(1)
     expect(onError.mock.calls[0][0].kind).toBe('read-failed')
+  })
+
+  it('abandons a pending read when the component unmounts', () => {
+    const onChange = jest.fn()
+    const { container, unmount } = render(
+      <Harness readAs={undefined} onChange={onChange} />
+    )
+
+    pick(container, [
+      new File(['A'], 'a.txt', { type: 'text/plain' }),
+      new File(['B'], 'b.txt', { type: 'text/plain' })
+    ])
+    expect(ControllableFileReader.instances).toHaveLength(2)
+
+    unmount()
+
+    // The reads land after the component is gone. A commit here would call the
+    // host's onValueChange for a component that no longer exists.
+    ControllableFileReader.instances[0].succeed('A')
+    ControllableFileReader.instances[1].succeed('B')
+
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('still validates size and type before reading anything', () => {
@@ -688,6 +726,48 @@ describe('MultipleFileUpload async batch overlap', () => {
     global.FileReader = RealFileReader
   })
 
+  it('holds the cap when a second batch settles against a newer base', async () => {
+    const onChange = jest.fn()
+    const onError = jest.fn()
+    const { container } = render(
+      <Harness
+        readAs={undefined}
+        maxFiles={3}
+        onChange={onChange}
+        onError={onError}
+      />
+    )
+
+    // Both batches measure their room against the SAME empty base, because
+    // neither has committed yet. Four files must still not become a selection
+    // of four under a cap of three.
+    pick(container, [
+      new File(['A'], 'a.txt', { type: 'text/plain' }),
+      new File(['B'], 'b.txt', { type: 'text/plain' })
+    ])
+    pick(container, [
+      new File(['C'], 'c.txt', { type: 'text/plain' }),
+      new File(['D'], 'd.txt', { type: 'text/plain' })
+    ])
+
+    ControllableFileReader.instances.forEach((reader, index) =>
+      reader.succeed(String.fromCharCode(65 + index))
+    )
+
+    await waitFor(() => {
+      expect(names(onChange.mock.calls.at(-1)![0])).toEqual([
+        'a.txt',
+        'b.txt',
+        'c.txt'
+      ])
+    })
+    const tooMany = onError.mock.calls
+      .map((call) => call[0])
+      .filter((failure) => failure.kind === 'too-many')
+    expect(tooMany).toHaveLength(1)
+    expect(tooMany[0].file.name).toBe('d.txt')
+  })
+
   it('does not lose the first batch when a second one is picked mid-read', async () => {
     const onChange = jest.fn()
     const { container } = render(
@@ -702,8 +782,7 @@ describe('MultipleFileUpload async batch overlap', () => {
     ControllableFileReader.instances[1].succeed('B')
 
     await waitFor(() => {
-      expect(screen.getByText('a.txt')).toBeInTheDocument()
-      expect(screen.getByText('b.txt')).toBeInTheDocument()
+      expect(names(onChange.mock.calls.at(-1)![0])).toEqual(['a.txt', 'b.txt'])
     })
   })
 })
