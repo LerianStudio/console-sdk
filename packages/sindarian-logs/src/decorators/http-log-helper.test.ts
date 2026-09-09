@@ -106,7 +106,10 @@ describe('logHttpEvent', () => {
       )
     })
 
-    it('should JSON-stringify error when no message property', () => {
+    // Was `stringContaining('VALIDATION_ERROR')`, which passed for the bare
+    // identifier AND for the whole serialised body, so it could not see the
+    // difference between the two. The exact string is what makes it see.
+    it('falls back to the identifier alone when the body has no message', () => {
       const request = new Request('https://api.example.com/users', {
         method: 'GET'
       })
@@ -121,7 +124,59 @@ describe('logHttpEvent', () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'UserService.catch',
-        expect.stringContaining('VALIDATION_ERROR')
+        'GET https://api.example.com/users → 400: VALIDATION_ERROR'
+      )
+    })
+
+    it('keeps an unnamed body out of the line entirely', () => {
+      const request = new Request('https://api.example.com/users', {
+        method: 'POST'
+      })
+      const response = new Response(null, { status: 502 })
+      // Markers, not PAN- and CPF-shaped literals. The case asserts the exact
+      // line, so the planted values only have to be findable; a card-shaped
+      // number here is a standing SAST false positive for somebody to triage
+      // forever.
+      const error = {
+        fields: {
+          cardNumber: 'card-number-must-not-log',
+          taxId: 'tax-id-must-not-log'
+        },
+        queryParams: { status: 'must be one of: OPEN, CLOSED' }
+      }
+
+      logHttpEvent(mockLogger as any, 'UserService', 'catch', [
+        request,
+        response,
+        error
+      ])
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'UserService.catch',
+        'POST https://api.example.com/users → 502'
+      )
+
+      const logged = JSON.stringify(mockLogger.error.mock.calls)
+      expect(logged).not.toContain('card-number-must-not-log')
+      expect(logged).not.toContain('tax-id-must-not-log')
+    })
+
+    it('reaches for the identifier when the message is present but empty', () => {
+      const request = new Request('https://api.example.com/users', {
+        method: 'PUT'
+      })
+      const response = new Response(null, { status: 422 })
+      const error = { message: '', code: 'VALIDATION_ERROR' }
+
+      logHttpEvent(mockLogger as any, 'UserService', 'catch', [
+        request,
+        response,
+        error
+      ])
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'UserService.catch',
+        'PUT https://api.example.com/users → 422: VALIDATION_ERROR'
       )
     })
   })
