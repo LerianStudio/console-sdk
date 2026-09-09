@@ -568,15 +568,27 @@ function defaultFullMessage(maxFiles: number): string {
  * back no way to tell which was which. Every rejection is reported through
  * `onError` and announced together in one `role="alert"`.
  *
- * Accessibility follows the sibling exactly: the real `<input type="file">` is
- * `sr-only` but focusable and labelable, never `aria-hidden` and never removed
- * from the tab order, so FormControl-injected ARIA and react-hook-form's focus
- * on error both work. The file list sits OUTSIDE the click zone, so activating
- * a remove control cannot also reopen the picker, and each remove control is
- * named after its own file: a column of identical "Remove file" buttons tells a
- * screen-reader user nothing about which row they are on. At the cap the input
- * is DISABLED rather than unmounted, because unmounting a focused control drops
- * focus to `<body>` silently.
+ * Accessibility follows the sibling: the real `<input type="file">` is
+ * `sr-only` but focusable and labelable, and never `aria-hidden`, so
+ * FormControl-injected ARIA and react-hook-form's focus on error both work.
+ * The file list sits OUTSIDE the click zone, so activating a remove control
+ * cannot also reopen the picker, and each remove control is named after its
+ * own file: a column of identical "Remove file" buttons tells a screen-reader
+ * user nothing about which row they are on.
+ *
+ * AT THE CAP the picker takes the native `disabled` attribute, and that DOES
+ * take it out of the tab order. This is the one state in which the input is
+ * not a focus target, and the one state in which focus-on-error cannot land on
+ * it, so it is a real cost rather than a free win. The cap has no counterpart
+ * in the single-file sibling, so the precedent followed here is
+ * `DateRangePicker`'s trigger: a control whose only job is to open a dialog has
+ * no state worth keeping focusable, and native `disabled` is what both removes
+ * it from the tab order and keeps the dialog shut. The alternative, an enabled
+ * picker that opens the file dialog and then refuses every file with
+ * `too-many`, is a control that lies about being available. What keeps the cap
+ * from being a dead end is the escape hatch: the remove controls answer to
+ * `disabled` alone and NEVER to the cap, so they stay focusable and removing
+ * one file reopens the picker.
  */
 export const MultipleFileUpload = React.forwardRef<
   HTMLInputElement,

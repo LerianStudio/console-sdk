@@ -275,9 +275,36 @@ describe('MultipleFileUpload cap', () => {
       />
     )
 
-    // Disabled rather than unmounted: removing a focused control from the tree
-    // drops the user's focus to <body> with no announcement.
+    // Native `disabled`, not `aria-disabled`: the picker's only job is to open
+    // the file dialog, and `disabled` is what both closes it and states the
+    // unavailability. The tab-order cost that carries, and the escape hatch
+    // that pays for it, are pinned by the next test.
     expect(input(container)).toBeDisabled()
+  })
+
+  it('keeps the way back under the cap reachable from the keyboard', () => {
+    const { container } = render(
+      <MultipleFileUpload
+        maxFiles={1}
+        value={[{ file: pdf('a.pdf'), text: '' }]}
+        onValueChange={jest.fn()}
+      />
+    )
+
+    // The native `disabled` attribute DOES take the picker out of the tab
+    // order, so the cap costs this input its focus target. That is only
+    // acceptable because the escape hatch stays reachable: the remove controls
+    // answer to `disabled` alone and never to the cap, so a keyboard user can
+    // always get back under it. Without that, the cap would be a dead end.
+    const picker = input(container)
+    expect(picker).toBeDisabled()
+    picker.focus()
+    expect(picker).not.toHaveFocus()
+
+    const remove = screen.getByRole('button', { name: 'Remove a.pdf' })
+    expect(remove).toBeEnabled()
+    remove.focus()
+    expect(remove).toHaveFocus()
   })
 
   it('accepts an unbounded selection when maxFiles is omitted', () => {

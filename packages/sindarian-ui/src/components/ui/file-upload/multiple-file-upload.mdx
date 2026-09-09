@@ -69,9 +69,11 @@ Everything else follows from that:
   not fit, rather than one per overflowing file.
 - Omit `maxFiles` for an unbounded selection.
 
-At the cap the zone reports it and the input is DISABLED rather than unmounted,
-because unmounting a focused control drops focus to `<body>` with no
-announcement. Removing stays available, so the cap is never a dead end. A file
+At the cap the zone reports it and the input takes the native `disabled`
+attribute, which also takes it OUT of the tab order: while capped, the picker is
+not a focus target and a focus-on-error cannot land on it. Budget for that if
+your form moves focus to this field. Removing stays available, because the
+remove controls never answer to the cap, so the cap is not a dead end. A file
 dropped onto a full zone is answered with the `'too-many'` rejection, which
 says why, instead of nothing at all.
 
