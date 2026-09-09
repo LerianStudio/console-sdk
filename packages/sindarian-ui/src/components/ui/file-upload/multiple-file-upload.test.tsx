@@ -110,6 +110,57 @@ describe('MultipleFileUpload accessibility', () => {
     expect(container.querySelectorAll('[aria-invalid="true"]')).toHaveLength(2)
   })
 
+  /**
+   * A disabled zone must not accept the files, which is obvious, and must ALSO
+   * cancel the browser's own action for them, which is not: an uncancelled
+   * file drop navigates the window to the file and takes every unsaved edit on
+   * the page with it. `fireEvent` returns false exactly when a handler called
+   * `preventDefault`, so this measures the cancellation and not a proxy.
+   */
+  it('cancels the browser drop on a disabled zone and still refuses the files', () => {
+    const onValueChange = jest.fn()
+    const { container } = render(
+      <MultipleFileUpload disabled onValueChange={onValueChange} />
+    )
+
+    // Kept, so the refusal the CURSOR shows can be asserted and not just the
+    // one the handler performs.
+    const dataTransfer = { dropEffect: 'copy' }
+
+    expect(fireEvent.dragOver(zone(container), { dataTransfer })).toBe(false)
+    expect(dataTransfer.dropEffect).toBe('none')
+    expect(
+      fireEvent.drop(zone(container), {
+        dataTransfer: { files: [pdf('dropped.pdf')] }
+      })
+    ).toBe(false)
+    expect(onValueChange).not.toHaveBeenCalled()
+  })
+
+  /**
+   * `ring-2` is the bare token the drag-active state adds. The zone also
+   * carries `focus-within:ring-2` at all times, and `classList` tokenizes on
+   * whitespace, so `contains('ring-2')` matches the drag state and never the
+   * focus variant.
+   */
+  it('drops the active highlight when the zone is disabled mid-drag', () => {
+    const onValueChange = jest.fn()
+    const { container, rerender } = render(
+      <MultipleFileUpload onValueChange={onValueChange} />
+    )
+
+    fireEvent.dragOver(zone(container), { dataTransfer: { dropEffect: '' } })
+    expect(zone(container).classList.contains('ring-2')).toBe(true)
+
+    rerender(<MultipleFileUpload disabled onValueChange={onValueChange} />)
+    fireEvent.drop(zone(container), {
+      dataTransfer: { files: [pdf('dropped.pdf')] }
+    })
+
+    expect(zone(container).classList.contains('ring-2')).toBe(false)
+    expect(onValueChange).not.toHaveBeenCalled()
+  })
+
   it('disables the native input when disabled', () => {
     const { container } = render(
       <MultipleFileUpload disabled onValueChange={jest.fn()} />

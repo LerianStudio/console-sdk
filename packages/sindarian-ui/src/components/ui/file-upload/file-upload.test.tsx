@@ -240,6 +240,62 @@ describe('FileUpload', () => {
     expect(container.querySelector('input[type="file"]')).toBeDisabled()
   })
 
+  /**
+   * The refusal an operator never sees, and the one that costs them work.
+   *
+   * A disabled zone must not accept the file, which is obvious, and must ALSO
+   * cancel the browser's own action for it, which is not: an uncancelled file
+   * drop navigates the window to the file and takes every unsaved edit on the
+   * page with it. `fireEvent` returns false exactly when a handler called
+   * `preventDefault`, so the two assertions below measure the cancellation
+   * itself rather than a proxy for it.
+   */
+  it('cancels the browser drop on a disabled zone and still refuses the file', () => {
+    const onSelect = jest.fn()
+    const { container } = render(<FileUpload disabled onSelect={onSelect} />)
+
+    const target = container.querySelector('input[type="file"]')!
+      .parentElement as HTMLElement
+
+    // Kept, so the refusal the CURSOR shows can be asserted and not just the
+    // one the handler performs.
+    const dataTransfer = { dropEffect: 'copy' }
+
+    expect(fireEvent.dragOver(target, { dataTransfer })).toBe(false)
+    expect(dataTransfer.dropEffect).toBe('none')
+    expect(
+      fireEvent.drop(target, {
+        dataTransfer: { files: [new File(['X'], 'cert.pem')] }
+      })
+    ).toBe(false)
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  /**
+   * `ring-2` is the bare token the drag-active state adds. The zone also
+   * carries `focus-within:ring-2` at all times, and `classList` tokenizes on
+   * whitespace, so `contains('ring-2')` matches the drag state and never the
+   * focus variant.
+   */
+  it('drops the active highlight when the zone is disabled mid-drag', () => {
+    const onSelect = jest.fn()
+    const { container, rerender } = render(<FileUpload onSelect={onSelect} />)
+
+    const target = container.querySelector('input[type="file"]')!
+      .parentElement as HTMLElement
+
+    fireEvent.dragOver(target, { dataTransfer: { dropEffect: '' } })
+    expect(target.classList.contains('ring-2')).toBe(true)
+
+    rerender(<FileUpload disabled onSelect={onSelect} />)
+    fireEvent.drop(target, {
+      dataTransfer: { files: [new File(['X'], 'cert.pem')] }
+    })
+
+    expect(target.classList.contains('ring-2')).toBe(false)
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
   it('accepts a dropped file through the same validate-and-read path', async () => {
     const onSelect = jest.fn()
     const { container } = render(
