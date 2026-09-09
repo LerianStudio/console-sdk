@@ -28,8 +28,8 @@
     "build:paths": "tsc-alias -p tsconfig.json",
     "test": "jest",
     "test:e2e": "cd test && npm run test",
-    "lint": "eslint . --fix",
-    "lint:check": "eslint ."
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "path-to-regexp": "^8.4.2"
