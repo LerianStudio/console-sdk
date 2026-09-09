@@ -1,3 +1,5 @@
+## [2.0.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v2.0.0-beta.1...sindarian-logs-v2.0.0-beta.2) (2026-09-09)
+
 ## [2.0.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v1.3.0-beta.1...sindarian-logs-v2.0.0-beta.1) (2026-09-09)
 
 
