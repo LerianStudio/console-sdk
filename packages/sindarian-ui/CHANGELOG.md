@@ -1,3 +1,16 @@
+## [2.0.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.2...sindarian-ui-v2.0.0-beta.3) (2026-09-09)
+
+
+### Features
+
+* **sindarian-ui:** add MultipleFileUpload beside the single-file one ([a28035e](https://github.com/LerianStudio/console-sdk/commit/a28035e125df2b524c76009b0b29a345c84712e3))
+
+
+### Bug Fixes
+
+* **file-upload:** hold the cap and abandon reads on unmount ([c97ad4c](https://github.com/LerianStudio/console-sdk/commit/c97ad4c7537f7bd92aea0319b79d628ac670077d))
+* **file-upload:** validate the batch before applying the cap ([720678d](https://github.com/LerianStudio/console-sdk/commit/720678db8410f8550ee74a9cb98781f907fa29b4))
+
 ## [2.0.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.1...sindarian-ui-v2.0.0-beta.2) (2026-09-07)
 
 
