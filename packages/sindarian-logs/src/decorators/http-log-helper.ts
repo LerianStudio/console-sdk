@@ -53,7 +53,10 @@ export function logHttpEvent(
     // A service cannot opt out of a decorator, so the leak reached every one
     // that inherits this catch. Anything richer than an identifier has to be
     // chosen by the service, which knows what its vendor puts in a body.
-    const detail = error?.message ?? error?.code
+    // `||` and not `??`: a vendor answering `{ message: '', code: 'X' }` has an
+    // identifier worth logging, and nullish coalescing would select the empty
+    // string and drop both.
+    const detail = error?.message || error?.code
 
     logger.error(
       operation,

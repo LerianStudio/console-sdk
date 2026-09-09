@@ -133,8 +133,15 @@ describe('logHttpEvent', () => {
         method: 'POST'
       })
       const response = new Response(null, { status: 502 })
+      // Markers, not PAN- and CPF-shaped literals. The case asserts the exact
+      // line, so the planted values only have to be findable; a card-shaped
+      // number here is a standing SAST false positive for somebody to triage
+      // forever.
       const error = {
-        fields: { cardNumber: '4111111111111111', taxId: '12345678901' },
+        fields: {
+          cardNumber: 'card-number-must-not-log',
+          taxId: 'tax-id-must-not-log'
+        },
         queryParams: { status: 'must be one of: OPEN, CLOSED' }
       }
 
@@ -150,8 +157,27 @@ describe('logHttpEvent', () => {
       )
 
       const logged = JSON.stringify(mockLogger.error.mock.calls)
-      expect(logged).not.toContain('4111111111111111')
-      expect(logged).not.toContain('12345678901')
+      expect(logged).not.toContain('card-number-must-not-log')
+      expect(logged).not.toContain('tax-id-must-not-log')
+    })
+
+    it('reaches for the identifier when the message is present but empty', () => {
+      const request = new Request('https://api.example.com/users', {
+        method: 'PUT'
+      })
+      const response = new Response(null, { status: 422 })
+      const error = { message: '', code: 'VALIDATION_ERROR' }
+
+      logHttpEvent(mockLogger as any, 'UserService', 'catch', [
+        request,
+        response,
+        error
+      ])
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'UserService.catch',
+        'PUT https://api.example.com/users → 422: VALIDATION_ERROR'
+      )
     })
   })
 
