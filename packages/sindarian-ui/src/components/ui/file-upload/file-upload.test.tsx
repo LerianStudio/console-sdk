@@ -257,14 +257,42 @@ describe('FileUpload', () => {
     const target = container.querySelector('input[type="file"]')!
       .parentElement as HTMLElement
 
-    expect(
-      fireEvent.dragOver(target, { dataTransfer: { dropEffect: '' } })
-    ).toBe(false)
+    // Kept, so the refusal the CURSOR shows can be asserted and not just the
+    // one the handler performs.
+    const dataTransfer = { dropEffect: 'copy' }
+
+    expect(fireEvent.dragOver(target, { dataTransfer })).toBe(false)
+    expect(dataTransfer.dropEffect).toBe('none')
     expect(
       fireEvent.drop(target, {
         dataTransfer: { files: [new File(['X'], 'cert.pem')] }
       })
     ).toBe(false)
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  /**
+   * `ring-2` is the bare token the drag-active state adds. The zone also
+   * carries `focus-within:ring-2` at all times, and `classList` tokenizes on
+   * whitespace, so `contains('ring-2')` matches the drag state and never the
+   * focus variant.
+   */
+  it('drops the active highlight when the zone is disabled mid-drag', () => {
+    const onSelect = jest.fn()
+    const { container, rerender } = render(<FileUpload onSelect={onSelect} />)
+
+    const target = container.querySelector('input[type="file"]')!
+      .parentElement as HTMLElement
+
+    fireEvent.dragOver(target, { dataTransfer: { dropEffect: '' } })
+    expect(target.classList.contains('ring-2')).toBe(true)
+
+    rerender(<FileUpload disabled onSelect={onSelect} />)
+    fireEvent.drop(target, {
+      dataTransfer: { files: [new File(['X'], 'cert.pem')] }
+    })
+
+    expect(target.classList.contains('ring-2')).toBe(false)
     expect(onSelect).not.toHaveBeenCalled()
   })
 

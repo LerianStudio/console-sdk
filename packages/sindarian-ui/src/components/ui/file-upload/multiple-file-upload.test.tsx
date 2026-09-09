@@ -123,14 +123,41 @@ describe('MultipleFileUpload accessibility', () => {
       <MultipleFileUpload disabled onValueChange={onValueChange} />
     )
 
-    expect(
-      fireEvent.dragOver(zone(container), { dataTransfer: { dropEffect: '' } })
-    ).toBe(false)
+    // Kept, so the refusal the CURSOR shows can be asserted and not just the
+    // one the handler performs.
+    const dataTransfer = { dropEffect: 'copy' }
+
+    expect(fireEvent.dragOver(zone(container), { dataTransfer })).toBe(false)
+    expect(dataTransfer.dropEffect).toBe('none')
     expect(
       fireEvent.drop(zone(container), {
         dataTransfer: { files: [pdf('dropped.pdf')] }
       })
     ).toBe(false)
+    expect(onValueChange).not.toHaveBeenCalled()
+  })
+
+  /**
+   * `ring-2` is the bare token the drag-active state adds. The zone also
+   * carries `focus-within:ring-2` at all times, and `classList` tokenizes on
+   * whitespace, so `contains('ring-2')` matches the drag state and never the
+   * focus variant.
+   */
+  it('drops the active highlight when the zone is disabled mid-drag', () => {
+    const onValueChange = jest.fn()
+    const { container, rerender } = render(
+      <MultipleFileUpload onValueChange={onValueChange} />
+    )
+
+    fireEvent.dragOver(zone(container), { dataTransfer: { dropEffect: '' } })
+    expect(zone(container).classList.contains('ring-2')).toBe(true)
+
+    rerender(<MultipleFileUpload disabled onValueChange={onValueChange} />)
+    fireEvent.drop(zone(container), {
+      dataTransfer: { files: [pdf('dropped.pdf')] }
+    })
+
+    expect(zone(container).classList.contains('ring-2')).toBe(false)
     expect(onValueChange).not.toHaveBeenCalled()
   })
 
