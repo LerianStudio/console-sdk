@@ -1,0 +1,188 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './multiple-file-upload.stories'
+
+<Meta of={Story} />
+
+# MultipleFileUpload
+
+Pick SEVERAL files, by click, keyboard, or drag-and-drop, accumulate them
+across repeated picks, validate each one, cap the total, and hand back
+`FileUploadResult[]`.
+
+Controlled: the host owns `value` and receives the whole next selection through
+`onValueChange`, on every add and every removal.
+
+## Why a sibling component and not a `multiple` flag
+
+`Select` and `MultipleSelect` are separate exports in this library, and
+`FileUpload` strips `'multiple'` from its props deliberately: single-file is its
+contract, not a default it happens to have. A boolean would have forced every
+prop into a union that means one thing when the flag is set and another when it
+is not, starting with `value`. Reach for `FileUpload` when the answer is one
+file and this component when it is several.
+
+## Where the line sits: picking, not uploading
+
+This component owns SELECTION and stops there. Choosing, validating, capping,
+listing and removing are its job. Uploading is not.
+
+That is not scope squeamishness, it is where the knowledge lives. An upload
+needs an endpoint, an auth scheme, a concurrency policy, a retry policy and
+often a parent id that does not exist yet when the files are chosen: a form
+that stages evidence while it is being filled can only upload against the id
+its create call returns afterwards. A primitive that guessed at any of that
+would be fought rather than used.
+
+So the host keeps its own per-file record and drives the transfer:
+
+```tsx
+type Evidence = { file: File; status: 'pending' | 'uploading' | 'done' | 'error' }
+
+const [picked, setPicked] = useState<FileUploadResult[]>([])
+const [uploads, setUploads] = useState<Evidence[]>([])
+
+<MultipleFileUpload
+  readAs="none"
+  accept="application/pdf,image/jpeg,image/png"
+  maxSizeBytes={20 * 1024 * 1024}
+  maxFiles={5}
+  value={picked}
+  onValueChange={setPicked}
+/>
+
+// after the create call returns an id, upload picked.map(p => p.file)
+```
+
+`FileUploadResult[]` is a value a form can hold and validate. An upload state
+machine is not.
+
+## Accumulation and the cap
+
+A second pick ADDS to the selection instead of replacing it, because a user
+assembling five documents does it in two or three trips to the file dialog.
+Everything else follows from that:
+
+- `maxFiles` is measured against what is ALREADY selected, not against the
+  batch.
+- A batch that overflows the cap still contributes the files that fit. The
+  overflow produces one `'too-many'` rejection naming the FIRST file that did
+  not fit, rather than one per overflowing file.
+- Omit `maxFiles` for an unbounded selection.
+
+At the cap the zone reports it and the input is DISABLED rather than unmounted,
+because unmounting a focused control drops focus to `<body>` with no
+announcement. Removing stays available, so the cap is never a dead end. A file
+dropped onto a full zone is answered with the `'too-many'` rejection, which
+says why, instead of nothing at all.
+
+## A batch survives its own casualties
+
+One file rejected for type, size, or a failed read does NOT discard the rest of
+the batch. Throwing away four good files because of a mistake in the fifth
+punishes the user for the wrong thing and gives no way to tell which was which.
+
+Every rejection is reported through `onError`, once per file, and all of them
+are announced together inside a single `role="alert"`.
+
+| `error.kind` | Carries | Raised when |
+| --- | --- | --- |
+| `'too-many'` | `file`, `maxFiles` | the batch overflows the cap |
+| `'too-large'` | `file`, `maxSizeBytes` | a file exceeds the per-file ceiling |
+| `'wrong-type'` | `file`, `accept` | a file fails the accept filter |
+| `'read-failed'` | `file` | a `readAs="text"` decode failed |
+
+## Text or binary: `readAs`
+
+Identical to `FileUpload`. `'text'` (the default) decodes each file as UTF-8 and
+populates `text`; `'none'` skips decoding entirely and is the only mode a BINARY
+file can use. Put a PDF through `'text'` and it decodes into
+replacement-character garbage that is then retained for as long as the host
+holds the value. In `'none'` mode nothing is read at all and `onValueChange`
+fires synchronously with every `File` intact.
+
+In `'text'` mode a batch is emitted in PICK order regardless of the order the
+individual reads settle in, and a file that fails to read is reported as
+`'read-failed'` while its readable siblings are still added.
+
+## Copy: `labels`
+
+| Field | Default |
+| --- | --- |
+| `labels.action` | `Choose files` |
+| `labels.hint` | `or drag and drop` |
+| `labels.full` | `Maximum of N files reached.` (zone copy at the cap) |
+| `labels.remove` | `Remove <filename>` (accessible name of each row's control) |
+| `labels.error` | the built-in refusal messages |
+
+`labels.remove` and `labels.full` are functions because both interpolate: the
+remove control receives its own file so its accessible name identifies the row,
+and `full` receives the cap. A column of identical "Remove file" buttons tells a
+screen-reader user nothing about which row they are on, which is why the name is
+per-file rather than fixed copy.
+
+`labels.error` receives each rejection so a message can interpolate the cap, the
+accept filter, or the offending filename. Return nothing to stay SILENT and let
+the host announce it instead, from `onError`, in its own locale. One refusal
+then produces ONE announcement instead of two in two languages. The zone still
+reads as invalid; only the copy goes away.
+
+```tsx
+<MultipleFileUpload
+  accept="application/pdf"
+  maxFiles={5}
+  labels={{
+    action: intl.formatMessage({ id: 'evidence.action' }),
+    hint: intl.formatMessage({ id: 'evidence.hint' }),
+    full: (maxFiles) => intl.formatMessage({ id: 'evidence.full' }, { maxFiles }),
+    remove: (file) => intl.formatMessage({ id: 'evidence.remove' }, { name: file.name }),
+    error: (failure) =>
+      failure.kind === 'too-many'
+        ? intl.formatMessage(
+            { id: 'evidence.tooMany' },
+            { maxFiles: failure.maxFiles, name: failure.file.name }
+          )
+        : intl.formatMessage({ id: `evidence.${failure.kind}` }, { name: failure.file.name })
+  }}
+  value={picked}
+  onValueChange={setPicked}
+/>
+```
+
+`validateFile(file, { accept, maxSizeBytes })` and `humanizeSize(bytes)` are
+exported from the same module, so a host can pre-validate before handing files
+over and format a cap the way the file rows do.
+
+## Accessibility
+
+The real `<input type="file" multiple>` is the accessible control: `sr-only` but
+focusable and labelable, never `aria-hidden` and never removed from the tab
+order, so FormControl-injected ARIA and react-hook-form's focus-on-error both
+work. The file list sits OUTSIDE the click zone, so activating a remove control
+cannot also reopen the picker.
+
+### Primary
+
+<Canvas of={Story.Primary} />
+
+### Selected
+
+<Canvas of={Story.Selected} />
+
+### At capacity
+
+<Canvas of={Story.AtCapacity} />
+
+### Unbounded
+
+<Canvas of={Story.Unbounded} />
+
+### Invalid
+
+<Canvas of={Story.Invalid} />
+
+### Disabled
+
+<Canvas of={Story.Disabled} />
+
+<Primary />
+<Controls />
