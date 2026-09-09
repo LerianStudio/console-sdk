@@ -563,14 +563,20 @@ function defaultFullMessage(maxFiles: number): string {
  * that overflows the cap still contributes the files that fit.
  *
  * A BATCH SURVIVES ITS OWN CASUALTIES. One file rejected for type, size or a
- * failed read does not discard the rest of the batch. The alternative punishes
+ * failed read does not discard the rest of the batch, and it does not consume
+ * a slot either: validation runs over the WHOLE batch before the cap is
+ * applied, so a file that was never eligible cannot cost an eligible one its
+ * place, and `'too-many'` always names a file a slot would genuinely have
+ * taken. The alternative punishes
  * a user for a mistake in one file by throwing away four good ones, and hands
  * back no way to tell which was which. Every rejection is reported through
  * `onError` and announced together in one `role="alert"`.
  *
- * Accessibility follows the sibling: the real `<input type="file">` is
- * `sr-only` but focusable and labelable, and never `aria-hidden`, so
- * FormControl-injected ARIA and react-hook-form's focus on error both work.
+ * Accessibility follows the sibling BELOW THE CAP: the real `<input
+ * type="file">` is `sr-only` but focusable and labelable, and never
+ * `aria-hidden`, so FormControl-injected ARIA and react-hook-form's focus on
+ * error both work while the picker is enabled. At the cap that changes, and
+ * the paragraph below says how.
  * The file list sits OUTSIDE the click zone, so activating a remove control
  * cannot also reopen the picker, and each remove control is named after its
  * own file: a column of identical "Remove file" buttons tells a screen-reader
@@ -709,22 +715,34 @@ export const MultipleFileUpload = React.forwardRef<
     const room = roomFor(valueRef.current.length)
 
     const rejections: MultipleFileUploadError[] = []
-    // One rejection for the batch, naming the FIRST file that did not fit:
-    // repeating it per overflowing file buries the actionable part.
-    if (incoming.length > room && maxFiles !== undefined) {
-      rejections.push({ kind: 'too-many', file: incoming[room], maxFiles })
-    }
 
-    const candidates: File[] = []
-    for (const file of incoming.slice(0, room)) {
+    // Validate EVERY file BEFORE the cap is applied. Slicing to the remaining
+    // room first would let a file that was never eligible consume a slot a
+    // good file could have used — one bad pick costing a good one, which is
+    // the opposite of a batch surviving its own casualties — and it would
+    // leave every file past the slice window neither validated nor reported.
+    // Validation is pure metadata (size and accept), so running it over files
+    // that may not fit costs nothing.
+    const eligible: File[] = []
+    for (const file of incoming) {
       const rejection = validateFile(file, { accept, maxSizeBytes })
       // Continue rather than abort: one bad file must not cost the good ones.
       if (rejection) {
         rejections.push(rejection)
         continue
       }
-      candidates.push(file)
+      eligible.push(file)
     }
+
+    // The cap then applies to the SURVIVORS. One rejection for the batch,
+    // naming the FIRST eligible file that did not fit: naming one already
+    // refused for its size or type would blame the cap for the wrong thing,
+    // and repeating it per overflowing file buries the actionable part.
+    if (eligible.length > room && maxFiles !== undefined) {
+      rejections.push({ kind: 'too-many', file: eligible[room], maxFiles })
+    }
+
+    const candidates = eligible.slice(0, room)
 
     // Binary path: no decode, no reader, no retained garbage string.
     if (readAs === 'none') {

@@ -77,8 +77,9 @@ describe('MultipleFileUpload accessibility', () => {
     expect(el).toHaveAttribute('multiple')
     expect(el).toHaveClass('sr-only')
     // Same contract as the single-file sibling: the input IS the accessible
-    // control, never hidden, never pulled from the tab order, never
-    // double-named by a wrapping <label>.
+    // control, never hidden, never double-named by a wrapping <label>, and,
+    // while enabled as it is here, never pulled from the tab order. The capped
+    // state is the exception and is covered by the cap tests.
     expect(el).not.toHaveAttribute('aria-hidden')
     expect(el).not.toHaveAttribute('tabindex')
     expect(container.querySelector('label')).toBeNull()
@@ -250,6 +251,42 @@ describe('MultipleFileUpload cap', () => {
 
     expect(names(onChange.mock.calls[1][0])).toEqual(['a.pdf', 'b.pdf'])
     expect(onError.mock.calls[0][0].file.name).toBe('c.pdf')
+  })
+
+  it('validates before the cap, so a refused file cannot cost a good one its slot', () => {
+    const onChange = jest.fn()
+    const onError = jest.fn()
+    const { container } = render(
+      <Harness
+        maxFiles={1}
+        maxSizeBytes={1024}
+        onChange={onChange}
+        onError={onError}
+      />
+    )
+
+    pick(container, [
+      fakeFile('big.pdf', 'application/pdf', 4096),
+      pdf('good.pdf'),
+      pdf('spare.pdf')
+    ])
+
+    // One slot left. The oversized file was never eligible for it, so it must
+    // not be the reason the good file is turned away.
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(names(onChange.mock.calls[0][0])).toEqual(['good.pdf'])
+
+    expect(onError.mock.calls.map((call) => call[0].kind).sort()).toEqual([
+      'too-large',
+      'too-many'
+    ])
+    const tooMany = onError.mock.calls
+      .map((call) => call[0])
+      .filter((failure) => failure.kind === 'too-many')
+    // `too-many` names a file a slot would genuinely have taken, never one
+    // already refused for its size: blaming the cap for that is a lie.
+    expect(tooMany).toHaveLength(1)
+    expect(tooMany[0].file.name).toBe('spare.pdf')
   })
 
   it('refuses everything once the cap is already reached', () => {

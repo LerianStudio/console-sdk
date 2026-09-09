@@ -64,9 +64,12 @@ Everything else follows from that:
 
 - `maxFiles` is measured against what is ALREADY selected, not against the
   batch.
+- Every file is validated BEFORE the cap is applied, so a file refused for its
+  type or size never consumes a slot an acceptable file could have used.
 - A batch that overflows the cap still contributes the files that fit. The
-  overflow produces one `'too-many'` rejection naming the FIRST file that did
-  not fit, rather than one per overflowing file.
+  overflow produces one `'too-many'` rejection naming the FIRST acceptable file
+  that did not fit, rather than one per overflowing file. It never names a file
+  that was already refused for its type or size.
 - Omit `maxFiles` for an unbounded selection.
 
 At the cap the zone reports it and the input takes the native `disabled`
@@ -157,10 +160,14 @@ over and format a cap the way the file rows do.
 ## Accessibility
 
 The real `<input type="file" multiple>` is the accessible control: `sr-only` but
-focusable and labelable, never `aria-hidden` and never removed from the tab
-order, so FormControl-injected ARIA and react-hook-form's focus-on-error both
-work. The file list sits OUTSIDE the click zone, so activating a remove control
-cannot also reopen the picker.
+focusable and labelable, and never `aria-hidden`. While it is enabled, that is,
+below the cap and with `disabled` unset, it is never removed from the tab order,
+so FormControl-injected ARIA and react-hook-form's focus-on-error both work.
+AT THE CAP it carries the native `disabled` attribute and does leave the tab
+order, so a focus-on-error cannot land on it while capped. See "Accumulation and
+the cap" above. The file list sits OUTSIDE the click zone, so activating a
+remove control cannot also reopen the picker, and the remove controls never
+answer to the cap, so the cap is always recoverable from the keyboard.
 
 ### Primary
 
