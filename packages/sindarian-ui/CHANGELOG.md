@@ -1,3 +1,11 @@
+## [2.0.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.4...sindarian-ui-v2.0.0-beta.5) (2026-09-09)
+
+
+### Bug Fixes
+
+* **logs:** reach for the error code when the message is empty ([dc5336f](https://github.com/LerianStudio/console-sdk/commit/dc5336f23a3caab545e84bd02ef7c024a7c05862))
+* **sindarian-logs:** stop logging the whole upstream body ([8e22900](https://github.com/LerianStudio/console-sdk/commit/8e229001d008ad507f5b1d61cc731c811161610a))
+
 ## [2.0.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.3...sindarian-ui-v2.0.0-beta.4) (2026-09-09)
 
 
