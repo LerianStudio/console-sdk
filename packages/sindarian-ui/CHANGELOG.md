@@ -1,3 +1,10 @@
+## [2.0.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.3...sindarian-ui-v2.0.0-beta.4) (2026-09-09)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** cancel the browser drop on a disabled zone ([c414f52](https://github.com/LerianStudio/console-sdk/commit/c414f52536348741d26ed92a2cc439bfe6d23ec0))
+
 ## [2.0.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.2...sindarian-ui-v2.0.0-beta.3) (2026-09-09)
 
 
