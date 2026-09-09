@@ -27,8 +27,8 @@
     "build:paths": "tsc-alias -p tsconfig.json",
     "test": "jest",
     "test:e2e": "exit 0",
-    "lint": "eslint . --fix",
-    "lint:check": "eslint ."
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "peerDependencies": {
     "@lerianstudio/sindarian-server": ">=1.0.0-beta.27",

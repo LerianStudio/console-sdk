@@ -32,8 +32,8 @@
     "test": "jest",
     "test:e2e": "exit 0",
     "test:cov": "jest --coverage",
-    "lint": "eslint . --fix",
-    "lint:check": "eslint ."
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "peerDependencies": {
     "tailwindcss": ">=4.0.0"

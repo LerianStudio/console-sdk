@@ -34,7 +34,8 @@
     "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
     "test:e2e": "exit 0",
     "test:cov": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --coverage",
-    "lint": "eslint . --fix"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@formatjs/ts-transformer": "^4.4.14",

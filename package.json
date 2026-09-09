@@ -12,6 +12,7 @@
   "scripts": {
     "build": "turbo build",
     "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
     "test": "turbo test",
     "test:e2e": "turbo test:e2e",
     "test:cov": "turbo test:cov"
