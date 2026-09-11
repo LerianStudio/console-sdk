@@ -1,5 +1,8 @@
 import { HttpStatus } from '@/constants/http-status'
-import { toProblemMessage } from '@/utils/error/to-problem-message'
+import {
+  noProblemDetails,
+  toProblemMessage
+} from '@/utils/error/to-problem-message'
 import { HttpException } from './http-exception'
 
 export class ApiException extends HttpException {
@@ -19,10 +22,7 @@ export class ApiException extends HttpException {
     status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR,
     metadata: any = {}
   ) {
-    super(
-      toProblemMessage(message, `Upstream error (status ${status})`),
-      status
-    )
+    super(toProblemMessage(message, noProblemDetails(status)), status)
     this.metadata = metadata
   }
 

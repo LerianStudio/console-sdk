@@ -499,7 +499,8 @@ describe('HttpService', () => {
     it('should keep the status when the error body is unparseable', async () => {
       mockResponse.ok = false
       mockResponse.status = HttpStatus.BAD_REQUEST
-      mockResponse.json = jest.fn().mockRejectedValue(new Error('Invalid JSON'))
+      // Only `text` is stubbed: the body is read as text and parsed here, so
+      // `response.json()` is never called on a failed response any more.
       mockResponse.text = jest.fn().mockResolvedValue('not json at all')
 
       const mockRequest = new Request('https://api.example.com/test')

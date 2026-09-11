@@ -387,7 +387,12 @@ describe('ApiException', () => {
         HttpStatus.BAD_GATEWAY
       )
 
-      expect(exception.message).toBe('Upstream error (status 502)')
+      // One sentence for one condition: the transport and this constructor
+      // both say `noProblemDetails(status)` now, so a caller cannot tell which
+      // frame gave up on the body.
+      expect(exception.message).toBe(
+        'Upstream error body carried no problem details (status 502)'
+      )
     })
 
     // Three Console transports do `throw new ServiceUnavailableApiException(
@@ -415,7 +420,9 @@ describe('ApiException', () => {
         HttpStatus.SERVICE_UNAVAILABLE
       )
 
-      expect(exception.message).toBe('Upstream error (status 503)')
+      expect(exception.message).toBe(
+        'Upstream error body carried no problem details (status 503)'
+      )
       expect(typeof exception.getResponse().message).toBe('string')
     })
 

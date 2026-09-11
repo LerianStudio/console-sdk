@@ -20,6 +20,7 @@ import {
   UnprocessableEntityApiException
 } from '@/exceptions/api-exception'
 import {
+  noProblemDetails,
   PROBLEM_FIELD_MAX_LENGTH,
   toProblemMessage
 } from '@/utils/error/to-problem-message'
@@ -47,17 +48,6 @@ const STATUS_EXCEPTIONS: Record<number, new (message: string) => ApiException> =
     [HttpStatus.UNPROCESSABLE_ENTITY]: UnprocessableEntityApiException,
     [HttpStatus.INTERNAL_SERVER_ERROR]: InternalServerErrorApiException
   }
-
-/**
- * What the caller is told when the failed response classified nothing.
- *
- * Not "non-JSON": a body that parses as a JSON string or number is perfectly
- * valid JSON and still carries no problem details, and it reached here as a
- * bare sentence written by the upstream — one that had a taxpayer id in it
- * the day this was found.
- */
-const noProblemDetails = (status: number) =>
-  `Upstream error body carried no problem details (status ${status})`
 
 /** Neither a `fetch` failure nor an unreadable success body may describe itself. */
 const UPSTREAM_UNREACHABLE =
@@ -105,10 +95,7 @@ export abstract class HttpService {
 
         await this.catch(request, response, error)
 
-        // Never the body itself. The whole parsed body used to be handed in
-        // as the message, and `getResponse()` serialises the message to the
-        // browser — so `detail` and `errors[]`, which is where an upstream
-        // puts destination URLs and the values it rejected, went with it.
+        // The bounded classification, never the body — see `toProblemMessage`.
         throw this.toApiException(
           response.status,
           toProblemMessage(error, noProblemDetails(response.status))
@@ -290,10 +277,8 @@ export abstract class HttpService {
   /**
    * The fields of a failed call that are safe to log.
    *
-   * The body is not among them. An RFC 9457 problem body puts a free-text
-   * sentence in `detail` and the rejected values themselves in `errors[]`, so
-   * logging the body wrote destination URLs and submitted values into operator
-   * logs, at error level, on every single failure. Only a bounded
+   * The body is not among them — `toProblemMessage` carries the argument for
+   * why `detail` and `errors[]` never leave the upstream. Only a bounded
    * classification survives: `type`, `title`, `code`. The URL keeps its path
    * and loses its query string, which carries tokens and filters just as
    * freely as a body does.
@@ -302,8 +287,9 @@ export abstract class HttpService {
    * that. What this returns is written by the default `catch` to
    * `console.error`, at error level, on every failed call, so it lands in the
    * operator's log and in whatever ships that log onward. The object returned
-   * here is the ceiling, not a starting point: `return { ...super.describe(),
-   * ...error }`, or returning `error` itself, puts the whole upstream body
+   * here is the ceiling, not a starting point: `return {
+   * ...super.describeRequestError(request, response, error), ...error }`, or
+   * returning `error` itself, puts the whole upstream body
    * back in the log and re-opens exactly the defect this replaced. Add named
    * fields you have read the upstream's contract for.
    *
@@ -314,18 +300,19 @@ export abstract class HttpService {
   protected describeRequestError(
     request: Request,
     response: Response,
-    error: any
+    error: unknown
   ): Record<string, unknown> {
     const { origin, pathname } = new URL(request.url)
+    const problem = (error ?? {}) as Record<string, unknown>
     const cap = (value: string) => value.slice(0, PROBLEM_FIELD_MAX_LENGTH)
 
     return {
       method: request.method,
       url: `${origin}${pathname}`,
       status: response.status,
-      ...(typeof error?.type === 'string' && { type: cap(error.type) }),
-      ...(typeof error?.title === 'string' && { title: cap(error.title) }),
-      ...(typeof error?.code === 'string' && { code: cap(error.code) })
+      ...(typeof problem.type === 'string' && { type: cap(problem.type) }),
+      ...(typeof problem.title === 'string' && { title: cap(problem.title) }),
+      ...(typeof problem.code === 'string' && { code: cap(problem.code) })
     }
   }
 
