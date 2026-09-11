@@ -60,21 +60,28 @@ export abstract class HttpService {
       // Parse application/json error responses
       // NodeJS native fetch does not throw for logic errors
       if (!response.ok) {
-        const error = await response.json()
+        const error = await this.readErrorBody(response)
 
         await this.catch(request, response, error)
 
+        // Never the body text. A gateway's HTML page or a truncated body used
+        // to arrive here inside a SyntaxError whose own message quotes the
+        // first bytes of that body, and that message became the exception's.
+        const message =
+          error ??
+          `Upstream returned a non-JSON error body (status ${response.status})`
+
         if (response.status === HttpStatus.UNAUTHORIZED) {
-          throw new UnauthorizedApiException(error)
+          throw new UnauthorizedApiException(message)
         } else if (response.status === HttpStatus.NOT_FOUND) {
-          throw new NotFoundApiException(error)
+          throw new NotFoundApiException(message)
         } else if (response.status === HttpStatus.UNPROCESSABLE_ENTITY) {
-          throw new UnprocessableEntityApiException(error)
+          throw new UnprocessableEntityApiException(message)
         } else if (response.status === HttpStatus.INTERNAL_SERVER_ERROR) {
-          throw new InternalServerErrorApiException(error)
+          throw new InternalServerErrorApiException(message)
         }
 
-        throw new ServiceUnavailableApiException(error)
+        throw new ServiceUnavailableApiException(message)
       }
 
       // Handle 204 Success No Content response
@@ -89,6 +96,32 @@ export abstract class HttpService {
       }
 
       throw new ServiceUnavailableApiException(error)
+    }
+  }
+
+  /**
+   * Reads the body of a failed response without letting the body decide the
+   * status.
+   *
+   * `response.json()` throws on a bodiless 401/403 and on any non-JSON error
+   * page, and that throw used to escape the whole `request` block: the caller
+   * got a 503 "service unavailable" for what was really an expired token, and
+   * the upstream status was gone. Text first, parse second, and only an object
+   * survives — a scalar or unparseable body is dropped rather than handed on
+   * to be interpolated into an exception message.
+   */
+  private async readErrorBody(response: Response): Promise<any> {
+    const rawText = await response.text()
+
+    if (!rawText) {
+      return undefined
+    }
+
+    try {
+      const parsed = JSON.parse(rawText)
+      return parsed !== null && typeof parsed === 'object' ? parsed : undefined
+    } catch {
+      return undefined
     }
   }
 
@@ -159,13 +192,50 @@ export abstract class HttpService {
   protected onAfterFetch(request: Request, response: Response) {}
 
   /**
+   * The fields of a failed call that are safe to log.
+   *
+   * The body is not among them. An RFC 9457 problem body puts a free-text
+   * sentence in `detail` and the rejected values themselves in `errors[]`, so
+   * logging the body wrote destination URLs and submitted values into operator
+   * logs, at error level, on every single failure. Only a bounded
+   * classification survives: `type`, `title`, `code`. The URL keeps its path
+   * and loses its query string, which carries tokens and filters just as
+   * freely as a body does.
+   *
+   * Override to add what a specific upstream is known to keep safe.
+   * @param request The request that was sent
+   * @param response The raw response received from the server
+   * @param error Parsed error response from the server, when it had one
+   */
+  protected describeRequestError(
+    request: Request,
+    response: Response,
+    error: any
+  ): Record<string, any> {
+    const { origin, pathname } = new URL(request.url)
+
+    return {
+      method: request.method,
+      url: `${origin}${pathname}`,
+      status: response.status,
+      ...(typeof error?.type === 'string' && { type: error.type }),
+      ...(typeof error?.title === 'string' && { title: error.title }),
+      ...(typeof error?.code === 'string' && { code: error.code })
+    }
+  }
+
+  /**
    * Catch function to handle errors from the native fetch API
    * @param request The request that was sent
    * @param response The raw response received from the server
-   * @param error Parsed error response from the server
+   * @param error Parsed error response from the server, `undefined` when the
+   * response carried no JSON object body
    */
   protected async catch(request: Request, response: Response, error: any) {
-    console.error('Request error', { response, error })
+    console.error(
+      'Request error',
+      this.describeRequestError(request, response, error)
+    )
   }
 
   async get<T>(

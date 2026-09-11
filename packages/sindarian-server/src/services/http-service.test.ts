@@ -55,6 +55,15 @@ class TestHttpService extends HttpService {
   protected createDefaults = jest.fn().mockResolvedValue({})
 }
 
+// Same, but keeping the REAL default `catch` so its log line can be asserted
+class DefaultCatchHttpService extends HttpService {
+  public async testRequest<T>(request: Request): Promise<T> {
+    return this.request<T>(request)
+  }
+
+  protected createDefaults = jest.fn().mockResolvedValue({})
+}
+
 describe('HttpService', () => {
   let httpService: TestHttpService
   let mockResponse: Partial<Response>
@@ -180,6 +189,9 @@ describe('HttpService', () => {
       mockResponse.ok = false
       mockResponse.status = HttpStatus.BAD_REQUEST
       mockResponse.json = jest.fn().mockResolvedValue({ error: 'Bad request' })
+      mockResponse.text = jest
+        .fn()
+        .mockResolvedValue(JSON.stringify({ error: 'Bad request' }))
 
       const mockRequest = new Request('https://api.example.com/test')
 
@@ -460,6 +472,9 @@ describe('HttpService', () => {
       mockResponse.ok = false
       mockResponse.status = HttpStatus.BAD_REQUEST
       mockResponse.json = jest.fn().mockResolvedValue({ error: 'Bad request' })
+      mockResponse.text = jest
+        .fn()
+        .mockResolvedValue(JSON.stringify({ error: 'Bad request' }))
 
       const mockRequest = new Request('https://api.example.com/test')
 
@@ -478,10 +493,11 @@ describe('HttpService', () => {
   })
 
   describe('error handling edge cases', () => {
-    it('should handle response.json() throwing an error', async () => {
+    it('should wrap an unparseable error body in ServiceUnavailableApiException', async () => {
       mockResponse.ok = false
       mockResponse.status = HttpStatus.BAD_REQUEST
       mockResponse.json = jest.fn().mockRejectedValue(new Error('Invalid JSON'))
+      mockResponse.text = jest.fn().mockResolvedValue('not json at all')
 
       const mockRequest = new Request('https://api.example.com/test')
 
@@ -503,6 +519,106 @@ describe('HttpService', () => {
       await expect(httpService.testRequest(mockRequest)).rejects.toThrow(
         ServiceUnavailableApiException
       )
+    })
+  })
+
+  // Three defects in how the transport handled a FAILED upstream call. Each
+  // test names the leak or the lost status it guards, because each one reached
+  // production once.
+  describe('failed upstream calls', () => {
+    it('logs no part of the problem body and no query string', async () => {
+      const service = new DefaultCatchHttpService()
+      const problem = {
+        type: 'https://hub.example.com/problems/validation',
+        title: 'Unprocessable Entity',
+        status: 422,
+        detail:
+          'destination https://webhook.acme.internal/secret-path was rejected',
+        errors: [{ message: 'taxId 123.456.789-00 is invalid' }]
+      }
+
+      mockResponse.ok = false
+      mockResponse.status = HttpStatus.UNPROCESSABLE_ENTITY
+      mockResponse.text = jest.fn().mockResolvedValue(JSON.stringify(problem))
+      mockResponse.json = jest.fn().mockResolvedValue(problem)
+
+      const mockRequest = new Request(
+        'https://api.example.com/v1/destinations?token=s3cr3t-token'
+      )
+
+      await expect(service.testRequest(mockRequest)).rejects.toThrow(
+        UnprocessableEntityApiException
+      )
+
+      const logged = JSON.stringify(consoleSpy.mock.calls)
+
+      // The body, and everything a body can carry.
+      expect(logged).not.toContain('webhook.acme.internal')
+      expect(logged).not.toContain('secret-path')
+      expect(logged).not.toContain('taxId')
+      // The query string, which carries tokens and filters just as freely.
+      expect(logged).not.toContain('s3cr3t-token')
+
+      // What an operator actually needs to act.
+      expect(logged).toContain('https://api.example.com/v1/destinations')
+      expect(logged).toContain('422')
+      expect(logged).toContain('Unprocessable Entity')
+    })
+
+    it('keeps a bodiless 401 a 401 instead of a 503', async () => {
+      mockResponse.ok = false
+      mockResponse.status = HttpStatus.UNAUTHORIZED
+      mockResponse.headers = new Headers({
+        'content-type': 'application/json'
+      })
+      mockResponse.text = jest.fn().mockResolvedValue('')
+      mockResponse.json = jest
+        .fn()
+        .mockRejectedValue(new SyntaxError('Unexpected end of JSON input'))
+
+      const mockRequest = new Request('https://api.example.com/test')
+
+      const error = await httpService
+        .testRequest(mockRequest)
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(UnauthorizedApiException)
+      expect(error).not.toBeInstanceOf(SyntaxError)
+      expect(error.getStatus()).toBe(HttpStatus.UNAUTHORIZED)
+
+      // The hook still runs, and still sees the real upstream status.
+      expect(httpService.catch).toHaveBeenCalledTimes(1)
+      const [, passedResponse] = (httpService.catch as unknown as jest.Mock)
+        .mock.calls[0]
+      expect(passedResponse.status).toBe(HttpStatus.UNAUTHORIZED)
+    })
+
+    it('never puts a non-JSON error body in the thrown message', async () => {
+      const html =
+        '<html><body>502 Bad Gateway - proxy-internal.acme</body></html>'
+
+      mockResponse.ok = false
+      mockResponse.status = HttpStatus.BAD_GATEWAY
+      mockResponse.headers = new Headers({ 'content-type': 'text/html' })
+      mockResponse.text = jest.fn().mockResolvedValue(html)
+      mockResponse.json = jest
+        .fn()
+        .mockRejectedValue(
+          new SyntaxError(
+            `Unexpected token '<', "${html.slice(0, 10)}"... is not valid JSON`
+          )
+        )
+
+      const mockRequest = new Request('https://api.example.com/test')
+
+      const error = await httpService
+        .testRequest(mockRequest)
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(ServiceUnavailableApiException)
+      expect(error.message).not.toContain('<html>')
+      expect(error.message).not.toContain('proxy-internal')
+      expect(error.message).toContain('502')
     })
   })
 })
