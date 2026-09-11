@@ -1,6 +1,27 @@
 import { LoggerAggregator } from '@/aggregator/logger-aggregator'
 
 /**
+ * The destination of a call, never its payload.
+ *
+ * A query string carries whatever the caller filtered by — a tax id, a document
+ * number, an account, a cursor — and these log lines are emitted by every
+ * service that inherits the hooks, so a service cannot opt out of the leak.
+ * `origin + pathname` sheds the query, the fragment and any credentials, and
+ * keeps the host and port an operator needs to tell two upstreams apart.
+ *
+ * The `catch` hook has no `instanceof Request` guard, so a caller can reach
+ * this with a relative URL no parser accepts: cut it at the first `?` or `#`.
+ */
+function destination(url: string): string {
+  try {
+    const parsed = new URL(url)
+    return parsed.origin + parsed.pathname
+  } catch {
+    return String(url).split(/[?#]/)[0]
+  }
+}
+
+/**
  * Shared logging logic for HTTP service hooks.
  * Used by both @LogHttpCall() decorator and LoggableHttpService.
  */
@@ -14,7 +35,7 @@ export function logHttpEvent(
 
   if (methodName === 'onBeforeFetch' && args[0] instanceof Request) {
     const request = args[0] as Request
-    logger.info(operation, `${request.method} ${request.url}`)
+    logger.info(operation, `${request.method} ${destination(request.url)}`)
     return
   }
 
@@ -25,12 +46,12 @@ export function logHttpEvent(
     if (response.ok) {
       logger.info(
         operation,
-        `${request.method} ${request.url} → ${response.status}`
+        `${request.method} ${destination(request.url)} → ${response.status}`
       )
     } else {
       logger.error(
         operation,
-        `${request.method} ${request.url} → ${response.status}`
+        `${request.method} ${destination(request.url)} → ${response.status}`
       )
     }
     return
@@ -60,7 +81,7 @@ export function logHttpEvent(
 
     logger.error(
       operation,
-      `${request.method} ${request.url} → ${response.status}` +
+      `${request.method} ${destination(request.url)} → ${response.status}` +
         (detail ? `: ${detail}` : '')
     )
   }
