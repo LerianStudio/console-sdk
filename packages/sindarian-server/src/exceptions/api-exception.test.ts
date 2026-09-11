@@ -390,14 +390,21 @@ describe('ApiException', () => {
       expect(exception.message).toBe('Upstream error (status 502)')
     })
 
-    it('takes an Error own message', () => {
+    // Three Console transports do `throw new ServiceUnavailableApiException(
+    // error)` from a `catch (error: any)`, so an `Error` arrives here whole.
+    // Its message is what broke, not what the caller may be told: taking it
+    // put `fetch failed: connect ECONNREFUSED 10.0.0.5:8080` on the wire.
+    it('never takes an Error own message', () => {
       const exception = new ApiException(
         '0005',
         'Service Unavailable',
-        new Error('socket hang up')
+        new TypeError('fetch failed: connect ECONNREFUSED 10.0.0.5:8080'),
+        HttpStatus.SERVICE_UNAVAILABLE
       )
 
-      expect(exception.message).toBe('socket hang up')
+      expect(exception.message).not.toContain('10.0.0.5')
+      expect(exception.message).not.toContain('8080')
+      expect(JSON.stringify(exception.getResponse())).not.toContain('10.0.0.5')
     })
 
     it('names the status when there is no message at all', () => {
