@@ -108,12 +108,16 @@ export abstract class HttpService {
       }
 
       return await response.json()
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof ApiException) {
         throw error
       }
 
-      this.onRequestFailure(request, error)
+      try {
+        this.onRequestFailure(request, error)
+      } catch {
+        // a failing failure-logger must never replace the bounded exception
+      }
 
       // Never the error's own message. A `fetch` failure names the host and
       // port it could not reach, and a success body that is not JSON arrives
@@ -257,9 +261,12 @@ export abstract class HttpService {
    * keep it server-side. The URL keeps its path and loses its query string,
    * which carries tokens just as freely as a body does.
    *
-   * Like `onBeforeFetch` and `onAfterFetch`, this must not throw: it runs
-   * outside the block that turns a failure into a bounded exception, so an
-   * exception raised here escapes `request` unbounded.
+   * Like `onBeforeFetch` and `onAfterFetch`, this must not throw. A throw is
+   * swallowed so the bounded exception still wins — an override that crashes
+   * here used to replace the fixed sentence with its own, and a
+   * non-`ApiException` message is serialised to the browser verbatim. The
+   * cost of the containment is that the override's own failure is silent and
+   * the record it was supposed to write is gone.
    *
    * @param request The request that was sent
    * @param error Whatever actually broke

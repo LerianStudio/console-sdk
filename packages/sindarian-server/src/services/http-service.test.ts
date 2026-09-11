@@ -1152,5 +1152,38 @@ describe('HttpService', () => {
         'Request failed'
       )
     })
+
+    it('contains an override that threw while logging the failure', async () => {
+      class ThrowingFailureHttpService extends HttpService {
+        public async testRequest<T>(request: Request): Promise<T> {
+          return this.request<T>(request)
+        }
+
+        protected createDefaults = jest.fn().mockResolvedValue({})
+
+        protected onRequestFailure(): void {
+          throw new Error(
+            'logger transport failed while writing: fetch failed: connect ECONNREFUSED 10.0.0.5:8080'
+          )
+        }
+      }
+
+      mockFetch.mockRejectedValue(
+        new TypeError('fetch failed: connect ECONNREFUSED 10.0.0.5:8080')
+      )
+
+      const error = await new ThrowingFailureHttpService()
+        .testRequest(new Request('https://api.example.com/v1/accounts'))
+        .catch((thrown) => thrown)
+
+      // A crashing failure-logger used to replace the bounded exception, and a
+      // non-ApiException puts its own `message` on the wire, serialised
+      // verbatim by BaseExceptionFilter.
+      expect(error).toBeInstanceOf(ServiceUnavailableApiException)
+      expect(error.message).toBe(
+        'The request to the upstream service could not be completed'
+      )
+      expect(error.message).not.toContain('10.0.0.5:8080')
+    })
   })
 })
