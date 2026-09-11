@@ -80,13 +80,17 @@ export abstract class HttpService {
 
       // Parse text/plain error responses
       if (response?.headers?.get('content-type')?.includes('text/plain')) {
-        const message = await response.text()
+        const body = await response.text()
 
-        // The hook still receives the text — a transport that knows its own
-        // upstream may read it — but the text never becomes the thrown
-        // message. It is free prose written by whatever answered, and the
-        // thrown message is what `getResponse()` hands to the browser.
-        await this.catch(request, response, { message })
+        // Under `text`, and bounded. It used to arrive as `message`, which is
+        // the key ten of the fifteen Console transports read and re-publish —
+        // into the browser, into an error log — so bounding only the thrown
+        // message left the leak open one frame up. Every `error?.message`
+        // reader now sees `undefined` and falls through to its own sentence;
+        // a transport that knows its upstream opts in by reading `text`.
+        await this.catch(request, response, {
+          text: body.slice(0, PROBLEM_FIELD_MAX_LENGTH)
+        })
 
         throw this.toApiException(
           response.status,
@@ -294,10 +298,17 @@ export abstract class HttpService {
 
   /**
    * Catch function to handle errors from the native fetch API
+   *
+   * Throwing from here opts out of everything `request` does afterwards: the
+   * bounded message and the preserved upstream status are both built after
+   * this hook returns, so an exception raised here is the one the caller gets,
+   * and bounding its message is the overrider's job (`PROBLEM_FIELD_MAX_LENGTH`
+   * is exported for exactly that).
+   *
    * @param request The request that was sent
    * @param response The raw response received from the server
-   * @param error Parsed error response from the server, `undefined` when the
-   * response carried no JSON object body
+   * @param error Parsed error response from the server; `{ text }` for a
+   * `text/plain` body, `undefined` when the response carried no JSON object
    */
   protected async catch(request: Request, response: Response, error: any) {
     console.error(

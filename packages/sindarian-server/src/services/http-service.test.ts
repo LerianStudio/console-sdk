@@ -132,7 +132,7 @@ describe('HttpService', () => {
       expect(httpService.catch).toHaveBeenCalledWith(
         mockRequest,
         mockResponse,
-        { message: 'Bad request' }
+        { text: 'Bad request' }
       )
     })
 
@@ -654,10 +654,11 @@ describe('HttpService', () => {
 
       // The hook still receives the text: a transport that knows its own
       // upstream may still read it, it just never becomes the thrown sentence.
+      // Under `text`, never `message` — see 'the text handed to the catch hook'.
       expect(httpService.catch).toHaveBeenCalledWith(
         mockRequest,
         expect.any(Response),
-        { message: 'upstream down: db-primary.internal' }
+        { text: 'upstream down: db-primary.internal' }
       )
     })
 
@@ -707,6 +708,13 @@ describe('HttpService', () => {
       // What actually broke stays reachable for a server-side log, off the
       // response the browser is handed.
       expect(error.cause).toBe(networkError)
+
+      // Off it for real: a caller that spreads the exception — into a log
+      // context, into a JSON body — must not put the host back on the wire.
+      expect(Object.getOwnPropertyDescriptor(error, 'cause')?.enumerable).toBe(
+        false
+      )
+      expect(JSON.stringify({ ...error })).not.toContain('10.0.0.5')
     })
 
     it('keeps a 403 a 403 instead of a 503', async () => {
@@ -836,6 +844,138 @@ describe('HttpService', () => {
       expect(logged.type).toHaveLength(200)
       expect(logged.title).toHaveLength(200)
       expect(logged.code).toHaveLength(200)
+    })
+  })
+
+  // Round 3. What the `catch` hook is handed for a text/plain failure. The
+  // hook's third argument carried the RAW body under the key `message`, and
+  // ten of the fifteen Console transports read `error?.message` and re-publish
+  // it — to the browser, to an error log — so bounding the thrown message
+  // alone left the leak open one frame up.
+  describe('the text handed to the catch hook', () => {
+    const upstream = 'https://api.example.com/test'
+    const leakyBody =
+      'token expired for cpf 123.456.789-00 at db-primary.internal:5432'
+
+    /** Mirrors `midaz-http-service.ts:106` — `error.message || <own sentence>`. */
+    class MessageReadingHttpService extends HttpService {
+      public async testRequest<T>(request: Request): Promise<T> {
+        return this.request<T>(request)
+      }
+
+      protected createDefaults = jest.fn().mockResolvedValue({})
+
+      protected async catch(
+        _request: Request,
+        _response: Response,
+        error: any
+      ) {
+        throw new UnauthorizedApiException(error?.message || 'Unauthorized')
+      }
+    }
+
+    /** Mirrors sindarian-logs `logHttpEvent` — `error?.message || error?.code`. */
+    class LoggingHttpService extends HttpService {
+      public readonly lines: string[] = []
+
+      public async testRequest<T>(request: Request): Promise<T> {
+        return this.request<T>(request)
+      }
+
+      protected createDefaults = jest.fn().mockResolvedValue({})
+
+      protected async catch(request: Request, response: Response, error: any) {
+        const detail = error?.message || error?.code
+        this.lines.push(
+          `${request.method} ${response.status}` + (detail ? `: ${detail}` : '')
+        )
+      }
+    }
+
+    class CapturingHttpService extends HttpService {
+      public received: unknown
+
+      public async testRequest<T>(request: Request): Promise<T> {
+        return this.request<T>(request)
+      }
+
+      protected createDefaults = jest.fn().mockResolvedValue({})
+
+      protected async catch(
+        _request: Request,
+        _response: Response,
+        error: any
+      ) {
+        this.received = error
+      }
+    }
+
+    it('does not reach a transport that re-publishes error.message', async () => {
+      mockFetch.mockResolvedValue(
+        new Response(leakyBody, {
+          status: HttpStatus.UNAUTHORIZED,
+          headers: { 'content-type': 'text/plain' }
+        })
+      )
+
+      const error = await new MessageReadingHttpService()
+        .testRequest(new Request(upstream))
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(UnauthorizedApiException)
+      expect(error.message).not.toContain('123.456.789-00')
+      expect(error.message).not.toContain('db-primary.internal')
+      expect(JSON.stringify(error.getResponse())).not.toContain('5432')
+    })
+
+    it('does not reach a transport that logs error.message', async () => {
+      mockFetch.mockResolvedValue(
+        new Response(leakyBody, {
+          status: HttpStatus.UNAUTHORIZED,
+          headers: { 'content-type': 'text/plain' }
+        })
+      )
+      const service = new LoggingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(UnauthorizedApiException)
+
+      expect(service.lines.join('\n')).not.toContain('123.456.789-00')
+      expect(service.lines.join('\n')).not.toContain('db-primary.internal')
+    })
+
+    it('caps the text it hands over at 200 characters', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('x'.repeat(100_000), {
+          status: HttpStatus.BAD_GATEWAY,
+          headers: { 'content-type': 'text/plain' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(ApiException)
+
+      expect((service.received as { text: string }).text).toHaveLength(200)
+    })
+
+    it('hands the text over under a key no transport already reads', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('upstream is down', {
+          status: HttpStatus.SERVICE_UNAVAILABLE,
+          headers: { 'content-type': 'text/plain' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(ServiceUnavailableApiException)
+
+      expect(service.received).toEqual({ text: 'upstream is down' })
+      expect(service.received).not.toHaveProperty('message')
     })
   })
 })
