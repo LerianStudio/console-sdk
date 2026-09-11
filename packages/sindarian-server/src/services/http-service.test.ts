@@ -1,6 +1,9 @@
 import { HttpService, FetchModuleOptions } from './http-service'
 import { HttpStatus } from '../constants/http-status'
 import {
+  ApiException,
+  BadRequestApiException,
+  ForbiddenApiException,
   InternalServerErrorApiException,
   NotFoundApiException,
   ServiceUnavailableApiException,
@@ -124,7 +127,7 @@ describe('HttpService', () => {
       const mockRequest = new Request('https://api.example.com/test')
 
       await expect(httpService.testRequest(mockRequest)).rejects.toThrow(
-        ServiceUnavailableApiException
+        BadRequestApiException
       )
       expect(httpService.catch).toHaveBeenCalledWith(
         mockRequest,
@@ -196,7 +199,7 @@ describe('HttpService', () => {
       const mockRequest = new Request('https://api.example.com/test')
 
       await expect(httpService.testRequest(mockRequest)).rejects.toThrow(
-        ServiceUnavailableApiException
+        BadRequestApiException
       )
       expect(httpService.catch).toHaveBeenCalledWith(
         mockRequest,
@@ -493,7 +496,7 @@ describe('HttpService', () => {
   })
 
   describe('error handling edge cases', () => {
-    it('should wrap an unparseable error body in ServiceUnavailableApiException', async () => {
+    it('should keep the status when the error body is unparseable', async () => {
       mockResponse.ok = false
       mockResponse.status = HttpStatus.BAD_REQUEST
       mockResponse.json = jest.fn().mockRejectedValue(new Error('Invalid JSON'))
@@ -501,8 +504,10 @@ describe('HttpService', () => {
 
       const mockRequest = new Request('https://api.example.com/test')
 
+      // An unreadable body is not a reason to forget that the upstream said
+      // 400: the body decides the message, never the status.
       await expect(httpService.testRequest(mockRequest)).rejects.toThrow(
-        ServiceUnavailableApiException
+        BadRequestApiException
       )
     })
 
@@ -619,6 +624,218 @@ describe('HttpService', () => {
       expect(error.message).not.toContain('<html>')
       expect(error.message).not.toContain('proxy-internal')
       expect(error.message).toContain('502')
+    })
+  })
+
+  // Round 2. Everything a failed call is allowed to tell the caller: the
+  // status it really was, and a sentence that came from us rather than from
+  // the upstream body. Fixtures are real `Response` objects so a body can only
+  // be read once, exactly as in production.
+  describe('what a failed call tells the caller', () => {
+    const upstream = 'https://api.example.com/test'
+
+    it('keeps a text/plain body out of the thrown message', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('upstream down: db-primary.internal', {
+          status: HttpStatus.SERVICE_UNAVAILABLE,
+          headers: { 'content-type': 'text/plain' }
+        })
+      )
+      const mockRequest = new Request(upstream)
+
+      const error = await httpService
+        .testRequest(mockRequest)
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(ServiceUnavailableApiException)
+      expect(typeof error.message).toBe('string')
+      expect(error.message).not.toContain('db-primary.internal')
+      expect(error.message).not.toContain('upstream down')
+
+      // The hook still receives the text: a transport that knows its own
+      // upstream may still read it, it just never becomes the thrown sentence.
+      expect(httpService.catch).toHaveBeenCalledWith(
+        mockRequest,
+        expect.any(Response),
+        { message: 'upstream down: db-primary.internal' }
+      )
+    })
+
+    it('never makes the upstream JSON body the exception message', async () => {
+      const problem = {
+        type: 'about:blank',
+        title: 'Internal Server Error',
+        detail: 'cpf 123.456.789-00 not found in ledger ldg-42'
+      }
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify(problem), {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          headers: { 'content-type': 'application/problem+json' }
+        })
+      )
+
+      const error = await httpService
+        .testRequest(new Request(upstream))
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(InternalServerErrorApiException)
+      // Only the bounded classification survives, never `detail`.
+      expect(error.message).toBe('Internal Server Error')
+      expect(typeof error.getResponse().message).toBe('string')
+      expect(JSON.stringify(error.getResponse())).not.toContain(
+        '123.456.789-00'
+      )
+      expect(JSON.stringify(error.getResponse())).not.toContain('ldg-42')
+    })
+
+    it('keeps the upstream host and port out of a network failure', async () => {
+      const networkError = new TypeError(
+        'fetch failed: connect ECONNREFUSED 10.0.0.5:8080'
+      )
+      mockFetch.mockRejectedValue(networkError)
+
+      const error = await httpService
+        .testRequest(new Request(upstream))
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(ServiceUnavailableApiException)
+      expect(typeof error.message).toBe('string')
+      expect(error.message).not.toContain('10.0.0.5')
+      expect(error.message).not.toContain('8080')
+      expect(JSON.stringify(error.getResponse())).not.toContain('10.0.0.5')
+
+      // What actually broke stays reachable for a server-side log, off the
+      // response the browser is handed.
+      expect(error.cause).toBe(networkError)
+    })
+
+    it('keeps a 403 a 403 instead of a 503', async () => {
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ title: 'Forbidden' }), {
+          status: HttpStatus.FORBIDDEN,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+
+      const error = await httpService
+        .testRequest(new Request(upstream))
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(ForbiddenApiException)
+      expect(error.getStatus()).toBe(HttpStatus.FORBIDDEN)
+    })
+
+    it('keeps a 400 a 400 instead of a 503', async () => {
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ title: 'Bad Request' }), {
+          status: HttpStatus.BAD_REQUEST,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+
+      const error = await httpService
+        .testRequest(new Request(upstream))
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(BadRequestApiException)
+      expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST)
+    })
+
+    it('keeps a client error with no exception class at its own status', async () => {
+      // 409 has no purpose-built exception here, and collapsing it into 503
+      // told the user "service unavailable" when the answer was "this already
+      // exists". Same for 429, 402, 410.
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ code: 'ALREADY_EXISTS' }), {
+          status: HttpStatus.CONFLICT,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+
+      const error = await httpService
+        .testRequest(new Request(upstream))
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(ApiException)
+      expect(error).not.toBeInstanceOf(ServiceUnavailableApiException)
+      expect(error.getStatus()).toBe(HttpStatus.CONFLICT)
+      expect(error.message).toBe('ALREADY_EXISTS')
+    })
+
+    it('drops a JSON scalar body instead of quoting it', async () => {
+      // A body that parses as JSON but is not an object carries no problem
+      // details, and quoting it put the upstream's free text — here a taxpayer
+      // id — into the message the browser is handed.
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify('Token expired for cpf 123.456.789-00'), {
+          status: HttpStatus.UNAUTHORIZED,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+      const mockRequest = new Request(upstream)
+
+      const error = await httpService
+        .testRequest(mockRequest)
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(UnauthorizedApiException)
+      expect(error.message).toBe(
+        'Upstream error body carried no problem details (status 401)'
+      )
+      expect(error.message).not.toContain('cpf')
+      expect(httpService.catch).toHaveBeenCalledWith(
+        mockRequest,
+        expect.any(Response),
+        undefined
+      )
+    })
+
+    it('never puts a non-JSON success body in the thrown message', async () => {
+      // A 200 whose body is a login page, not JSON. `response.json()` throws a
+      // SyntaxError that quotes the first bytes of that page, and that message
+      // used to become the exception's.
+      mockFetch.mockResolvedValue(
+        new Response('<html><body>secret-token-abc</body></html>', {
+          status: HttpStatus.OK,
+          headers: { 'content-type': 'text/html' }
+        })
+      )
+
+      const error = await httpService
+        .testRequest(new Request(upstream))
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(ServiceUnavailableApiException)
+      expect(typeof error.message).toBe('string')
+      expect(error.message).not.toContain('<html>')
+      expect(error.message).not.toContain('secret-token-abc')
+    })
+
+    it('caps the classification fields it logs', async () => {
+      // `type`, `title` and `code` come from the upstream and are unbounded.
+      const service = new DefaultCatchHttpService()
+      mockFetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            type: 'x'.repeat(4000),
+            title: 'T'.repeat(4000),
+            code: 'c'.repeat(4000)
+          }),
+          {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            headers: { 'content-type': 'application/json' }
+          }
+        )
+      )
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(InternalServerErrorApiException)
+
+      const [, logged] = consoleSpy.mock.calls[0]
+      expect(logged.type).toHaveLength(200)
+      expect(logged.title).toHaveLength(200)
+      expect(logged.code).toHaveLength(200)
     })
   })
 })

@@ -11,17 +11,57 @@ import { createQueryString } from '@/utils/search/create-query-string'
 import { HttpStatus } from '@/constants/http-status'
 import {
   ApiException,
+  BadRequestApiException,
+  ForbiddenApiException,
   InternalServerErrorApiException,
   NotFoundApiException,
   ServiceUnavailableApiException,
   UnauthorizedApiException,
   UnprocessableEntityApiException
 } from '@/exceptions/api-exception'
+import {
+  PROBLEM_FIELD_MAX_LENGTH,
+  toProblemMessage
+} from '@/utils/error/to-problem-message'
 
 export interface FetchModuleOptions extends RequestInit {
   baseUrl?: URL | string
   search?: object
 }
+
+/**
+ * The statuses that have a purpose-built exception here.
+ *
+ * Anything else in the 4xx range keeps the status the upstream actually sent
+ * rather than collapsing into 503: a 409 used to reach the user as "service
+ * unavailable" when the answer was "this already exists", and a 429 as an
+ * outage when the answer was "slow down". 5xx keeps collapsing into 503,
+ * because a gateway that failed IS an unavailable service from here.
+ */
+const STATUS_EXCEPTIONS: Record<number, new (message: string) => ApiException> =
+  {
+    [HttpStatus.BAD_REQUEST]: BadRequestApiException,
+    [HttpStatus.UNAUTHORIZED]: UnauthorizedApiException,
+    [HttpStatus.FORBIDDEN]: ForbiddenApiException,
+    [HttpStatus.NOT_FOUND]: NotFoundApiException,
+    [HttpStatus.UNPROCESSABLE_ENTITY]: UnprocessableEntityApiException,
+    [HttpStatus.INTERNAL_SERVER_ERROR]: InternalServerErrorApiException
+  }
+
+/**
+ * What the caller is told when the failed response classified nothing.
+ *
+ * Not "non-JSON": a body that parses as a JSON string or number is perfectly
+ * valid JSON and still carries no problem details, and it reached here as a
+ * bare sentence written by the upstream — one that had a taxpayer id in it
+ * the day this was found.
+ */
+const noProblemDetails = (status: number) =>
+  `Upstream error body carried no problem details (status ${status})`
+
+/** Neither a `fetch` failure nor an unreadable success body may describe itself. */
+const UPSTREAM_UNREACHABLE =
+  'The request to the upstream service could not be completed'
 
 /**
  * HTTP service class to allow easy implementation of custom API repositories
@@ -42,19 +82,16 @@ export abstract class HttpService {
       if (response?.headers?.get('content-type')?.includes('text/plain')) {
         const message = await response.text()
 
+        // The hook still receives the text — a transport that knows its own
+        // upstream may read it — but the text never becomes the thrown
+        // message. It is free prose written by whatever answered, and the
+        // thrown message is what `getResponse()` hands to the browser.
         await this.catch(request, response, { message })
 
-        if (response.status === HttpStatus.UNAUTHORIZED) {
-          throw new UnauthorizedApiException(message)
-        } else if (response.status === HttpStatus.NOT_FOUND) {
-          throw new NotFoundApiException(message)
-        } else if (response.status === HttpStatus.UNPROCESSABLE_ENTITY) {
-          throw new UnprocessableEntityApiException(message)
-        } else if (response.status === HttpStatus.INTERNAL_SERVER_ERROR) {
-          throw new InternalServerErrorApiException(message)
-        }
-
-        throw new ServiceUnavailableApiException(message)
+        throw this.toApiException(
+          response.status,
+          noProblemDetails(response.status)
+        )
       }
 
       // Parse application/json error responses
@@ -64,24 +101,14 @@ export abstract class HttpService {
 
         await this.catch(request, response, error)
 
-        // Never the body text. A gateway's HTML page or a truncated body used
-        // to arrive here inside a SyntaxError whose own message quotes the
-        // first bytes of that body, and that message became the exception's.
-        const message =
-          error ??
-          `Upstream returned a non-JSON error body (status ${response.status})`
-
-        if (response.status === HttpStatus.UNAUTHORIZED) {
-          throw new UnauthorizedApiException(message)
-        } else if (response.status === HttpStatus.NOT_FOUND) {
-          throw new NotFoundApiException(message)
-        } else if (response.status === HttpStatus.UNPROCESSABLE_ENTITY) {
-          throw new UnprocessableEntityApiException(message)
-        } else if (response.status === HttpStatus.INTERNAL_SERVER_ERROR) {
-          throw new InternalServerErrorApiException(message)
-        }
-
-        throw new ServiceUnavailableApiException(message)
+        // Never the body itself. The whole parsed body used to be handed in
+        // as the message, and `getResponse()` serialises the message to the
+        // browser — so `detail` and `errors[]`, which is where an upstream
+        // puts destination URLs and the values it rejected, went with it.
+        throw this.toApiException(
+          response.status,
+          toProblemMessage(error, noProblemDetails(response.status))
+        )
       }
 
       // Handle 204 Success No Content response
@@ -95,8 +122,40 @@ export abstract class HttpService {
         throw error
       }
 
-      throw new ServiceUnavailableApiException(error)
+      // Never the error's own message. A `fetch` failure names the host and
+      // port it could not reach, and a success body that is not JSON arrives
+      // here as a SyntaxError quoting its first bytes; both used to become
+      // the message this exception serialises to the browser. What actually
+      // broke stays on `cause`, which no exception filter serialises, so a
+      // server-side log can still say it. Non-enumerable, like the `cause`
+      // the Error constructor sets, so a caller that spreads the exception
+      // does not put it back on the wire.
+      throw Object.defineProperty(
+        new ServiceUnavailableApiException(UPSTREAM_UNREACHABLE),
+        'cause',
+        { value: error, writable: true, configurable: true }
+      )
     }
+  }
+
+  /**
+   * The exception a failed upstream call becomes, at the status it really was.
+   */
+  private toApiException(status: number, message: string): ApiException {
+    const Exception = STATUS_EXCEPTIONS[status]
+
+    if (Exception) {
+      return new Exception(message)
+    }
+
+    if (
+      status >= HttpStatus.BAD_REQUEST &&
+      status < HttpStatus.INTERNAL_SERVER_ERROR
+    ) {
+      return new ApiException('0008', 'Upstream Error', message, status)
+    }
+
+    return new ServiceUnavailableApiException(message)
   }
 
   /**
@@ -110,7 +169,7 @@ export abstract class HttpService {
    * survives — a scalar or unparseable body is dropped rather than handed on
    * to be interpolated into an exception message.
    */
-  private async readErrorBody(response: Response): Promise<any> {
+  private async readErrorBody(response: Response): Promise<unknown> {
     const rawText = await response.text()
 
     if (!rawText) {
@@ -202,7 +261,15 @@ export abstract class HttpService {
    * and loses its query string, which carries tokens and filters just as
    * freely as a body does.
    *
-   * Override to add what a specific upstream is known to keep safe.
+   * Override to add what a specific upstream is known to keep safe — and only
+   * that. What this returns is written by the default `catch` to
+   * `console.error`, at error level, on every failed call, so it lands in the
+   * operator's log and in whatever ships that log onward. The object returned
+   * here is the ceiling, not a starting point: `return { ...super.describe(),
+   * ...error }`, or returning `error` itself, puts the whole upstream body
+   * back in the log and re-opens exactly the defect this replaced. Add named
+   * fields you have read the upstream's contract for.
+   *
    * @param request The request that was sent
    * @param response The raw response received from the server
    * @param error Parsed error response from the server, when it had one
@@ -211,16 +278,17 @@ export abstract class HttpService {
     request: Request,
     response: Response,
     error: any
-  ): Record<string, any> {
+  ): Record<string, unknown> {
     const { origin, pathname } = new URL(request.url)
+    const cap = (value: string) => value.slice(0, PROBLEM_FIELD_MAX_LENGTH)
 
     return {
       method: request.method,
       url: `${origin}${pathname}`,
       status: response.status,
-      ...(typeof error?.type === 'string' && { type: error.type }),
-      ...(typeof error?.title === 'string' && { title: error.title }),
-      ...(typeof error?.code === 'string' && { code: error.code })
+      ...(typeof error?.type === 'string' && { type: cap(error.type) }),
+      ...(typeof error?.title === 'string' && { title: cap(error.title) }),
+      ...(typeof error?.code === 'string' && { code: cap(error.code) })
     }
   }
 

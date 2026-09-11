@@ -1,17 +1,28 @@
 import { HttpStatus } from '@/constants/http-status'
+import { toProblemMessage } from '@/utils/error/to-problem-message'
 import { HttpException } from './http-exception'
 
 export class ApiException extends HttpException {
   private readonly metadata: any
 
+  /**
+   * @param message Anything, coerced to a string. `message` used to be a
+   * constructor parameter property, so it replaced `Error.message` with
+   * whatever was handed in — and an upstream JSON body handed in here became
+   * the `message` that `getResponse()` serialises to the browser. A body is
+   * now reduced to its bounded classification before it gets that far.
+   */
   constructor(
     public readonly code: string,
     public readonly title: string,
-    public readonly message: string,
+    message: unknown,
     status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR,
     metadata: any = {}
   ) {
-    super(message, status)
+    super(
+      toProblemMessage(message, `Upstream error (status ${status})`),
+      status
+    )
     this.metadata = metadata
   }
 
