@@ -978,4 +978,129 @@ describe('HttpService', () => {
       expect(service.received).not.toHaveProperty('message')
     })
   })
+
+  // Round 3. A call that never produced a usable response becomes one fixed
+  // sentence on the wire, which is right — and until this hook existed it
+  // also became NOTHING in the server log. A Midaz outage, a DNS or TLS
+  // failure, a 200 whose body is a login page: all of them left no record at
+  // all, and `cause` is read by no code.
+  describe('what an unreachable upstream writes down', () => {
+    const withQuery = 'https://api.example.com/v1/accounts?token=s3cr3t-token'
+
+    it('logs the method, the path and what actually broke', async () => {
+      const service = new DefaultCatchHttpService()
+      mockFetch.mockRejectedValue(
+        new TypeError('fetch failed: connect ECONNREFUSED 10.0.0.5:8080')
+      )
+
+      const error = await service
+        .testRequest(new Request(withQuery))
+        .catch((thrown) => thrown)
+
+      expect(consoleSpy).toHaveBeenCalledWith('Request failed', {
+        method: 'GET',
+        url: 'https://api.example.com/v1/accounts',
+        cause: 'fetch failed: connect ECONNREFUSED 10.0.0.5:8080'
+      })
+
+      // The host and port belong in the operator's log and nowhere else.
+      expect(error).toBeInstanceOf(ServiceUnavailableApiException)
+      expect(error.message).toBe(
+        'The request to the upstream service could not be completed'
+      )
+    })
+
+    it('keeps the query string out of what it logs', async () => {
+      const service = new DefaultCatchHttpService()
+      mockFetch.mockRejectedValue(new TypeError('fetch failed'))
+
+      await expect(
+        service.testRequest(new Request(withQuery))
+      ).rejects.toBeInstanceOf(ServiceUnavailableApiException)
+
+      expect(JSON.stringify(consoleSpy.mock.calls)).not.toContain('s3cr3t')
+    })
+
+    it('records a success body that was never JSON', async () => {
+      const service = new DefaultCatchHttpService()
+      mockFetch.mockResolvedValue(
+        new Response('<html><body>login</body></html>', {
+          status: HttpStatus.OK,
+          headers: { 'content-type': 'text/html' }
+        })
+      )
+
+      await expect(
+        service.testRequest(new Request('https://api.example.com/v1/accounts'))
+      ).rejects.toBeInstanceOf(ServiceUnavailableApiException)
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Request failed',
+        expect.objectContaining({ method: 'GET' })
+      )
+    })
+
+    it('records a catch override that threw something unexpected', async () => {
+      class ThrowingCatchHttpService extends HttpService {
+        public async testRequest<T>(request: Request): Promise<T> {
+          return this.request<T>(request)
+        }
+
+        protected createDefaults = jest.fn().mockResolvedValue({})
+
+        protected async catch() {
+          throw new Error('transport bug: cannot read code of undefined')
+        }
+      }
+
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ title: 'Conflict' }), {
+          status: HttpStatus.CONFLICT,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+
+      await expect(
+        new ThrowingCatchHttpService().testRequest(
+          new Request('https://api.example.com/v1/accounts')
+        )
+      ).rejects.toBeInstanceOf(ServiceUnavailableApiException)
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Request failed',
+        expect.objectContaining({
+          cause: 'transport bug: cannot read code of undefined'
+        })
+      )
+    })
+
+    it('is overridable like the fetch hooks beside it', async () => {
+      const onRequestFailure = jest.fn()
+
+      class RoutingHttpService extends HttpService {
+        public async testRequest<T>(request: Request): Promise<T> {
+          return this.request<T>(request)
+        }
+
+        protected createDefaults = jest.fn().mockResolvedValue({})
+        protected onRequestFailure = onRequestFailure
+      }
+
+      const broke = new TypeError('fetch failed')
+      mockFetch.mockRejectedValue(broke)
+
+      await expect(
+        new RoutingHttpService().testRequest(
+          new Request('https://api.example.com/v1/accounts')
+        )
+      ).rejects.toBeInstanceOf(ServiceUnavailableApiException)
+
+      expect(onRequestFailure).toHaveBeenCalledTimes(1)
+      expect(onRequestFailure).toHaveBeenCalledWith(expect.any(Request), broke)
+      // Overriding it replaces the default log entirely.
+      expect(JSON.stringify(consoleSpy.mock.calls)).not.toContain(
+        'Request failed'
+      )
+    })
+  })
 })

@@ -126,14 +126,16 @@ export abstract class HttpService {
         throw error
       }
 
+      this.onRequestFailure(request, error)
+
       // Never the error's own message. A `fetch` failure names the host and
       // port it could not reach, and a success body that is not JSON arrives
       // here as a SyntaxError quoting its first bytes; both used to become
       // the message this exception serialises to the browser. What actually
-      // broke stays on `cause`, which no exception filter serialises, so a
-      // server-side log can still say it. Non-enumerable, like the `cause`
-      // the Error constructor sets, so a caller that spreads the exception
-      // does not put it back on the wire.
+      // broke went to `onRequestFailure` just above, and stays on `cause`,
+      // which no exception filter serialises. Non-enumerable, like the
+      // `cause` the Error constructor sets, so a caller that spreads the
+      // exception does not put it back on the wire.
       throw Object.defineProperty(
         new ServiceUnavailableApiException(UPSTREAM_UNREACHABLE),
         'cause',
@@ -253,6 +255,37 @@ export abstract class HttpService {
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onAfterFetch(request: Request, response: Response) {}
+
+  /**
+   * Event triggered when the call never produced a usable response.
+   *
+   * A `fetch` that never connected, a DNS or TLS failure, a success body that
+   * is not JSON, a `catch` override that threw something other than an
+   * `ApiException`: every one of them becomes the same fixed sentence on the
+   * wire, which is correct — the host and port a request could not reach are
+   * not the browser's business. They ARE the operator's, and nothing wrote
+   * them down: an upstream outage left no server-side record at all.
+   *
+   * What lands here is deliberately the unredacted cause, so an override must
+   * keep it server-side. The URL keeps its path and loses its query string,
+   * which carries tokens just as freely as a body does.
+   *
+   * Like `onBeforeFetch` and `onAfterFetch`, this must not throw: it runs
+   * outside the block that turns a failure into a bounded exception, so an
+   * exception raised here escapes `request` unbounded.
+   *
+   * @param request The request that was sent
+   * @param error Whatever actually broke
+   */
+  protected onRequestFailure(request: Request, error: unknown): void {
+    const { origin, pathname } = new URL(request.url)
+
+    console.error('Request failed', {
+      method: request.method,
+      url: `${origin}${pathname}`,
+      cause: error instanceof Error ? error.message : String(error)
+    })
+  }
 
   /**
    * The fields of a failed call that are safe to log.
