@@ -179,6 +179,36 @@ describe('logHttpEvent', () => {
         'PUT https://api.example.com/users → 422: VALIDATION_ERROR'
       )
     })
+
+    // `HttpService` hands a `text/plain` upstream body over as `{ text }`, and
+    // that key is chosen precisely because no transport reads it. Reading it
+    // here would re-open the leak in every service that inherits the hook, so
+    // the absence is the contract, not an oversight.
+    it('never reaches for the text a plain-text body arrives under', () => {
+      const request = new Request('https://api.example.com/v1/accounts', {
+        method: 'GET'
+      })
+      const response = new Response(null, { status: 401 })
+      const error = {
+        text: 'token expired for cpf 123.456.789-00 at db-primary.internal:5432'
+      }
+
+      logHttpEvent(mockLogger as any, 'UserService', 'catch', [
+        request,
+        response,
+        error
+      ])
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'UserService.catch',
+        'GET https://api.example.com/v1/accounts → 401'
+      )
+
+      const logged = JSON.stringify(mockLogger.error.mock.calls)
+      expect(logged).not.toContain('cpf')
+      expect(logged).not.toContain('123.456')
+      expect(logged).not.toContain('db-primary')
+    })
   })
 
   // The logged URL is the destination, never the payload. A query string on an

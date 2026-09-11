@@ -77,6 +77,8 @@ export function logHttpEvent(
     // `||` and not `??`: a vendor answering `{ message: '', code: 'X' }` has an
     // identifier worth logging, and nullish coalescing would select the empty
     // string and drop both.
+    // Never `text`: `HttpService` hands a text/plain body over under that key
+    // precisely because it is unbounded, unstructured prose from the vendor.
     const detail = error?.message || error?.code
 
     logger.error(
