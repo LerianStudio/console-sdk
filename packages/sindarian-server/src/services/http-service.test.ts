@@ -769,6 +769,15 @@ describe('HttpService', () => {
       expect(error).not.toBeInstanceOf(ServiceUnavailableApiException)
       expect(error.getStatus()).toBe(HttpStatus.CONFLICT)
       expect(error.message).toBe('ALREADY_EXISTS')
+
+      // The identity a filter and a client read, not only the status.
+      expect(error.code).toBe('0008')
+      expect(error.title).toBe('Upstream Error')
+      expect(error.getResponse()).toEqual({
+        code: '0008',
+        title: 'Upstream Error',
+        message: 'ALREADY_EXISTS'
+      })
     })
 
     it('drops a JSON scalar body instead of quoting it', async () => {
@@ -819,6 +828,46 @@ describe('HttpService', () => {
       expect(error.message).not.toContain('<html>')
       expect(error.message).not.toContain('secret-token-abc')
     })
+
+    // Dropping the `typeof === 'string'` guards looks harmless — the field is
+    // just absent from the log either way. It is not: `cap(123)` throws inside
+    // `catch`, the throw escapes to the outer handler, and the 409 the
+    // upstream really sent reaches the caller as a 503.
+    it.each([
+      ['type', { type: 123, title: 'Conflict', code: 'ALREADY_EXISTS' }],
+      ['title', { type: 'about:blank', title: 123, code: 'ALREADY_EXISTS' }],
+      ['code', { type: 'about:blank', title: 'Conflict', code: 123 }]
+    ])(
+      'drops a non-string %s instead of interpolating it',
+      async (field, body) => {
+        const service = new DefaultCatchHttpService()
+        mockFetch.mockResolvedValue(
+          new Response(JSON.stringify(body), {
+            status: HttpStatus.CONFLICT,
+            headers: { 'content-type': 'application/json' }
+          })
+        )
+
+        const error = await service
+          .testRequest(new Request(upstream))
+          .catch((thrown) => thrown)
+
+        const [, logged] = consoleSpy.mock.calls[0]
+        expect(logged).not.toHaveProperty(field)
+
+        // The two that ARE strings still land, so this is the guard doing its
+        // job and not a throw that swallowed the whole log line.
+        expect(Object.keys(logged)).toEqual(
+          expect.arrayContaining(
+            ['type', 'title', 'code'].filter((name) => name !== field)
+          )
+        )
+
+        // The status survives the field it could not use.
+        expect(error.getStatus()).toBe(HttpStatus.CONFLICT)
+        expect(error).not.toBeInstanceOf(ServiceUnavailableApiException)
+      }
+    )
 
     it('caps the classification fields it logs', async () => {
       // `type`, `title` and `code` come from the upstream and are unbounded.
