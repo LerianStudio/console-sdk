@@ -270,6 +270,23 @@ describe('logHttpEvent', () => {
     })
 
     // The catch hook has no `instanceof Request` guard, so a caller can reach it
+    // A fragment is the other half of that fallback. Nothing forces a caller
+    // to use `?`: a relative URL carrying its parameters after `#` reaches the
+    // same unparseable path, and splitting on `?` alone logs the lot.
+    it('still truncates a relative URL that carries a fragment', () => {
+      logHttpEvent(mockLogger as any, 'UserService', 'catch', [
+        { method: 'GET', url: '/v1/x#taxId=123.456.789-00&cursor=abc' },
+        new Response(null, { status: 400 }),
+        undefined
+      ])
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'UserService.catch',
+        'GET /v1/x → 400'
+      )
+      assertNoQuery(mockLogger.error.mock.calls)
+    })
+
     // with a relative URL that no parser accepts.
     it('still truncates a relative URL that cannot be parsed', () => {
       logHttpEvent(mockLogger as any, 'UserService', 'catch', [
