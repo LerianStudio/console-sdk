@@ -343,4 +343,95 @@ describe('ApiException', () => {
       })
     })
   })
+
+  // `message` used to be a constructor parameter property, so it replaced
+  // `Error.message` with whatever was handed in — and `getResponse()` ships
+  // `message` straight to the browser. Anything that is not already a string
+  // is now reduced to a bounded sentence before it gets there.
+  describe('message coercion', () => {
+    it('keeps a string message exactly as given', () => {
+      const exception = new ApiException('0001', 'Title', 'Account not found')
+
+      expect(exception.message).toBe('Account not found')
+    })
+
+    it('reduces an upstream problem object to its title', () => {
+      const exception = new ApiException('0005', 'Service Unavailable', {
+        title: 'Gateway Timeout',
+        detail: 'cpf 123.456.789-00 timed out at db-primary.internal',
+        errors: [{ field: 'taxId', value: '123.456.789-00' }]
+      })
+
+      expect(exception.message).toBe('Gateway Timeout')
+      expect(JSON.stringify(exception.getResponse())).not.toContain(
+        '123.456.789-00'
+      )
+      expect(JSON.stringify(exception.getResponse())).not.toContain(
+        'db-primary.internal'
+      )
+    })
+
+    it('falls back to the problem code when there is no title', () => {
+      const exception = new ApiException('0005', 'Service Unavailable', {
+        code: 'ALREADY_EXISTS'
+      })
+
+      expect(exception.message).toBe('ALREADY_EXISTS')
+    })
+
+    it('names the status when the object classifies nothing', () => {
+      const exception = new ApiException(
+        '0005',
+        'Service Unavailable',
+        { detail: 'something went wrong' },
+        HttpStatus.BAD_GATEWAY
+      )
+
+      // One sentence for one condition: the transport and this constructor
+      // both say `noProblemDetails(status)` now, so a caller cannot tell which
+      // frame gave up on the body.
+      expect(exception.message).toBe(
+        'Upstream error body carried no problem details (status 502)'
+      )
+    })
+
+    // Three Console transports do `throw new ServiceUnavailableApiException(
+    // error)` from a `catch (error: any)`, so an `Error` arrives here whole.
+    // Its message is what broke, not what the caller may be told: taking it
+    // put `fetch failed: connect ECONNREFUSED 10.0.0.5:8080` on the wire.
+    it('never takes an Error own message', () => {
+      const exception = new ApiException(
+        '0005',
+        'Service Unavailable',
+        new TypeError('fetch failed: connect ECONNREFUSED 10.0.0.5:8080'),
+        HttpStatus.SERVICE_UNAVAILABLE
+      )
+
+      expect(exception.message).not.toContain('10.0.0.5')
+      expect(exception.message).not.toContain('8080')
+      expect(JSON.stringify(exception.getResponse())).not.toContain('10.0.0.5')
+    })
+
+    it('names the status when there is no message at all', () => {
+      const exception = new ApiException(
+        '0005',
+        'Service Unavailable',
+        undefined,
+        HttpStatus.SERVICE_UNAVAILABLE
+      )
+
+      expect(exception.message).toBe(
+        'Upstream error body carried no problem details (status 503)'
+      )
+      expect(typeof exception.getResponse().message).toBe('string')
+    })
+
+    it('caps an upstream title at 200 characters', () => {
+      const exception = new ApiException('0005', 'Service Unavailable', {
+        title: 'T'.repeat(4000)
+      })
+
+      expect(exception.message).toHaveLength(200)
+    })
+  })
 })

@@ -55,7 +55,11 @@ describe('BaseExceptionFilter', () => {
     )
   })
 
-  it('should handle ApiException without message (default message)', async () => {
+  // An empty message used to survive the constructor, and this filter's
+  // `message || 'Internal server error'` then told the user that an expired
+  // token was a server fault. The constructor now substitutes a sentence that
+  // names the real status, so the filter's own fallback stays unreached.
+  it('names the real status when the message is empty', async () => {
     const exception = new ApiException(
       'TEST_ERROR',
       'Test Error',
@@ -66,6 +70,10 @@ describe('BaseExceptionFilter', () => {
     await filter.catch(exception)
 
     expect(mockNextResponse.json).toHaveBeenCalledWith(
+      { message: expect.stringContaining('404') },
+      { status: 404 }
+    )
+    expect(mockNextResponse.json).not.toHaveBeenCalledWith(
       { message: 'Internal server error' },
       { status: 404 }
     )
