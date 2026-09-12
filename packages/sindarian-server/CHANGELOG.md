@@ -1,3 +1,20 @@
+## [2.0.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.1...sindarian-server-v2.0.0-beta.2) (2026-09-12)
+
+
+### Features
+
+* **sindarian-server:** log what an unreachable upstream was ([0651954](https://github.com/LerianStudio/console-sdk/commit/0651954564d52c7a7b6e3906321a4cb0075d9ee9))
+
+
+### Bug Fixes
+
+* **sindarian-logs:** keep query strings out of the http log line ([1eb8436](https://github.com/LerianStudio/console-sdk/commit/1eb8436433f6b685f66522f922140d8cf1fa4ebf))
+* **sindarian-server:** an Error never becomes the message on the wire ([6039bef](https://github.com/LerianStudio/console-sdk/commit/6039bef46f5d266292f8474a27435b7b800d9f3e))
+* **sindarian-server:** bound the error message and map more statuses ([e51b5f0](https://github.com/LerianStudio/console-sdk/commit/e51b5f034333677b4a39a1e4c1683e15cda6ea8b))
+* **sindarian-server:** contain a failure hook that throws ([0719575](https://github.com/LerianStudio/console-sdk/commit/07195757201709d01c5bcd5a3b00dc665a977122))
+* **sindarian-server:** keep the status, drop the body from the log ([1c1aed9](https://github.com/LerianStudio/console-sdk/commit/1c1aed924aa0cc2ba67b24192af0c9c4f94c19cb))
+* **sindarian-server:** stop handing the raw text body to the catch hook ([70f9b27](https://github.com/LerianStudio/console-sdk/commit/70f9b27a9e54ca7ffb25dd255f7116baad72bfd5))
+
 ## [2.0.0-beta.1](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v1.4.0-beta.1...sindarian-server-v2.0.0-beta.1) (2026-09-09)
 
 
