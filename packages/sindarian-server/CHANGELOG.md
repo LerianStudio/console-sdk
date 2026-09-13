@@ -1,3 +1,11 @@
+## [2.0.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.2...sindarian-server-v2.0.0-beta.3) (2026-09-13)
+
+
+### Bug Fixes
+
+* **sindarian-server:** match text/plain regardless of header case ([5d9f6ce](https://github.com/LerianStudio/console-sdk/commit/5d9f6cea3cb567ec073b5ba7d85de83d20d144c6))
+* **sindarian-server:** read the status before the content type ([d29f041](https://github.com/LerianStudio/console-sdk/commit/d29f041b4c616dc04ca4970c1b0a6857169ea0cf))
+
 ## [2.0.0-beta.2](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.1...sindarian-server-v2.0.0-beta.2) (2026-09-12)
 
 
