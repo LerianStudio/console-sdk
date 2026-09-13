@@ -188,6 +188,44 @@ describe('HttpService', () => {
       )
     })
 
+    // A success an upstream failed to label as JSON. Real `Response` fixtures,
+    // because the point is that `response.json()` parses by body and ignores
+    // the declared content type: only the branch order decides whether the
+    // caller ever reaches it.
+    it('returns the body of a text/plain 200 that carries JSON', async () => {
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ total: '1.50', currency: 'BRL' }), {
+          status: HttpStatus.OK,
+          headers: { 'content-type': 'text/plain; charset=utf-8' }
+        })
+      )
+      const mockRequest = new Request('https://api.example.com/test')
+
+      await expect(httpService.testRequest(mockRequest)).resolves.toEqual({
+        total: '1.50',
+        currency: 'BRL'
+      })
+      expect(httpService.catch).not.toHaveBeenCalled()
+    })
+
+    it('still throws the bounded exception for a text/plain 200 that is not JSON', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('db-primary.internal: not JSON at all', {
+          status: HttpStatus.OK,
+          headers: { 'content-type': 'text/plain' }
+        })
+      )
+      const mockRequest = new Request('https://api.example.com/test')
+
+      const error = await httpService
+        .testRequest(mockRequest)
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(ServiceUnavailableApiException)
+      expect(error.message).not.toContain('db-primary.internal')
+      expect(error.message).not.toContain('not JSON at all')
+    })
+
     it('should handle JSON error responses', async () => {
       mockResponse.ok = false
       mockResponse.status = HttpStatus.BAD_REQUEST
@@ -1026,6 +1064,25 @@ describe('HttpService', () => {
 
       expect(service.received).toEqual({ text: 'upstream is down' })
       expect(service.received).not.toHaveProperty('message')
+    })
+
+    // Media types are case-insensitive (RFC 9110 8.3.1). A gateway that spells
+    // it `Text/Plain` is still answering plain text, and the hook must still
+    // receive the bounded `{ text }`, not whatever the JSON reader made of it.
+    it('recognises a plain-text failure whatever the case of its media type', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('upstream is down', {
+          status: HttpStatus.SERVICE_UNAVAILABLE,
+          headers: { 'content-type': 'Text/Plain; charset=UTF-8' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(ServiceUnavailableApiException)
+
+      expect(service.received).toEqual({ text: 'upstream is down' })
     })
   })
 

@@ -68,8 +68,20 @@ export abstract class HttpService {
 
       this.onAfterFetch(request, response)
 
-      // Parse text/plain error responses
-      if (response?.headers?.get('content-type')?.includes('text/plain')) {
+      // Parse text/plain error responses. The status decides, not the header:
+      // an upstream that answers a SUCCESS it forgot to label as JSON is not
+      // an outage, and reading the header first turned every one of them into
+      // one. A 2xx falls through to `response.json()` below, which parses by
+      // body and ignores the declared type; a 2xx whose body is genuinely not
+      // JSON lands in the catch and becomes the same bounded exception it
+      // always did.
+      if (
+        !response.ok &&
+        response?.headers
+          ?.get('content-type')
+          ?.toLowerCase()
+          .includes('text/plain')
+      ) {
         const body = await response.text()
 
         // Under `text`, and bounded. It used to arrive as `message`, which is
