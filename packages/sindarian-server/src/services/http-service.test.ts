@@ -1065,6 +1065,25 @@ describe('HttpService', () => {
       expect(service.received).toEqual({ text: 'upstream is down' })
       expect(service.received).not.toHaveProperty('message')
     })
+
+    // Media types are case-insensitive (RFC 9110 8.3.1). A gateway that spells
+    // it `Text/Plain` is still answering plain text, and the hook must still
+    // receive the bounded `{ text }`, not whatever the JSON reader made of it.
+    it('recognises a plain-text failure whatever the case of its media type', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('upstream is down', {
+          status: HttpStatus.SERVICE_UNAVAILABLE,
+          headers: { 'content-type': 'Text/Plain; charset=UTF-8' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(ServiceUnavailableApiException)
+
+      expect(service.received).toEqual({ text: 'upstream is down' })
+    })
   })
 
   // Round 3. A call that never produced a usable response becomes one fixed

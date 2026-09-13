@@ -77,7 +77,10 @@ export abstract class HttpService {
       // always did.
       if (
         !response.ok &&
-        response?.headers?.get('content-type')?.includes('text/plain')
+        response?.headers
+          ?.get('content-type')
+          ?.toLowerCase()
+          .includes('text/plain')
       ) {
         const body = await response.text()
 
