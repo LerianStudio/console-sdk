@@ -43,17 +43,19 @@ Both ranges gained a clause anchored on the 2.x tuple:
 - peer: `>=1.0.0-beta.27 || >=2.0.0-0`
 - dev: `>=1.1.0 || >=2.0.0-0`
 
-`packages/sindarian-logs/src/peer-dependencies.test.ts` holds four assertions:
+`packages/sindarian-logs/src/peer-dependencies.test.ts` holds five assertions:
 
 1. both ranges declare the server at all, so deleting the key cannot pass;
 2. the peer range admits `packages/sindarian-server/package.json`'s current `version`;
 3. the dev range admits it too, which is what makes npm link the sibling;
-4. the peer range still admits `1.3.0`, a concrete server version 1.x consumers install.
+4. the peer range still admits `1.3.0`, a concrete server version 1.x consumers install;
+5. the dev range still admits it too, so this file cherry-picked onto a `hotfix/*`
+   branch off the 1.x line keeps linking the sibling rather than a published copy.
 
-Assertion 4 exists because assertions 2 and 3 alone accept a bare `>=2.0.0-0`, which
-would drop every 1.x consumer while staying green. Assertion 1 exists because `semver`
-reads an empty range as `*`: with the previous `?? ''` fallback, a deleted key passed
-the moment the server left prerelease.
+Assertions 4 and 5 exist because 2 and 3 alone accept a bare `>=2.0.0-0`, which would
+drop the whole 1.x line while staying green. Assertion 1 exists because `semver` reads
+an empty range as `*`: with the previous `?? ''` fallback, a deleted key passed the
+moment the server left prerelease.
 
 ## What the consumer has to do
 
@@ -181,7 +183,7 @@ peer=>=1.0.0-beta.27  dev=>=1.1.0
   ● @lerianstudio/sindarian-server ranges › accepts the sibling version this monorepo publishes
   ● @lerianstudio/sindarian-server ranges › links the sibling for development instead of a published copy
 Test Suites: 1 failed, 1 total
-Tests:       2 failed, 2 passed, 4 total
+Tests:       2 failed, 3 passed, 5 total
 rc=1
 ```
 
@@ -192,19 +194,24 @@ rc=1
   ● @lerianstudio/sindarian-server ranges › accepts the sibling version this monorepo publishes
   ● @lerianstudio/sindarian-server ranges › keeps the 1.x server line consumers still install
 Test Suites: 1 failed, 1 total
-Tests:       3 failed, 1 passed, 4 total
+Tests:       3 failed, 2 passed, 5 total
 rc=1
 ```
 
-### RED, the peer range replaced by a bare `>=2.0.0-0`
+### RED, a range replaced by a bare `>=2.0.0-0`
 
-The two sibling assertions stay green, which is the point: only the 1.x assertion
-catches a range that would drop every 1.x consumer.
+The sibling assertions stay green in both cases, which is the point: only the 1.x
+assertions catch a range that would drop the whole 1.x line.
 
 ```
+# peer range
   ● @lerianstudio/sindarian-server ranges › keeps the 1.x server line consumers still install
-Test Suites: 1 failed, 1 total
-Tests:       1 failed, 3 passed, 4 total
+Tests:       1 failed, 4 passed, 5 total
+rc=1
+
+# dev range
+  ● @lerianstudio/sindarian-server ranges › keeps a 1.x sibling linkable for development
+Tests:       1 failed, 4 passed, 5 total
 rc=1
 ```
 
@@ -213,7 +220,7 @@ rc=1
 ```
 $ npx jest src/peer-dependencies.test.ts
 Test Suites: 1 passed, 1 total
-Tests:       4 passed, 4 total
+Tests:       5 passed, 5 total
 rc=0
 ```
 
@@ -232,11 +239,11 @@ Before: a third entry,
 
 ```
 $ npx turbo lint --filter=@lerianstudio/sindarian-logs     -> Tasks: 1 successful, 1 total   LINT-rc=0
-$ npm run test  -- --filter=@lerianstudio/sindarian-logs   -> Tests: 80 passed, 80 total     TEST-rc=0
+$ npm run test  -- --filter=@lerianstudio/sindarian-logs   -> Tests: 81 passed, 81 total     TEST-rc=0
 $ npm run build -- --filter=@lerianstudio/sindarian-logs   -> Tasks: 2 successful, 2 total   BUILD-rc=0
 ```
 
-The build is the load-bearing one: those 80 tests and that `tsc` now run against
+The build is the load-bearing one: those 81 tests and that `tsc` now run against
 server `2.0.0-beta.3`, not against `1.1.0`. They pass, so the 2.x server API is
 compatible with this package.
 

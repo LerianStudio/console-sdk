@@ -11,10 +11,12 @@ type Manifest = {
 const SERVER = '@lerianstudio/sindarian-server'
 
 /**
- * A server version on the 1.x line that consumers still install: product-console
- * resolves sindarian-server 1.3.0 today. Widening these ranges onto the 2.x line
- * must not drop that line, and a bare ">=2.0.0-0" drops every 1.x consumer while
- * keeping the sibling assertions below green.
+ * A server version on the 1.x line that is still live: product-console resolves
+ * sindarian-server 1.3.0 today, and `release.yml` still cuts `hotfix/*` releases
+ * off it. Widening these ranges onto the 2.x line must not drop that line, and a
+ * bare ">=2.0.0-0" drops it in both ranges while keeping the sibling assertions
+ * below green: for consumers it makes the package uninstallable, and on a 1.x
+ * branch it puts a published copy of the server back where the sibling belongs.
  */
 const SUPPORTED_1X = '1.3.0'
 
@@ -56,5 +58,9 @@ describe(`${SERVER} ranges`, () => {
 
   it('keeps the 1.x server line consumers still install', () => {
     expect(satisfies(SUPPORTED_1X, rangeFor('peerDependencies'))).toBe(true)
+  })
+
+  it('keeps a 1.x sibling linkable for development', () => {
+    expect(satisfies(SUPPORTED_1X, rangeFor('devDependencies'))).toBe(true)
   })
 })
