@@ -322,6 +322,148 @@ describe('LoggerAggregator', () => {
     })
   })
 
+  describe('ignorePaths', () => {
+    const ignoring = (paths: string[]) =>
+      new LoggerAggregator(mockRepo, { ignorePaths: paths })
+
+    it('should write the access line when nothing is ignored', async () => {
+      await aggregator.runWithContext(
+        '/api/csp-report',
+        'POST',
+        {},
+        async () => {}
+      )
+
+      expect(mockRepo.calls).toHaveLength(1)
+    })
+
+    it('should write no access line for an exactly ignored path', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+        silent.info('csp', 'violation received')
+      })
+
+      expect(mockRepo.calls).toHaveLength(0)
+    })
+
+    it('should keep writing for a path that is not ignored', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext('/api/users', 'GET', {}, async () => {})
+
+      expect(mockRepo.calls).toHaveLength(1)
+      expect(mockRepo.calls[0].log.path).toBe('/api/users')
+    })
+
+    it('should silence every child of a prefix pattern', async () => {
+      const silent = ignoring(['/api/admin/health/*'])
+
+      await silent.runWithContext(
+        '/api/admin/health/alive',
+        'GET',
+        {},
+        async () => {}
+      )
+      await silent.runWithContext(
+        '/api/admin/health/readyz',
+        'GET',
+        {},
+        async () => {}
+      )
+
+      expect(mockRepo.calls).toHaveLength(0)
+    })
+
+    it('should not let a prefix pattern escape its own segment', async () => {
+      const silent = ignoring(['/api/admin/health/*'])
+
+      await silent.runWithContext(
+        '/api/admin/health',
+        'GET',
+        {},
+        async () => {}
+      )
+      await silent.runWithContext(
+        '/api/admin/healthz',
+        'GET',
+        {},
+        async () => {}
+      )
+
+      expect(mockRepo.calls.map((call) => call.log.path)).toEqual([
+        '/api/admin/health',
+        '/api/admin/healthz'
+      ])
+    })
+
+    it('should not treat an exact pattern as a prefix', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext(
+        '/api/csp-report/legacy',
+        'POST',
+        {},
+        async () => {}
+      )
+
+      expect(mockRepo.calls).toHaveLength(1)
+    })
+
+    it('should still write when the request throws', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await expect(
+        silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+          throw new Error('sink is down')
+        })
+      ).rejects.toThrow('sink is down')
+
+      expect(mockRepo.calls).toHaveLength(1)
+      expect(mockRepo.calls[0].method).toBe('error')
+      expect(mockRepo.calls[0].log.events[0].message).toBe('sink is down')
+    })
+
+    it('should still write when the handler records an error event', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+        silent.error('csp', 'report rejected')
+      })
+
+      expect(mockRepo.calls).toHaveLength(1)
+      expect(mockRepo.calls[0].method).toBe('error')
+    })
+
+    it('should stay silent for anything below error', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+        silent.warn('csp', 'malformed report')
+        silent.audit('csp', 'report stored')
+      })
+
+      expect(mockRepo.calls).toHaveLength(0)
+    })
+
+    it('should match any of several patterns', async () => {
+      const silent = ignoring(['/api/csp-report', '/api/admin/health/*'])
+
+      await silent.runWithContext('/api/csp-report', 'POST', {}, async () => {})
+      await silent.runWithContext(
+        '/api/admin/health/alive',
+        'GET',
+        {},
+        async () => {}
+      )
+      await silent.runWithContext('/api/ledgers', 'GET', {}, async () => {})
+
+      expect(mockRepo.calls.map((call) => call.log.path)).toEqual([
+        '/api/ledgers'
+      ])
+    })
+  })
+
   describe('concurrent contexts', () => {
     it('should isolate events between parallel requests', async () => {
       await Promise.all([

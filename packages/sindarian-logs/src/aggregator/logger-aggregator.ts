@@ -18,12 +18,29 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
 
 const MAX_EVENTS = 1000
 
+export type LoggerAggregatorOptions = {
+  /** Records debug-level events instead of dropping them. */
+  debug?: boolean
+  /**
+   * Request paths that write no access line, for routes whose volume carries no
+   * information: a violation sink, a health probe. Two forms, no regex:
+   *
+   * - `'/api/csp-report'` matches that path and nothing else
+   * - `'/api/admin/health/*'` matches everything under `/api/admin/health/`,
+   *   and neither `/api/admin/health` itself nor `/api/admin/healthz`
+   *
+   * A request that ends at `error` level is written anyway, thrown or recorded,
+   * so silencing a route never hides its failures. Defaults to silencing nothing.
+   */
+  ignorePaths?: string[]
+}
+
 export class LoggerAggregator {
   private storage = new AsyncLocalStorage<RequestContext>()
 
   constructor(
     private readonly loggerRepository: LoggerRepository,
-    private readonly options: { debug?: boolean } = {}
+    private readonly options: LoggerAggregatorOptions = {}
   ) {}
 
   /**
@@ -171,6 +188,10 @@ export class LoggerAggregator {
     const context = this.storage.getStore()
     if (!context) return
 
+    const escalatedLevel = this.escalateLevel(context.events)
+
+    if (escalatedLevel !== 'error' && this.isIgnored(context.path)) return
+
     const duration = (Date.now() - context.startTime) / 1000
 
     const events: TransformedEvent[] = context.events.map((event) => {
@@ -189,8 +210,6 @@ export class LoggerAggregator {
       return transformed
     })
 
-    const escalatedLevel = this.escalateLevel(context.events)
-
     const log: AggregatedLog = {
       level: escalatedLevel,
       method: context.method,
@@ -204,6 +223,21 @@ export class LoggerAggregator {
     if (context.metadata.handler) log.handler = context.metadata.handler
 
     this.writeLog(escalatedLevel, log)
+  }
+
+  /**
+   * Matches a request path against the configured `ignorePaths`.
+   * `'/a/b/*'` keeps its trailing slash, so it covers `/a/b/c` but not `/a/bc`.
+   */
+  private isIgnored(path: string): boolean {
+    const patterns = this.options.ignorePaths
+    if (!patterns?.length) return false
+
+    return patterns.some((pattern) =>
+      pattern.endsWith('/*')
+        ? path.startsWith(pattern.slice(0, -1))
+        : path === pattern
+    )
   }
 
   /**
