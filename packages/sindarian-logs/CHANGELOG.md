@@ -1,3 +1,12 @@
+## [2.0.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v2.0.0-beta.3...sindarian-logs-v2.0.0-beta.4) (2026-09-14)
+
+
+### Bug Fixes
+
+* **sindarian-logs:** accept the 2.x server line as a peer ([d1cca61](https://github.com/LerianStudio/console-sdk/commit/d1cca61222fa12d00f0abce37347b7d2f7d03298))
+* **sindarian-server:** match text/plain regardless of header case ([5d9f6ce](https://github.com/LerianStudio/console-sdk/commit/5d9f6cea3cb567ec073b5ba7d85de83d20d144c6))
+* **sindarian-server:** read the status before the content type ([d29f041](https://github.com/LerianStudio/console-sdk/commit/d29f041b4c616dc04ca4970c1b0a6857169ea0cf))
+
 ## [2.0.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v2.0.0-beta.2...sindarian-logs-v2.0.0-beta.3) (2026-09-12)
 
 
