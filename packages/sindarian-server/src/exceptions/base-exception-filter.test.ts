@@ -92,64 +92,91 @@ describe('BaseExceptionFilter', () => {
     )
   })
 
-  it('should handle non-ApiException with undefined message', async () => {
-    const exception = {
-      message: undefined
-    }
+  // A controller may throw anything at all, and this filter writes the last
+  // body before the wire. `message` used to be whatever the thrown value
+  // carried under that name: an object, an empty string, or nothing. A caller
+  // that classifies a failure with string methods, which is every Console
+  // route reading `error.message`, got a dead branch and answered a 500, and
+  // an object landed in the browser under a field documented as a sentence.
+  describe('the body always carries a string message', () => {
+    const messageOf = () => mockNextResponse.json.mock.calls[0][0] as any
 
-    await filter.catch(exception)
+    it('names a fallback when the thrown value has no message', async () => {
+      await filter.catch({ message: undefined })
 
-    expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: undefined },
-      { status: 500 }
-    )
-  })
+      expect(mockNextResponse.json).toHaveBeenCalledWith(
+        { message: 'Internal server error' },
+        { status: 500 }
+      )
+    })
 
-  it('should handle non-ApiException with empty string message', async () => {
-    const exception = {
-      message: ''
-    }
+    it('names a fallback for an empty message', async () => {
+      await filter.catch({ message: '' })
 
-    await filter.catch(exception)
+      expect(mockNextResponse.json).toHaveBeenCalledWith(
+        { message: 'Internal server error' },
+        { status: 500 }
+      )
+    })
 
-    expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: '' },
-      { status: 500 }
-    )
-  })
+    it('reduces an object message that classifies nothing', async () => {
+      await filter.catch({
+        message: { error: 'Complex error', details: ['detail1', 'detail2'] }
+      })
 
-  it('should handle non-ApiException with complex object message', async () => {
-    const complexMessage = {
-      error: 'Complex error',
-      details: ['detail1', 'detail2']
-    }
-    const exception = {
-      message: complexMessage
-    }
+      expect(typeof messageOf().message).toBe('string')
+      expect(mockNextResponse.json).toHaveBeenCalledWith(
+        { message: 'Internal server error' },
+        { status: 500 }
+      )
+    })
 
-    await filter.catch(exception)
+    // Same reduction the exception constructor already does one frame down:
+    // an upstream problem body classifies in `title` and `code`, and
+    // describes in `detail` and `errors[]`, which carry the caller's own
+    // rejected values and never leave the upstream.
+    it('reduces an object message to its classification only', async () => {
+      await filter.catch({
+        message: {
+          title: 'Gateway Timeout',
+          detail: 'cpf 123.456.789-00 timed out at db-primary.internal'
+        }
+      })
 
-    expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: complexMessage },
-      { status: 500 }
-    )
-  })
+      expect(messageOf().message).toBe('Gateway Timeout')
+      expect(JSON.stringify(messageOf())).not.toContain('123.456.789-00')
+      expect(JSON.stringify(messageOf())).not.toContain('db-primary.internal')
+    })
 
-  it('should handle string exception', async () => {
-    const exception = 'Simple string error'
+    it('names a fallback for a thrown string', async () => {
+      await filter.catch('Simple string error')
 
-    await filter.catch(exception)
+      expect(mockNextResponse.json).toHaveBeenCalledWith(
+        { message: 'Internal server error' },
+        { status: 500 }
+      )
+    })
 
-    expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: undefined }, // strings don't have message property
-      { status: 500 }
-    )
-  })
+    // `throw null` used to make the filter itself throw on `.message`, and a
+    // filter that throws escapes the whole request pipeline: the caller got
+    // Next's own HTML error page where a JSON envelope was promised, and a
+    // browser parsing it as JSON failed on the first character.
+    it('survives a thrown null', async () => {
+      await expect(filter.catch(null)).resolves.toBeDefined()
 
-  it('should handle null exception', async () => {
-    const exception = null
+      expect(mockNextResponse.json).toHaveBeenCalledWith(
+        { message: 'Internal server error' },
+        { status: 500 }
+      )
+    })
 
-    await expect(filter.catch(exception)).rejects.toThrow()
+    // The ApiException branch has been bounded since the message stopped
+    // being the upstream body; this branch serialised whatever it was handed.
+    it('caps an unbounded message', async () => {
+      await filter.catch(new Error('x'.repeat(5000)))
+
+      expect(messageOf().message).toHaveLength(2000)
+    })
   })
 
   it('should handle Error instance', async () => {
