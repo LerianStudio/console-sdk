@@ -1,3 +1,24 @@
+## [2.0.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.5...sindarian-ui-v2.0.0-beta.6) (2026-09-14)
+
+
+### Features
+
+* **sindarian-server:** log what an unreachable upstream was ([0651954](https://github.com/LerianStudio/console-sdk/commit/0651954564d52c7a7b6e3906321a4cb0075d9ee9))
+
+
+### Bug Fixes
+
+* **sindarian-logs:** accept the 2.x server line as a peer ([d1cca61](https://github.com/LerianStudio/console-sdk/commit/d1cca61222fa12d00f0abce37347b7d2f7d03298))
+* **sindarian-logs:** keep query strings out of the http log line ([1eb8436](https://github.com/LerianStudio/console-sdk/commit/1eb8436433f6b685f66522f922140d8cf1fa4ebf))
+* **sindarian-server:** an Error never becomes the message on the wire ([6039bef](https://github.com/LerianStudio/console-sdk/commit/6039bef46f5d266292f8474a27435b7b800d9f3e))
+* **sindarian-server:** bound the error message and map more statuses ([e51b5f0](https://github.com/LerianStudio/console-sdk/commit/e51b5f034333677b4a39a1e4c1683e15cda6ea8b))
+* **sindarian-server:** contain a failure hook that throws ([0719575](https://github.com/LerianStudio/console-sdk/commit/07195757201709d01c5bcd5a3b00dc665a977122))
+* **sindarian-server:** keep the status, drop the body from the log ([1c1aed9](https://github.com/LerianStudio/console-sdk/commit/1c1aed924aa0cc2ba67b24192af0c9c4f94c19cb))
+* **sindarian-server:** match text/plain regardless of header case ([5d9f6ce](https://github.com/LerianStudio/console-sdk/commit/5d9f6cea3cb567ec073b5ba7d85de83d20d144c6))
+* **sindarian-server:** read the status before the content type ([d29f041](https://github.com/LerianStudio/console-sdk/commit/d29f041b4c616dc04ca4970c1b0a6857169ea0cf))
+* **sindarian-server:** stop handing the raw text body to the catch hook ([70f9b27](https://github.com/LerianStudio/console-sdk/commit/70f9b27a9e54ca7ffb25dd255f7116baad72bfd5))
+* **sindarian-ui:** keep the badge label on one line ([57e96b5](https://github.com/LerianStudio/console-sdk/commit/57e96b592ac582b79e35b7b8c1f9ceba12e344ae))
+
 ## [2.0.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.4...sindarian-ui-v2.0.0-beta.5) (2026-09-09)
 
 
