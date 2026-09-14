@@ -11,9 +11,20 @@ import { Slot } from '@radix-ui/react-slot'
  * anonymous flex item — so the screen reads `IDctx-123`. Consumers were pasting
  * `className="gap-1"` per call site; `cn` runs tailwind-merge, so an explicit
  * `gap-2` still wins. Single-child badges are unaffected: gap needs two items.
+ *
+ * `whitespace-nowrap` keeps the pill a pill. `rounded-full` draws the ends as
+ * semicircles sized to ONE line box, so a label that wraps stretches those caps
+ * over two lines and the shape reads as a rounded blob, not a token. It bit a
+ * consumer table whose column was sized to its content: `min-content` on
+ * wrappable text resolves to the WIDEST WORD, so a three-word group name landed
+ * at 112px wide and 46px tall against the 26px of a single-line badge. Nowrap
+ * also pins `min-content` to the full label, which is what lets a caller cap the
+ * box with `max-w-*` plus a truncating child and get an ellipsis. A caller that
+ * genuinely wants a wrapping badge passes `whitespace-normal`; tailwind-merge
+ * lets it win.
  */
 const badgeVariants = cva(
-  'inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
     variants: {
       variant: {
