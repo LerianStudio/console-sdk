@@ -20,7 +20,14 @@ import { RequestIdRepository } from '@/request-id/request-id-repository'
       useFactory: (context: ResolutionContext) => {
         const loggerRepository = context.get<LoggerRepository>(LoggerRepository)
         return new LoggerAggregator(loggerRepository, {
-          debug: process.env.ENABLE_DEBUG === 'true'
+          debug: process.env.ENABLE_DEBUG === 'true',
+          // Which routes are noise is an operational property, not a code one:
+          // it changes with traffic, not with a release. Comma-separated, so
+          // LOG_IGNORE_PATHS=/api/csp-report,/api/admin/health/*
+          ignorePaths: (process.env.LOG_IGNORE_PATHS ?? '')
+            .split(',')
+            .map((path) => path.trim())
+            .filter(Boolean)
         })
       }
     },
