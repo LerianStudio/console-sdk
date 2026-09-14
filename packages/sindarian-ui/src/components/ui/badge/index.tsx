@@ -5,13 +5,6 @@ import { cn } from '@/lib/utils'
 import { Slot } from '@radix-ui/react-slot'
 
 /**
- * `credit` is the accounting reading of a credit amount, NOT an alias of
- * `destructive` (an error/alarm). The credit role is a tint-and-ink pair:
- * `--credit-foreground` mirrors `--credit` by contract, so the red carries the
- * role as text over a tinted surface. Do not "fix" this into a solid
- * `bg-credit` fill — that renders red-on-red and is invisible.
- */
-/**
  * `gap-1` is load-bearing, not decoration: a badge holding a label AND an
  * element child (`ID<code>ctx-123</code>`) has nothing between them otherwise —
  * JSX drops the newline-only text node and CSS drops the whitespace-only
@@ -34,6 +27,14 @@ const badgeVariants = cva(
           'border-transparent bg-muted-foreground text-white dark:text-black',
         destructive:
           'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
+        /**
+         * The accounting reading of a credit amount, NOT an alias of
+         * `destructive` (an error/alarm). The credit role is a tint-and-ink
+         * pair: `--credit-foreground` mirrors `--credit` by contract, so the
+         * red carries the role as text over a tinted surface. Do not "fix"
+         * this into a solid `bg-credit` fill — that renders red-on-red and is
+         * invisible.
+         */
         credit:
           'border-credit/30 bg-credit/10 text-credit-foreground px-[10px] py-1',
         error:
