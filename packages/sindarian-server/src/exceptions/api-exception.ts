@@ -26,12 +26,22 @@ export class ApiException extends HttpException {
     this.metadata = metadata
   }
 
+  /**
+   * The body a caller receives.
+   *
+   * Metadata is spread UNDER the three named fields, not over them. Spreading
+   * it last let a caller passing a `message` key put the object back that the
+   * constructor had just reduced to a sentence, one line above, and Console
+   * already passes metadata here (`{ details }`), so `message` is the next key
+   * anyone reaches for. Metadata extends the body; these three are its
+   * contract.
+   */
   getResponse() {
     return {
+      ...this.metadata,
       code: this.code,
       title: this.title,
-      message: this.message,
-      ...this.metadata
+      message: this.message
     }
   }
 }

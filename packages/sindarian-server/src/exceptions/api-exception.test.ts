@@ -433,5 +433,34 @@ describe('ApiException', () => {
 
       expect(exception.message).toHaveLength(200)
     })
+
+    // `getResponse()` spread the metadata over the three named fields rather
+    // than under them, so a caller that put a `message` key in metadata
+    // replaced the coerced sentence with whatever it held and undid the
+    // coercion one line above it. Metadata extends the body; the named fields
+    // are the contract. Console passes `{ details }` here today, and `message`
+    // is the next key anyone reaches for.
+    it('metadata never replaces the named fields', () => {
+      const exception = new ApiException(
+        '0005',
+        'Service Unavailable',
+        'Upstream timed out',
+        HttpStatus.SERVICE_UNAVAILABLE,
+        {
+          message: { detail: 'cpf 123.456.789-00' },
+          code: '9999',
+          title: 'Overwritten',
+          details: { requestId: 'r-1' }
+        }
+      )
+
+      const response = exception.getResponse()
+
+      expect(response.message).toBe('Upstream timed out')
+      expect(response.code).toBe('0005')
+      expect(response.title).toBe('Service Unavailable')
+      expect(response).toMatchObject({ details: { requestId: 'r-1' } })
+      expect(JSON.stringify(response)).not.toContain('123.456.789-00')
+    })
   })
 })
