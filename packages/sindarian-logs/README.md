@@ -10,6 +10,7 @@ A unified logging and tracing system for Sindarian Server applications. Every HT
 - 🎯 **Decorator-based tracing** — use `@Traceable()` on class methods for automatic operation naming
 - ⚡ **Non-class support** — use `withTrace()` for NextAuth callbacks, cron jobs, and other non-class code
 - 🌐 **HTTP service logging** — built-in `@LogHttpCall()` decorator and `LoggableHttpService` base class
+- 🔇 **Opt-out routes**: `ignorePaths` drops the access line for a noisy route and still writes its errors
 - 🔧 **Zero configuration** — import `LoggerModule` and start logging
 
 ## 🚀 Quick start
@@ -134,11 +135,53 @@ export class ExternalApiService extends LoggableHttpService {
 }
 ```
 
+### Silencing a noisy route
+
+Some routes carry no information per hit and arrive a great many times: a CSP
+violation sink, a health probe. One access line each buries everything else, and
+nothing the handler does can bound it, because the line is written by the
+aggregator after the handler returns. `ignorePaths` drops that line.
+
+With `LoggerModule`, set the environment variable (comma-separated, blanks and
+surrounding spaces ignored):
+
+```bash
+LOG_IGNORE_PATHS=/api/csp-report,/api/admin/health/*
+```
+
+Those are Product Console's two uses: an anonymous violation sink that every
+browser tab can post to, and the two liveness probes Kubernetes calls on a timer.
+
+Constructing the aggregator yourself takes the same list as an option:
+
+```typescript
+import { LoggerAggregator } from '@lerianstudio/sindarian-logs'
+
+new LoggerAggregator(loggerRepository, {
+  ignorePaths: ['/api/csp-report', '/api/admin/health/*']
+})
+```
+
+Two forms, no regex:
+
+| Pattern | Matches | Does not match |
+| --- | --- | --- |
+| `/api/csp-report` | that path, exactly | `/api/csp-report/legacy` |
+| `/api/admin/health/*` | `/api/admin/health/alive`, `/api/admin/health/readyz`, and anything deeper | `/api/admin/health`, `/api/admin/healthz` |
+
+**A silenced route still reports its failures.** The line is dropped only when
+the request ends below `error`. An error thrown out of the handler, or recorded
+with `.error()`, escalates the whole request and writes the full entry with
+every event in it. The bound applies to the routine hit, not to the incident.
+Everything below that, including `warn` and `audit`, stays silent, which is what
+makes the bound hold.
+
 ## ⚙️ Configuration
 
 | Environment variable | Effect |
 | --- | --- |
 | `ENABLE_DEBUG=true` | Includes debug-level events in the aggregated output |
+| `LOG_IGNORE_PATHS=/a,/b/*` | Writes no access line for those paths unless the request ends at `error` (see [Silencing a noisy route](#silencing-a-noisy-route)) |
 | `NODE_ENV=development` | Enables `pino-pretty` formatted output for readability |
 | `NODE_ENV=test` | Disables `@Traceable()` decorator to avoid noise in tests |
 
@@ -169,7 +212,7 @@ Each request produces a single structured JSON log entry:
 
 Key characteristics of the output:
 
-- **One entry per request** — no matter how many `.info()`, `.error()`, or `.warn()` calls happen, the result is a single log line
+- **One entry per request** — no matter how many `.info()`, `.error()`, or `.warn()` calls happen, the result is a single log line, or none at all for a path listed in `ignorePaths`
 - **Level escalation** — the top-level `level` reflects the highest severity event in the request
 - **Transformed events** — timestamps are ISO strings, levels are uppercase
 - **Trace ID** — a UUID that ties all events to the same request, useful for filtering in log aggregation tools
@@ -196,6 +239,7 @@ Key characteristics of the output:
 | `AggregatedLog` | Final structured output written via Pino |
 | `TransformedEvent` | Event after transformation (ISO timestamps, uppercase levels) |
 | `RequestContext` | Request-scoped context holding aggregated events |
+| `LoggerAggregatorOptions` | `LoggerAggregator` constructor options: `debug`, `ignorePaths` |
 
 ## 🔗 How it works
 
@@ -203,6 +247,8 @@ Key characteristics of the output:
 2. **Code executes** — your `.info()`, `.error()`, `.warn()`, `.debug()`, and `.audit()` calls push `LogEvent` entries into the context
 3. **Request completes** — the context is finalized, events are transformed, and a single `AggregatedLog` is written through Pino
 4. **Level is escalated** — the final log level is the highest severity event recorded during the request
+
+A path listed in `ignorePaths` stops at step 3: the context is finalized and nothing is written, unless the escalated level is `error`.
 
 ## 📄 License
 
