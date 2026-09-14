@@ -80,10 +80,11 @@ describe('Badge token hygiene', () => {
  * An omitted size — and an explicit `size="default"` — must reproduce them byte
  * for byte; that is the whole guarantee that adding the axis broke no consumer.
  *
- * One deliberate edit since that capture: `gap-1` joined the base, because a
- * badge with a label and an element child rendered them glued (see "Badge child
- * separation" below). It is the only token added, and it is inert for the
- * single-child badges these three fixtures render.
+ * Two deliberate edits since that capture, both additions to the base and both
+ * inert for the single-child badges these three fixtures render: `gap-1`,
+ * because a badge with a label and an element child rendered them glued (see
+ * "Badge child separation" below), and `whitespace-nowrap`, because a label long
+ * enough to wrap stopped the pill being a pill (see "Badge single-line pill").
  *
  * `cn` runs everything through tailwind-merge (see `src/lib/utils.ts`), which is
  * why the base `border-border` and `px-2.5 py-0.5` are absent from variants that
@@ -92,11 +93,11 @@ describe('Badge token hygiene', () => {
  */
 const BEFORE_SIZE_AXIS = {
   default:
-    'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
+    'inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
   credit:
-    'inline-flex items-center gap-1 rounded-full border text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-credit/30 bg-credit/10 text-credit-foreground px-[10px] py-1',
+    'inline-flex items-center gap-1 whitespace-nowrap rounded-full border text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-credit/30 bg-credit/10 text-credit-foreground px-[10px] py-1',
   outline:
-    'inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground'
+    'inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground'
 } as const
 
 describe('Badge default size', () => {
@@ -264,5 +265,51 @@ describe('Badge accessible name', () => {
     expect(
       screen.getByRole('link', { name: 'Open overdue items' })
     ).toBeInTheDocument()
+  })
+})
+
+/**
+ * A pill is a single-line token: `rounded-full` draws its ends as semicircles
+ * sized to ONE line box. Let the label wrap and the shape stops being a pill —
+ * it becomes a two-line rounded blob with the caps stretched over both lines.
+ *
+ * The console's user table reproduced it: a Groups column sized to its content
+ * (`w-0`, so `min-content`) resolves `min-content` to the WIDEST WORD when the
+ * text may wrap, so the group "Plugin Fees Editor" rendered at 112px wide and
+ * 46px tall — three words stacked, against the 26px of a single-line badge.
+ * Every badge in a narrow cell is the same trap, and there are 203 files using
+ * this component in that consumer alone, so the guarantee belongs in the base.
+ *
+ * `whitespace-nowrap` also fixes `min-content` at the full label width, which is
+ * what lets a consumer cap the box (`max-w-*` plus a truncating child) and get
+ * an ellipsis instead of a reflow.
+ */
+describe('Badge single-line pill', () => {
+  it('keeps its label on one line by default', () => {
+    render(<Badge data-testid="badge">Plugin Fees Editor</Badge>)
+
+    expect(screen.getByTestId('badge')).toHaveClass('whitespace-nowrap')
+  })
+
+  it('applies to every variant, not just the default', () => {
+    render(
+      <Badge data-testid="badge" variant="secondary">
+        Plugin Fees Editor
+      </Badge>
+    )
+
+    expect(screen.getByTestId('badge')).toHaveClass('whitespace-nowrap')
+  })
+
+  it('lets a consumer opt back into wrapping through tailwind-merge', () => {
+    render(
+      <Badge data-testid="badge" className="whitespace-normal">
+        Plugin Fees Editor
+      </Badge>
+    )
+
+    const badge = screen.getByTestId('badge')
+    expect(badge).toHaveClass('whitespace-normal')
+    expect(badge).not.toHaveClass('whitespace-nowrap')
   })
 })

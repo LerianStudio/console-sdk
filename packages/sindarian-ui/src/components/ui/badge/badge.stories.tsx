@@ -73,3 +73,24 @@ export const WithElementChild: StoryObj<BadgeProps> = {
     )
   }
 }
+
+/**
+ * A long label in a narrow box. The base `whitespace-nowrap` is what keeps this
+ * a pill: let it wrap and `rounded-full` stretches the end caps over two lines.
+ * The cap plus truncating child is the pattern for a table cell that cannot
+ * afford the full width.
+ */
+export const LongLabel: StoryObj<BadgeProps> = {
+  args: {
+    variant: 'secondary',
+    className: 'max-w-[180px]',
+    children: <span className="truncate">Plugin Fees Administrator</span>
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-[220px]">
+        <Story />
+      </div>
+    )
+  ]
+}
