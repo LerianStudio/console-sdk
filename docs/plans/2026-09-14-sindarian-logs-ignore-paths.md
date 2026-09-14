@@ -10,7 +10,7 @@ read in `LoggerModule`'s existing provider factory, two test files, and the
 package README. No change to `TraceMiddleware`, to the log shape, or to any
 other package.
 
-Status: Done. Code final at `39369a9165eeca06d6fcf5616f9e9e791f4586b7`.
+Status: Done. Code final at `64fa3db`.
 
 ## Phase overview
 
@@ -19,6 +19,7 @@ Status: Done. Code final at `39369a9165eeca06d6fcf5616f9e9e791f4586b7`.
 | 1 | `ignorePaths` on the aggregator, the matching rules, the error escape hatch | `67f37f8` |
 | 2 | `LOG_IGNORE_PATHS`, so a `LoggerModule` consumer reaches the option | `3c1e2eb` |
 | 3 | README: both ways to set it, what each pattern form matches, the safety rule | `39369a9` |
+| 4 | The escape hatch survives the 1000-event cap, found in review | `64fa3db` |
 
 ## Found by
 
@@ -62,6 +63,24 @@ the request, so both still write the full entry with every event in it.
 Everything below, `warn` and `audit` included, stays silent: a route that warns
 on each malformed payload would otherwise defeat the bound it was silenced for.
 
+## Epic 1b: the escape hatch had a hole, found in review
+
+CodeRabbit found it on PR #189 and it was real. A request context stops
+recording at `MAX_EVENTS` (1000), and the old cap dropped the 1001st event
+whatever it was. So a request that recorded a thousand events and then failed
+lost the error event, escalated to whatever the thousand were, and with
+`ignorePaths` on that path the guard then discarded the entry entirely. The
+promise this whole change rests on, that silencing a route never hides its
+failures, had a reachable counterexample.
+
+An error now takes the oldest event's slot rather than being dropped. The entry
+stays capped at 1000, the failure is in it, and the level of the whole entry is
+`error` again.
+
+That also repairs a pre-existing information loss that has nothing to do with
+`ignorePaths`: before this, any request past the cap wrote an entry whose level
+contradicted what actually happened.
+
 ## Epic 2: reaching the option from a consumer
 
 `LoggerModule` builds the aggregator in its own factory, so importing the module
@@ -99,7 +118,7 @@ it should move at a restart, not at a release.
 ## Verification
 
 All commands run in `/srv/worktrees/sdk-logs-ignore` on 2026-09-14.
-The suite passes 81 tests on the parent `9ded7ed` and 96 on the final head.
+The suite passes 81 tests on the parent `9ded7ed` and 99 on the final head.
 
 ### RED, the aggregator option
 
@@ -170,7 +189,46 @@ Tests:       5 passed, 5 total
 GREEN2-rc=0
 ```
 
-### Gates, at the code-final head
+### RED, the hole in the escape hatch
+
+```
+$ date -u                                    Mon Sep 14 23:07:45 UTC 2026
+$ git rev-parse HEAD                         87eb1b6e39ce4251714604ef005aed718158c66a
+$ git status --porcelain                      M packages/sindarian-logs/src/aggregator/logger-aggregator.test.ts
+$ npx jest src/aggregator/logger-aggregator.test.ts
+  ● LoggerAggregator › addEvent › should keep an error event that arrives at the cap
+    Expected: "the one that matters"
+    Received: "event-999"
+  ● LoggerAggregator › ignorePaths › should still write when an error is recorded past the event cap
+    Expected length: 1
+    Received length: 0
+    Received array:  []
+  ● LoggerAggregator › ignorePaths › should still write when a throw lands past the event cap
+    Expected length: 1
+    Received length: 0
+    Received array:  []
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 42 passed, 45 total
+RED3-rc=1
+```
+
+`Received array: []` on both ignored-path cases is the defect stated plainly:
+the request failed and nothing at all was written.
+
+### GREEN, the hole closed
+
+```
+$ date -u                                    Mon Sep 14 23:08:00 UTC 2026
+$ git rev-parse HEAD                         87eb1b6e39ce4251714604ef005aed718158c66a
+$ git status --porcelain                      M packages/sindarian-logs/src/aggregator/logger-aggregator.test.ts
+                                              M packages/sindarian-logs/src/aggregator/logger-aggregator.ts
+$ npx jest
+Test Suites: 8 passed, 8 total
+Tests:       99 passed, 99 total
+GREEN3-rc=0
+```
+
+### Gates, at the first code-final head
 
 ```
 $ date -u                 Mon Sep 14 22:59:31 UTC 2026
@@ -195,6 +253,20 @@ $ grep -n "LoggerAggregatorOptions" packages/sindarian-logs/dist/aggregator/logg
 
 The test task builds sindarian-server first (`test` dependsOn `^build`), so
 those 96 tests ran against the sibling server in this repo, not a published copy.
+
+### Gates, re-run at the true final head after the review fix
+
+```
+$ date -u                 Mon Sep 14 23:09:20 UTC 2026
+$ git rev-parse HEAD      64fa3dbe30f843612fc2bc36f7a44008ae61bdb8
+$ git status --porcelain   M docs/plans/2026-09-14-sindarian-logs-ignore-paths.md   (this file, nothing else)
+
+$ npx turbo lint  --filter=@lerianstudio/sindarian-logs    Tasks: 1 successful   LINT-rc=0
+$ npm run test -- --filter=@lerianstudio/sindarian-logs    Tasks: 3 successful   TEST-rc=0
+     @lerianstudio/sindarian-logs:test: Test Suites: 8 passed, 8 total
+     @lerianstudio/sindarian-logs:test: Tests:       99 passed, 99 total
+$ npm run build -- --filter=@lerianstudio/sindarian-logs   Tasks: 2 successful   BUILD-rc=0
+```
 
 ### Live proof, against the built package
 
@@ -228,6 +300,34 @@ silenced route is not, and it still carries its events. The raw line, verbatim:
 ```
 {"level":"ERROR","time":"2026-09-14T23:00:30.009Z","env":"production","msg":"{\"level\":\"error\",\"method\":\"GET\",\"path\":\"/api/csp-report\",\"duration\":0,\"events\":[{\"timestamp\":\"2026-09-14T23:00:30.009Z\",\"message\":\"sink is down\",\"operation\":\"request_error\",\"level\":\"ERROR\",\"error\":\"sink is down\"}],\"traceId\":\"37c25b69-efba-4679-9c38-18b68c87fd49\"}"}
 ```
+
+### Live proof again, on the build that carries the review fix
+
+Same script at `64fa3db`, with a sixth request added: one that records a
+thousand events on a silenced route and then throws, which is the case the
+review found. `events=` is the length of the entry's event array and the value
+printed after it is its last event.
+
+```
+--- RUN A, LOG_IGNORE_PATHS unset ---                           A-rc=0
+INFO  /api/csp-report          events=0    []
+INFO  /api/admin/health/alive  events=0    []
+INFO  /api/admin/health/readyz events=0    []
+INFO  /api/ledgers             events=0    []
+ERROR /api/csp-report          events=1    ["sink is down"]
+ERROR /api/csp-report          events=1000 ["sink is down"]
+access lines: 6
+
+--- RUN B, LOG_IGNORE_PATHS=/api/csp-report,/api/admin/health/* ---   B-rc=0
+INFO  /api/ledgers             events=0    []
+ERROR /api/csp-report          events=1    ["sink is down"]
+ERROR /api/csp-report          events=1000 ["sink is down"]
+access lines: 3
+```
+
+The capped request on a silenced route writes an entry at `error` whose last
+event is the failure, on the shipped artifact. Before the fix that line did not
+exist at all.
 
 ## Follow-ups, found and not fixed here
 
