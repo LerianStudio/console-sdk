@@ -106,7 +106,13 @@ export class LoggerAggregator {
 
     if (event.level === 'debug' && !this.options.debug) return
 
-    if (context.events.length >= MAX_EVENTS) return
+    if (context.events.length >= MAX_EVENTS) {
+      // An error always gets a slot, at the cost of the oldest event: it sets
+      // the level of the whole entry, so dropping it would both hide the
+      // failure and, on an ignored path, discard the entry altogether.
+      if (event.level !== 'error') return
+      context.events.shift()
+    }
 
     context.events.push({
       ...event,

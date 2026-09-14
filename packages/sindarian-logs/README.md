@@ -171,8 +171,10 @@ Two forms, no regex:
 
 **A silenced route still reports its failures.** The line is dropped only when
 the request ends below `error`. An error thrown out of the handler, or recorded
-with `.error()`, escalates the whole request and writes the full entry with
-every event in it. The bound applies to the routine hit, not to the incident.
+with `.error()`, escalates the whole request and writes the full entry with its
+events. That holds even for a request that already hit the 1000-event cap: an
+error arriving at the cap takes the oldest event's slot instead of being
+dropped. The bound applies to the routine hit, not to the incident.
 Everything below that, including `warn` and `audit`, stays silent, which is what
 makes the bound hold.
 

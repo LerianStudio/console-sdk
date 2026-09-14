@@ -177,6 +177,22 @@ describe('LoggerAggregator', () => {
       expect(mockRepo.calls[0].log.events).toHaveLength(1000)
       expect(mockRepo.calls[0].log.events[999].message).toBe('event-999')
     })
+
+    it('should keep an error event that arrives at the cap', async () => {
+      await aggregator.runWithContext('/test', 'GET', {}, async () => {
+        for (let i = 0; i < 1000; i++) {
+          aggregator.addEvent({ message: `event-${i}` })
+        }
+        aggregator.error('op', 'the one that matters')
+      })
+
+      const events = mockRepo.calls[0].log.events
+      expect(events).toHaveLength(1000)
+      expect(events[999].message).toBe('the one that matters')
+      // The oldest event made room for it.
+      expect(events[0].message).toBe('event-1')
+      expect(mockRepo.calls[0].method).toBe('error')
+    })
   })
 
   describe('setResponseMetadata', () => {
@@ -444,6 +460,40 @@ describe('LoggerAggregator', () => {
       })
 
       expect(mockRepo.calls).toHaveLength(0)
+    })
+
+    it('should still write when an error is recorded past the event cap', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+        for (let i = 0; i < 1000; i++) {
+          silent.info('csp', `report-${i}`)
+        }
+        silent.error('csp', 'sink rejected the batch')
+      })
+
+      expect(mockRepo.calls).toHaveLength(1)
+      expect(mockRepo.calls[0].method).toBe('error')
+      expect(mockRepo.calls[0].log.events[999].message).toBe(
+        'sink rejected the batch'
+      )
+    })
+
+    it('should still write when a throw lands past the event cap', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await expect(
+        silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+          for (let i = 0; i < 1000; i++) {
+            silent.info('csp', `report-${i}`)
+          }
+          throw new Error('sink is down')
+        })
+      ).rejects.toThrow('sink is down')
+
+      expect(mockRepo.calls).toHaveLength(1)
+      expect(mockRepo.calls[0].method).toBe('error')
+      expect(mockRepo.calls[0].log.events[999].message).toBe('sink is down')
     })
 
     it('should match any of several patterns', async () => {
