@@ -1247,17 +1247,29 @@ Tests:       39 passed, 39 total
 
 M1 to M12 were applied at `4677bd4`, `dist` rebuilt, run, then reverted with
 `git checkout -- <file>`, with `git status --porcelain` verified empty after every revert
-(`clean-after-Mn=0` printed each time), `2026-09-15 16:33:53 UTC` onward. M13 to M16 were
+(`clean-after-Mn=0` printed each time), `2026-09-15 16:33:53 UTC` onward. M16 to M18 were
 applied the same way at the code-final head `2f8936e`, `2026-09-15 18:02:18 UTC` onward,
-each reverted with `git checkout -- <file>` and `clean-after-Mn=0` printed. Unit counts are
-out of 29 for M1 to M12 and out of 37 for M13 to M18; e2e is out of 29 throughout. M13 to
-M16 were run twice, once at `712f004` and again here with identical results, because the
-`ApiException` fix moved the head under them.
+and the counts printed for M13 to M15 are from the run at `712f004`, before the four
+`ApiException` cases existed. Each was reverted with `git checkout -- <file>` and
+`clean-after-Mn=0` printed. e2e is out of 29 throughout.
 
-The whole table was re-measured at this head rather than carried over, because the filter
-was rewritten under it twice. A review of the previous table reproduced every row except
-M4, whose printed numbers belonged to a strictly smaller mutation than the one the row
-described; M4 below is the mutation as written, with the numbers it actually prints.
+**Each row's counts belong to the head that row names, and the bases differ.** M1 to M12
+are out of 29 cases at `4677bd4`; M13 to M15 are out of 33 at `712f004`; M16, M17 and M18
+are out of 37 at the code-final head `2f8936e`. Two earlier sentences here said otherwise,
+that M13 to M16 gave identical results across two heads and that the whole table had been
+re-measured at one head. Neither can be true: the `ApiException` fix added four cases, so
+a file of 33 and a file of 37 cannot print the same totals even when the same single case
+dies. Every KILL in the table reproduces; it is the totals that are per-head.
+
+A review of the table before this correction reproduced every row except M4, whose printed
+numbers belonged to a strictly smaller mutation than the one the row described; M4 below is
+the mutation as written, with the numbers it actually prints.
+
+M13 to M16 have since been re-taken at the code-final head of the follow-up lane,
+`dd76fc2`, out of 887 unit cases and 32 e2e:
+`docs/plans/2026-09-15-typed-exception-fail-safe.md`. M14 there is applied as this row
+writes it, which is the reading that also removes the `typeof` guard, and M16 lands on all
+three writers because the serialisation moved into one function.
 
 | # | Mutation | Result |
 |---|---|---|
@@ -1273,10 +1285,10 @@ described; M4 below is the mutation as written, with the numbers it actually pri
 | M10 | `customInspect: false` dropped, so rendering runs the value's own inspector again | unit rc=1, **1 failed** / 28 passed: `ignores a custom inspection function on the thrown value`; e2e rc=0, 29 passed |
 | M11 | the guard around the write removed | unit rc=1, **1 failed** / 28 passed: `answers a body when reading the thrown value throws`, which REJECTS rather than answering; e2e rc=0, 29 passed |
 | M12 | the bound dropped from `name` only | unit rc=1, **1 failed** / 28 passed: `bounds a name of a megabyte`; e2e rc=0, 29 passed |
-| M13 | `compact: true` dropped from the render, so the value breaks at three levels deep again | unit rc=1, **1 failed** / 32 passed: `writes a three-level upstream body on one line`; e2e rc=0, 29 passed |
-| M14 | the pre-PR `ApiException` fallback restored (`exception.message \|\| UNCLASSIFIED`), i.e. the previous version of this branch | unit rc=1, **1 failed** / 32 passed: `answers the message it was given, even a mutated empty one`; e2e rc=0, 29 passed |
-| M15 | the narrowing duck-typed (`instanceof ApiException \|\| typeof exception?.getStatus === 'function'`) | unit rc=1, **1 failed** / 32 passed: `answers 500 for a value that only looks like an ApiException`; e2e rc=1, **1 failed** / 28 passed: `answers 500 for a plain HttpException, and redacts it too` |
-| M16 | the record handed to `console.error` as an OBJECT again, i.e. the previous version of this branch | unit rc=1, **16 failed** / 21 passed; e2e rc=1, **4 failed** / 25 passed |
+| M13 | `compact: true` dropped from the render, so the value breaks at three levels deep again | unit rc=1, **1 failed** / 32 passed: `writes a three-level upstream body on one line`; e2e rc=0, 29 passed (at `712f004`, 33 cases) |
+| M14 | the pre-PR `ApiException` fallback restored (`exception.message \|\| UNCLASSIFIED`), i.e. the previous version of this branch | unit rc=1, **1 failed** / 32 passed: `answers the message it was given, even a mutated empty one`; e2e rc=0, 29 passed (at `712f004`, 33 cases, where this branch carried no `typeof` guard yet, so the mutation is the fallback alone; the same text at a head that HAS the guard removes that too, and kills six) |
+| M15 | the narrowing duck-typed (`instanceof ApiException \|\| typeof exception?.getStatus === 'function'`) | unit rc=1, **1 failed** / 32 passed: `answers 500 for a value that only looks like an ApiException`; e2e rc=1, **1 failed** / 28 passed: `answers 500 for a plain HttpException, and redacts it too` (at `712f004`, 33 cases) |
+| M16 | the record handed to `console.error` as an OBJECT again, i.e. the previous version of this branch | unit rc=1, **16 failed** / 21 passed; e2e rc=1, **4 failed** / 25 passed (at `2f8936e`, 37 cases) |
 | M17 | the string guard removed from the `ApiException` branch (`{ message: exception.message }`), i.e. the previous version of this branch | unit rc=1, **4 failed** / 33 passed, one per non-string shape; e2e rc=0, 29 passed |
 | M18 | the guard's fallback as `UNCLASSIFIED` instead of `noProblemDetails(status)`, so a 404 says `Internal server error` | unit rc=1, **4 failed** / 33 passed; e2e rc=0, 29 passed |
 
@@ -1307,8 +1319,9 @@ M15 is the `getStatus` guard the same pass deleted: the narrowing is `instanceof
 duck-type, and M15 proves it by making it a duck-type and watching a plain `HttpException`
 stop being redacted.
 
-Unit counts for M1 to M12 are out of 29, and for M13 to M16 out of 33: this pass added four
-cases, three reading the physical log line and one reading the mutated empty message.
+Unit counts for M1 to M12 are out of 29, for M13 to M15 out of 33, and for M16 to M18 out of
+37: this pass added four cases, three reading the physical log line and one reading the
+mutated empty message, and M16 onward were taken after them.
 
 M5 is also the pin that closed a gap a review found: two e2e cases asserted the status and
 the message but not `code`, so the headline table was pinned for five of the seven routes
