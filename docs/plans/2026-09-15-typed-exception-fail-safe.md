@@ -2,8 +2,8 @@
 
 - Repository: `LerianStudio/console-sdk`, package `@lerianstudio/sindarian-server`
 - Branch: `fix/typed-exception-fail-safe`, cut from `origin/develop` at `7dd44f6`
-- Code-final head: `dd76fc2`
-- Status: complete, gates green, ten mutants killed at the code-final head
+- Code-final head: `547f176`
+- Status: complete, gates green, thirteen mutants killed at the code-final head
 - Follows: `docs/plans/2026-09-14-server-error-message-string.md` (PR #190, merged).
   Every item here is a finding against that pass, made by the review that ran after
   it merged.
@@ -49,15 +49,22 @@ Three defects close with it:
   of JSON input` for a caller promised an envelope, which is the failure `throw null`
   produced until #190 closed it on the OTHER branch.
 
-### Task 1.2: the status read is guarded too, and names itself when it can
+### Task 1.2: the status is read the same way, and checked rather than caught
 
 `getStatus()` is inherited from `HttpException`, but a subclass may override it with
-anything, and an override that throws reached the same zero-byte body. The typed branch
-now reads it inside a `try`, keeps the real status in the answer whenever the read
-succeeded, and answers 500 when even that was unreadable. The sentence stays the
+anything, and an override that throws reached the same zero-byte body. `readWireStatus`
+is its half of the fix, and the review round below is why it is a check and not a
+`try`: an override may also RETURN a number no response can carry, and the runtime
+rejects anything outside 200 to 599 with a `RangeError`, measured. A guard that caught
+the throw and reused the status it was handed would therefore throw from inside its own
+fallback, which is the zero-byte body again one frame later. Anything unusable answers
+500.
+
+A status that IS usable still names itself: the sentence for an unusable message is the
 constructor's own, `noProblemDetails(status)`, because a 404 that says `Internal server
 error` is the defect `names the real status when the message is empty` exists to
-prevent.
+prevent. And a message that is a usable string is still the one the caller is told,
+whatever the status did.
 
 ### Task 1.3: `getResponse()` reads through the same function
 
@@ -111,6 +118,31 @@ upstream's own text.
   heads the prose did not name, and two sentences in the preamble could not both be
   true. Each row now names the head and the case basis it was taken at, the false
   sentences are corrected, and all four are re-taken at this lane's code-final head.
+
+## Epic 4: the review round
+
+CodeRabbit raised four findings on the PR. Three were real and are fixed in `547f176`,
+each with its own cases; the fourth was a wording defect in the manual.
+
+1. **A status no response can carry.** The major one, and it reopened the hole this lane
+   exists to close: `NextResponse.json` rejects a status outside 200 to 599, so the
+   branch that caught a throwing `getStatus` threw again from inside its own fallback.
+   Verified before fixing, against the real `NextResponse`: 0, 199, 600, 700 and `NaN`
+   all raise `RangeError: init["status"] must be in the range of 200 to 599, inclusive`,
+   while 200 and 599 pass. The typed branch has no `try` left at all now: two reads, two
+   functions that cannot throw.
+2. **`getResponse()` read the status unguarded** to build its fallback sentence, so an
+   application rendering its own envelope could still be taken down by the same
+   override. It reads through `readWireStatus` too.
+3. **`JSON.stringify` throws** on a cycle, a `bigint` or a getter that throws, and
+   `describeRequestError` is documented as overridable. The transport calls the writer
+   inside its own `try`, so a throw there became a 503 for an upstream that answered
+   409, which is a regression this lane introduced when it replaced the `console.error`
+   of an object (`util.inspect` renders a cycle as `[Circular]` and never throws). The
+   writer keeps the label and announces an unserialisable record instead.
+4. **Wording.** `TECHNICAL.md` said a mutated message is answered with "the
+   constructor's own sentence", which reads as though the original message comes back.
+   It is the status-specific fallback sentence, and the manual says that now.
 
 ## Found by this lane, not fixed
 
@@ -271,15 +303,66 @@ rc=0
 Tests:       887 passed, 887 total
 ```
 
+### RED before GREEN: the review round
+
+`2026-09-15 19:28:34 UTC`, `HEAD 6ee8f06`, `git status --porcelain` =
+
+```
+ M packages/sindarian-server/src/exceptions/api-exception.test.ts
+ M packages/sindarian-server/src/exceptions/base-exception-filter.test.ts
+ M packages/sindarian-server/src/services/http-service.test.ts
+```
+
+```
+$ cd packages/sindarian-server && npx jest
+rc=1
+Tests:       8 failed, 887 passed, 895 total
+  ● a typed exception whose message cannot be trusted › answers 500 for the unusable status 0
+  ● a typed exception whose message cannot be trusted › answers 500 for the unusable status 700
+  ● a typed exception whose message cannot be trusted › answers 500 for the unusable status NaN
+  ● a typed exception whose message cannot be trusted › answers 500 for the unusable status 199
+  ● ApiException › a message written after construction › answers a body when getStatus gives a throw
+  ● ApiException › a message written after construction › answers a body when getStatus gives 0
+  ● ApiException › a message written after construction › answers a body when getStatus gives 700
+  ● one failed call is one physical log line › keeps the real status when the record cannot be serialised
+```
+
+The `RangeError` the first four are about, measured against the real `NextResponse`
+before any of this was written:
+
+```
+$ node -e "const { NextResponse } = require('next/server'); ..."
+200 ok status=200
+404 ok status=404
+0 THROWS RangeError init["status"] must be in the range of 200 to 599, inclusive
+700 THROWS RangeError init["status"] must be in the range of 200 to 599, inclusive
+NaN THROWS RangeError init["status"] must be in the range of 200 to 599, inclusive
+199 THROWS RangeError init["status"] must be in the range of 200 to 599, inclusive
+599 ok status=599
+600 THROWS RangeError init["status"] must be in the range of 200 to 599, inclusive
+```
+
+GREEN, `2026-09-15 19:30:11 UTC`, same `HEAD 6ee8f06`:
+
+```
+$ cd packages/sindarian-server && npx jest
+rc=0
+Tests:       896 passed, 896 total
+
+$ cd packages/sindarian-server && npm run test:e2e
+rc=0
+Tests:       32 passed, 32 total
+```
+
 ### Gates at the code-final head
 
-`2026-09-15 19:16:06 UTC`, `HEAD dd76fc2`, `git status --porcelain` empty (0 lines).
+`2026-09-15 19:36:22 UTC`, `HEAD 547f176`, `git status --porcelain` empty (0 lines).
 
 ```
 $ cd packages/sindarian-server && npx jest
 rc=0
 Test Suites: 38 passed, 38 total
-Tests:       887 passed, 887 total
+Tests:       896 passed, 896 total
 
 $ cd packages/sindarian-server && npm run test:e2e
 rc=0
@@ -295,7 +378,7 @@ rc=0
 > tsc && npm run build:paths
 ```
 
-At the monorepo root, `2026-09-15 19:16:31 UTC`, same head:
+At the monorepo root, `2026-09-15 19:36:22 UTC`, same head:
 
 ```
 $ npm test
@@ -322,25 +405,28 @@ rc=0
 
 ### Mutants
 
-Ten, all at the code-final head `dd76fc2`, `2026-09-15 19:12:15 UTC` onward, each
+Thirteen, all at the code-final head `547f176`, `2026-09-15 19:31:41 UTC` onward, each
 applied with an exact single-occurrence replacement, `dist` rebuilt by the e2e run,
 reverted with `git checkout -- packages`, and `clean-after-<id>=0` printed after every
-revert. Unit counts are out of 887 and e2e out of 32 throughout.
+revert. Unit counts are out of 896 and e2e out of 32 throughout.
 
-M13 to M16 are #190's four rows, re-taken here; N1 to N7 are this lane's.
+M13 to M16 are #190's four rows, re-taken here; N1 to N9 are this lane's.
 
 | # | Mutation | Result |
 |---|---|---|
 | M13 | `compact: true` dropped from the render | unit rc=1, **1 failed**: `writes a three-level upstream body on one line`; e2e rc=0 |
-| M14 | the pre-PR `ApiException` answer restored, as the row writes it (`{ message: exception.message \|\| UNCLASSIFIED }`), which removes the guard, the bound and the status-naming fallback together | unit rc=1, **6 failed**: `answers the message it was given, even a mutated empty one`, `bounds a message written after construction`, and the four `names the real status for %s`; e2e rc=0 |
+| M14 | the pre-PR `ApiException` answer restored, as #190's row writes it (`{ message: exception.message \|\| UNCLASSIFIED }`), which removes the guard, the bound and the status-naming fallback together | unit rc=1, **8 failed**: the mutated-empty pin, the bound, the four `names the real status for %s`, the throwing getter and `names 500 in the fallback when neither read is usable`; e2e rc=0 |
 | M15 | the narrowing duck-typed (`instanceof ApiException \|\| typeof exception?.getStatus === 'function'`) | unit rc=1, **1 failed**: `answers 500 for a value that only looks like an ApiException`; e2e rc=1, **1 failed**: `answers 500 for a plain HttpException, and redacts it too` |
 | M16 | the record handed to `console.error` as an OBJECT again, now inside `logErrorLine`, so it lands on all THREE writers rather than the filter alone | unit rc=1, **26 failed**; e2e rc=1, **4 failed** |
 | N1 | the bound dropped from `readWireMessage` | unit rc=1, **2 failed**, `bounds a message written after construction` in both the filter's suite and the exception's; e2e rc=1, **1 failed**: the five-megabyte route |
-| N2 | the guard dropped from `readWireMessage` | unit rc=1, **1 failed**: `answers a sentence when the message getter throws`, the `getResponse()` side; e2e rc=1, **1 failed**: the throwing-getter route. The filter's own case survives this one, because the filter's `try` around `getStatus` catches it as well, which is the point of having both |
+| N2 | the guard dropped from `readWireMessage` | unit rc=1, **2 failed**: the throwing-getter case on each caller; e2e rc=1, **1 failed**: the throwing-getter route |
 | N3 | the message read TWICE (`typeof source.message === 'string' ? source.message.slice(...)`) | unit rc=1, **2 failed**: both `answers the message it checked` cases; e2e rc=0. It SURVIVED at `0344d50` and is what the third RED block above exists for |
-| N4 | the guard removed from `getResponse()` only (`message: this.message`) | unit rc=1, **6 failed**, all on the exception's own suite; e2e rc=1, **3 failed**, all three typed routes. This is the pair to N1 and N2: removing the guard from one caller fails tests |
-| N5 | the `try` dropped from the typed branch, status read unguarded | unit rc=1, **1 failed**: `answers a body at 500 when getStatus throws`; e2e rc=0 |
+| N4 | the guard removed from `getResponse()` only (`message: this.message`) | unit rc=1, **9 failed**, all on the exception's own suite; e2e rc=1, **3 failed**, all three typed routes. Removing the guard from one of the two callers fails tests, which is what having one function is for |
+| N5 | the guard dropped from `readWireStatus` | unit rc=1, **2 failed**: `answers a body at 500 when getStatus throws` and its `getResponse()` twin; e2e rc=0 |
+| N6 | the RANGE check dropped from `readWireStatus`, any number accepted | unit rc=1, **7 failed**: the four unusable statuses on the filter, two on `getResponse()`, and `names 500 in the fallback when neither read is usable`; e2e rc=0 |
 | N7 | the bound dropped from `logErrorLine` | unit rc=1, **4 failed**: the three `bounds a ... of a megabyte` cases and `bounds what an upstream failure writes` |
+| N8 | the serialisation guard dropped from `logErrorLine` | unit rc=1, **1 failed**: `keeps the real status when the record cannot be serialised`; e2e rc=0 |
+| N9 | `getResponse()` reading the status unguarded (`noProblemDetails(this.getStatus())`) | unit rc=1, **3 failed**: the three `answers a body when getStatus gives %s` cases; e2e rc=0 |
 
 ### Live proof
 

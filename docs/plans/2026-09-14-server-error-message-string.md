@@ -1266,7 +1266,7 @@ numbers belonged to a strictly smaller mutation than the one the row described; 
 the mutation as written, with the numbers it actually prints.
 
 M13 to M16 have since been re-taken at the code-final head of the follow-up lane,
-`dd76fc2`, out of 887 unit cases and 32 e2e:
+`547f176`, out of 896 unit cases and 32 e2e:
 `docs/plans/2026-09-15-typed-exception-fail-safe.md`. M14 there is applied as this row
 writes it, which is the reading that also removes the `typeof` guard, and M16 lands on all
 three writers because the serialisation moved into one function.
