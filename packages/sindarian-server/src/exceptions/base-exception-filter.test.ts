@@ -1,3 +1,4 @@
+import { inspect } from 'node:util'
 import { BaseExceptionFilter } from './base-exception-filter'
 import { ApiException } from './api-exception'
 import { NextResponse } from 'next/server'
@@ -321,6 +322,15 @@ describe('BaseExceptionFilter', () => {
       expect(payloadOf().value).toHaveLength(2000)
     })
 
+    // `name` is read off the thrown value like the other two, so it is bounded
+    // like the other two. A non-string one falls back rather than being written
+    // raw, and the real field is in `value` either way.
+    it('bounds a name of a megabyte', async () => {
+      await filter.catch({ name: 'x'.repeat(1_000_000), code: 'E_NOPE' })
+
+      expect(payloadOf().name).toHaveLength(2000)
+    })
+
     it('bounds an Error message of a megabyte', async () => {
       await filter.catch(new Error('x'.repeat(1_000_000)))
 
@@ -349,6 +359,45 @@ describe('BaseExceptionFilter', () => {
         message: undefined,
         value: 'null'
       })
+    })
+
+    // Writing the log line must not cost the caller its response. The filter
+    // runs inside `ServerFactory._handleRequest`'s catch block, and that call
+    // is not itself guarded, so a filter that throws escapes the request
+    // pipeline and the route answers a zero-byte body: the exact failure a
+    // thrown `null` used to produce. Everything the record reads is controlled
+    // by the throw site, and it can be booby-trapped two ways.
+    it('answers a body when reading the thrown value throws', async () => {
+      await expect(
+        filter.catch({
+          get message() {
+            throw new Error('this getter is the trap')
+          }
+        })
+      ).resolves.toBeDefined()
+
+      expect(mockNextResponse.json).toHaveBeenCalledWith(
+        { message: 'Internal server error', code: '0004' },
+        { status: 500 }
+      )
+      // Still a line, so a 500 in the log is never a 500 with no line.
+      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
+        name: 'object'
+      })
+    })
+
+    // Rendering a value runs its `[util.inspect.custom]` function unless that
+    // is turned off. It is not our code, it can throw, and a lying one could
+    // hide the incident it was supposed to print.
+    it('ignores a custom inspection function on the thrown value', async () => {
+      await filter.catch({
+        code: 'E_NOPE',
+        [inspect.custom]: () => {
+          throw new Error('this inspector is the trap')
+        }
+      })
+
+      expect(payloadOf().value).toContain("code: 'E_NOPE'")
     })
 
     // `Promise.reject()` with no argument, or a rethrow of a value that turned

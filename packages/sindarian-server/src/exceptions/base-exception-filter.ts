@@ -115,11 +115,12 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // Unconditional, because the early return above is what decides whether a
     // value is unexpected and nothing that reaches this line is not.
     //
-    // Three fields, always the same three. `message` is the sentence an
-    // operator greps, when the value had one; it is NOT what decides what else
-    // gets written, and keying that decision on a nullish `message` is a defect
-    // this file already shipped once: `{ message: '', code, detail }` wrote an
-    // empty string and dropped the two fields that were the incident.
+    // Three fields, always the same three, and all three bounded. `message` is
+    // the sentence an operator greps, when the value had one; it is NOT what
+    // decides what else gets written, and keying that decision on a nullish
+    // `message` is a defect this file already shipped once:
+    // `{ message: '', code, detail }` wrote an empty string and dropped the two
+    // fields that were the incident.
     // `value` is the whole thrown value rendered, so `String({ code, detail })`
     // never happens, four levels deep so an upstream body prints the rejected
     // value under `errors` instead of `[Object]`, and cut at the same 2000
@@ -138,19 +139,40 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // `Error` message or rethrown inside an upstream body, must redact in its
     // own log pipeline. The cheaper fix is at the throw site: name what failed,
     // not whose record it was.
-    const message = exception?.message
+    // Every read below is of a value the throw site controls, and the write
+    // must not cost the caller its response: this filter runs inside
+    // `ServerFactory._handleRequest`'s own catch block and that call is not
+    // guarded, so a filter that throws escapes the request pipeline and the
+    // route answers a ZERO-BYTE body. `throw null` produced exactly that until
+    // this branch, and three other shapes still could: a `message` getter that
+    // throws, a `[util.inspect.custom]` function that throws, a proxy trap.
+    // `customInspect: false` closes the second one and stops a custom inspector
+    // from deciding what an incident looks like; the `catch` closes the rest.
+    // Losing the line is bad, losing the response is the failure this file
+    // exists to prevent, so the fallback still writes one and `typeof` cannot
+    // throw.
+    try {
+      const name = exception?.name
+      const message = exception?.message
 
-    console.error('Unhandled exception', {
-      name: exception?.name ?? typeof exception,
-      message:
-        typeof message === 'string'
-          ? message.slice(0, MESSAGE_MAX_LENGTH)
-          : undefined,
-      value: inspect(exception, { depth: 4, breakLength: Infinity }).slice(
-        0,
-        MESSAGE_MAX_LENGTH
-      )
-    })
+      console.error('Unhandled exception', {
+        name:
+          typeof name === 'string'
+            ? name.slice(0, MESSAGE_MAX_LENGTH)
+            : typeof exception,
+        message:
+          typeof message === 'string'
+            ? message.slice(0, MESSAGE_MAX_LENGTH)
+            : undefined,
+        value: inspect(exception, {
+          depth: 4,
+          breakLength: Infinity,
+          customInspect: false
+        }).slice(0, MESSAGE_MAX_LENGTH)
+      })
+    } catch {
+      console.error('Unhandled exception', { name: typeof exception })
+    }
 
     return NextResponse.json(
       { message: UNCLASSIFIED, code: UNCLASSIFIED_CODE },
