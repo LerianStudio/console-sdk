@@ -111,12 +111,12 @@ JSON bodies. Every one of the six already produced a string:
 | 400, body classifying nothing | BadRequest (400) | `string` | `Upstream error body carried no problem details (status 400)` |
 
 That table was the one measurement block in this file with no command and no exit code.
-Re-run at the code-final head `b878660` (`2026-09-15 17:46:20 UTC`), six real sockets on
+Re-run at the code-final head `712f004` (`2026-09-15 17:55:41 UTC`), six real sockets on
 ephemeral loopback ports, harness at `/tmp/rv-sdkerr-sockets/probe.cjs` driving the built
 `dist` through a concrete `HttpService`. An earlier version of this paragraph named the
 previous pass's last CI commit, two changes below the shipping filter, so a negative claim
 the whole change rests on was labelled as re-run against code that had since been
-rewritten. The code-final head in this document is `b878660`, and every claim that has to
+rewritten. The code-final head in this document is `712f004`, and every claim that has to
 hold AT it was re-taken there: this socket table, the per-route and trap measurements, the
 eight gates and the mutants. A RED block belongs to the pass that produced it and names its
 own head, because a RED cannot be re-taken later without becoming a different measurement.
@@ -376,7 +376,7 @@ this lane opened on, reachable again through the line that was supposed to be th
 closes the getter and any proxy trap, and still writes `{ name: typeof exception }`, because
 a 500 with no log line is what moving the text there was meant to prevent.
 
-Measured at the code-final head `b878660`, four booby-trapped values plus the empty-message
+Measured at the code-final head `712f004`, four booby-trapped values plus the empty-message
 shape through the real filter, each answering a body and writing exactly one call on
 exactly one physical line. `physical_lines` is the count for the line `util.format` hands
 the stream, and `record` its byte count with the stack included rather than elided:
@@ -395,7 +395,7 @@ The same five at the previous head `1b0218d`, which is what the one-line rule bo
 bytes. Only the trap whose record is `{ name }` alone was ever short enough to survive
 Node's own `breakLength: 128`.
 
-Measured at the code-final head `b878660` through the REAL pipeline (`app.handler`,
+Measured at the code-final head `712f004` through the REAL pipeline (`app.handler`,
 the package's own e2e app, `dist` rebuilt), one row per throwing route, body read off the
 real `Response` and the `console.error` arguments formatted the way Node formats them. The
 `bytes` figure is the whole line INCLUDING any stack, not a harness-elided one, and
@@ -558,8 +558,8 @@ is the sentence a consumer reads before accepting a breaking release.
 
 Measured at `4677bd4` (`2026-09-15 16:39:00 UTC`) by driving the REAL `BaseExceptionFilter`
 with real exception instances and reading the real `Response` body, and still exact at the
-code-final head `b878660`: the only executable change between the two is the log write,
-with the `ApiException` branch byte-identical (`git diff 4677bd4 b878660` over the filter,
+code-final head `712f004`: the only executable change between the two is the log write,
+with the `ApiException` branch byte-identical (`git diff 4677bd4 712f004` over the filter,
 comments stripped, touches nothing else). Zero log lines were written on this branch, which
 is the other half of the narrowing:
 
@@ -712,7 +712,7 @@ remembering to write a catch-all filter is not a safe library.
 
 ## Verification
 
-Eight gates at `b878660`, the code-final head: four at the package level and four at
+Eight gates at `712f004`, the code-final head: four at the package level and four at
 the monorepo root through turbo, counted against the block below rather than asserted. The
 two CI-job arms under it are a ninth and tenth invocation of one of those eight, pinned
 separately because the job's filter argument is what they check. Tree clean
@@ -822,7 +822,7 @@ claim is that nothing could tell it apart.
 
 The RED re-taken AT the code-final head is M16, which restores the record as an object and
 changes nothing else: `unit rc=1, 16 failed / 17 passed; e2e rc=1, 4 failed / 25 passed`,
-the same counts and the same case names as the RED above, at `b878660`.
+the same counts and the same case names as the RED above, at `712f004`.
 
 ### RED before GREEN, rebuilding the log record
 
@@ -1157,7 +1157,7 @@ Tests:       39 passed, 39 total
 M1 to M12 were applied at `4677bd4`, `dist` rebuilt, run, then reverted with
 `git checkout -- <file>`, with `git status --porcelain` verified empty after every revert
 (`clean-after-Mn=0` printed each time), `2026-09-15 16:33:53 UTC` onward. M13 to M16 were
-applied the same way at the code-final head `b878660`, `2026-09-15 17:44:33 UTC` onward,
+applied the same way at the code-final head `712f004`, `2026-09-15 17:53:28 UTC` onward,
 each reverted with `git checkout -- <file>` and `clean-after-Mn=0` printed. Unit counts are
 out of 29 for M1 to M12 and out of 33 for M13 to M16; e2e is out of 29 throughout.
 
@@ -1239,7 +1239,7 @@ VERDICT: every value passing `instanceof ApiException` has a truthy getStatus: t
 
 The socket measurement in the table above ran under `unshare -rn` on ephemeral loopback
 ports at `9ded7ed`, at `24a7777`, at `4677bd4`, and once more at the code-final head
-`b878660` with the command and exit code pasted beside the table. Identical output every time: this PR
+`712f004` with the command and exit code pasted beside the table. Identical output every time: this PR
 changes nothing on the transport frame, redaction included, because an `ApiException` is
 narrowed off before it.
 
