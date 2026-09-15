@@ -2,8 +2,8 @@
 
 - Repository: `LerianStudio/console-sdk`, package `@lerianstudio/sindarian-server`
 - Branch: `fix/typed-exception-fail-safe`, cut from `origin/develop` at `7dd44f6`
-- Code-final head: `547f176`
-- Status: complete, gates green, thirteen mutants killed at the code-final head
+- Code-final head: `9a9e11a`
+- Status: complete, gates green, fourteen mutants killed at the code-final head
 - Follows: `docs/plans/2026-09-14-server-error-message-string.md` (PR #190, merged).
   Every item here is a finding against that pass, made by the review that ran after
   it merged.
@@ -143,6 +143,13 @@ each with its own cases; the fourth was a wording defect in the manual.
 4. **Wording.** `TECHNICAL.md` said a mutated message is answered with "the
    constructor's own sentence", which reads as though the original message comes back.
    It is the status-specific fallback sentence, and the manual says that now.
+
+A second round raised one more, also real and also about the writer: `JSON.stringify`
+returns the VALUE `undefined`, with no throw at all, for a record whose own `toJSON`
+gives one, so the label would be followed by the word `undefined` and a collector would
+have nothing to parse. Verified before fixing (`JSON.stringify({ toJSON: () => undefined
+})` is `undefined`, and `util.format` renders it as the word). Fixed in `9a9e11a`: the
+same announcement a record that throws takes.
 
 ## Found by this lane, not fixed
 
@@ -356,13 +363,13 @@ Tests:       32 passed, 32 total
 
 ### Gates at the code-final head
 
-`2026-09-15 19:36:22 UTC`, `HEAD 547f176`, `git status --porcelain` empty (0 lines).
+`2026-09-15 20:06:41 UTC`, `HEAD 9a9e11a`, `git status --porcelain` empty (0 lines).
 
 ```
 $ cd packages/sindarian-server && npx jest
 rc=0
 Test Suites: 38 passed, 38 total
-Tests:       896 passed, 896 total
+Tests:       897 passed, 897 total
 
 $ cd packages/sindarian-server && npm run test:e2e
 rc=0
@@ -378,7 +385,7 @@ rc=0
 > tsc && npm run build:paths
 ```
 
-At the monorepo root, `2026-09-15 19:36:22 UTC`, same head:
+At the monorepo root, `2026-09-15 20:06:41 UTC`, same head:
 
 ```
 $ npm test
@@ -405,19 +412,19 @@ rc=0
 
 ### Mutants
 
-Thirteen, all at the code-final head `547f176`, `2026-09-15 19:31:41 UTC` onward, each
+Fourteen, all at the code-final head `9a9e11a`, `2026-09-15 20:03:30 UTC` onward, each
 applied with an exact single-occurrence replacement, `dist` rebuilt by the e2e run,
 reverted with `git checkout -- packages`, and `clean-after-<id>=0` printed after every
-revert. Unit counts are out of 896 and e2e out of 32 throughout.
+revert. Unit counts are out of 897 and e2e out of 32 throughout.
 
-M13 to M16 are #190's four rows, re-taken here; N1 to N9 are this lane's.
+M13 to M16 are #190's four rows, re-taken here; N1 to N10 are this lane's.
 
 | # | Mutation | Result |
 |---|---|---|
 | M13 | `compact: true` dropped from the render | unit rc=1, **1 failed**: `writes a three-level upstream body on one line`; e2e rc=0 |
 | M14 | the pre-PR `ApiException` answer restored, as #190's row writes it (`{ message: exception.message \|\| UNCLASSIFIED }`), which removes the guard, the bound and the status-naming fallback together | unit rc=1, **8 failed**: the mutated-empty pin, the bound, the four `names the real status for %s`, the throwing getter and `names 500 in the fallback when neither read is usable`; e2e rc=0 |
 | M15 | the narrowing duck-typed (`instanceof ApiException \|\| typeof exception?.getStatus === 'function'`) | unit rc=1, **1 failed**: `answers 500 for a value that only looks like an ApiException`; e2e rc=1, **1 failed**: `answers 500 for a plain HttpException, and redacts it too` |
-| M16 | the record handed to `console.error` as an OBJECT again, now inside `logErrorLine`, so it lands on all THREE writers rather than the filter alone | unit rc=1, **26 failed**; e2e rc=1, **4 failed** |
+| M16 | the record handed to `console.error` as an OBJECT again, now inside `logErrorLine`, so it lands on all THREE writers rather than the filter alone | unit rc=1, **28 failed**; e2e rc=1, **4 failed** |
 | N1 | the bound dropped from `readWireMessage` | unit rc=1, **2 failed**, `bounds a message written after construction` in both the filter's suite and the exception's; e2e rc=1, **1 failed**: the five-megabyte route |
 | N2 | the guard dropped from `readWireMessage` | unit rc=1, **2 failed**: the throwing-getter case on each caller; e2e rc=1, **1 failed**: the throwing-getter route |
 | N3 | the message read TWICE (`typeof source.message === 'string' ? source.message.slice(...)`) | unit rc=1, **2 failed**: both `answers the message it checked` cases; e2e rc=0. It SURVIVED at `0344d50` and is what the third RED block above exists for |
@@ -425,8 +432,9 @@ M13 to M16 are #190's four rows, re-taken here; N1 to N9 are this lane's.
 | N5 | the guard dropped from `readWireStatus` | unit rc=1, **2 failed**: `answers a body at 500 when getStatus throws` and its `getResponse()` twin; e2e rc=0 |
 | N6 | the RANGE check dropped from `readWireStatus`, any number accepted | unit rc=1, **7 failed**: the four unusable statuses on the filter, two on `getResponse()`, and `names 500 in the fallback when neither read is usable`; e2e rc=0 |
 | N7 | the bound dropped from `logErrorLine` | unit rc=1, **4 failed**: the three `bounds a ... of a megabyte` cases and `bounds what an upstream failure writes` |
-| N8 | the serialisation guard dropped from `logErrorLine` | unit rc=1, **1 failed**: `keeps the real status when the record cannot be serialised`; e2e rc=0 |
+| N8 | the serialisation guard dropped from `logErrorLine` | unit rc=1, **2 failed**: `keeps the real status when the record cannot be serialised` and `keeps the record a record when toJSON gives nothing`; e2e rc=0 |
 | N9 | `getResponse()` reading the status unguarded (`noProblemDetails(this.getStatus())`) | unit rc=1, **3 failed**: the three `answers a body when getStatus gives %s` cases; e2e rc=0 |
+| N10 | the `?? line` dropped, so a `toJSON` that gives nothing writes the word `undefined` | unit rc=1, **1 failed**: `keeps the record a record when toJSON gives nothing`; e2e rc=0 |
 
 ### Live proof
 
