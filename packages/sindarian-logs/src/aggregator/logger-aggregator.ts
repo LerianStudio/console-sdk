@@ -29,8 +29,10 @@ export type LoggerAggregatorOptions = {
    * - `'/api/admin/health/*'` matches everything under `/api/admin/health/`,
    *   and neither `/api/admin/health` itself nor `/api/admin/healthz`
    *
-   * A request that ends at `error` level is written anyway, thrown or recorded,
-   * so silencing a route never hides its failures. Defaults to silencing nothing.
+   * A request that failed is written anyway: one recorded at `error` level, or
+   * one that answered 5xx. A throw inside a sindarian-server handler becomes a
+   * 5xx response before this context ends, so it is the status that keeps it.
+   * Defaults to silencing nothing.
    */
   ignorePaths?: string[]
 }
@@ -110,6 +112,8 @@ export class LoggerAggregator {
       // An error always gets a slot, at the cost of the oldest event: it sets
       // the level of the whole entry, so dropping it would both hide the
       // failure and, on an ignored path, discard the entry altogether.
+      // The slot that goes is events[0] whatever it holds, so on a request
+      // that errored twice past the cap the first failure is the one lost.
       if (event.level !== 'error') return
       context.events.shift()
     }
@@ -196,7 +200,15 @@ export class LoggerAggregator {
 
     const escalatedLevel = this.escalateLevel(context.events)
 
-    if (escalatedLevel !== 'error' && this.isIgnored(context.path)) return
+    // A silenced route is silent only when it succeeded. Recording an error is
+    // one way to fail; answering 5xx is the other, and on a sindarian-server
+    // route it is the only one left, because the framework turns a handler
+    // throw into a 5xx response before this context ends. A 4xx stays silent:
+    // that is the caller's problem, not the route's.
+    const failed =
+      escalatedLevel === 'error' || (context.statusCode ?? 0) >= 500
+
+    if (!failed && this.isIgnored(context.path)) return
 
     const duration = (Date.now() - context.startTime) / 1000
 

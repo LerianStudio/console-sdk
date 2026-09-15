@@ -135,7 +135,10 @@ describe('LoggerModule', () => {
     expect(repository.calls).toHaveLength(1)
   })
 
-  it('should still write an error raised under an ignored path', async () => {
+  // Direct, so it pins the factory's own wiring. What a request does over
+  // HTTP, where the framework catches the throw first, is in
+  // logger-pipeline.test.ts.
+  it('should still write a callback throw under an ignored path', async () => {
     process.env.LOG_IGNORE_PATHS = '/api/csp-report'
     const aggregator = buildAggregator(repository)
 

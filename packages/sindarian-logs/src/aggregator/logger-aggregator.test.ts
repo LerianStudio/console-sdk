@@ -426,7 +426,11 @@ describe('LoggerAggregator', () => {
       expect(mockRepo.calls).toHaveLength(1)
     })
 
-    it('should still write when the request throws', async () => {
+    // These drive runWithContext directly, so they pin the aggregator's own
+    // rule and nothing about HTTP. A throw only reaches this branch from a
+    // caller that lets it out; inside sindarian-server the framework converts
+    // it to a 5xx first. logger-pipeline.test.ts covers that route.
+    it('should still write when the callback throws', async () => {
       const silent = ignoring(['/api/csp-report'])
 
       await expect(
@@ -479,7 +483,7 @@ describe('LoggerAggregator', () => {
       )
     })
 
-    it('should still write when a throw lands past the event cap', async () => {
+    it('should still write when a callback throw lands past the event cap', async () => {
       const silent = ignoring(['/api/csp-report'])
 
       await expect(
