@@ -45,6 +45,51 @@ export const noProblemDetails = (status: number) =>
  * @param value A string, a parsed problem body, or nothing
  * @param fallback The sentence to use when `value` classifies nothing
  */
+/**
+ * Reads the message off an exception that is about to be answered.
+ *
+ * `toProblemMessage` above runs once, in the constructor, over a value an
+ * upstream sent. This runs at the other end, over `Error.message` itself,
+ * which is a WRITABLE property: `e.message = upstreamBody` after construction
+ * walked past the constructor entirely and put an object on the wire under a
+ * field documented as a sentence, `e.message = undefined` left the field
+ * missing, and a rethrown 5 MB body became a 5 MB response. The two are not
+ * the same function because an empty string is a legitimate message once a
+ * route has written one, and the constructor substitutes for it.
+ *
+ * Three things, all of them about the read and none about the value:
+ *
+ * - ONE read. A check on one read and a use of another is not a guard: a
+ *   `message` getter answering a sentence first and an object second passed a
+ *   `typeof` and handed the object over.
+ * - Bounded, at the ceiling the constructor uses, because a message written
+ *   after construction has a size this package does not control.
+ * - It cannot throw. Both callers are the last frame before a body: the
+ *   exception filter runs inside `ServerFactory._handleRequest`'s own catch
+ *   block, which does not guard it, so a throw here escapes the request
+ *   pipeline and the route answers a ZERO-BYTE body with no content-type -
+ *   `SyntaxError: Unexpected end of JSON input` for a caller promised an
+ *   envelope. Losing the sentence is bad; losing the response is the failure
+ *   this package already closed once, for `throw null`.
+ *
+ * @param source The exception whose `message` is about to be answered
+ * @param fallback The sentence to use when the read gives no usable string
+ */
+export function readWireMessage(
+  source: { message?: unknown },
+  fallback: string
+): string {
+  try {
+    const message = source.message
+
+    return typeof message === 'string'
+      ? message.slice(0, MESSAGE_MAX_LENGTH)
+      : fallback
+  } catch {
+    return fallback
+  }
+}
+
 export function toProblemMessage(value: unknown, fallback: string): string {
   if (typeof value === 'string') {
     return value ? value.slice(0, MESSAGE_MAX_LENGTH) : fallback

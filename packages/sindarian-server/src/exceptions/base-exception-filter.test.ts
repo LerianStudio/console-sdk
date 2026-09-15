@@ -168,6 +168,109 @@ describe('BaseExceptionFilter', () => {
     })
   })
 
+  // The same branch again, for the three ways a thrown value can fight back
+  // while it is being read.
+  //
+  // A guard that reads the value TWICE is not a guard: it checks one read and
+  // hands over another, and `message` is a property a throw site owns. A
+  // getter answering a sentence first and an object second passed the `typeof`
+  // and put the object on the wire. Reading once into a local is the whole
+  // fix.
+  //
+  // A read that THROWS is worse than a wrong body. This filter runs inside
+  // `ServerFactory._handleRequest`'s own catch block and that call is not
+  // guarded, so a filter that throws escapes the request pipeline and the
+  // route answers a ZERO-BYTE body with no content-type: a caller promised
+  // JSON gets `SyntaxError: Unexpected end of JSON input`. The unexpected
+  // branch below has been guarded against exactly this since `throw null`; the
+  // typed branch was not, and reached it through a `message` getter or an
+  // overridden `getStatus`.
+  //
+  // The answer keeps the constructor's own fallback and the REAL status
+  // whenever the status could be read, because a 404 that says `Internal
+  // server error` is the defect `names the real status when the message is
+  // empty` exists to prevent. When the status itself is unreadable there is
+  // nothing left to trust and the answer is 500.
+  describe('a typed exception whose message cannot be trusted', () => {
+    const notFound = () =>
+      new ApiException(
+        '0003',
+        'Not Found',
+        'Ledger not found',
+        HttpStatus.NOT_FOUND
+      )
+
+    const bodyOf = () => mockNextResponse.json.mock.calls[0][0] as any
+    const statusOf = () => mockNextResponse.json.mock.calls[0][1] as any
+
+    it('answers a string for a message that changes between reads', async () => {
+      const exception = notFound()
+      let reads = 0
+
+      Object.defineProperty(exception, 'message', {
+        get() {
+          reads += 1
+          return reads === 1
+            ? 'looks like a sentence'
+            : { title: 'Gateway Timeout', payer: 'cpf 123.456.789-00' }
+        }
+      })
+
+      await filter.catch(exception)
+
+      expect(typeof bodyOf().message).toBe('string')
+      expect(JSON.stringify(bodyOf())).not.toContain('123.456.789-00')
+      expect(JSON.stringify(bodyOf())).not.toContain('Gateway Timeout')
+      expect(statusOf()).toEqual({ status: 404 })
+    })
+
+    it('answers a body when the message getter throws', async () => {
+      const exception = notFound()
+
+      Object.defineProperty(exception, 'message', {
+        get() {
+          throw new Error('trap')
+        }
+      })
+
+      await filter.catch(exception)
+
+      expect(bodyOf().message).toBe(
+        'Upstream error body carried no problem details (status 404)'
+      )
+      expect(statusOf()).toEqual({ status: 404 })
+    })
+
+    it('answers a body at 500 when getStatus throws', async () => {
+      const exception = notFound()
+
+      exception.getStatus = () => {
+        throw new Error('trap')
+      }
+
+      await filter.catch(exception)
+
+      expect(bodyOf().message).toBe(
+        'Upstream error body carried no problem details (status 500)'
+      )
+      expect(statusOf()).toEqual({ status: 500 })
+    })
+
+    // The constructor caps every message it is given at 2000 characters
+    // (`toProblemMessage`), and a message written after construction walked
+    // straight past that: a rethrown 5 MB upstream body became a 5 MB response
+    // body. The same ceiling now applies wherever the message is read.
+    it('bounds a message written after construction', async () => {
+      const exception = notFound()
+      exception.message = 'x'.repeat(1_000_000)
+
+      await filter.catch(exception)
+
+      expect(bodyOf().message).toHaveLength(2000)
+      expect(statusOf()).toEqual({ status: 404 })
+    })
+  })
+
   // The shape of an ordinary rethrow in a TypeScript route:
   // `catch (e) { throw { message: e.message } }`, or an upstream problem body
   // whose `message` is already a sentence. It is not an `Error`, so a

@@ -4,7 +4,8 @@ import { ApiException } from './api-exception'
 import { ExceptionFilter } from './exception-filter'
 import {
   MESSAGE_MAX_LENGTH,
-  noProblemDetails
+  noProblemDetails,
+  readWireMessage
 } from '@/utils/error/to-problem-message'
 import { NextResponse } from 'next/server'
 
@@ -102,8 +103,8 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // reads back `{ message: '' }` at 404. Restoring the fallback turns that
     // case red, which is the only way the difference is visible at all.
     //
-    // What the `typeof` IS for is the shape, not the emptiness, and it is the
-    // one place this filter was still handing over whatever it was given.
+    // What the guard below IS for is the shape, not the emptiness, and this
+    // was the one place this filter still handed over whatever it was given.
     // `Error.message` is typed `string` and the constructor produces one, but
     // it is a writable property: `e.message = upstreamBody` after construction
     // put an OBJECT on the wire under a field documented as a sentence, with
@@ -118,18 +119,29 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // server error` is the defect `names the real status when the message is
     // empty` exists to prevent, and this branch must not reintroduce it one
     // mutation over.
+    //
+    // Both reads are inside the guard, and there is exactly one of each.
+    // `readWireMessage` owns the message read, for this branch and for
+    // `ApiException.getResponse()`, which is the other frame that answers one;
+    // the `try` here is for `getStatus`, which a subclass may override with
+    // anything. A status that could be read still names itself in the answer;
+    // one that could not leaves nothing to trust and answers 500.
     if (exception instanceof ApiException) {
-      const status = exception.getStatus()
+      let status: number = HttpStatus.INTERNAL_SERVER_ERROR
 
-      return NextResponse.json(
-        {
-          message:
-            typeof exception.message === 'string'
-              ? exception.message
-              : noProblemDetails(status)
-        },
-        { status }
-      )
+      try {
+        status = exception.getStatus()
+
+        return NextResponse.json(
+          { message: readWireMessage(exception, noProblemDetails(status)) },
+          { status }
+        )
+      } catch {
+        return NextResponse.json(
+          { message: noProblemDetails(status) },
+          { status }
+        )
+      }
     }
 
     // The only remaining copy of what actually broke, written to the seam

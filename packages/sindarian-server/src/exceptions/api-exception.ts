@@ -1,6 +1,7 @@
 import { HttpStatus } from '@/constants/http-status'
 import {
   noProblemDetails,
+  readWireMessage,
   toProblemMessage
 } from '@/utils/error/to-problem-message'
 import { HttpException } from './http-exception'
@@ -36,12 +37,22 @@ export class ApiException extends HttpException {
    * anyone reaches for. Metadata extends the body; these three are its
    * contract.
    */
+  /**
+   * `message` is read through `readWireMessage` rather than taken, because the
+   * constructor is not the only writer: `Error.message` is a writable property
+   * and a route that sets one after construction bypasses the reduction above.
+   * An application that renders this body itself - Console spreads it into its
+   * own envelope - was the caller still receiving an upstream object, a
+   * missing field, or five megabytes under a field this file documents as a
+   * string. The exception filter reads a message through the same function,
+   * which is why there is one and not two.
+   */
   getResponse() {
     return {
       ...this.metadata,
       code: this.code,
       title: this.title,
-      message: this.message
+      message: readWireMessage(this, noProblemDetails(this.getStatus()))
     }
   }
 }

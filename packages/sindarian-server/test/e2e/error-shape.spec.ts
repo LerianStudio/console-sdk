@@ -212,3 +212,54 @@ describe('An unexpected error answers a generic body, never its own text', () =>
     expect(logged()).toContain('no such ledger')
   })
 })
+
+/**
+ * The other half of the same rule, for the exceptions this library DOES model.
+ *
+ * These never reach the package's filter here: the app registers its own
+ * filter, which answers an `ApiException` by spreading
+ * `ApiException.getResponse()` into its envelope, and that is how an
+ * application that renders its own body reads the message. So this block is
+ * the only place the accessor is read through a real Response.
+ *
+ * The constructor reduces and bounds whatever it is handed. `Error.message` is
+ * writable, so a value written after construction never passed through it, and
+ * this is the shape that put an upstream's object on the wire under a field
+ * documented as a sentence, a 5 MB body in a browser, and - for a `message`
+ * that throws when read - no response at all.
+ */
+describe('A typed exception carries a bounded sentence, however it was written', () => {
+  it('names the real status instead of an upstream object', async () => {
+    const { response, body } = await get('typed-object')
+
+    expect(response.status).toBe(404)
+    expect(body.message).toBe(
+      'Upstream error body carried no problem details (status 404)'
+    )
+    expect(body.code).toBe('0003')
+    expect(JSON.stringify(body)).not.toContain('123.456.789-00')
+    expect(JSON.stringify(body)).not.toContain('db-primary.internal')
+    expect(JSON.stringify(body)).not.toContain('Gateway Timeout')
+  })
+
+  it('bounds a five-megabyte message at two thousand characters', async () => {
+    const { response, body } = await get('typed-huge')
+
+    expect(response.status).toBe(404)
+    expect(body.message).toHaveLength(2000)
+  })
+
+  // A filter that throws escapes the request pipeline, and the route answers a
+  // ZERO-BYTE body with no content-type: `response.json()` below is the
+  // assertion, because it is what raises `SyntaxError: Unexpected end of JSON
+  // input` for a caller promised an envelope.
+  it('answers a body at all when reading the message throws', async () => {
+    const { response, body } = await get('typed-trap')
+
+    expect(response.status).toBe(404)
+    expect(body.message).toBe(
+      'Upstream error body carried no problem details (status 404)'
+    )
+    expect(body.code).toBe('0003')
+  })
+})

@@ -2,7 +2,8 @@ import {
   Controller,
   Get,
   HttpException,
-  HttpStatus
+  HttpStatus,
+  NotFoundApiException
 } from '@lerianstudio/sindarian-server'
 
 /**
@@ -107,5 +108,46 @@ export class ThrowingController {
   @Get('http-status')
   public httpStatus(): never {
     throw new HttpException('no such ledger', HttpStatus.NOT_FOUND)
+  }
+
+  /**
+   * A TYPED exception whose `message` was written after construction.
+   *
+   * These three are not unexpected errors: the app's own filter answers them,
+   * through `ApiException.getResponse()`, which is what an application that
+   * renders its own envelope actually reads. The constructor bounds and
+   * reduces the message it is handed; a property written afterwards never went
+   * through it, so an upstream body, a 5 MB string and a getter that throws
+   * each reached this far untouched.
+   */
+  @Get('typed-object')
+  public typedObject(): never {
+    const exception = new NotFoundApiException('Ledger not found')
+    ;(exception as any).message = {
+      title: 'Gateway Timeout',
+      detail: 'timed out at db-primary.internal:8080',
+      errors: { payer: { document: 'cpf 123.456.789-00' } }
+    }
+    throw exception
+  }
+
+  /** The same mutation with a rethrown upstream body's worth of text. */
+  @Get('typed-huge')
+  public typedHuge(): never {
+    const exception = new NotFoundApiException('Ledger not found')
+    exception.message = 'x'.repeat(5_000_000)
+    throw exception
+  }
+
+  /** The read itself fails, which used to cost the route its whole response. */
+  @Get('typed-trap')
+  public typedTrap(): never {
+    const exception = new NotFoundApiException('Ledger not found')
+    Object.defineProperty(exception, 'message', {
+      get() {
+        throw new Error('trap')
+      }
+    })
+    throw exception
   }
 }
