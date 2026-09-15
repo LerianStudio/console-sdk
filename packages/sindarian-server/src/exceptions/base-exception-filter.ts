@@ -136,9 +136,10 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // serialised here instead of handed over as an object.** Node renders a
     // second argument with its OWN `util.inspect` defaults, `breakLength: 128`
     // and `compact: 3`, which no option on the call below can reach: measured
-    // on an RFC 9457 body whose rejected value sits three levels down, the
-    // record printed across FIVE physical lines with `value` already flat, and
-    // an `Error` made it THIRTEEN. A line-oriented collector, the Docker
+    // through the real request pipeline, an RFC 9457 body whose rejected value
+    // sits three levels down printed across SEVEN physical lines, and a thrown
+    // `Error` fifteen. Flattening the value alone does not fix that, it only
+    // shortens the first one to five. A line-oriented collector, the Docker
     // json-file driver or Fluent Bit, ships each of those as a separate event,
     // so the taxpayer id lands in a different event from the `Unhandled
     // exception` label an operator greps for. A string argument is written
