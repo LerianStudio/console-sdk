@@ -3,11 +3,14 @@ import { Controller, Get } from '@lerianstudio/sindarian-server'
 /**
  * A route may throw anything, not only an ApiException.
  *
- * These four shapes are what actually reached the default exception filter in
- * production code and left the response body without a readable `message`.
+ * The first four shapes are what actually reached the default exception filter
+ * in production code and left the response body without a readable `message`.
  * They exist so the e2e suite reads a REAL Response, built by a real
  * NextResponse: the filter's own unit tests mock `NextResponse.json`, so they
  * can assert the arguments and never the body a caller parses.
+ *
+ * The fifth, `error`, pins a leak that is NOT closed: a thrown `Error` still
+ * puts its own text on the wire. See the spec's second describe block.
  */
 @Controller('/throwing')
 export class ThrowingController {
@@ -38,5 +41,16 @@ export class ThrowingController {
   @Get('null')
   public null(): never {
     throw null
+  }
+
+  /**
+   * A bare `Error`, carrying exactly what the `object` route above has
+   * stripped from it: an internal host and port, and a taxpayer id. Its text
+   * reaches the browser verbatim, and the spec pins that rather than asserting
+   * it away. Known leak class, awaiting a product decision.
+   */
+  @Get('error')
+  public error(): never {
+    throw new Error('connect ECONNREFUSED 10.0.0.5:8080 for cpf 123.456.789-00')
   }
 }
