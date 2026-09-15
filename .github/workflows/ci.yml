@@ -105,6 +105,41 @@ jobs:
       - name: Run tests for ${{ matrix.name }}
         run: npm run test -- --filter=@lerianstudio/${{ matrix.name }}
 
+  # Run e2e tests for changed packages.
+  #
+  # The unit job above cannot cover these. sindarian-server's jest config
+  # ignores <rootDir>/test, and the e2e suite is the only place that reads a
+  # real Response body instead of the arguments of a mocked NextResponse.json,
+  # which is exactly where a filter crash hides. Until now those cases ran only
+  # in release.yml, after merge, where a red job blocks a publish instead of a
+  # merge. Packages with no test:e2e script are a no-op for turbo.
+  test-e2e:
+    name: Test E2E ${{ matrix.name }}
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs: get-changed-paths
+    if: needs.get-changed-paths.outputs.matrix != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.get-changed-paths.outputs.matrix) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run E2E tests for ${{ matrix.name }}
+        run: npm run test:e2e -- --filter=@lerianstudio/${{ matrix.name }}
+
   # Build changed packages to catch compilation errors
   build:
     name: Build ${{ matrix.name }}
