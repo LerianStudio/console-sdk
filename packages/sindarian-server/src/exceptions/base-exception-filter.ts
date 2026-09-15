@@ -2,9 +2,11 @@ import { inspect } from 'node:util'
 import { HttpStatus } from '@/constants'
 import { ApiException } from './api-exception'
 import { ExceptionFilter } from './exception-filter'
+import { logErrorLine } from '@/utils/error/log-error-line'
 import {
-  MESSAGE_MAX_LENGTH,
-  noProblemDetails
+  noProblemDetails,
+  readWireMessage,
+  readWireStatus
 } from '@/utils/error/to-problem-message'
 import { NextResponse } from 'next/server'
 
@@ -102,8 +104,8 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // reads back `{ message: '' }` at 404. Restoring the fallback turns that
     // case red, which is the only way the difference is visible at all.
     //
-    // What the `typeof` IS for is the shape, not the emptiness, and it is the
-    // one place this filter was still handing over whatever it was given.
+    // What the guard below IS for is the shape, not the emptiness, and this
+    // was the one place this filter still handed over whatever it was given.
     // `Error.message` is typed `string` and the constructor produces one, but
     // it is a writable property: `e.message = upstreamBody` after construction
     // put an OBJECT on the wire under a field documented as a sentence, with
@@ -118,16 +120,21 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // server error` is the defect `names the real status when the message is
     // empty` exists to prevent, and this branch must not reintroduce it one
     // mutation over.
+    //
+    // Two reads, each exactly once and each of a value a subclass owns, so
+    // each goes through the function that owns it. `ApiException.getResponse()`
+    // reads the same two the same way, which is what keeps the body an
+    // application renders itself and the body this filter renders from
+    // drifting apart. Neither can throw, and this matters more here than
+    // anywhere else in the file: this filter runs inside
+    // `ServerFactory._handleRequest`'s own catch block, which does not guard
+    // the call, so a throw escapes the pipeline and the route answers a
+    // ZERO-BYTE body.
     if (exception instanceof ApiException) {
-      const status = exception.getStatus()
+      const status = readWireStatus(exception)
 
       return NextResponse.json(
-        {
-          message:
-            typeof exception.message === 'string'
-              ? exception.message
-              : noProblemDetails(status)
-        },
+        { message: readWireMessage(exception, noProblemDetails(status)) },
         { status }
       )
     }
@@ -152,30 +159,20 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // `{ message: '', code, detail }` wrote an empty string and dropped the two
     // fields that were the incident.
     // `value` is the whole thrown value rendered, so `String({ code, detail })`
-    // never happens, four levels deep so an upstream body prints the rejected
-    // value under `errors` instead of `[Object]`, and cut at the same 2000
-    // characters a message is, because a rethrown upstream body has a size this
-    // package does not control and one bad upstream must not fill a log sink.
-    // There is no `stack` field: rendering an `Error` prints its stack, inside
-    // the same bound.
+    // never happens, and four levels deep so an upstream body prints the
+    // rejected value under `errors` instead of `[Object]`. There is no `stack`
+    // field: rendering an `Error` prints its stack, inside the same bound.
     //
-    // **One failure is one physical line, and that is why the record is
-    // serialised here instead of handed over as an object.** Node renders a
-    // second argument with its OWN `util.inspect` defaults, `breakLength: 128`
-    // and `compact: 3`, which no option on the call below can reach: measured
-    // through the real request pipeline, an RFC 9457 body whose rejected value
-    // sits three levels down printed across SEVEN physical lines, and a thrown
-    // `Error` fifteen. Flattening the value alone does not fix that, it only
-    // shortens the first one to five. A line-oriented collector, the Docker
-    // json-file driver or Fluent Bit, ships each of those as a separate event,
-    // so the taxpayer id lands in a different event from the `Unhandled
-    // exception` label an operator greps for. A string argument is written
-    // through verbatim and JSON has no multi-line string, so a stack's
-    // newlines survive as escapes inside the one line rather than breaking it,
-    // and what a collector receives is also parseable. `compact: true` is the
-    // other half: without it `util.inspect` breaks a value nested three deep
-    // whatever `breakLength` says, and the escaped newlines would be inside
-    // `value` for no reason.
+    // **One failure is one physical line, and every field is bounded**, which
+    // is what `logErrorLine` is and why the transport's two failure logs go
+    // through the same function: measured through the real request pipeline,
+    // an RFC 9457 body whose rejected value sits three levels down printed
+    // across SEVEN physical lines as a record object, and a thrown `Error`
+    // fifteen. Flattening the value alone does not fix that, it only shortens
+    // the first one to five. `compact: true` here is the other half: without
+    // it `util.inspect` breaks a value nested three deep whatever
+    // `breakLength` says, and the escaped newlines would ride inside `value`
+    // for no reason.
     //
     // **This package applies NO redaction to what it writes here.** `value` is
     // what the route threw, verbatim within the bound, which is the opposite of
@@ -203,30 +200,18 @@ export class BaseExceptionFilter implements ExceptionFilter {
       const name = exception?.name
       const message = exception?.message
 
-      console.error(
-        'Unhandled exception',
-        JSON.stringify({
-          name:
-            typeof name === 'string'
-              ? name.slice(0, MESSAGE_MAX_LENGTH)
-              : typeof exception,
-          message:
-            typeof message === 'string'
-              ? message.slice(0, MESSAGE_MAX_LENGTH)
-              : undefined,
-          value: inspect(exception, {
-            depth: 4,
-            breakLength: Infinity,
-            compact: true,
-            customInspect: false
-          }).slice(0, MESSAGE_MAX_LENGTH)
+      logErrorLine('Unhandled exception', {
+        name: typeof name === 'string' ? name : typeof exception,
+        message: typeof message === 'string' ? message : undefined,
+        value: inspect(exception, {
+          depth: 4,
+          breakLength: Infinity,
+          compact: true,
+          customInspect: false
         })
-      )
+      })
     } catch {
-      console.error(
-        'Unhandled exception',
-        JSON.stringify({ name: typeof exception })
-      )
+      logErrorLine('Unhandled exception', { name: typeof exception })
     }
 
     return NextResponse.json(

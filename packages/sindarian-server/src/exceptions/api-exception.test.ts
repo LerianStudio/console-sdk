@@ -462,5 +462,98 @@ describe('ApiException', () => {
       expect(response).toMatchObject({ details: { requestId: 'r-1' } })
       expect(JSON.stringify(response)).not.toContain('123.456.789-00')
     })
+
+    // `getResponse()` is the OTHER caller of a typed exception's message, and
+    // the one an application serialises itself: Product Console spreads it
+    // into its own envelope. The constructor reduces and bounds the message it
+    // is handed, but `Error.message` is a writable property, so a value written
+    // after construction reached here untouched - an upstream problem object
+    // under a field documented as a sentence, a missing field for `undefined`,
+    // or a rethrown 5 MB body served to a browser.
+    //
+    // The guard belongs where the message is READ, so both callers get it from
+    // one place: the filter's typed branch and this accessor.
+    describe('a message written after construction', () => {
+      const mutated = (value: unknown) => {
+        const exception = new NotFoundApiException('Ledger not found')
+        ;(exception as any).message = value
+        return exception
+      }
+
+      it.each([
+        [
+          'an upstream problem object',
+          { title: 'Gateway Timeout', detail: 'cpf 123.456.789-00' }
+        ],
+        ['a number', 42],
+        ['undefined', undefined],
+        ['null', null]
+      ])('names the real status for %s', (_label, value) => {
+        const response = mutated(value).getResponse()
+
+        expect(response.message).toBe(
+          'Upstream error body carried no problem details (status 404)'
+        )
+        expect(response.code).toBe('0003')
+        expect(JSON.stringify(response)).not.toContain('123.456.789-00')
+        expect(JSON.stringify(response)).not.toContain('Gateway Timeout')
+      })
+
+      it('bounds a message written after construction', () => {
+        expect(
+          mutated('x'.repeat(1_000_000)).getResponse().message
+        ).toHaveLength(2000)
+      })
+
+      // The status is read here too, to name it in the fallback, and it is
+      // read from a method a subclass may override with anything. An accessor
+      // that throws takes its route down with it, so both reads answer rather
+      // than throw, and a status no Response can carry is not one.
+      it.each([['a throw'], [0], [700]])(
+        'answers a body when getStatus gives %s',
+        (status) => {
+          const broken = (exception: NotFoundApiException) => {
+            exception.getStatus = () => {
+              if (status === 'a throw') throw new Error('trap')
+              return status as number
+            }
+            return exception
+          }
+
+          // A usable message is still answered, and the accessor does not
+          // throw on its way there.
+          expect(
+            broken(new NotFoundApiException('Ledger not found')).getResponse()
+          ).toMatchObject({
+            code: '0003',
+            title: 'Not Found',
+            message: 'Ledger not found'
+          })
+
+          // And a message that needs the fallback gets one naming a status a
+          // response can actually carry.
+          expect(
+            broken(mutated({ title: 'Gateway Timeout' }) as any).getResponse()
+              .message
+          ).toBe('Upstream error body carried no problem details (status 500)')
+        }
+      )
+
+      // Reading it must not throw either: an application renders this body
+      // itself, and an accessor that throws takes its route down with it.
+      it('answers a sentence when the message getter throws', () => {
+        const exception = new NotFoundApiException('Ledger not found')
+
+        Object.defineProperty(exception, 'message', {
+          get() {
+            throw new Error('trap')
+          }
+        })
+
+        expect(exception.getResponse().message).toBe(
+          'Upstream error body carried no problem details (status 404)'
+        )
+      })
+    })
   })
 })

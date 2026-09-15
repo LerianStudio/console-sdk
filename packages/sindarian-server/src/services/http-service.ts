@@ -19,6 +19,7 @@ import {
   UnauthorizedApiException,
   UnprocessableEntityApiException
 } from '@/exceptions/api-exception'
+import { logErrorLine } from '@/utils/error/log-error-line'
 import {
   noProblemDetails,
   PROBLEM_FIELD_MAX_LENGTH,
@@ -286,7 +287,7 @@ export abstract class HttpService {
   protected onRequestFailure(request: Request, error: unknown): void {
     const { origin, pathname } = new URL(request.url)
 
-    console.error('Request failed', {
+    logErrorLine('Request failed', {
       method: request.method,
       url: `${origin}${pathname}`,
       cause: error instanceof Error ? error.message : String(error)
@@ -350,7 +351,7 @@ export abstract class HttpService {
    * `text/plain` body, `undefined` when the response carried no JSON object
    */
   protected async catch(request: Request, response: Response, error: any) {
-    console.error(
+    logErrorLine(
       'Request error',
       this.describeRequestError(request, response, error)
     )

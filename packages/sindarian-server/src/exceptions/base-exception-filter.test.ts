@@ -168,6 +168,169 @@ describe('BaseExceptionFilter', () => {
     })
   })
 
+  // The same branch again, for the three ways a thrown value can fight back
+  // while it is being read.
+  //
+  // A guard that reads the value TWICE is not a guard: it checks one read and
+  // hands over another, and `message` is a property a throw site owns. A
+  // getter answering a sentence first and an object second passed the `typeof`
+  // and put the object on the wire. Reading once into a local is the whole
+  // fix.
+  //
+  // A read that THROWS is worse than a wrong body. This filter runs inside
+  // `ServerFactory._handleRequest`'s own catch block and that call is not
+  // guarded, so a filter that throws escapes the request pipeline and the
+  // route answers a ZERO-BYTE body with no content-type: a caller promised
+  // JSON gets `SyntaxError: Unexpected end of JSON input`. The unexpected
+  // branch below has been guarded against exactly this since `throw null`; the
+  // typed branch was not, and reached it through a `message` getter or an
+  // overridden `getStatus`.
+  //
+  // The answer keeps the constructor's own fallback and the REAL status
+  // whenever the status could be read, because a 404 that says `Internal
+  // server error` is the defect `names the real status when the message is
+  // empty` exists to prevent. When the status itself is unreadable there is
+  // nothing left to trust and the answer is 500.
+  describe('a typed exception whose message cannot be trusted', () => {
+    const notFound = () =>
+      new ApiException(
+        '0003',
+        'Not Found',
+        'Ledger not found',
+        HttpStatus.NOT_FOUND
+      )
+
+    const bodyOf = () => mockNextResponse.json.mock.calls[0][0] as any
+    const statusOf = () => mockNextResponse.json.mock.calls[0][1] as any
+
+    // Both cases assert the EXACT sentence, and that is the whole point: a
+    // version that reads the property twice answers the SECOND read, and
+    // `typeof body.message === 'string'` cannot tell the two apart. In the
+    // first case the second read is an object, so a double read answers the
+    // fallback rather than what it checked; in the second both reads are
+    // strings, so a double read answers the taxpayer id with no type error
+    // anywhere to catch it. Only the value says which read was used.
+    it('answers the message it checked, not a later read', async () => {
+      const exception = notFound()
+      let reads = 0
+
+      Object.defineProperty(exception, 'message', {
+        get() {
+          reads += 1
+          return reads === 1
+            ? 'looks like a sentence'
+            : { title: 'Gateway Timeout', payer: 'cpf 123.456.789-00' }
+        }
+      })
+
+      await filter.catch(exception)
+
+      expect(bodyOf().message).toBe('looks like a sentence')
+      expect(JSON.stringify(bodyOf())).not.toContain('123.456.789-00')
+      expect(JSON.stringify(bodyOf())).not.toContain('Gateway Timeout')
+      expect(statusOf()).toEqual({ status: 404 })
+    })
+
+    it('answers the message it checked when every read is a string', async () => {
+      const exception = notFound()
+      let reads = 0
+
+      Object.defineProperty(exception, 'message', {
+        get() {
+          reads += 1
+          return reads === 1 ? 'Ledger not found' : 'cpf 123.456.789-00'
+        }
+      })
+
+      await filter.catch(exception)
+
+      expect(bodyOf().message).toBe('Ledger not found')
+      expect(JSON.stringify(bodyOf())).not.toContain('123.456.789-00')
+    })
+
+    it('answers a body when the message getter throws', async () => {
+      const exception = notFound()
+
+      Object.defineProperty(exception, 'message', {
+        get() {
+          throw new Error('trap')
+        }
+      })
+
+      await filter.catch(exception)
+
+      expect(bodyOf().message).toBe(
+        'Upstream error body carried no problem details (status 404)'
+      )
+      expect(statusOf()).toEqual({ status: 404 })
+    })
+
+    // A status no Response can carry is the same failure as a `getStatus` that
+    // throws, one frame later: `NextResponse.json` rejects anything outside
+    // 200 to 599 with a `RangeError`, so a fallback that reuses the status it
+    // was handed throws from inside the very branch that was catching, and the
+    // route is back to a zero-byte body. The status is therefore checked, not
+    // caught.
+    it.each([[0], [700], [NaN], [199]])(
+      'answers 500 for the unusable status %s',
+      async (status) => {
+        const exception = notFound()
+        exception.getStatus = () => status
+
+        await filter.catch(exception)
+
+        // The status is the only thing that falls back: a message it can use
+        // is still the one the caller is told.
+        expect(statusOf()).toEqual({ status: 500 })
+        expect(bodyOf().message).toBe('Ledger not found')
+      }
+    )
+
+    it('answers a body at 500 when getStatus throws', async () => {
+      const exception = notFound()
+
+      exception.getStatus = () => {
+        throw new Error('trap')
+      }
+
+      await filter.catch(exception)
+
+      expect(bodyOf().message).toBe('Ledger not found')
+      expect(statusOf()).toEqual({ status: 500 })
+    })
+
+    // Both unusable at once, which is the only shape that shows which status
+    // the sentence names: the fallback must not promise a 404 the response is
+    // not carrying.
+    it('names 500 in the fallback when neither read is usable', async () => {
+      const exception = notFound()
+
+      exception.getStatus = () => 700
+      ;(exception as any).message = { title: 'Gateway Timeout' }
+
+      await filter.catch(exception)
+
+      expect(bodyOf().message).toBe(
+        'Upstream error body carried no problem details (status 500)'
+      )
+      expect(statusOf()).toEqual({ status: 500 })
+    })
+
+    // The constructor caps every message it is given at 2000 characters
+    // (`toProblemMessage`), and a message written after construction walked
+    // straight past that: a rethrown 5 MB upstream body became a 5 MB response
+    // body. The same ceiling now applies wherever the message is read.
+    it('bounds a message written after construction', async () => {
+      const exception = notFound()
+      exception.message = 'x'.repeat(1_000_000)
+
+      await filter.catch(exception)
+
+      expect(bodyOf().message).toHaveLength(2000)
+      expect(statusOf()).toEqual({ status: 404 })
+    })
+  })
+
   // The shape of an ordinary rethrow in a TypeScript route:
   // `catch (e) { throw { message: e.message } }`, or an upstream problem body
   // whose `message` is already a sentence. It is not an `Error`, so a

@@ -1,3 +1,5 @@
+import { HttpStatus } from '@/constants/http-status'
+
 /**
  * Longest an upstream-controlled classification may be once it becomes ours.
  *
@@ -45,6 +47,83 @@ export const noProblemDetails = (status: number) =>
  * @param value A string, a parsed problem body, or nothing
  * @param fallback The sentence to use when `value` classifies nothing
  */
+/**
+ * Reads the message off an exception that is about to be answered.
+ *
+ * `toProblemMessage` above runs once, in the constructor, over a value an
+ * upstream sent. This runs at the other end, over `Error.message` itself,
+ * which is a WRITABLE property: `e.message = upstreamBody` after construction
+ * walked past the constructor entirely and put an object on the wire under a
+ * field documented as a sentence, `e.message = undefined` left the field
+ * missing, and a rethrown 5 MB body became a 5 MB response. The two are not
+ * the same function because an empty string is a legitimate message once a
+ * route has written one, and the constructor substitutes for it.
+ *
+ * Three things, all of them about the read and none about the value:
+ *
+ * - ONE read. A check on one read and a use of another is not a guard: a
+ *   `message` getter answering a sentence first and an object second passed a
+ *   `typeof` and handed the object over.
+ * - Bounded, at the ceiling the constructor uses, because a message written
+ *   after construction has a size this package does not control.
+ * - It cannot throw. Both callers are the last frame before a body: the
+ *   exception filter runs inside `ServerFactory._handleRequest`'s own catch
+ *   block, which does not guard it, so a throw here escapes the request
+ *   pipeline and the route answers a ZERO-BYTE body with no content-type -
+ *   `SyntaxError: Unexpected end of JSON input` for a caller promised an
+ *   envelope. Losing the sentence is bad; losing the response is the failure
+ *   this package already closed once, for `throw null`.
+ *
+ * @param source The exception whose `message` is about to be answered
+ * @param fallback The sentence to use when the read gives no usable string
+ */
+export function readWireMessage(
+  source: { message?: unknown },
+  fallback: string
+): string {
+  try {
+    const message = source.message
+
+    return typeof message === 'string'
+      ? message.slice(0, MESSAGE_MAX_LENGTH)
+      : fallback
+  } catch {
+    return fallback
+  }
+}
+
+/**
+ * The status a response may actually be built with, read off an exception.
+ *
+ * `getStatus` is a method a subclass may override with anything, and both
+ * frames that answer a typed exception have to read it: one to build the
+ * response, one to name the status in a fallback sentence.
+ *
+ * Two ways it fails and one answer for both. An override that THROWS is the
+ * `readWireMessage` story exactly. An override that RETURNS a number no
+ * response can carry is worse, because it fails one frame later: the runtime
+ * rejects anything outside 200 to 599 with a `RangeError`, measured, so a
+ * guard that caught the throw and reused the status would throw from inside
+ * its own fallback and leave the route with the zero-byte body again. The
+ * status is therefore checked rather than caught, and anything unusable
+ * answers 500, the status this library already gives a failure it cannot
+ * classify.
+ */
+export function readWireStatus(source: { getStatus?: () => unknown }): number {
+  try {
+    const status = source.getStatus?.()
+
+    return typeof status === 'number' &&
+      Number.isInteger(status) &&
+      status >= 200 &&
+      status <= 599
+      ? status
+      : HttpStatus.INTERNAL_SERVER_ERROR
+  } catch {
+    return HttpStatus.INTERNAL_SERVER_ERROR
+  }
+}
+
 export function toProblemMessage(value: unknown, fallback: string): string {
   if (typeof value === 'string') {
     return value ? value.slice(0, MESSAGE_MAX_LENGTH) : fallback
