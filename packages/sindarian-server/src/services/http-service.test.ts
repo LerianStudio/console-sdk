@@ -1383,6 +1383,45 @@ describe('HttpService', () => {
       expect(error.getStatus()).toBe(HttpStatus.CONFLICT)
       // And the failure is still announced, under its own label.
       expect(consoleSpy.mock.calls[0][0]).toBe('Request error')
+      expect(JSON.parse(consoleSpy.mock.calls[0][1])).toEqual({
+        record: 'unserialisable'
+      })
+    })
+
+    // The other way a record refuses to serialise, and it does not throw:
+    // `JSON.stringify` returns the VALUE undefined for a record whose own
+    // `toJSON` gives one, so the label would be followed by the word
+    // `undefined` and a collector would have nothing to parse.
+    it('keeps the record a record when toJSON gives nothing', async () => {
+      class NothingHttpService extends HttpService {
+        public async testRequest<T>(request: Request): Promise<T> {
+          return this.request<T>(request)
+        }
+
+        protected createDefaults = jest.fn().mockResolvedValue({})
+
+        protected describeRequestError() {
+          return { toJSON: () => undefined } as unknown as Record<
+            string,
+            unknown
+          >
+        }
+      }
+
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ title: 'Conflict' }), {
+          status: HttpStatus.CONFLICT,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+
+      await new NothingHttpService()
+        .testRequest(new Request('https://api.example.com/v1/accounts'))
+        .catch(() => {})
+
+      expect(JSON.parse(consoleSpy.mock.calls[0][1])).toEqual({
+        record: 'unserialisable'
+      })
     })
 
     // `cause` is an upstream's own text and has a size this package does not

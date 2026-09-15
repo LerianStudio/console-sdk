@@ -40,7 +40,10 @@ import { MESSAGE_MAX_LENGTH } from './to-problem-message'
  * inside its own `try`, where a throw becomes the 503 that means "the upstream
  * never answered" - for an upstream that answered 409 perfectly well. The
  * label is therefore always written: a record that cannot be serialised is
- * announced as one, and only its fields are lost.
+ * announced as one, and only its fields are lost. A record whose own `toJSON`
+ * returns nothing is the quiet version of the same thing, giving `undefined`
+ * back with no throw at all, and it takes the same announcement rather than
+ * leaving the word `undefined` after the label for a collector to parse.
  *
  * @param label The greppable label, written as the first argument
  * @param record The fields of the failure, serialised beside it
@@ -52,9 +55,10 @@ export function logErrorLine(
   let line = '{"record":"unserialisable"}'
 
   try {
-    line = JSON.stringify(record, (_key, value) =>
-      typeof value === 'string' ? value.slice(0, MESSAGE_MAX_LENGTH) : value
-    )
+    line =
+      JSON.stringify(record, (_key, value) =>
+        typeof value === 'string' ? value.slice(0, MESSAGE_MAX_LENGTH) : value
+      ) ?? line
   } catch {
     // Keep the announcement, lose the fields.
   }
