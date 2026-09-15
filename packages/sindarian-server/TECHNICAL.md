@@ -179,13 +179,18 @@ The framework processes parameters through a multi-stage pipeline:
 #### Exception Hierarchy
 ```typescript
 // Base exception class
-export class ApiException extends Error {
-  constructor(message: string, private readonly statusCode: number)
+export class HttpException extends Error {
+  constructor(message: string, status?: number)
   getStatus(): number
 }
 
-// HTTP-specific exceptions
-export class HttpException extends ApiException
+// Adds the classification a caller reads, and coerces the message to a
+// bounded string: an upstream body handed in here keeps only its title or code
+export class ApiException extends HttpException {
+  constructor(code: string, title: string, message: unknown, status?: HttpStatus, metadata?: any)
+  getResponse(): { code: string; title: string; message: string }
+}
+
 export class ValidationApiException extends ApiException // 400
 export class NotFoundApiException extends ApiException  // 404
 ```
@@ -197,10 +202,10 @@ export abstract class ExceptionFilter {
 }
 ```
 
-**Built-in BaseExceptionFilter** (`base-exception-filter.ts:4`):
-- Handles any unhandled exception
-- Extracts status code via `getStatus()` method
-- Returns standardized JSON error response
+**Built-in BaseExceptionFilter** (`base-exception-filter.ts`):
+- Answers an `ApiException` with its own message, at its own status from `getStatus()`
+- Answers anything else, an unexpected error, with `500 {"message":"Internal server error","code":"0004"}`: the thrown value's own text never reaches the response, and a status it carried of its own is not read (a plain `HttpException` is answered 500)
+- Writes the thrown value to the operator log at error level instead, as `{ name, message, value }`, each field bounded at 2000 characters. This package does not redact it; a consumer whose routes throw a customer's data redacts in its own log pipeline
 
 #### Filter Registration
 1. **Global Filters**: `app.useGlobalFilters(filter)`
