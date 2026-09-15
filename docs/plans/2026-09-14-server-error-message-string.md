@@ -12,9 +12,10 @@ change on the 2.x line and it is the reason this is a `feat!`.
 
 **Scope:** `packages/sindarian-server/src/exceptions/base-exception-filter.ts` and
 `api-exception.ts`, their unit tests, one new controller plus one new spec in the
-package's e2e app, and one job added to `.github/workflows/ci.yml` so those e2e cases gate
-a pull request instead of only a release. No change to `HttpService`, to
-`toProblemMessage`, or to any other package.
+package's e2e app, the package's `TECHNICAL.md` where it documents that filter, and one
+job added to `.github/workflows/ci.yml` so those e2e cases gate a pull request instead of
+only a release. No change to `HttpService`, to `toProblemMessage`, or to any other
+package.
 
 Status: Done.
 
@@ -110,10 +111,13 @@ JSON bodies. Every one of the six already produced a string:
 | 400, body classifying nothing | BadRequest (400) | `string` | `Upstream error body carried no problem details (status 400)` |
 
 That table was the one measurement block in this file with no command and no exit code.
-Re-run at the code-final head `7034afc` (`2026-09-15 12:44:15 UTC`), six real sockets on
+Re-run at the code-final head `1811db7` (`2026-09-15 16:13:54 UTC`), six real sockets on
 ephemeral loopback ports, harness at `/tmp/rv-sdkerr-sockets/probe.cjs` driving the built
-`dist` through a concrete `HttpService`. Output verbatim, the package's own
-`console.error` lines elided:
+`dist` through a concrete `HttpService`. An earlier version of this paragraph named the
+previous pass's last CI commit, two changes below the shipping filter, so a negative claim
+the whole change rests on was labelled as re-run against code that had since been
+rewritten. One commit is the code-final head in this document and it is `1811db7`. Output
+verbatim, the package's own `console.error` lines elided:
 
 ```
 $ timeout 300 unshare -rn bash -c 'ip link set lo up && node /tmp/rv-sdkerr-sockets/probe.cjs'
@@ -143,19 +147,33 @@ bump on the consumer, not a release of this package.
 PR body said "`develop` publishes the next beta on the 3.x line rather than 2.x". False.
 `release.yml:239-240` makes `develop` a `prerelease: beta` branch, and on a prerelease
 branch semantic-release does not apply the release type to the last version: it takes the
-highest of (increment the last prerelease) and (apply the type to the last STABLE release,
-plus `-beta.1`). Run verbatim with the repo's own semver 6.3.1 over the tags reachable from
-`origin/develop`:
+highest of (increment the last prerelease) and (apply the type to the latest version on
+the branch, PRERELEASES INCLUDED, plus `-beta.1`).
+
+That second term is the correction. An earlier version of this section said "apply the
+type to the last STABLE release", and the harness pasted under it implemented that, so it
+printed intermediates the library never computes. The shipped rule reads
+`semver.inc(getLatestVersion(tagsToVersions(branch.tags), { withPrerelease: true }), type)`
+(`lib/get-next-version.js:17`), which is 2.0.0-beta.3 here, not 1.3.0. Both rules answer
+2.0.0-beta.4 today, which is why the wrong one survived three readings; they diverge the
+moment `develop` sits on a patch prerelease ahead of `main`, where the stated rule gives
+2.0.1-beta.2 and the shipped one gives 3.0.0-beta.1.
+
+Run against the library itself rather than a reimplementation: `get-next-version.js`
+imported straight from `node_modules`, fed the 41 real `sindarian-server-v*` tags merged
+into `origin/develop`. The CI pin and the installed copy carry the same rule byte for
+byte (`diff` of that file between `semantic-release@23.0.8`, pinned at `release.yml:255`,
+and the installed 25.0.5, rc=0).
 
 ```
-$ node /tmp/rv-sdkerr-fix3-semrel/next-version.cjs
+$ node /tmp/rv-sdkerr-fix4/next-version.mjs
 rc=0
-lastRelease (beta chan) : 2.0.0-beta.3
-latest stable, no prerel: 1.3.0
-type=major -> highest(inc(2.0.0-beta.3,prerelease)=2.0.0-beta.4, inc(1.3.0,major)-beta.1=2.0.0-beta.1) = 2.0.0-beta.4
-type=minor -> highest(inc(2.0.0-beta.3,prerelease)=2.0.0-beta.4, inc(1.3.0,minor)-beta.1=1.4.0-beta.1) = 2.0.0-beta.4
-type=patch -> highest(inc(2.0.0-beta.3,prerelease)=2.0.0-beta.4, inc(1.3.0,patch)-beta.1=1.3.1-beta.1) = 2.0.0-beta.4
-main branch (not prerelease) would give: 2.0.0
+tags on develop      : 41
+highest prerelease   : 2.0.0-beta.3 (npm dist-tag develop)
+develop, type=major -> 2.0.0-beta.4
+develop, type=minor -> 2.0.0-beta.4
+develop, type=patch -> 2.0.0-beta.4
+main,    type=major -> 2.0.0
 ```
 
 So merging this publishes **2.0.0-beta.4** on the `develop` dist-tag, and the breaking
@@ -237,10 +255,23 @@ for.
 **An unexpected error answers the generic sentence and the code, and nothing else.** An
 unexpected error is anything that is not one of this library's typed exceptions: a bare
 `Error`, a plain `HttpException`, an object carrying a string `message`, an upstream
-problem body, a thrown string, a thrown `null`. Its own text used to be the response body
-verbatim. The body is now `{"message":"Internal server error","code":"0004"}` at 500, for
-every one of them, and the text and the stack go to `console.error` instead. `0004` is not
-a new code: it is the one `InternalServerErrorApiException` already carries.
+problem body, a thrown string, a thrown `null`, a thrown `undefined`. The body is now
+`{"message":"Internal server error","code":"0004"}` at 500 for every one of them, and the
+text goes to `console.error` instead. `0004` is not a new code: it is the one
+`InternalServerErrorApiException` already carries.
+
+**What each of those used to answer, corrected.** Two earlier versions of this paragraph
+closed the enumeration with "its own text used to be the response body verbatim", and the
+pass-2 review refuted it for three of the six shapes named. The refutation was right and
+the following pass made the sentence wider instead of narrower, so it is answered here by
+name. Measured at the branch point `9ded7ed` through the real `app.handler`: `throwing/string`
+answered `500 {}`, `throwing/no-message` answered `500 {}`, and `throwing/null` produced no
+`Response` at all. Only the shapes carrying a string under `message` put text on the wire:
+the bare `Error`, the plain `HttpException`, and the object whose `message` is a sentence.
+So there were two different defects, not one, and they changed in opposite directions: for
+the text-carrying shapes a leak closed, and for the rest a body a caller could not read at
+all became one it can. A consumer sizing this migration reads the enumeration and needs
+that distinction, because their string-throwing routes were never leaking text to a user.
 
 `ApiException` is narrowed off FIRST and keeps its message: it extends `HttpException`
 extends `Error`, so redacting by `instanceof Error` would take the sentence off every 401,
@@ -270,34 +301,69 @@ are not an upstream's body, they are what a route threw:
 same `instanceof Error` branch, so for a thrown object the text was not redacted, it was
 deleted: the response had already stopped carrying the upstream's `detail` and nothing
 wrote it anywhere. An operator paged on a spike of 500s had no host, no request and no
-line to grep. The write is now unconditional, and a value with no `message` is handed to
-`console.error` whole rather than stringified, because `String({ code, detail })` is
-`[object Object]` and those fields are the incident.
+line to grep. The write is now unconditional.
 
-Measured at the code-final head `62dfdbe` through the REAL pipeline (`app.handler`, the
-package's own e2e app, `dist` rebuilt), one row per throwing route, body read off the
-real `Response` and the `console.error` payload captured:
+**The record it writes is three fields, and this pass rebuilt it.** The first unconditional
+version was `{ name, message: exception?.message ?? exception, stack }`, and review found
+three defects in one line. It fell back on NULLISH, so a value carrying a PRESENT but empty
+`message` logged `''` and dropped everything beside it: `{ message: '', code: 'E_NOPE',
+detail: 'cpf ... at db-primary.internal:8080' }` wrote a line that said nothing at all, for
+a value differing from a covered one only by `''` instead of `null`. It was unbounded, so a
+route rethrowing a megabyte of upstream body wrote a megabyte per failed request. And
+handing an object to `console.error` renders it two levels deep, so an RFC 9457 body's
+`errors` map printed `errors: { payer: [Object] }`, eliding exactly the field that is the
+incident.
+
+The record is now, always:
+
+```
+{ name, message, value }
+```
+
+`name` is the constructor name or `typeof`. `message` is the sentence an operator greps,
+present when the thrown value carried a string one, and it decides nothing else. `value` is
+the whole thrown value rendered with `util.inspect(value, { depth: 4, breakLength: Infinity })`.
+Both are cut at `MESSAGE_MAX_LENGTH`, the same 2000 characters a message is bounded at
+elsewhere in the package. There is no `stack` field: rendering an `Error` prints its stack,
+inside that bound.
+
+Measured at the code-final head `1811db7` through the REAL pipeline (`app.handler`, the
+package's own e2e app, `dist` rebuilt, `2026-09-15 16:13:34 UTC`), one row per throwing
+route, body read off the real `Response` and the `console.error` payload captured, stacks
+elided by the harness and the record's own byte count printed:
 
 ```
 object       500 {"message":"Internal server error","code":"0004"}
-             log calls=1 payload={"name":"object","message":{"title":"Gateway Timeout","detail":"cpf 123.456.789-00 timed out at db-primary.internal:8080"}}
+             log calls=1 bytes=173 payload={"name":"object","value":"{ message: { title: 'Gateway Timeout', detail: 'timed out at db-primary.internal:8080', errors: { payer: { document: 'cpf 123.456.789-00' } } } }"}
 errorlike    500 {"message":"Internal server error","code":"0004"}
-             log calls=1 payload={"name":"object","message":"connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00"}
+             log calls=1 bytes=214 payload={"name":"object","message":"connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00","value":"{ message: 'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00', code: 'ECONNREFUSED' }"}
 no-message   500 {"message":"Internal server error","code":"0004"}
-             log calls=1 payload={"name":"object","message":{"code":"E_NOPE","detail":"timed out at db-primary.internal:8080"}}
+             log calls=1 bytes=95 payload={"name":"object","value":"{ code: 'E_NOPE', detail: 'timed out at db-primary.internal:8080' }"}
 string       500 {"message":"Internal server error","code":"0004"}
-             log calls=1 payload={"name":"string","message":"something went wrong"}
+             log calls=1 bytes=50 payload={"name":"string","value":"'something went wrong'"}
 null         500 {"message":"Internal server error","code":"0004"}
-             log calls=1 payload={"name":"object","message":null}
+             log calls=1 bytes=32 payload={"name":"object","value":"null"}
+undefined    500 {"message":"Internal server error","code":"0004"}
+             log calls=1 bytes=40 payload={"name":"undefined","value":"undefined"}
 error        500 {"message":"Internal server error","code":"0004"}
-             log calls=1 payload={"name":"Error","message":"connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00","stack":"<stack>"}
+             log calls=1 bytes=198 payload={"name":"Error","message":"connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00","value":"Error: connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00 <stack elided>"}
 http-status  500 {"message":"Internal server error","code":"0004"}
-             log calls=1 payload={"name":"Error","message":"no such ledger","stack":"<stack>"}
+             log calls=1 bytes=106 payload={"name":"Error","message":"no such ledger","value":"HttpException [Error]: no such ledger <stack elided>"}
+DISTINCT_BODIES=1 BODY_BYTES=49
 ```
 
-Seven shapes, one body, seven log lines. `errorlike` and `error` carry byte-identical
-text under different shapes and are now indistinguishable on the wire, which is the whole
-claim.
+Eight shapes, one body of 49 bytes, eight log lines. `errorlike` and `error` carry
+byte-identical text under different shapes and are now indistinguishable on the wire, which
+is the whole claim. The `object` row is also the depth proof: its taxpayer id sits three
+levels down under `errors`, where a real problem body puts a rejected value, and at the
+default depth that field reads `[Object]`.
+
+The bound and the empty message, from the same run:
+
+```
+thrown bytes=2000000 -> message=2000 value=2000 record=4041
+empty message -> {"name":"object","message":"","value":"{ message: '', code: 'E_NOPE', detail: 'cpf 123.456.789-00 timed out at db-primary.internal:8080' }"}
+```
 
 **What `0004` means, now that it is true.** A caller reading codes can tell this envelope
 from a sentence an upstream actually wrote, because the two never arrive together: an
@@ -307,13 +373,24 @@ carrying. That sentence shipped in the previous version of this branch while the
 route answered `{"message":"Gateway Timeout","code":"0004"}`, which refuted it. It is
 pinned now rather than asserted.
 
-**One thing this moves rather than removes, and consumers must be told.** The text goes to
-the operator log verbatim, and a log is a less private place than it looks: it is shipped
-onward by whatever collects stdout, and no key-based redaction reaches inside a sentence.
-The filter comment now says so in as many words: do not interpolate a customer's data into
-an `Error` message. The SRE standard's prohibited-fields list forbids a CPF in a log while
-separately sanctioning error details with stack traces, so this is the accepted trade and
-the correct posture is omission at the throw site, not a second redactor here.
+**One thing this moves rather than removes, and consumers must be told.** The thrown value
+goes to the operator log as it came, bounded but not redacted, and a log is a less private
+place than it looks: it is shipped onward by whatever collects stdout, and no key-based
+redaction reaches inside a sentence.
+
+**Said plainly, because an earlier version of this section did not.** That version cited the
+SRE standard as "separately sanctioning error details with stack traces, so this is the
+accepted trade". Read again, the sanction covers an `Error`'s message and stack; the same
+list forbids PII and forbids raw request and response bodies at any level, and one of the
+shapes this filter writes IS a rethrown counterparty body. So this is not a trade the
+standard blesses. It is a deliberate decision, Fred's on 2026-09-15: the value goes to the
+log for every shape, because the alternative on offer was a projection of named fields, and
+at this frame there is no contract saying which key holds the incident. What the code does
+about it is bound the write, so no single failure can flood a sink; what it does NOT do is
+redact, and it says so in three places a consumer reads: the filter's own comment,
+`TECHNICAL.md`, and the PR description. A consumer whose routes rethrow an upstream body
+redacts in its log pipeline; the cheaper fix is omission at the throw site, which is why
+"name what failed, not whose record it was" is written beside the code.
 
 **Why `console.error` and not the package's `Logger`.** `Logger.error` writes through a
 static logger an application has to register, and drops everything until it does.
@@ -334,6 +411,15 @@ which is exactly where the `null` case hid. Two more routes and a second describ
 cover the unexpected errors: the bare `Error`, which carries the same host, port and
 taxpayer id the `object` route carries so the two can be read against each other, and a
 plain `HttpException`, whose status defect stays open and is pinned rather than changed.
+An eighth route throws `undefined`, the one shape with no route until this pass and the
+one a `Promise.reject()` with no argument produces.
+
+The package's own `TECHNICAL.md` documented this filter as extracting the status from
+`getStatus()` and returning a standard error response, which is the opposite of what it
+does for anything untyped, and its class hierarchy had `HttpException` extending
+`ApiException` rather than the other way round. Both are corrected. The published README
+documents the filter nowhere, so that block was the only place a consumer could have read
+it.
 
 The filter's status line lost a second operand that could never be false:
 `exception instanceof ApiException && exception.getStatus` became
@@ -342,7 +428,7 @@ The filter's status line lost a second operand that could never be false:
 over from when `exception` was untyped and it did real work.
 
 **And a pull request now RUNS those e2e cases.** It did not. `jest.config.ts` ignores
-`<rootDir>/test`, so the package's `npm test` (38 suites, 857 tests) excludes every case
+`<rootDir>/test`, so the package's `npm test` (38 suites, 862 tests) excludes every case
 that reads a real `Response`, and `ci.yml` had only lint, test and build. The e2e suite
 ran solely in `release.yml`, AFTER merge, where a red job blocks a publish instead of a
 merge and the offending commit has to be reverted off `develop`. `ci.yml` gained a
@@ -376,18 +462,20 @@ says the session expired, a 404 still names what was not found, a 422 still list
 failed validation". The first two halves are right. The third is wrong twice over, and it
 is the sentence a consumer reads before accepting a breaking release.
 
-Measured at the code-final head `62dfdbe` by driving the REAL `BaseExceptionFilter` with
-real exception instances and reading the real `Response` body:
+Measured at the code-final head `1811db7` (`2026-09-15 16:13:34 UTC`) by driving the REAL
+`BaseExceptionFilter` with real exception instances and reading the real `Response` body.
+Zero log lines were written on this branch, which is the other half of the narrowing:
 
 ```
-ValidationApiException(msg, {amount:[required]}) -> 400 {"message":"Validation failed"}
-                                                    getResponse(): {"errors":{"amount":["required"]},"code":"0007","title":"Validation Error","message":"Validation failed"}
-UnprocessableEntityApiException(msg)             -> 422 {"message":"Insufficient funds"}
-                                                    getResponse(): {"code":"0006","title":"Unprocessable Entity","message":"Insufficient funds"}
-UnauthorizedApiException(msg)                    -> 401 {"message":"Session expired"}
-                                                    getResponse(): {"code":"0001","title":"Unauthorized","message":"Session expired"}
-NotFoundApiException(msg)                        -> 404 {"message":"Ledger not found"}
-                                                    getResponse(): {"code":"0003","title":"Not Found","message":"Ledger not found"}
+ValidationApiException               -> 400 {"message":"Validation failed"}
+                                        getResponse(): {"errors":{"amount":["required"]},"code":"0007","title":"Validation Error","message":"Validation failed"}
+UnprocessableEntityApiException      -> 422 {"message":"Insufficient funds"}
+                                        getResponse(): {"code":"0006","title":"Unprocessable Entity","message":"Insufficient funds"}
+UnauthorizedApiException             -> 401 {"message":"Session expired"}
+                                        getResponse(): {"code":"0001","title":"Unauthorized","message":"Session expired"}
+NotFoundApiException                 -> 404 {"message":"Ledger not found"}
+                                        getResponse(): {"code":"0003","title":"Not Found","message":"Ledger not found"}
+log calls on the typed branch = 0
 ```
 
 Two facts, both pre-existing and neither changed by this PR. The exception that carries a
@@ -399,8 +487,14 @@ The list reaches a browser only in an application that writes its own filter and
 serialises `getResponse()` itself, which is what Product Console's `GlobalExceptionFilter`
 and this package's own e2e `AppExceptionFilter` do.
 
-The honest sentence, and the one now in the PR body: a 401, a 404 and a 400 validation
-failure still carry the sentence this library wrote for them, unchanged to the byte.
+**One sentence, carried word for word here and in the PR body**, because a previous version
+of this paragraph claimed the body carried it and the body carried a different, weaker
+claim ("a 400 validation failure still names what failed", which the measurement above
+refutes: a Zod form failure answers `Validation failed` and nothing about the field):
+
+> A 401 still says the session expired, a 404 still names what was not found, and a 400
+> from `ZodValidationPipe` still answers `Validation failed`, each the sentence this
+> library wrote, unchanged to the byte.
 - **The structured upstream body is still dropped, not carried on a typed field.** The
   brief that opened this lane asked for two things: a string `message`, AND the structured
   body travelling on a typed field such as `details`. Only the first shipped, and that is
@@ -490,35 +584,45 @@ remembering to write a catch-all filter is not a safe library.
    Console's forms. Needs a product decision, not a patch, and a pin the day the decision
    is taken.
 3. **The e2e app's own filter shadows the `ApiException` branch.** `AppExceptionFilter` is
-   `@Catch()` and answers every `ApiException` itself, so all 28 e2e cases exercise the
+   `@Catch()` and answers every `ApiException` itself, so all 29 e2e cases exercise the
    non-`ApiException` path only. The branch that serves every 401, 404 and 422 is covered
    by unit cases against a mocked `NextResponse.json`, which is the blind spot this suite
    was added to close. It matters more now that the narrowing carries the redaction, so the
    protection was put where it can fire: mutant M2 below deletes the narrowing and four
-   unit cases die, one of them written for exactly that. Reaching it from e2e means a
-   second app whose filter does not shadow it, which is a bigger harness than this lane
-   needs.
+   unit cases die while the whole e2e suite stays green, one of them written for exactly
+   that. Reaching it from e2e means a second app whose filter does not shadow it, which is
+   a bigger harness than this lane needs.
 4. **The e2e harness breaks if `test/` is installed on its own.** `npm install` there
    fetches a second copy of `next`, and the two `NextRequest` types are incompatible, so
    the suite fails to compile before running a single case. CI never hits it because
    `npm ci` at the root links the workspace and hoists one `next`. Left alone; the fix is
    a note or a workspace entry, and neither belongs in this PR.
+5. **A thrown value whose `message` getter throws still makes the filter itself throw.**
+   `throw { get message() { throw new Error('x') } }` is read on the log line, and a filter
+   that throws escapes the request pipeline, which is the zero-byte-body failure the `null`
+   case documents at length. Pre-existing and unchanged by this pass: the previous head read
+   `exception?.message` on the same line. `util.inspect` does NOT invoke getters, so `value`
+   alone is safe, and the exposure is the one read of `.message`. Left alone deliberately:
+   the closing move is a `try`/`catch` around the write, and adding a branch for a shape
+   nobody throws is the kind of defensive code this file has been deleting. It is written
+   down here so the day someone produces that shape, it is a known hole rather than a
+   discovery.
 
 ## Verification
 
-All eight gates at `62dfdbe`, the code-final head, `2026-09-15 14:07:49 UTC`, tree clean
-(`git status --porcelain` empty before and after).
+All nine gates at `1811db7`, the code-final head, `2026-09-15 16:06:50 UTC` onward, tree
+clean (`git status --porcelain` empty before and after).
 
 ```
 $ cd packages/sindarian-server && npm test
 rc=0
 Test Suites: 38 passed, 38 total
-Tests:       857 passed, 857 total
+Tests:       862 passed, 862 total
 
 $ cd packages/sindarian-server && npm run test:e2e
 rc=0
 Test Suites: 2 passed, 2 total
-Tests:       28 passed, 28 total
+Tests:       29 passed, 29 total
 
 $ cd packages/sindarian-server && npm run lint
 rc=0
@@ -550,7 +654,7 @@ The exact command the new CI job runs, both arms:
 ```
 $ npm run test:e2e -- --filter=@lerianstudio/sindarian-server
 rc=0
-@lerianstudio/sindarian-server:test:e2e: Tests:       28 passed, 28 total
+@lerianstudio/sindarian-server:test:e2e: Tests:       29 passed, 29 total
  Tasks:    1 successful, 1 total
 
 $ npm run test:e2e -- --filter=@lerianstudio/sindarian-ui     # a package with `exit 0`
@@ -558,11 +662,93 @@ rc=0
  Tasks:    1 successful, 1 total
 ```
 
+### RED before GREEN, rebuilding the log record
+
+Assertions first, source untouched, on top of a fresh merge of `origin/develop` (`096af65`,
+merged clean with no conflict). Header at the RED: `2026-09-15 16:02:58 UTC`, `HEAD
+8784c79`, `git status --porcelain` =
+
+```
+ M packages/sindarian-server/src/exceptions/base-exception-filter.test.ts
+ M packages/sindarian-server/test/app/controllers/throwing-controller.ts
+ M packages/sindarian-server/test/e2e/error-shape.spec.ts
+```
+
+`dist` rebuilt first (`npm run build`, rc=0), because the e2e app resolves the package
+through `main`, not the sources.
+
+```
+$ npx jest src/exceptions/base-exception-filter.test.ts
+rc=1
+  ● BaseExceptionFilter › an unexpected error › writes the Error text and its stack to the server log
+  ● BaseExceptionFilter › an unexpected error › writes the text of a thrown object that is not an Error
+  ● BaseExceptionFilter › an unexpected error › writes a thrown value that has no message at all
+  ● BaseExceptionFilter › an unexpected error › keeps the fields beside an empty message
+  ● BaseExceptionFilter › an unexpected error › prints a nested body to its leaf rather than [Object]
+  ● BaseExceptionFilter › an unexpected error › bounds a thrown value of a megabyte
+  ● BaseExceptionFilter › an unexpected error › bounds an Error message of a megabyte
+  ● BaseExceptionFilter › an unexpected error › writes a thrown string
+  ● BaseExceptionFilter › an unexpected error › writes a line for a thrown null without throwing
+  ● BaseExceptionFilter › an unexpected error › answers and writes a line for a thrown undefined
+Tests:       10 failed, 16 passed, 26 total
+
+$ npm run test:e2e
+rc=1
+  ● Whatever a route throws, the body carries a string message › answers JSON with a body at all, for a thrown null
+    Expected substring: "\"value\":\"null\""
+    Received string:    "[[\"Unhandled exception\",{\"name\":\"object\",\"message\":null}]]"
+  ● Whatever a route throws, the body carries a string message › answers JSON with a body at all, for a thrown undefined
+    Expected substring: "\"value\":\"undefined\""
+    Received string:    "[[\"Unhandled exception\",{\"name\":\"undefined\"}]]"
+Tests:       2 failed, 27 passed, 29 total
+```
+
+The two `Received` values ARE the defect read off the real pipeline: the record a thrown
+`null` and a thrown `undefined` produced carried the shape's name and nothing about the
+failure, because the value itself was never written.
+
+GREEN after the filter change, `2026-09-15 16:04:21 UTC`, same `HEAD 8784c79` with the
+source modified, `npm run build` rc=0 first:
+
+```
+$ npx jest src/exceptions/base-exception-filter.test.ts
+rc=0
+Tests:       26 passed, 26 total
+
+$ npm run test:e2e
+rc=0
+Test Suites: 2 passed, 2 total
+Tests:       29 passed, 29 total
+```
+
+Re-taken at the code-final head `1811db7` (`2026-09-15 16:06:30 UTC`, tree clean before),
+with only `base-exception-filter.ts` held at `8784c79` and every assertion at HEAD: the
+same 10 unit failures and the same 2 e2e failures, `dist` rebuilt in between. Source
+restored with `git checkout HEAD -- <file>`, `git status --porcelain` empty afterwards.
+
+**The inert reduction, proved before deleting it.** `ApiException`'s constructor already
+runs its message through `toProblemMessage`, so the filter's second call was the identity
+function. Two probes at `8784c79`, each built and run in full:
+
+```
+# probe A: { message: exception.message }
+unit rc=0 Tests: 21 passed, 21 total   e2e rc=0 Tests: 28 passed, 28 total
+# probe B: { message: exception.message || UNCLASSIFIED }   (the literal pre-PR expression)
+unit rc=0 Tests: 21 passed, 21 total   e2e rc=0 Tests: 28 passed, 28 total
+```
+
+Nothing in either suite could tell the three versions apart, which is what an inert call
+looks like from the outside. It is gone, and the line reads `{ message: exception.message }`.
+
 ### RED before GREEN, widening the redaction to every shape
 
 Assertions first, source untouched, on top of a fresh merge of `origin/develop`
 (`ea23be7`, merged clean with no conflict). Header at the RED: `2026-09-15 13:59:24 UTC`,
-`HEAD 88c9956`, `git status --porcelain` =
+`HEAD 1ac3ff5`, `git status --porcelain` =
+
+(That merge commit was `88c9956` when the run happened. The reword recorded below rewrote
+every commit above the breaking one, so the same tree now sits at `1ac3ff5`; the shas in
+this section are the current ones, and `88c9956` no longer exists on the branch.)
 
 ```
  M packages/sindarian-server/src/exceptions/base-exception-filter.test.ts
@@ -607,7 +793,7 @@ had already had stripped from it. The three cases with no printed value are the 
 `console.error` was called zero times for a thrown object, a thrown string and a thrown
 `null`, so that text was not moved anywhere, it was gone.
 
-GREEN after the filter change, `2026-09-15 14:01:02 UTC`, same `HEAD 88c9956` with the
+GREEN after the filter change, `2026-09-15 14:01:02 UTC`, same `HEAD 1ac3ff5` with the
 source modified, `npm run build` rc=0 first:
 
 ```
@@ -742,25 +928,37 @@ Tests:       39 passed, 39 total
 
 ### Mutants
 
-Each one applied at the implementation commit, `dist` rebuilt, run, then reverted with
+Each one applied at the code-final head `1811db7`, `dist` rebuilt, run, then reverted with
 `git checkout -- <file>`, with `git status --porcelain` verified empty after every revert
-(`clean-after-Mn=yes` printed each time). `2026-09-15 14:03:51 UTC` onward. Unit counts
-are out of 21, e2e out of 28.
+(`clean-after-Mn=0` printed each time). `2026-09-15 16:08:17 UTC` onward. Unit counts are
+out of 26, e2e out of 29.
+
+The whole table was re-measured at this head rather than carried over, because the filter
+was rewritten under it. A review of the previous table reproduced every row except M4,
+whose printed numbers belonged to a strictly smaller mutation than the one the row
+described; M4 below is the mutation as written, with the numbers it actually prints.
 
 | # | Mutation | Result |
 |---|---|---|
-| M1 | the response goes back to reading the thrown value, `toProblemMessage(exception instanceof Error ? exception : exception?.message, ...)`, i.e. the previous version of this branch | unit rc=1, **4 failed** / 17 passed; e2e rc=1, **2 failed** / 26 passed: `keeps no part of an upstream problem object` and `keeps no part of a thrown object whose message is a string` |
-| M2 | the `ApiException` narrowing dropped (`false && exception instanceof ApiException`), so a typed exception is redacted like anything else | unit rc=1, **4 failed** / 17 passed: both `should handle ApiException` cases, `names the real status when the message is empty`, and `never redacts an ApiException, which is an Error too` |
-| M3 | the `console.error` write removed entirely | unit rc=1, **5 failed** / 16 passed; e2e rc=1, **7 failed** / 21 passed |
-| M4 | the optional chaining dropped from the log reads (`exception.name`, `exception.message`, `exception.stack`) | unit rc=1, **2 failed** / 19 passed; e2e rc=1, **1 failed** / 27 passed, with the original `TypeError: Cannot read properties of null (reading 'name')` |
-| M5 | `code` dropped from the body | unit rc=1, **9 failed** / 12 passed; e2e rc=1, **5 failed** / 23 passed |
-| M6 | the log write put back behind `if (exception instanceof Error)`, i.e. the previous version of this branch | unit rc=1, **4 failed** / 17 passed, all four of the new log cases; e2e rc=1, **5 failed** / 23 passed |
+| M1 | the response goes back to reading the thrown value, `toProblemMessage(exception instanceof Error ? exception : exception?.message, ...)`, i.e. the previous version of this branch | unit rc=1, **4 failed** / 22 passed; e2e rc=1, **2 failed** / 27 passed: `keeps no part of an upstream problem object` and `keeps no part of a thrown object whose message is a string` |
+| M2 | the `ApiException` narrowing dropped (`false && exception instanceof ApiException`), so a typed exception is redacted like anything else | unit rc=1, **4 failed** / 22 passed: `should handle ApiException with getStatus method`, `names the real status when the message is empty`, `never redacts an ApiException, which is an Error too`, `should handle ApiException with custom status codes`; e2e rc=0, 29 passed, which is found-not-fixed item 3 in one line |
+| M3 | the `console.error` write removed entirely | unit rc=1, **10 failed** / 16 passed; e2e rc=1, **8 failed** / 21 passed |
+| M4 | the optional chaining dropped from the log reads, as written (`exception.name`, `exception.message`) | unit rc=1, **3 failed** / 23 passed; e2e rc=1, **2 failed** / 27 passed, with `TypeError: Cannot read properties of null (reading 'message')` and the same for `undefined` |
+| M5 | `code` dropped from the body | unit rc=1, **10 failed** / 16 passed; e2e rc=1, **8 failed** / 21 passed |
+| M6 | the log write put back behind `if (exception instanceof Error)`, i.e. the previous version of this branch | unit rc=1, **8 failed** / 18 passed; e2e rc=1, **6 failed** / 23 passed |
+| M7 | the 2000-character bound dropped from both fields, record shape otherwise unchanged | unit rc=1, **2 failed** / 24 passed: `bounds a thrown value of a megabyte`, `bounds an Error message of a megabyte`; e2e rc=0, 29 passed |
+| M8 | the render depth back to the default (`inspect(exception, { breakLength: Infinity })`) | unit rc=1, **1 failed** / 25 passed; e2e rc=1, **1 failed** / 28 passed: `keeps no part of an upstream problem object`, on the `[Object]` assertion |
+| M9 | `message` back to the nullish fallback, `message ?? exception`, i.e. the previous version of this branch | unit rc=1, **4 failed** / 22 passed; e2e rc=0, 29 passed |
 
-M1 and M6 are this pass's pair, and they are the two halves of the same narrowing: M1 is
-the text reaching the wire, M6 is the text reaching nothing at all. Both were live
-behaviour on the previous head of this branch, and neither had a test that could see it,
-which is why the mutants are recorded as the previous version rather than as an invented
-edit.
+M1 and M6 are the previous pass's pair, the two halves of one narrowing: M1 is the text
+reaching the wire, M6 is the text reaching nothing at all. M7, M8 and M9 are this pass's
+three, one per defect review found in the log record, and each was live behaviour on the
+previous head with no test that could see it. That is why the mutants are recorded as
+previous versions of this branch rather than as invented edits.
+
+M5 is also the pin that closed a gap a review found: two e2e cases asserted the status and
+the message but not `code`, so the headline table was pinned for five of the seven routes
+that existed then. Both assert it now, and M5 kills 8 e2e cases where it used to kill 5.
 
 M2 guards the widest blast radius of the three, and it is the repair shape an earlier
 version of this plan wrote down as the future fix for the leak. `exception instanceof Error ? UNCLASSIFIED
@@ -786,7 +984,28 @@ VERDICT: every value passing `instanceof ApiException` has a truthy getStatus: t
 ```
 
 The socket measurement in the table above ran under `unshare -rn` on ephemeral loopback
-ports at `9ded7ed`, at `24a7777`, and once more at the code-final head `7034afc` with the
-command and exit code pasted beside the table. Identical output all three times: this PR
+ports at `9ded7ed`, at `24a7777`, and once more at the code-final head `1811db7` with the
+command and exit code pasted beside the table. Identical output every time: this PR
 changes nothing on the transport frame, redaction included, because an `ApiException` is
 narrowed off before it.
+
+### The breaking footer was reworded, and that rewrote the branch
+
+`conventional-changelog` renders the `BREAKING CHANGE:` footer of the one `feat!` commit as
+the `### BREAKING CHANGES` section of the release notes, and this repo has squash merge
+disabled (`allow_squash_merge=false`), so that commit lands on `develop` verbatim. Its
+footer still carried the migration advice this document retracted two passes ago: classify
+on the status and the code. Measured through the real pipeline, every unexpected error
+answers the same status and the same code, so a consumer following it would turn a targeted
+retry into a retry on every deterministic bug. The retraction had reached the plan and the
+PR description, which is to say the two artefacts nobody outside the repo reads, and not
+the one that ships.
+
+The footer now says what shipped and what to do: one body for every shape, the real text in
+the operator log, do not branch on the message text and do not re-point that branch at the
+status or the code, typed exceptions unchanged.
+
+Reworded with `GIT_SEQUENCE_EDITOR` marking `reword` and `git rebase -i --rebase-merges -S`,
+which rewrote the five commits above it, merge included. Verified: the tree is byte-identical
+to the pre-rebase head (`git diff` between them is empty, and `HEAD^{tree}` is the same
+object), and every commit on the branch still reads `G` under `fred@fredamaral.com.br`.
