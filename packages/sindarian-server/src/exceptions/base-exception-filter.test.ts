@@ -50,7 +50,7 @@ describe('BaseExceptionFilter', () => {
     await filter.catch(exception)
 
     expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: 'Test error message' },
+      { message: 'Test error message', code: '0004' },
       { status: 500 }
     )
   })
@@ -87,7 +87,7 @@ describe('BaseExceptionFilter', () => {
     await filter.catch(exception)
 
     expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: 'Non-API error' },
+      { message: 'Non-API error', code: '0004' },
       { status: 500 }
     )
   })
@@ -105,7 +105,7 @@ describe('BaseExceptionFilter', () => {
       await filter.catch({ message: undefined })
 
       expect(mockNextResponse.json).toHaveBeenCalledWith(
-        { message: 'Internal server error' },
+        { message: 'Internal server error', code: '0004' },
         { status: 500 }
       )
     })
@@ -114,7 +114,7 @@ describe('BaseExceptionFilter', () => {
       await filter.catch({ message: '' })
 
       expect(mockNextResponse.json).toHaveBeenCalledWith(
-        { message: 'Internal server error' },
+        { message: 'Internal server error', code: '0004' },
         { status: 500 }
       )
     })
@@ -126,7 +126,7 @@ describe('BaseExceptionFilter', () => {
 
       expect(typeof messageOf().message).toBe('string')
       expect(mockNextResponse.json).toHaveBeenCalledWith(
-        { message: 'Internal server error' },
+        { message: 'Internal server error', code: '0004' },
         { status: 500 }
       )
     })
@@ -152,7 +152,7 @@ describe('BaseExceptionFilter', () => {
       await filter.catch('Simple string error')
 
       expect(mockNextResponse.json).toHaveBeenCalledWith(
-        { message: 'Internal server error' },
+        { message: 'Internal server error', code: '0004' },
         { status: 500 }
       )
     })
@@ -166,7 +166,7 @@ describe('BaseExceptionFilter', () => {
       await expect(filter.catch(null)).resolves.toBeDefined()
 
       expect(mockNextResponse.json).toHaveBeenCalledWith(
-        { message: 'Internal server error' },
+        { message: 'Internal server error', code: '0004' },
         { status: 500 }
       )
     })
@@ -174,21 +174,78 @@ describe('BaseExceptionFilter', () => {
     // The ApiException branch has been bounded since the message stopped
     // being the upstream body; this branch serialised whatever it was handed.
     it('caps an unbounded message', async () => {
-      await filter.catch(new Error('x'.repeat(5000)))
+      await filter.catch({ message: 'x'.repeat(5000) })
 
       expect(messageOf().message).toHaveLength(2000)
     })
   })
 
-  it('should handle Error instance', async () => {
-    const exception = new Error('Standard Error instance')
+  // What a route threw that this library does not model. Its text is the
+  // failure's own words and it used to be the response body; it is now the log
+  // line, and the caller is told only that the failure was not classified.
+  describe('an unexpected error', () => {
+    let consoleError: jest.SpyInstance
 
-    await filter.catch(exception)
+    beforeEach(() => {
+      consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+    })
 
-    expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: 'Standard Error instance' },
-      { status: 500 }
-    )
+    afterEach(() => {
+      consoleError.mockRestore()
+    })
+
+    it('answers the generic sentence and the code, never the Error text', async () => {
+      await filter.catch(new Error('connect ECONNREFUSED 10.0.0.5:8080'))
+
+      expect(mockNextResponse.json).toHaveBeenCalledWith(
+        { message: 'Internal server error', code: '0004' },
+        { status: 500 }
+      )
+    })
+
+    it('writes the Error text and its stack to the server log', async () => {
+      const exception = new Error('connect ECONNREFUSED 10.0.0.5:8080')
+
+      await filter.catch(exception)
+
+      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
+        name: 'Error',
+        message: 'connect ECONNREFUSED 10.0.0.5:8080',
+        stack: exception.stack
+      })
+    })
+
+    // Length is no longer what stands between the text and the browser, so an
+    // Error is not capped, it is dropped. This case exists because the cap
+    // above used to be the only thing holding a 5000-character Error back.
+    it('drops an unbounded Error text rather than capping it', async () => {
+      await filter.catch(new Error('x'.repeat(5000)))
+
+      expect(mockNextResponse.json).toHaveBeenCalledWith(
+        { message: 'Internal server error', code: '0004' },
+        { status: 500 }
+      )
+    })
+
+    // An ApiException IS an Error. Redacting by `instanceof Error` alone would
+    // take the message off every 401, 404 and 422 this library raises, which
+    // is the whole sentence a caller shows a user.
+    it('never redacts an ApiException, which is an Error too', async () => {
+      await filter.catch(
+        new ApiException(
+          '0003',
+          'Not Found',
+          'Ledger not found',
+          HttpStatus.NOT_FOUND
+        )
+      )
+
+      expect(mockNextResponse.json).toHaveBeenCalledWith(
+        { message: 'Ledger not found' },
+        { status: 404 }
+      )
+      expect(consoleError).not.toHaveBeenCalled()
+    })
   })
 
   it('should return the NextResponse from NextResponse.json', async () => {

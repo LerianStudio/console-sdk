@@ -1,4 +1,9 @@
-import { Controller, Get } from '@lerianstudio/sindarian-server'
+import {
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus
+} from '@lerianstudio/sindarian-server'
 
 /**
  * A route may throw anything, not only an ApiException.
@@ -9,8 +14,9 @@ import { Controller, Get } from '@lerianstudio/sindarian-server'
  * NextResponse: the filter's own unit tests mock `NextResponse.json`, so they
  * can assert the arguments and never the body a caller parses.
  *
- * The fifth, `error`, pins a leak that is NOT closed: a thrown `Error` still
- * puts its own text on the wire. See the spec's second describe block.
+ * The last two are the unexpected errors: a bare `Error` and a plain
+ * `HttpException`. Neither puts its own text on the wire any more. See the
+ * spec's second describe block.
  */
 @Controller('/throwing')
 export class ThrowingController {
@@ -20,7 +26,7 @@ export class ThrowingController {
     throw {
       message: {
         title: 'Gateway Timeout',
-        detail: 'cpf 123.456.789-00 timed out at db-primary.internal'
+        detail: 'cpf 123.456.789-00 timed out at db-primary.internal:8080'
       }
     }
   }
@@ -44,13 +50,28 @@ export class ThrowingController {
   }
 
   /**
-   * A bare `Error`, carrying exactly what the `object` route above has
-   * stripped from it: an internal host and port, and a taxpayer id. Its text
-   * reaches the browser verbatim, and the spec pins that rather than asserting
-   * it away. Known leak class, awaiting a product decision.
+   * A bare `Error`, carrying the same two values the `object` route above
+   * carries and has stripped from it: the internal host and port
+   * `db-primary.internal:8080`, and the taxpayer id `123.456.789-00`. Same
+   * values, different thrown shape, so the spec can assert that the shape no
+   * longer decides whether a caller reads the failure's own words.
    */
   @Get('error')
   public error(): never {
-    throw new Error('connect ECONNREFUSED 10.0.0.5:8080 for cpf 123.456.789-00')
+    throw new Error(
+      'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00'
+    )
+  }
+
+  /**
+   * A plain `HttpException`, which carries a real status of its own.
+   *
+   * Found, not fixed: this filter answers it as 500 regardless. The case pins
+   * the status so that giving a plain `HttpException` its real status later is
+   * a deliberate red test rather than a silent change for every caller.
+   */
+  @Get('http-status')
+  public httpStatus(): never {
+    throw new HttpException('no such ledger', HttpStatus.NOT_FOUND)
   }
 }

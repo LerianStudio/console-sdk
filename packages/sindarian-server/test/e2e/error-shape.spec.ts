@@ -41,6 +41,7 @@ describe('Whatever a route throws, the body carries a string message', () => {
     expect(response.status).toBe(500)
     expect(typeof body.message).toBe('string')
     expect(body.message).toBe('Internal server error')
+    expect(body.code).toBe('0004')
   })
 
   it('names a sentence for a thrown string', async () => {
@@ -67,30 +68,57 @@ describe('Whatever a route throws, the body carries a string message', () => {
 })
 
 /**
- * KNOWN LEAK CLASS, pinned rather than closed. Awaiting a product decision.
+ * An unexpected error is anything a route threw that this library does not
+ * model: a bare `Error`, or a plain `HttpException`. Its text is the failure's
+ * own words, whatever the throw site interpolated into them, and it used to
+ * reach the browser verbatim: below, an internal host and port and a taxpayer
+ * id.
  *
- * A thrown `Error` puts its own text on the wire verbatim. `toProblemMessage`
- * has a rule for an `Error` *value*, returning the fallback instead of its
- * text, but the filter hands it `exception?.message`, which is already a
- * string by then, so that rule never fires from this frame. Whatever the Error
- * says reaches the browser: below, an internal host and port and a taxpayer id.
- *
- * The identical values thrown as a problem object one route over ARE stripped,
- * which is what makes this worth pinning: the leak is not closed, it is only
- * narrow, and the adjacent passing case must not be read as covering it.
- *
- * Closing it is a wire-behaviour change: callers classify on this text today,
- * and no one has measured which. This case exists so that closing it is a
- * deliberate red test, never a silent one.
+ * It now answers the generic sentence and the code, and the words go to the
+ * server log instead, the way `HttpService` already writes an upstream
+ * failure. The route above throws the SAME two values as a problem object and
+ * they are stripped there too, which is the point of keeping the pair: the
+ * shape a route happens to throw no longer decides whether a caller reads the
+ * failure's own words.
  */
-describe('A thrown Error still puts its own text on the wire', () => {
-  it('leaks the Error message verbatim, host, port and taxpayer id', async () => {
+describe('An unexpected error answers a generic body, never its own text', () => {
+  let consoleError: jest.SpyInstance
+
+  beforeEach(() => {
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleError.mockRestore()
+  })
+
+  it('redacts a thrown Error, host, port and taxpayer id', async () => {
     const { response, body } = await get('error')
 
     expect(response.status).toBe(500)
     expect(typeof body.message).toBe('string')
-    expect(body.message).toBe(
-      'connect ECONNREFUSED 10.0.0.5:8080 for cpf 123.456.789-00'
+    expect(body.message).toBe('Internal server error')
+    expect(body.code).toBe('0004')
+    expect(JSON.stringify(body)).not.toContain('db-primary.internal')
+    expect(JSON.stringify(body)).not.toContain('8080')
+    expect(JSON.stringify(body)).not.toContain('123.456.789-00')
+
+    expect(JSON.stringify(consoleError.mock.calls)).toContain(
+      'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00'
     )
+  })
+
+  // Found, not fixed: a plain `HttpException` carries a real status of its own
+  // and this filter answers 500 regardless. Pinned here so that giving it the
+  // real status later is a deliberate red test rather than a silent change.
+  it('answers 500 for a plain HttpException, and redacts it too', async () => {
+    const { response, body } = await get('http-status')
+
+    expect(response.status).toBe(500)
+    expect(body.message).toBe('Internal server error')
+    expect(body.code).toBe('0004')
+    expect(JSON.stringify(body)).not.toContain('no such ledger')
+
+    expect(JSON.stringify(consoleError.mock.calls)).toContain('no such ledger')
   })
 })
