@@ -111,12 +111,12 @@ JSON bodies. Every one of the six already produced a string:
 | 400, body classifying nothing | BadRequest (400) | `string` | `Upstream error body carried no problem details (status 400)` |
 
 That table was the one measurement block in this file with no command and no exit code.
-Re-run at the code-final head `1811db7` (`2026-09-15 16:13:54 UTC`), six real sockets on
+Re-run at the code-final head `4677bd4` (`2026-09-15 16:32:11 UTC`), six real sockets on
 ephemeral loopback ports, harness at `/tmp/rv-sdkerr-sockets/probe.cjs` driving the built
 `dist` through a concrete `HttpService`. An earlier version of this paragraph named the
 previous pass's last CI commit, two changes below the shipping filter, so a negative claim
 the whole change rests on was labelled as re-run against code that had since been
-rewritten. One commit is the code-final head in this document and it is `1811db7`. Output
+rewritten. One commit is the code-final head in this document and it is `4677bd4`. Output
 verbatim, the package's own `console.error` lines elided:
 
 ```
@@ -320,15 +320,40 @@ The record is now, always:
 { name, message, value }
 ```
 
-`name` is the constructor name or `typeof`. `message` is the sentence an operator greps,
-present when the thrown value carried a string one, and it decides nothing else. `value` is
-the whole thrown value rendered with `util.inspect(value, { depth: 4, breakLength: Infinity })`.
-Both are cut at `MESSAGE_MAX_LENGTH`, the same 2000 characters a message is bounded at
-elsewhere in the package. There is no `stack` field: rendering an `Error` prints its stack,
-inside that bound.
+`name` is the value's own `name` when that is a string, else `typeof`. `message` is the
+sentence an operator greps, present when the thrown value carried a string one, and it
+decides nothing else. `value` is the whole thrown value rendered with
+`util.inspect(value, { depth: 4, breakLength: Infinity, customInspect: false })`. All three
+are cut at `MESSAGE_MAX_LENGTH`, the same 2000 characters a message is bounded at elsewhere
+in the package. There is no `stack` field: rendering an `Error` prints its stack, inside
+that bound.
 
-Measured at the code-final head `1811db7` through the REAL pipeline (`app.handler`, the
-package's own e2e app, `dist` rebuilt, `2026-09-15 16:13:34 UTC`), one row per throwing
+**And the whole write is inside a guard, which is a reversal.** An earlier version of this
+plan listed a thrown value with a throwing `message` getter as found-not-fixed, on the
+argument that a `try`/`catch` is a branch for a state nobody produces. Review found a second
+door into the same failure and that changed the answer: rendering a value runs its
+`[util.inspect.custom]` function, which is not our code, can throw, and could also lie about
+what it prints. Two doors, one guard, and the failure behind them is the worst one in this
+file: this filter runs inside `ServerFactory._handleRequest`'s own catch block
+(`server-factory.ts:204-216`), that call is not wrapped, so a filter that throws escapes the
+request pipeline and the route answers a ZERO-BYTE body. That is the `throw null` failure
+this lane opened on, reachable again through the line that was supposed to be the safe half.
+`customInspect: false` closes the inspector door and prints the real fields; the `catch`
+closes the getter and any proxy trap, and still writes `{ name: typeof exception }`, because
+a 500 with no log line is what moving the text there was meant to prevent.
+
+Measured at the code-final head, four booby-trapped values through the real filter, each
+answering a body and writing exactly one line:
+
+```
+throwing message getter    -> 500 {"message":"Internal server error","code":"0004"} log calls=1 name=6ch message=absent value=absent
+throwing custom inspector  -> 500 {"message":"Internal server error","code":"0004"} log calls=1 name=6ch message=absent value=96ch
+name of a megabyte         -> 500 {"message":"Internal server error","code":"0004"} log calls=1 name=2000ch message=absent value=2000ch
+value of two megabytes     -> 500 {"message":"Internal server error","code":"0004"} log calls=1 name=6ch message=2000ch value=2000ch
+```
+
+Measured at the code-final head `4677bd4` through the REAL pipeline (`app.handler`, the
+package's own e2e app, `dist` rebuilt, `2026-09-15 16:32:38 UTC`), one row per throwing
 route, body read off the real `Response` and the `console.error` payload captured, stacks
 elided by the harness and the record's own byte count printed:
 
@@ -428,7 +453,7 @@ The filter's status line lost a second operand that could never be false:
 over from when `exception` was untyped and it did real work.
 
 **And a pull request now RUNS those e2e cases.** It did not. `jest.config.ts` ignores
-`<rootDir>/test`, so the package's `npm test` (38 suites, 862 tests) excludes every case
+`<rootDir>/test`, so the package's `npm test` (38 suites, 865 tests) excludes every case
 that reads a real `Response`, and `ci.yml` had only lint, test and build. The e2e suite
 ran solely in `release.yml`, AFTER merge, where a red job blocks a publish instead of a
 merge and the offending commit has to be reverted off `develop`. `ci.yml` gained a
@@ -462,7 +487,7 @@ says the session expired, a 404 still names what was not found, a 422 still list
 failed validation". The first two halves are right. The third is wrong twice over, and it
 is the sentence a consumer reads before accepting a breaking release.
 
-Measured at the code-final head `1811db7` (`2026-09-15 16:13:34 UTC`) by driving the REAL
+Measured at the code-final head `4677bd4` (`2026-09-15 16:39:00 UTC`) by driving the REAL
 `BaseExceptionFilter` with real exception instances and reading the real `Response` body.
 Zero log lines were written on this branch, which is the other half of the narrowing:
 
@@ -597,27 +622,24 @@ remembering to write a catch-all filter is not a safe library.
    the suite fails to compile before running a single case. CI never hits it because
    `npm ci` at the root links the workspace and hoists one `next`. Left alone; the fix is
    a note or a workspace entry, and neither belongs in this PR.
-5. **A thrown value whose `message` getter throws still makes the filter itself throw.**
-   `throw { get message() { throw new Error('x') } }` is read on the log line, and a filter
-   that throws escapes the request pipeline, which is the zero-byte-body failure the `null`
-   case documents at length. Pre-existing and unchanged by this pass: the previous head read
-   `exception?.message` on the same line. `util.inspect` does NOT invoke getters, so `value`
-   alone is safe, and the exposure is the one read of `.message`. Left alone deliberately:
-   the closing move is a `try`/`catch` around the write, and adding a branch for a shape
-   nobody throws is the kind of defensive code this file has been deleting. It is written
-   down here so the day someone produces that shape, it is a known hole rather than a
-   discovery.
+5. **CLOSED, not carried: a thrown value that traps the log write.** This item was written
+   as found-not-fixed one commit earlier, for a `message` getter that throws, on the
+   argument that guarding it is a branch for a state nobody produces. A review then named a
+   second door, a `[util.inspect.custom]` function that throws, which rendering the value
+   runs by default. Two doors into the zero-byte-body failure, closed by one guard plus
+   `customInspect: false`, with three cases and three mutants (M10, M11, M12). Recorded here
+   because the reversal is the point: one trap read as a curiosity, two read as a hole.
 
 ## Verification
 
-All nine gates at `1811db7`, the code-final head, `2026-09-15 16:06:50 UTC` onward, tree
+All nine gates at `4677bd4`, the code-final head, `2026-09-15 16:31:15 UTC` onward, tree
 clean (`git status --porcelain` empty before and after).
 
 ```
 $ cd packages/sindarian-server && npm test
 rc=0
 Test Suites: 38 passed, 38 total
-Tests:       862 passed, 862 total
+Tests:       865 passed, 865 total
 
 $ cd packages/sindarian-server && npm run test:e2e
 rc=0
@@ -721,10 +743,74 @@ Test Suites: 2 passed, 2 total
 Tests:       29 passed, 29 total
 ```
 
-Re-taken at the code-final head `1811db7` (`2026-09-15 16:06:30 UTC`, tree clean before),
-with only `base-exception-filter.ts` held at `8784c79` and every assertion at HEAD: the
-same 10 unit failures and the same 2 e2e failures, `dist` rebuilt in between. Source
-restored with `git checkout HEAD -- <file>`, `git status --porcelain` empty afterwards.
+Re-taken at the code-final head `4677bd4` (`2026-09-15 16:38:29 UTC`, `packages` clean
+before), with only `base-exception-filter.ts` held at `8784c79`, the state this pass
+started from, and every assertion at HEAD. `dist` rebuilt in between, source restored with
+`git checkout HEAD -- <file>` and `git status --porcelain packages` empty afterwards. It
+covers both code changes at once, since both are in that one file:
+
+```
+$ npx jest src/exceptions/base-exception-filter.test.ts
+rc=1
+  ● BaseExceptionFilter › an unexpected error › writes the Error text and its stack to the server log
+  ● BaseExceptionFilter › an unexpected error › writes the text of a thrown object that is not an Error
+  ● BaseExceptionFilter › an unexpected error › writes a thrown value that has no message at all
+  ● BaseExceptionFilter › an unexpected error › keeps the fields beside an empty message
+  ● BaseExceptionFilter › an unexpected error › prints a nested body to its leaf rather than [Object]
+  ● BaseExceptionFilter › an unexpected error › bounds a thrown value of a megabyte
+  ● BaseExceptionFilter › an unexpected error › bounds a name of a megabyte
+  ● BaseExceptionFilter › an unexpected error › bounds an Error message of a megabyte
+  ● BaseExceptionFilter › an unexpected error › writes a thrown string
+  ● BaseExceptionFilter › an unexpected error › writes a line for a thrown null without throwing
+  ● BaseExceptionFilter › an unexpected error › answers a body when reading the thrown value throws
+  ● BaseExceptionFilter › an unexpected error › ignores a custom inspection function on the thrown value
+  ● BaseExceptionFilter › an unexpected error › answers and writes a line for a thrown undefined
+Tests:       13 failed, 16 passed, 29 total
+
+$ npm run test:e2e
+rc=1
+  ● Whatever a route throws, the body carries a string message › answers JSON with a body at all, for a thrown null
+  ● Whatever a route throws, the body carries a string message › answers JSON with a body at all, for a thrown undefined
+Tests:       2 failed, 27 passed, 29 total
+```
+
+### RED before GREEN, the fail-safe write
+
+Assertions first, source untouched. Header at the RED: `2026-09-15 16:28:13 UTC`,
+`HEAD 016092d`, `git status --porcelain` =
+` M packages/sindarian-server/src/exceptions/base-exception-filter.test.ts`.
+
+```
+$ npx jest src/exceptions/base-exception-filter.test.ts
+rc=1
+  ● BaseExceptionFilter › an unexpected error › bounds a name of a megabyte
+    Received length: 1000000
+  ● BaseExceptionFilter › an unexpected error › answers a body when reading the thrown value throws
+    Rejected to value: [Error: this getter is the trap]
+  ● BaseExceptionFilter › an unexpected error › ignores a custom inspection function on the thrown value
+    this inspector is the trap
+Tests:       3 failed, 26 passed, 29 total
+```
+
+`Rejected to value` is the defect in two words: the filter did not answer, it threw, and
+nothing above it catches a filter.
+
+GREEN after the guard, `2026-09-15 16:28:46 UTC`, same HEAD with the source modified,
+`npm run build` rc=0 first:
+
+```
+$ npx jest src/exceptions/base-exception-filter.test.ts
+rc=0
+Tests:       29 passed, 29 total
+
+$ npm run test:e2e
+rc=0
+Tests:       29 passed, 29 total
+
+$ npm test
+rc=0
+Tests:       865 passed, 865 total
+```
 
 **The inert reduction, proved before deleting it.** `ApiException`'s constructor already
 runs its message through `toProblemMessage`, so the filter's second call was the identity
@@ -928,33 +1014,36 @@ Tests:       39 passed, 39 total
 
 ### Mutants
 
-Each one applied at the code-final head `1811db7`, `dist` rebuilt, run, then reverted with
+Each one applied at the code-final head `4677bd4`, `dist` rebuilt, run, then reverted with
 `git checkout -- <file>`, with `git status --porcelain` verified empty after every revert
-(`clean-after-Mn=0` printed each time). `2026-09-15 16:08:17 UTC` onward. Unit counts are
-out of 26, e2e out of 29.
+(`clean-after-Mn=0` printed each time). `2026-09-15 16:33:53 UTC` onward. Unit counts are
+out of 29, e2e out of 29.
 
 The whole table was re-measured at this head rather than carried over, because the filter
-was rewritten under it. A review of the previous table reproduced every row except M4,
-whose printed numbers belonged to a strictly smaller mutation than the one the row
+was rewritten under it twice. A review of the previous table reproduced every row except
+M4, whose printed numbers belonged to a strictly smaller mutation than the one the row
 described; M4 below is the mutation as written, with the numbers it actually prints.
 
 | # | Mutation | Result |
 |---|---|---|
-| M1 | the response goes back to reading the thrown value, `toProblemMessage(exception instanceof Error ? exception : exception?.message, ...)`, i.e. the previous version of this branch | unit rc=1, **4 failed** / 22 passed; e2e rc=1, **2 failed** / 27 passed: `keeps no part of an upstream problem object` and `keeps no part of a thrown object whose message is a string` |
-| M2 | the `ApiException` narrowing dropped (`false && exception instanceof ApiException`), so a typed exception is redacted like anything else | unit rc=1, **4 failed** / 22 passed: `should handle ApiException with getStatus method`, `names the real status when the message is empty`, `never redacts an ApiException, which is an Error too`, `should handle ApiException with custom status codes`; e2e rc=0, 29 passed, which is found-not-fixed item 3 in one line |
-| M3 | the `console.error` write removed entirely | unit rc=1, **10 failed** / 16 passed; e2e rc=1, **8 failed** / 21 passed |
-| M4 | the optional chaining dropped from the log reads, as written (`exception.name`, `exception.message`) | unit rc=1, **3 failed** / 23 passed; e2e rc=1, **2 failed** / 27 passed, with `TypeError: Cannot read properties of null (reading 'message')` and the same for `undefined` |
-| M5 | `code` dropped from the body | unit rc=1, **10 failed** / 16 passed; e2e rc=1, **8 failed** / 21 passed |
-| M6 | the log write put back behind `if (exception instanceof Error)`, i.e. the previous version of this branch | unit rc=1, **8 failed** / 18 passed; e2e rc=1, **6 failed** / 23 passed |
-| M7 | the 2000-character bound dropped from both fields, record shape otherwise unchanged | unit rc=1, **2 failed** / 24 passed: `bounds a thrown value of a megabyte`, `bounds an Error message of a megabyte`; e2e rc=0, 29 passed |
-| M8 | the render depth back to the default (`inspect(exception, { breakLength: Infinity })`) | unit rc=1, **1 failed** / 25 passed; e2e rc=1, **1 failed** / 28 passed: `keeps no part of an upstream problem object`, on the `[Object]` assertion |
-| M9 | `message` back to the nullish fallback, `message ?? exception`, i.e. the previous version of this branch | unit rc=1, **4 failed** / 22 passed; e2e rc=0, 29 passed |
+| M1 | the response goes back to reading the thrown value, `toProblemMessage(exception instanceof Error ? exception : exception?.message, ...)`, i.e. the previous version of this branch | unit rc=1, **5 failed** / 24 passed; e2e rc=1, **2 failed** / 27 passed: `keeps no part of an upstream problem object` and `keeps no part of a thrown object whose message is a string` |
+| M2 | the `ApiException` narrowing dropped (`false && exception instanceof ApiException`), so a typed exception is redacted like anything else | unit rc=1, **4 failed** / 25 passed: `should handle ApiException with getStatus method`, `names the real status when the message is empty`, `never redacts an ApiException, which is an Error too`, `should handle ApiException with custom status codes`; e2e rc=0, 29 passed, which is found-not-fixed item 3 in one line |
+| M3 | the whole `console.error` write removed | unit rc=1, **13 failed** / 16 passed; e2e rc=1, **8 failed** / 21 passed |
+| M4 | the optional chaining dropped from the log reads, as written (`exception.name`, `exception.message`) | unit rc=1, **2 failed** / 27 passed; e2e rc=1, **2 failed** / 27 passed. With the guard in place this no longer takes the response down, it degrades the line to the fallback record, which is the point of the guard |
+| M5 | `code` dropped from the body | unit rc=1, **11 failed** / 18 passed; e2e rc=1, **8 failed** / 21 passed |
+| M6 | the log write put back behind `if (exception instanceof Error)`, i.e. the previous version of this branch | unit rc=1, **11 failed** / 18 passed; e2e rc=1, **6 failed** / 23 passed |
+| M7 | the 2000-character bound dropped from all three fields, record shape otherwise unchanged | unit rc=1, **3 failed** / 26 passed, one per bounded field; e2e rc=0, 29 passed |
+| M8 | the render depth back to the default (`inspect(exception, { breakLength: Infinity, customInspect: false })`) | unit rc=1, **1 failed** / 28 passed; e2e rc=1, **1 failed** / 28 passed: `keeps no part of an upstream problem object`, on the `[Object]` assertion |
+| M9 | `message` back to the nullish fallback, `message ?? exception`, i.e. the previous version of this branch | unit rc=1, **4 failed** / 25 passed; e2e rc=0, 29 passed |
+| M10 | `customInspect: false` dropped, so rendering runs the value's own inspector again | unit rc=1, **1 failed** / 28 passed: `ignores a custom inspection function on the thrown value`; e2e rc=0, 29 passed |
+| M11 | the guard around the write removed | unit rc=1, **1 failed** / 28 passed: `answers a body when reading the thrown value throws`, which REJECTS rather than answering; e2e rc=0, 29 passed |
+| M12 | the bound dropped from `name` only | unit rc=1, **1 failed** / 28 passed: `bounds a name of a megabyte`; e2e rc=0, 29 passed |
 
-M1 and M6 are the previous pass's pair, the two halves of one narrowing: M1 is the text
-reaching the wire, M6 is the text reaching nothing at all. M7, M8 and M9 are this pass's
-three, one per defect review found in the log record, and each was live behaviour on the
-previous head with no test that could see it. That is why the mutants are recorded as
-previous versions of this branch rather than as invented edits.
+M1 and M6 are the first pair, the two halves of one narrowing: M1 is the text reaching the
+wire, M6 is the text reaching nothing at all. M7, M8 and M9 are the log record's three, one
+per defect review found in it. M10, M11 and M12 are the fail-safe's three. Every one of
+them was live behaviour on some earlier head of this branch with no test that could see it,
+which is why they are recorded as previous versions rather than as invented edits.
 
 M5 is also the pin that closed a gap a review found: two e2e cases asserted the status and
 the message but not `code`, so the headline table was pinned for five of the seven routes
@@ -984,7 +1073,7 @@ VERDICT: every value passing `instanceof ApiException` has a truthy getStatus: t
 ```
 
 The socket measurement in the table above ran under `unshare -rn` on ephemeral loopback
-ports at `9ded7ed`, at `24a7777`, and once more at the code-final head `1811db7` with the
+ports at `9ded7ed`, at `24a7777`, and once more at the code-final head `4677bd4` with the
 command and exit code pasted beside the table. Identical output every time: this PR
 changes nothing on the transport frame, redaction included, because an `ApiException` is
 narrowed off before it.
