@@ -177,6 +177,22 @@ describe('LoggerAggregator', () => {
       expect(mockRepo.calls[0].log.events).toHaveLength(1000)
       expect(mockRepo.calls[0].log.events[999].message).toBe('event-999')
     })
+
+    it('should keep an error event that arrives at the cap', async () => {
+      await aggregator.runWithContext('/test', 'GET', {}, async () => {
+        for (let i = 0; i < 1000; i++) {
+          aggregator.addEvent({ message: `event-${i}` })
+        }
+        aggregator.error('op', 'the one that matters')
+      })
+
+      const events = mockRepo.calls[0].log.events
+      expect(events).toHaveLength(1000)
+      expect(events[999].message).toBe('the one that matters')
+      // The oldest event made room for it.
+      expect(events[0].message).toBe('event-1')
+      expect(mockRepo.calls[0].method).toBe('error')
+    })
   })
 
   describe('setResponseMetadata', () => {
@@ -319,6 +335,186 @@ describe('LoggerAggregator', () => {
       })
 
       expect(mockRepo.calls[0].log.events[0].level).toBe('WARN')
+    })
+  })
+
+  describe('ignorePaths', () => {
+    const ignoring = (paths: string[]) =>
+      new LoggerAggregator(mockRepo, { ignorePaths: paths })
+
+    it('should write the access line when nothing is ignored', async () => {
+      await aggregator.runWithContext(
+        '/api/csp-report',
+        'POST',
+        {},
+        async () => {}
+      )
+
+      expect(mockRepo.calls).toHaveLength(1)
+    })
+
+    it('should write no access line for an exactly ignored path', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+        silent.info('csp', 'violation received')
+      })
+
+      expect(mockRepo.calls).toHaveLength(0)
+    })
+
+    it('should keep writing for a path that is not ignored', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext('/api/users', 'GET', {}, async () => {})
+
+      expect(mockRepo.calls).toHaveLength(1)
+      expect(mockRepo.calls[0].log.path).toBe('/api/users')
+    })
+
+    it('should silence every child of a prefix pattern', async () => {
+      const silent = ignoring(['/api/admin/health/*'])
+
+      await silent.runWithContext(
+        '/api/admin/health/alive',
+        'GET',
+        {},
+        async () => {}
+      )
+      await silent.runWithContext(
+        '/api/admin/health/readyz',
+        'GET',
+        {},
+        async () => {}
+      )
+
+      expect(mockRepo.calls).toHaveLength(0)
+    })
+
+    it('should not let a prefix pattern escape its own segment', async () => {
+      const silent = ignoring(['/api/admin/health/*'])
+
+      await silent.runWithContext(
+        '/api/admin/health',
+        'GET',
+        {},
+        async () => {}
+      )
+      await silent.runWithContext(
+        '/api/admin/healthz',
+        'GET',
+        {},
+        async () => {}
+      )
+
+      expect(mockRepo.calls.map((call) => call.log.path)).toEqual([
+        '/api/admin/health',
+        '/api/admin/healthz'
+      ])
+    })
+
+    it('should not treat an exact pattern as a prefix', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext(
+        '/api/csp-report/legacy',
+        'POST',
+        {},
+        async () => {}
+      )
+
+      expect(mockRepo.calls).toHaveLength(1)
+    })
+
+    // These drive runWithContext directly, so they pin the aggregator's own
+    // rule and nothing about HTTP. A throw only reaches this branch from a
+    // caller that lets it out; inside sindarian-server the framework converts
+    // it to a 5xx first. logger-pipeline.test.ts covers that route.
+    it('should still write when the callback throws', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await expect(
+        silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+          throw new Error('sink is down')
+        })
+      ).rejects.toThrow('sink is down')
+
+      expect(mockRepo.calls).toHaveLength(1)
+      expect(mockRepo.calls[0].method).toBe('error')
+      expect(mockRepo.calls[0].log.events[0].message).toBe('sink is down')
+    })
+
+    it('should still write when the handler records an error event', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+        silent.error('csp', 'report rejected')
+      })
+
+      expect(mockRepo.calls).toHaveLength(1)
+      expect(mockRepo.calls[0].method).toBe('error')
+    })
+
+    it('should stay silent for anything below error', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+        silent.warn('csp', 'malformed report')
+        silent.audit('csp', 'report stored')
+      })
+
+      expect(mockRepo.calls).toHaveLength(0)
+    })
+
+    it('should still write when an error is recorded past the event cap', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+        for (let i = 0; i < 1000; i++) {
+          silent.info('csp', `report-${i}`)
+        }
+        silent.error('csp', 'sink rejected the batch')
+      })
+
+      expect(mockRepo.calls).toHaveLength(1)
+      expect(mockRepo.calls[0].method).toBe('error')
+      expect(mockRepo.calls[0].log.events[999].message).toBe(
+        'sink rejected the batch'
+      )
+    })
+
+    it('should still write when a callback throw lands past the event cap', async () => {
+      const silent = ignoring(['/api/csp-report'])
+
+      await expect(
+        silent.runWithContext('/api/csp-report', 'POST', {}, async () => {
+          for (let i = 0; i < 1000; i++) {
+            silent.info('csp', `report-${i}`)
+          }
+          throw new Error('sink is down')
+        })
+      ).rejects.toThrow('sink is down')
+
+      expect(mockRepo.calls).toHaveLength(1)
+      expect(mockRepo.calls[0].method).toBe('error')
+      expect(mockRepo.calls[0].log.events[999].message).toBe('sink is down')
+    })
+
+    it('should match any of several patterns', async () => {
+      const silent = ignoring(['/api/csp-report', '/api/admin/health/*'])
+
+      await silent.runWithContext('/api/csp-report', 'POST', {}, async () => {})
+      await silent.runWithContext(
+        '/api/admin/health/alive',
+        'GET',
+        {},
+        async () => {}
+      )
+      await silent.runWithContext('/api/ledgers', 'GET', {}, async () => {})
+
+      expect(mockRepo.calls.map((call) => call.log.path)).toEqual([
+        '/api/ledgers'
+      ])
     })
   })
 
