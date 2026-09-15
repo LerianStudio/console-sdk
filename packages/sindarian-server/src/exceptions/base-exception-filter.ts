@@ -29,8 +29,13 @@ export class BaseExceptionFilter implements ExceptionFilter {
    * envelope was promised.
    */
   async catch(exception: any) {
+    // No `&& exception.getStatus` here. It was carried over from when
+    // `exception` was untyped and the guard did real work; after the
+    // `instanceof`, `getStatus` is inherited from `HttpException` and cannot
+    // be missing, so the second operand only invited a defensive branch for a
+    // state that cannot occur.
     const status =
-      exception instanceof ApiException && exception.getStatus
+      exception instanceof ApiException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR
 
