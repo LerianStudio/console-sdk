@@ -190,9 +190,13 @@ describe('An unexpected error answers a generic body, never its own text', () =>
     expect(logged()).toContain(
       'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00'
     )
-    // The stack is the shape that broke this worst: rendered as a record object
-    // it cost thirteen physical lines. Its frames are still here, escaped
-    // inside one line.
+    // The stack is the shape that broke this worst: handed over as a record
+    // OBJECT, these same three fields render across seventeen physical lines
+    // under this runner, measured by formatting them the old way. The count
+    // follows the stack's depth and so differs by frame - fifteen through the
+    // ts-node harness the filter's own comment cites, which is why no single
+    // number is the fact here. One line is. Its frames are still inside it,
+    // escaped.
     expect(writtenLines()).toHaveLength(1)
     expect(writtenLines()[0]).not.toContain('\n')
     expect(writtenLines()[0]).toContain('\\n    at ')
