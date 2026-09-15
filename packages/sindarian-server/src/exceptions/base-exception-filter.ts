@@ -25,8 +25,10 @@ export class BaseExceptionFilter implements ExceptionFilter {
    *
    * Reading the message through `?.` is load-bearing too. `throw null` used to
    * make this filter throw, and a filter that throws escapes the request
-   * pipeline entirely: the caller got Next's own HTML error page where a JSON
-   * envelope was promised.
+   * pipeline entirely, so the route produced no Response at all. Measured on
+   * Next 16.2.6 under `next start`, that answers `500` with a ZERO-BYTE body
+   * and no `content-type` header: a caller promised a JSON envelope instead
+   * gets `SyntaxError: Unexpected end of JSON input`.
    */
   async catch(exception: any) {
     // No `&& exception.getStatus` here. It was carried over from when

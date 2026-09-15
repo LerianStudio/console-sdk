@@ -158,9 +158,10 @@ describe('BaseExceptionFilter', () => {
     })
 
     // `throw null` used to make the filter itself throw on `.message`, and a
-    // filter that throws escapes the whole request pipeline: the caller got
-    // Next's own HTML error page where a JSON envelope was promised, and a
-    // browser parsing it as JSON failed on the first character.
+    // filter that throws escapes the whole request pipeline, so the route
+    // produced no Response at all. Measured on Next 16.2.6 under `next start`:
+    // `500`, a ZERO-BYTE body, no `content-type`, and a browser parsing that
+    // as JSON gets `SyntaxError: Unexpected end of JSON input`.
     it('survives a thrown null', async () => {
       await expect(filter.catch(null)).resolves.toBeDefined()
 
