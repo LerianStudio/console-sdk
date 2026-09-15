@@ -203,7 +203,14 @@ describe('BaseExceptionFilter', () => {
     const bodyOf = () => mockNextResponse.json.mock.calls[0][0] as any
     const statusOf = () => mockNextResponse.json.mock.calls[0][1] as any
 
-    it('answers a string for a message that changes between reads', async () => {
+    // Both cases assert the EXACT sentence, and that is the whole point: a
+    // version that reads the property twice answers the SECOND read, and
+    // `typeof body.message === 'string'` cannot tell the two apart. In the
+    // first case the second read is an object, so a double read answers the
+    // fallback rather than what it checked; in the second both reads are
+    // strings, so a double read answers the taxpayer id with no type error
+    // anywhere to catch it. Only the value says which read was used.
+    it('answers the message it checked, not a later read', async () => {
       const exception = notFound()
       let reads = 0
 
@@ -218,10 +225,27 @@ describe('BaseExceptionFilter', () => {
 
       await filter.catch(exception)
 
-      expect(typeof bodyOf().message).toBe('string')
+      expect(bodyOf().message).toBe('looks like a sentence')
       expect(JSON.stringify(bodyOf())).not.toContain('123.456.789-00')
       expect(JSON.stringify(bodyOf())).not.toContain('Gateway Timeout')
       expect(statusOf()).toEqual({ status: 404 })
+    })
+
+    it('answers the message it checked when every read is a string', async () => {
+      const exception = notFound()
+      let reads = 0
+
+      Object.defineProperty(exception, 'message', {
+        get() {
+          reads += 1
+          return reads === 1 ? 'Ledger not found' : 'cpf 123.456.789-00'
+        }
+      })
+
+      await filter.catch(exception)
+
+      expect(bodyOf().message).toBe('Ledger not found')
+      expect(JSON.stringify(bodyOf())).not.toContain('123.456.789-00')
     })
 
     it('answers a body when the message getter throws', async () => {
