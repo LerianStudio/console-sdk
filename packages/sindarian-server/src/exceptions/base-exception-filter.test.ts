@@ -52,7 +52,12 @@ describe('BaseExceptionFilter', () => {
     )
   })
 
-  it('should handle exception without getStatus method (default to 500)', async () => {
+  // Named for the `exception.getStatus ? exception.getStatus() : 500` guard
+  // that `9bcba71` deleted as unreachable, so the old name pointed at a concept
+  // this filter no longer has and read as coverage for a missing-`getStatus`
+  // path that nothing exercises. What the case actually pins is the status: a
+  // value this library does not model is answered 500 whatever it carries.
+  it('answers 500 for a value this library does not model', async () => {
     const exception = {
       message: 'Test error message'
     }
@@ -220,7 +225,18 @@ describe('BaseExceptionFilter', () => {
   // that wrote one, so an operator paged on a spike of 500s had no host, no
   // taxpayer id and no line to grep for every other shape, and the response no
   // longer carried them either: the text was not redacted, it was deleted.
+  //
+  // The record is always the same three fields. `message` is the greppable
+  // sentence when the value had one, and nothing else decides what gets
+  // written: `value` carries the whole thrown value rendered, so a field beside
+  // an EMPTY message survives, which an `??` fallback keyed on nullish deleted.
+  // Both fields are cut at 2000 characters, because the value is whatever a
+  // route threw and a rethrown upstream body has no size this package controls.
   describe('an unexpected error', () => {
+    // What `console.error` was handed: the label is `[0][0]`, the record
+    // `[0][1]`. A case reads one field of it rather than restating all three.
+    const payloadOf = () => consoleError.mock.calls[0][1] as any
+
     it('answers the generic sentence and the code, never the Error text', async () => {
       await filter.catch(new Error('connect ECONNREFUSED 10.0.0.5:8080'))
 
@@ -230,16 +246,17 @@ describe('BaseExceptionFilter', () => {
       )
     })
 
+    // The stack is inside `value`: rendering an `Error` prints its stack, which
+    // is why the record has no separate `stack` field to go unbounded.
     it('writes the Error text and its stack to the server log', async () => {
-      const exception = new Error('connect ECONNREFUSED 10.0.0.5:8080')
+      await filter.catch(new Error('connect ECONNREFUSED 10.0.0.5:8080'))
 
-      await filter.catch(exception)
-
-      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
-        name: 'Error',
-        message: 'connect ECONNREFUSED 10.0.0.5:8080',
-        stack: exception.stack
-      })
+      expect(payloadOf().name).toBe('Error')
+      expect(payloadOf().message).toBe('connect ECONNREFUSED 10.0.0.5:8080')
+      expect(payloadOf().value).toContain(
+        'Error: connect ECONNREFUSED 10.0.0.5:8080'
+      )
+      expect(payloadOf().value).toContain('at ')
     })
 
     it('writes the text of a thrown object that is not an Error', async () => {
@@ -248,27 +265,67 @@ describe('BaseExceptionFilter', () => {
         code: 'ECONNREFUSED'
       })
 
-      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
-        name: 'object',
-        message: 'connect ECONNREFUSED 10.0.0.5:8080',
-        stack: undefined
-      })
+      expect(payloadOf().name).toBe('object')
+      expect(payloadOf().message).toBe('connect ECONNREFUSED 10.0.0.5:8080')
+      expect(payloadOf().value).toContain("code: 'ECONNREFUSED'")
     })
 
-    // The upstream body a route rethrew has no `message` at all. It is handed
-    // over whole rather than stringified, because `String({...})` is
+    // The upstream body a route rethrew has no `message` at all. It is rendered
+    // whole rather than stringified, because `String({...})` is
     // `[object Object]` and the fields ARE the incident: this is the only copy
     // left once the response stopped carrying them.
     it('writes a thrown value that has no message at all', async () => {
-      const exception = { code: 'E_NOPE', detail: 'timed out at db-primary' }
-
-      await filter.catch(exception)
+      await filter.catch({ code: 'E_NOPE', detail: 'timed out at db-primary' })
 
       expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
         name: 'object',
-        message: exception,
-        stack: undefined
+        message: undefined,
+        value: "{ code: 'E_NOPE', detail: 'timed out at db-primary' }"
       })
+    })
+
+    // The shape the `??` fallback deleted: `message` is PRESENT and empty, so
+    // a fallback keyed on nullish kept the empty string and wrote nothing else.
+    // An operator paged on this got a line that said nothing at all, which is
+    // the outcome moving the text to the log exists to prevent.
+    it('keeps the fields beside an empty message', async () => {
+      await filter.catch({
+        message: '',
+        code: 'E_NOPE',
+        detail: 'cpf 123.456.789-00 timed out at db-primary.internal:8080'
+      })
+
+      expect(payloadOf().message).toBe('')
+      expect(payloadOf().value).toContain("code: 'E_NOPE'")
+      expect(payloadOf().value).toContain('123.456.789-00')
+    })
+
+    // An upstream problem body nests: `errors` holds a field map, and the
+    // rejected value is two levels under that. Rendering it at the default
+    // depth prints `[Object]` exactly where the incident is.
+    it('prints a nested body to its leaf rather than [Object]', async () => {
+      await filter.catch({
+        code: 'E_UPSTREAM',
+        errors: { payer: { document: { value: 'cpf 123.456.789-00' } } }
+      })
+
+      expect(payloadOf().value).toContain('123.456.789-00')
+      expect(payloadOf().value).not.toContain('[Object]')
+    })
+
+    // A route that rethrows a megabyte of upstream body writes a megabyte per
+    // failed request otherwise, which is how one bad upstream fills a log sink.
+    it('bounds a thrown value of a megabyte', async () => {
+      await filter.catch('x'.repeat(1_000_000))
+
+      expect(payloadOf().value).toHaveLength(2000)
+    })
+
+    it('bounds an Error message of a megabyte', async () => {
+      await filter.catch(new Error('x'.repeat(1_000_000)))
+
+      expect(payloadOf().message).toHaveLength(2000)
+      expect(payloadOf().value).toHaveLength(2000)
     })
 
     it('writes a thrown string', async () => {
@@ -276,8 +333,8 @@ describe('BaseExceptionFilter', () => {
 
       expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
         name: 'string',
-        message: 'payment gateway rejected the settlement',
-        stack: undefined
+        message: undefined,
+        value: "'payment gateway rejected the settlement'"
       })
     })
 
@@ -289,8 +346,24 @@ describe('BaseExceptionFilter', () => {
 
       expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
         name: 'object',
-        message: null,
-        stack: undefined
+        message: undefined,
+        value: 'null'
+      })
+    })
+
+    // `Promise.reject()` with no argument, or a rethrow of a value that turned
+    // out to be undefined. `typeof undefined` is the only name there is.
+    it('answers and writes a line for a thrown undefined', async () => {
+      await expect(filter.catch(undefined)).resolves.toBeDefined()
+
+      expect(mockNextResponse.json).toHaveBeenCalledWith(
+        { message: 'Internal server error', code: '0004' },
+        { status: 500 }
+      )
+      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
+        name: 'undefined',
+        message: undefined,
+        value: 'undefined'
       })
     })
 

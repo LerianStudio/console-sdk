@@ -55,6 +55,10 @@ describe('Whatever a route throws, the body carries a string message', () => {
 
     expect(logged()).toContain('Gateway Timeout')
     expect(logged()).toContain('123.456.789-00')
+    // The taxpayer id is three levels down. Rendered at the default depth it
+    // reads `errors: { payer: [Object] }` and the incident is gone from the
+    // only place that still has it.
+    expect(logged()).not.toContain('[Object]')
   })
 
   // The ordinary rethrow in a TypeScript route, and the shape that survived
@@ -94,6 +98,7 @@ describe('Whatever a route throws, the body carries a string message', () => {
     expect(response.status).toBe(500)
     expect(typeof body.message).toBe('string')
     expect(body.message).toBe('Internal server error')
+    expect(body.code).toBe('0004')
 
     expect(logged()).toContain('something went wrong')
   })
@@ -110,25 +115,48 @@ describe('Whatever a route throws, the body carries a string message', () => {
     expect(response.headers.get('content-type')).toContain('application/json')
     expect(typeof body.message).toBe('string')
     expect(body.message).toBe('Internal server error')
+    expect(body.code).toBe('0004')
 
+    // The label alone would pass on an empty record, and this is the shape
+    // whose record has nothing but the rendered value in it.
     expect(logged()).toContain('Unhandled exception')
+    expect(logged()).toContain('"value":"null"')
+  })
+
+  // A rejection with no argument at all. It answers the same body as every
+  // other shape, and its log line carries the one thing there is to say.
+  it('answers JSON with a body at all, for a thrown undefined', async () => {
+    const { response, body } = await get('undefined')
+
+    expect(response.status).toBe(500)
+    expect(body.message).toBe('Internal server error')
+    expect(body.code).toBe('0004')
+
+    expect(logged()).toContain('"name":"undefined"')
+    expect(logged()).toContain('"value":"undefined"')
   })
 })
 
 /**
  * An unexpected error is anything a route threw that this library does not
  * model, with no exception: an `Error`, a plain `HttpException`, an object
- * carrying a string `message`, an upstream problem body, a string, a `null`.
- * Its text is the failure's own words, whatever the throw site interpolated
- * into them, and it used to reach the browser verbatim: below, an internal
- * host and port and a taxpayer id.
+ * carrying a string `message`, an upstream problem body, a string, a `null`,
+ * an `undefined`. Its text is the failure's own words, whatever the throw site
+ * interpolated into them.
  *
- * It now answers the generic sentence and the code, and the words go to the
- * server log instead, the way `HttpService` already writes an upstream
- * failure. The block above throws the SAME values under four different shapes
- * and reads the same body back from every one, which is the point of keeping
- * them together: the shape a route happens to throw no longer decides whether
- * a caller reads the failure's own words.
+ * What each of those used to answer differed by shape, which is the defect.
+ * The shapes carrying a string under `message`, the `Error` and the plain
+ * `HttpException` among them, put that string on the wire verbatim: below, an
+ * internal host and port and a taxpayer id. The rest answered a body a caller
+ * could not read at all, `{}` for a thrown string and for a value with no
+ * `message`, and no response whatsoever for a thrown `null`.
+ *
+ * They now answer one body, the generic sentence and the code, and the words
+ * go to the server log instead, the way `HttpService` already writes an
+ * upstream failure. The block above throws the SAME values under four
+ * different shapes and reads the same body back from every one, which is the
+ * point of keeping them together: the shape a route happens to throw no longer
+ * decides whether a caller reads the failure's own words.
  */
 describe('An unexpected error answers a generic body, never its own text', () => {
   it('redacts a thrown Error, host, port and taxpayer id', async () => {

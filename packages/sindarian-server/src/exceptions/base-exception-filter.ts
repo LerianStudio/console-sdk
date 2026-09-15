@@ -1,7 +1,8 @@
+import { inspect } from 'node:util'
 import { HttpStatus } from '@/constants'
 import { ApiException } from './api-exception'
 import { ExceptionFilter } from './exception-filter'
-import { toProblemMessage } from '@/utils/error/to-problem-message'
+import { MESSAGE_MAX_LENGTH } from '@/utils/error/to-problem-message'
 import { NextResponse } from 'next/server'
 
 /** What the caller is told when the thrown value classified nothing. */
@@ -52,8 +53,8 @@ export class BaseExceptionFilter implements ExceptionFilter {
    * the sentence was ours when it was a connection string. There is nothing
    * left to ask: an `ApiException` returns above, so everything here is
    * unexpected by construction and answers one constant body. `toProblemMessage`
-   * is not consulted on this path at all, because there is no longer a reading
-   * of the thrown value for it to choose between.
+   * is not consulted anywhere in this file, because there is no longer a
+   * reading of a thrown value for it to choose between.
    *
    * Reading the value through `?.` is load-bearing, and it has moved to the
    * log line. `throw null` used to make this filter throw, and a filter that
@@ -64,11 +65,14 @@ export class BaseExceptionFilter implements ExceptionFilter {
    * input`.
    *
    * **What this asks of a consumer.** The text is not destroyed, it is moved,
-   * and the operator log is a less private place than it looks: whatever a
-   * throw site interpolated into an `Error` message is now written there
-   * verbatim, shipped onward by whatever collects stdout, and no key-based
-   * redaction can reach inside a sentence. Do not put a customer's data in an
-   * `Error` message. Name what failed, not whose record it was.
+   * and the operator log is a less private place than it looks: the thrown
+   * value is written there as it came, bounded but not redacted, shipped onward
+   * by whatever collects stdout. That covers a sentence a throw site
+   * interpolated into an `Error` AND the fields of an upstream body a route
+   * rethrew, and no key-based redaction reaches inside either. Do not put a
+   * customer's data in an `Error` message, and redact in the log pipeline if
+   * your routes rethrow an upstream's body. Name what failed, not whose record
+   * it was.
    */
   async catch(exception: any) {
     // This narrowing is what keeps the redaction below off every 401, 404 and
@@ -82,15 +86,24 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // `instanceof`, `getStatus` is inherited from `HttpException` and cannot
     // be missing, so the second operand only invited a defensive branch for a
     // state that cannot occur.
+    //
+    // No `toProblemMessage` either. The constructor already ran the message
+    // through it (`api-exception.ts`), so by the time the filter sees one it is
+    // a non-empty string under 2000 characters and a second call is the
+    // identity function. Measured before removing it: this line as
+    // `{ message: exception.message }`, and as the literal pre-PR
+    // `{ message: exception.message || UNCLASSIFIED }`, each gave 21/21 unit
+    // and 28/28 e2e. Nothing could tell the three apart, which is what an
+    // inert reduction looks like from the outside.
     if (exception instanceof ApiException) {
       return NextResponse.json(
-        { message: toProblemMessage(exception.message, UNCLASSIFIED) },
+        { message: exception.message },
         { status: exception.getStatus() }
       )
     }
 
-    // The only remaining copy of what actually broke, written the way
-    // `HttpService.onRequestFailure` already writes an upstream failure:
+    // The only remaining copy of what actually broke, written to the seam
+    // `HttpService.onRequestFailure` already uses for an upstream failure:
     // `console.error`, at error level, so it lands in the operator's log and
     // in whatever ships that log onward. Not the package's `Logger`, whose
     // static methods write through a logger the application has to register
@@ -100,14 +113,43 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // the response had already stopped carrying the upstream's own `detail`.
     //
     // Unconditional, because the early return above is what decides whether a
-    // value is unexpected and nothing that reaches this line is not. The value
-    // is handed over whole rather than stringified when it has no `message`:
-    // `String({ code, detail })` is `[object Object]`, and those fields are
-    // the incident.
+    // value is unexpected and nothing that reaches this line is not.
+    //
+    // Three fields, always the same three. `message` is the sentence an
+    // operator greps, when the value had one; it is NOT what decides what else
+    // gets written, and keying that decision on a nullish `message` is a defect
+    // this file already shipped once: `{ message: '', code, detail }` wrote an
+    // empty string and dropped the two fields that were the incident.
+    // `value` is the whole thrown value rendered, so `String({ code, detail })`
+    // never happens, four levels deep so an upstream body prints the rejected
+    // value under `errors` instead of `[Object]`, and cut at the same 2000
+    // characters a message is, because a rethrown upstream body has a size this
+    // package does not control and one bad upstream must not fill a log sink.
+    // There is no `stack` field: rendering an `Error` prints its stack, inside
+    // the same bound.
+    //
+    // **This package applies NO redaction to what it writes here.** `value` is
+    // what the route threw, verbatim within the bound, which is the opposite of
+    // `HttpService.describeRequestError` one frame down: there the value is an
+    // upstream's response body over a contract the transport knows, so only its
+    // classification is copied. Here it is the last remaining copy of what
+    // broke, and a projection would have to guess which key holds the incident.
+    // A consumer whose routes throw a customer's data, interpolated into an
+    // `Error` message or rethrown inside an upstream body, must redact in its
+    // own log pipeline. The cheaper fix is at the throw site: name what failed,
+    // not whose record it was.
+    const message = exception?.message
+
     console.error('Unhandled exception', {
       name: exception?.name ?? typeof exception,
-      message: exception?.message ?? exception,
-      stack: exception?.stack
+      message:
+        typeof message === 'string'
+          ? message.slice(0, MESSAGE_MAX_LENGTH)
+          : undefined,
+      value: inspect(exception, { depth: 4, breakLength: Infinity }).slice(
+        0,
+        MESSAGE_MAX_LENGTH
+      )
     })
 
     return NextResponse.json(

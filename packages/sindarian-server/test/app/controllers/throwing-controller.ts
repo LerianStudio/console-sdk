@@ -22,13 +22,21 @@ import {
  */
 @Controller('/throwing')
 export class ThrowingController {
-  /** An upstream problem body handed straight to `throw`. */
+  /**
+   * An upstream problem body handed straight to `throw`.
+   *
+   * The taxpayer id sits three levels down, under `errors`, which is where an
+   * RFC 9457 body actually puts a rejected value. Rendered at the default
+   * depth that field reads `errors: { payer: [Object] }`, so the spec's log
+   * assertion is also what pins the depth the filter renders at.
+   */
   @Get('object')
   public object(): never {
     throw {
       message: {
         title: 'Gateway Timeout',
-        detail: 'cpf 123.456.789-00 timed out at db-primary.internal:8080'
+        detail: 'timed out at db-primary.internal:8080',
+        errors: { payer: { document: 'cpf 123.456.789-00' } }
       }
     }
   }
@@ -67,6 +75,12 @@ export class ThrowingController {
   @Get('null')
   public null(): never {
     throw null
+  }
+
+  /** `Promise.reject()` with no argument, or a rethrow of a missing value. */
+  @Get('undefined')
+  public undefined(): never {
+    throw undefined
   }
 
   /**
