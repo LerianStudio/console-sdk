@@ -1,3 +1,5 @@
+import { Console } from 'node:console'
+import { Writable } from 'node:stream'
 import { HttpService, FetchModuleOptions } from './http-service'
 import { HttpStatus } from '../constants/http-status'
 import {
@@ -94,6 +96,13 @@ describe('HttpService', () => {
   afterEach(() => {
     consoleSpy.mockRestore()
   })
+
+  // The record as a collector receives it: one JSON string beside the label,
+  // not an object for Node to render however it likes.
+  const recordOf = (label: string) =>
+    JSON.parse(
+      consoleSpy.mock.calls.find((call) => call[0] === label)?.[1] as string
+    )
 
   describe('request method', () => {
     it('should make a successful request', async () => {
@@ -890,7 +899,7 @@ describe('HttpService', () => {
           .testRequest(new Request(upstream))
           .catch((thrown) => thrown)
 
-        const [, logged] = consoleSpy.mock.calls[0]
+        const logged = recordOf('Request error')
         expect(logged).not.toHaveProperty(field)
 
         // The two that ARE strings still land, so this is the guard doing its
@@ -928,7 +937,7 @@ describe('HttpService', () => {
         service.testRequest(new Request(upstream))
       ).rejects.toBeInstanceOf(InternalServerErrorApiException)
 
-      const [, logged] = consoleSpy.mock.calls[0]
+      const logged = recordOf('Request error')
       expect(logged.type).toHaveLength(200)
       expect(logged.title).toHaveLength(200)
       expect(logged.code).toHaveLength(200)
@@ -1104,7 +1113,7 @@ describe('HttpService', () => {
         .testRequest(new Request(withQuery))
         .catch((thrown) => thrown)
 
-      expect(consoleSpy).toHaveBeenCalledWith('Request failed', {
+      expect(recordOf('Request failed')).toEqual({
         method: 'GET',
         url: 'https://api.example.com/v1/accounts',
         cause: 'fetch failed: connect ECONNREFUSED 10.0.0.5:8080'
@@ -1141,10 +1150,7 @@ describe('HttpService', () => {
         service.testRequest(new Request('https://api.example.com/v1/accounts'))
       ).rejects.toBeInstanceOf(ServiceUnavailableApiException)
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Request failed',
-        expect.objectContaining({ method: 'GET' })
-      )
+      expect(recordOf('Request failed')).toMatchObject({ method: 'GET' })
     })
 
     it('records a catch override that threw something unexpected', async () => {
@@ -1173,12 +1179,9 @@ describe('HttpService', () => {
         )
       ).rejects.toBeInstanceOf(ServiceUnavailableApiException)
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Request failed',
-        expect.objectContaining({
-          cause: 'transport bug: cannot read code of undefined'
-        })
-      )
+      expect(recordOf('Request failed')).toMatchObject({
+        cause: 'transport bug: cannot read code of undefined'
+      })
     })
 
     it('is overridable like the fetch hooks beside it', async () => {
@@ -1241,6 +1244,119 @@ describe('HttpService', () => {
         'The request to the upstream service could not be completed'
       )
       expect(error.message).not.toContain('10.0.0.5:8080')
+    })
+  })
+
+  // One failed call has to be ONE log event. Handing `console.error` a record
+  // OBJECT does not give that: Node renders a second argument with its own
+  // `util.inspect` defaults, `breakLength: 128` and `compact: 3`, and a real
+  // ledger URL beside a connection string is already past 128 characters, so
+  // the two records here broke across five and eight physical lines. A
+  // line-oriented collector, the Docker json-file driver or Fluent Bit, ships
+  // each of those as a separate event, so the internal host and the taxpayer
+  // id an upstream failure carries land in a different event from the label an
+  // operator greps for. The exception filter was fixed for this one frame up;
+  // these are the two writes that carry actual upstream data.
+  //
+  // The bytes themselves, with no `util.format` of ours in the way and no spy:
+  // a REAL `Console` writing into a captured stream, which is the frame a
+  // collector reads. Spying `process.stderr.write` does not reach it, because
+  // jest replaces the global console with one that buffers into the test
+  // report instead of writing to the process streams, so that spy captures
+  // nothing at all and would pass on an empty array.
+  describe('one failed call is one physical log line', () => {
+    const captured = async (run: () => Promise<unknown>) => {
+      const chunks: string[] = []
+      const sink = new Writable({
+        write(chunk, _encoding, done) {
+          chunks.push(String(chunk))
+          done()
+        }
+      })
+      const real = new Console({ stdout: sink, stderr: sink })
+      const saved = global.console
+
+      consoleSpy.mockRestore()
+      global.console = real as unknown as Console
+      try {
+        await run().catch(() => {})
+      } finally {
+        global.console = saved
+      }
+
+      return chunks
+    }
+
+    it('writes an unreachable upstream on one line', async () => {
+      const service = new DefaultCatchHttpService()
+      mockFetch.mockRejectedValue(
+        new TypeError(
+          'fetch failed: connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00'
+        )
+      )
+
+      const chunks = await captured(() =>
+        service.testRequest(
+          new Request('https://api.example.com/v1/organizations/o-1/ledgers')
+        )
+      )
+
+      expect(chunks).toHaveLength(1)
+      expect(chunks[0].slice(0, -1)).not.toContain('\n')
+      expect(chunks[0].startsWith('Request failed ')).toBe(true)
+      // Same line, so a collector ships the incident with the label.
+      expect(chunks[0]).toContain('123.456.789-00')
+      expect(JSON.parse(chunks[0].slice('Request failed '.length)).cause).toBe(
+        'fetch failed: connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00'
+      )
+    })
+
+    it('writes a failed response on one line', async () => {
+      const service = new DefaultCatchHttpService()
+      mockFetch.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            type: 'about:blank',
+            title: 'Conflict',
+            code: '42'
+          }),
+          {
+            status: HttpStatus.CONFLICT,
+            headers: { 'content-type': 'application/json' }
+          }
+        )
+      )
+
+      const chunks = await captured(() =>
+        service.testRequest(
+          new Request('https://api.example.com/v1/organizations/o-1/ledgers')
+        )
+      )
+
+      expect(chunks).toHaveLength(1)
+      expect(chunks[0].slice(0, -1)).not.toContain('\n')
+      expect(chunks[0].startsWith('Request error ')).toBe(true)
+      expect(JSON.parse(chunks[0].slice('Request error '.length))).toEqual({
+        method: 'GET',
+        url: 'https://api.example.com/v1/organizations/o-1/ledgers',
+        status: 409,
+        type: 'about:blank',
+        title: 'Conflict',
+        code: '42'
+      })
+    })
+
+    // `cause` is an upstream's own text and has a size this package does not
+    // control, the same argument the filter's record is bounded on.
+    it('bounds what an upstream failure writes', async () => {
+      const service = new DefaultCatchHttpService()
+      mockFetch.mockRejectedValue(new TypeError('x'.repeat(1_000_000)))
+
+      await service
+        .testRequest(new Request('https://api.example.com/v1/accounts'))
+        .catch(() => {})
+
+      expect(recordOf('Request failed').cause).toHaveLength(2000)
     })
   })
 })
