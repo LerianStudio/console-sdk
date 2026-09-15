@@ -111,13 +111,16 @@ JSON bodies. Every one of the six already produced a string:
 | 400, body classifying nothing | BadRequest (400) | `string` | `Upstream error body carried no problem details (status 400)` |
 
 That table was the one measurement block in this file with no command and no exit code.
-Re-run at the code-final head `4677bd4` (`2026-09-15 16:32:11 UTC`), six real sockets on
+Re-run at the code-final head `b878660` (`2026-09-15 17:46:20 UTC`), six real sockets on
 ephemeral loopback ports, harness at `/tmp/rv-sdkerr-sockets/probe.cjs` driving the built
 `dist` through a concrete `HttpService`. An earlier version of this paragraph named the
 previous pass's last CI commit, two changes below the shipping filter, so a negative claim
 the whole change rests on was labelled as re-run against code that had since been
-rewritten. One commit is the code-final head in this document and it is `4677bd4`. Output
-verbatim, the package's own `console.error` lines elided:
+rewritten. The code-final head in this document is `b878660`, and every claim that has to
+hold AT it was re-taken there: this socket table, the per-route and trap measurements, the
+eight gates and the mutants. A RED block belongs to the pass that produced it and names its
+own head, because a RED cannot be re-taken later without becoming a different measurement.
+Output verbatim, the package's own `console.error` lines elided:
 
 ```
 $ timeout 300 unshare -rn bash -c 'ip link set lo up && node /tmp/rv-sdkerr-sockets/probe.cjs'
@@ -323,10 +326,41 @@ The record is now, always:
 `name` is the value's own `name` when that is a string, else `typeof`. `message` is the
 sentence an operator greps, present when the thrown value carried a string one, and it
 decides nothing else. `value` is the whole thrown value rendered with
-`util.inspect(value, { depth: 4, breakLength: Infinity, customInspect: false })`. All three
-are cut at `MESSAGE_MAX_LENGTH`, the same 2000 characters a message is bounded at elsewhere
-in the package. There is no `stack` field: rendering an `Error` prints its stack, inside
-that bound.
+`util.inspect(value, { depth: 4, breakLength: Infinity, compact: true, customInspect: false })`.
+All three are cut at `MESSAGE_MAX_LENGTH`, the same 2000 characters a message is bounded at
+elsewhere in the package. There is no `stack` field: rendering an `Error` prints its stack,
+inside that bound.
+
+**And the record is written as JSON, on ONE physical line, which is the last defect this
+lane found in it.** Handing `console.error` a record OBJECT does not produce one line, and
+no option on our own `inspect` call can make it: Node renders a second argument with its
+OWN `util.inspect` defaults, `breakLength: 128` and `compact: 3`. Measured through the real
+pipeline at the previous head, `1b0218d`: the `object` route wrote SEVEN physical lines,
+`errorlike` and `no-message` five each, the `error` route fifteen and `http-status`
+seventeen. A line-oriented collector, the Docker json-file driver or Fluent Bit, ships each
+of those as a separate event, so the taxpayer id and the internal host land in a DIFFERENT
+event from the `Unhandled exception` label an operator greps for. That is the outcome
+moving the text into the log was built to prevent, reappearing one frame further out.
+
+Nothing in the suite could see it. All twenty-nine e2e and all twenty-nine filter unit
+assertions read `console.error`'s ARGUMENTS through a jest spy, which intercepts before
+Node formats them: the same blind spot the e2e suite was added to close on the response
+side, one frame over on the log side.
+
+A string argument is written through verbatim, and JSON has no multi-line string, so a
+stack's newlines survive as escapes inside the single line rather than breaking it, and
+what a collector receives is parseable as well as whole. `compact: true` is the other half:
+without it `util.inspect` breaks a value nested three or more deep whatever `breakLength`
+says, so the RFC 9457 body's own rendering was three lines, and those breaks would now ride
+along inside the record as escapes for no reason. `message: undefined` becomes an absent
+key rather than the word `undefined`, which says the same thing in less.
+
+Three assertions pin it where the spy cannot: two format the captured arguments the way
+Node does and read the physical lines back, and one swaps the global console for a REAL
+`Console` writing into a captured stream and counts the writes. That third one exists
+because spying `process.stderr.write` does NOT work here: jest replaces the global console
+with one that buffers into the test report instead of writing to the process streams, so
+that spy captures nothing at all and would have passed on an empty array.
 
 **And the whole write is inside a guard, which is a reversal.** An earlier version of this
 plan listed a thrown value with a throwing `message` getter as found-not-fixed, on the
@@ -342,53 +376,88 @@ this lane opened on, reachable again through the line that was supposed to be th
 closes the getter and any proxy trap, and still writes `{ name: typeof exception }`, because
 a 500 with no log line is what moving the text there was meant to prevent.
 
-Measured at the code-final head, four booby-trapped values through the real filter, each
-answering a body and writing exactly one line:
+Measured at the code-final head `b878660`, four booby-trapped values plus the empty-message
+shape through the real filter, each answering a body and writing exactly one call on
+exactly one physical line. `physical_lines` is the count for the line `util.format` hands
+the stream, and `record` its byte count with the stack included rather than elided:
 
 ```
-throwing message getter    -> 500 {"message":"Internal server error","code":"0004"} log calls=1 name=6ch message=absent value=absent
-throwing custom inspector  -> 500 {"message":"Internal server error","code":"0004"} log calls=1 name=6ch message=absent value=96ch
-name of a megabyte         -> 500 {"message":"Internal server error","code":"0004"} log calls=1 name=2000ch message=absent value=2000ch
-value of two megabytes     -> 500 {"message":"Internal server error","code":"0004"} log calls=1 name=6ch message=2000ch value=2000ch
+trap: message getter     calls=1 physical_lines=1 record=37   name=6ch    message=absent value=absent
+trap: custom inspector   calls=1 physical_lines=1 record=144  name=6ch    message=absent value=96ch
+trap: name of 1MB        calls=1 physical_lines=1 record=4042 name=2000ch message=absent value=2000ch
+thrown 2MB               calls=1 physical_lines=1 record=2048 name=6ch    message=absent value=2000ch
+empty message            calls=1 physical_lines=1 record=160  name=6ch    message=0ch    value=99ch
+  {"name":"object","message":"","value":"{ message: '', code: 'E_NOPE', detail: 'cpf 123.456.789-00 timed out at db-primary.internal:8080' }"}
 ```
 
-Measured at the code-final head `4677bd4` through the REAL pipeline (`app.handler`, the
-package's own e2e app, `dist` rebuilt, `2026-09-15 16:32:38 UTC`), one row per throwing
-route, body read off the real `Response` and the `console.error` payload captured, stacks
-elided by the harness and the record's own byte count printed:
+The same five at the previous head `1b0218d`, which is what the one-line rule bought:
+`physical_lines` 1, 5, 5, 5 and 5 respectively, for records of 38, 171, 4069, 2075 and 167
+bytes. Only the trap whose record is `{ name }` alone was ever short enough to survive
+Node's own `breakLength: 128`.
+
+Measured at the code-final head `b878660` through the REAL pipeline (`app.handler`,
+the package's own e2e app, `dist` rebuilt), one row per throwing route, body read off the
+real `Response` and the `console.error` arguments formatted the way Node formats them. The
+`bytes` figure is the whole line INCLUDING any stack, not a harness-elided one, and
+`physical_lines` is what a line-oriented collector counts. The `<stack elided>` marker is
+applied to the printed row only; the byte count is of the full line.
+
+An earlier version of this block pasted a 173-byte single-line value for the `object` row
+and did not reproduce at the head it named, which is how the false claim that the record
+was one line survived a pass. These numbers were taken twice, once at `1b0218d` and once
+here, with the same harness: a temporary `test/measure-record.ts` driving `app.handler` per
+route and the filter directly for the traps, run under `ts-node` and removed afterwards.
 
 ```
+$ cd packages/sindarian-server/test && ts-node --project tsconfig.json measure-record.ts
+rc=0
 object       500 {"message":"Internal server error","code":"0004"}
-             log calls=1 bytes=173 payload={"name":"object","value":"{ message: { title: 'Gateway Timeout', detail: 'timed out at db-primary.internal:8080', errors: { payer: { document: 'cpf 123.456.789-00' } } } }"}
+             log calls=1 physical_lines=1 bytes=193
+             Unhandled exception {"name":"object","value":"{ message: { title: 'Gateway Timeout', detail: 'timed out at db-primary.internal:8080', errors: { payer: { document: 'cpf 123.456.789-00' } } } }"}
 errorlike    500 {"message":"Internal server error","code":"0004"}
-             log calls=1 bytes=214 payload={"name":"object","message":"connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00","value":"{ message: 'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00', code: 'ECONNREFUSED' }"}
+             log calls=1 physical_lines=1 bytes=234
+             Unhandled exception {"name":"object","message":"connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00","value":"{ message: 'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00', code: 'ECONNREFUSED' }"}
 no-message   500 {"message":"Internal server error","code":"0004"}
-             log calls=1 bytes=95 payload={"name":"object","value":"{ code: 'E_NOPE', detail: 'timed out at db-primary.internal:8080' }"}
+             log calls=1 physical_lines=1 bytes=115
+             Unhandled exception {"name":"object","value":"{ code: 'E_NOPE', detail: 'timed out at db-primary.internal:8080' }"}
 string       500 {"message":"Internal server error","code":"0004"}
-             log calls=1 bytes=50 payload={"name":"string","value":"'something went wrong'"}
+             log calls=1 physical_lines=1 bytes=70
+             Unhandled exception {"name":"string","value":"'something went wrong'"}
 null         500 {"message":"Internal server error","code":"0004"}
-             log calls=1 bytes=32 payload={"name":"object","value":"null"}
+             log calls=1 physical_lines=1 bytes=52
+             Unhandled exception {"name":"object","value":"null"}
 undefined    500 {"message":"Internal server error","code":"0004"}
-             log calls=1 bytes=40 payload={"name":"undefined","value":"undefined"}
+             log calls=1 physical_lines=1 bytes=60
+             Unhandled exception {"name":"undefined","value":"undefined"}
 error        500 {"message":"Internal server error","code":"0004"}
-             log calls=1 bytes=198 payload={"name":"Error","message":"connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00","value":"Error: connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00 <stack elided>"}
+             log calls=1 physical_lines=1 bytes=1614
+             Unhandled exception {"name":"Error","message":"connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00","value":"Error: connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00\n    at <stack elided>"}
 http-status  500 {"message":"Internal server error","code":"0004"}
-             log calls=1 bytes=106 payload={"name":"Error","message":"no such ledger","value":"HttpException [Error]: no such ledger <stack elided>"}
+             log calls=1 physical_lines=1 bytes=1552
+             Unhandled exception {"name":"Error","message":"no such ledger","value":"{ HttpException [Error]: no such ledger\n    at <stack elided>"}
 DISTINCT_BODIES=1 BODY_BYTES=49
 ```
 
-Eight shapes, one body of 49 bytes, eight log lines. `errorlike` and `error` carry
-byte-identical text under different shapes and are now indistinguishable on the wire, which
-is the whole claim. The `object` row is also the depth proof: its taxpayer id sits three
+Eight shapes, one body of 49 bytes, eight log lines, and now eight PHYSICAL lines rather
+than fifty-two. The same eight routes at `1b0218d`, same harness, same run shape:
+
+```
+object 7 lines / 242 bytes   errorlike 5 / 241   no-message 5 / 142   string 1 / 91
+null 1 / 73                  undefined 1 / 81    error 15 / 1711      http-status 17 / 1668
+DISTINCT_BODIES=1 BODY_BYTES=49
+```
+
+The body was already right; only the log was breaking apart. `errorlike` and `error` carry
+byte-identical text under different shapes and are indistinguishable on the wire, which is
+the whole claim. The `object` row is also the depth proof: its taxpayer id sits three
 levels down under `errors`, where a real problem body puts a rejected value, and at the
-default depth that field reads `[Object]`.
+default depth that field reads `[Object]`. It is the depth proof AND the line proof, and
+those are two different failures: at the previous head the id was present and split across
+event boundaries, so an operator grepping the label got a record with no incident in it.
 
-The bound and the empty message, from the same run:
-
-```
-thrown bytes=2000000 -> message=2000 value=2000 record=4041
-empty message -> {"name":"object","message":"","value":"{ message: '', code: 'E_NOPE', detail: 'cpf 123.456.789-00 timed out at db-primary.internal:8080' }"}
-```
+The bound and the empty message, from the same run, are in the trap block above:
+`thrown 2MB` gives `message=absent value=2000ch record=2048`, and the empty message keeps
+every field beside it.
 
 **What `0004` means, now that it is true.** A caller reading codes can tell this envelope
 from a sentence an upstream actually wrote, because the two never arrive together: an
@@ -453,7 +522,7 @@ The filter's status line lost a second operand that could never be false:
 over from when `exception` was untyped and it did real work.
 
 **And a pull request now RUNS those e2e cases.** It did not. `jest.config.ts` ignores
-`<rootDir>/test`, so the package's `npm test` (38 suites, 865 tests) excludes every case
+`<rootDir>/test`, so the package's `npm test` (38 suites, 869 tests) excludes every case
 that reads a real `Response`, and `ci.yml` had only lint, test and build. The e2e suite
 ran solely in `release.yml`, AFTER merge, where a red job blocks a publish instead of a
 merge and the offending commit has to be reverted off `develop`. `ci.yml` gained a
@@ -487,9 +556,12 @@ says the session expired, a 404 still names what was not found, a 422 still list
 failed validation". The first two halves are right. The third is wrong twice over, and it
 is the sentence a consumer reads before accepting a breaking release.
 
-Measured at the code-final head `4677bd4` (`2026-09-15 16:39:00 UTC`) by driving the REAL
-`BaseExceptionFilter` with real exception instances and reading the real `Response` body.
-Zero log lines were written on this branch, which is the other half of the narrowing:
+Measured at `4677bd4` (`2026-09-15 16:39:00 UTC`) by driving the REAL `BaseExceptionFilter`
+with real exception instances and reading the real `Response` body, and still exact at the
+code-final head `b878660`: the only executable change between the two is the log write,
+with the `ApiException` branch byte-identical (`git diff 4677bd4 b878660` over the filter,
+comments stripped, touches nothing else). Zero log lines were written on this branch, which
+is the other half of the narrowing:
 
 ```
 ValidationApiException               -> 400 {"message":"Validation failed"}
@@ -629,17 +701,28 @@ remembering to write a catch-all filter is not a safe library.
    runs by default. Two doors into the zero-byte-body failure, closed by one guard plus
    `customInspect: false`, with three cases and three mutants (M10, M11, M12). Recorded here
    because the reversal is the point: one trap read as a curiosity, two read as a hole.
+6. **A mutated `ApiException` answers a blank message.** The filter answers
+   `exception.message` with no fallback of its own, so `e.message = ''` assigned after
+   construction reads back `404 {"message":""}`, which a UI renders as empty rather than as
+   a sentence. Pinned, not fixed, and the reason is that the constructor makes it
+   unreachable: every message goes through `toProblemMessage`, which substitutes a sentence
+   naming the status. Restoring `|| UNCLASSIFIED` is one token and it is a product call,
+   not a defect to close quietly, because it puts a branch back for a state this package
+   cannot produce. The pin and M14 are what make either choice visible.
 
 ## Verification
 
-All nine gates at `4677bd4`, the code-final head, `2026-09-15 16:31:15 UTC` onward, tree
-clean (`git status --porcelain` empty before and after).
+Eight gates at `b878660`, the code-final head: four at the package level and four at
+the monorepo root through turbo, counted against the block below rather than asserted. The
+two CI-job arms under it are a ninth and tenth invocation of one of those eight, pinned
+separately because the job's filter argument is what they check. Tree clean
+(`git status --porcelain` showing only the plan before the docs commit).
 
 ```
 $ cd packages/sindarian-server && npm test
 rc=0
 Test Suites: 38 passed, 38 total
-Tests:       865 passed, 865 total
+Tests:       869 passed, 869 total
 
 $ cd packages/sindarian-server && npm run test:e2e
 rc=0
@@ -683,6 +766,63 @@ $ npm run test:e2e -- --filter=@lerianstudio/sindarian-ui     # a package with `
 rc=0
  Tasks:    1 successful, 1 total
 ```
+
+### RED before GREEN, one failure on one physical line
+
+Assertions first, source untouched. Header at the RED: `2026-09-15 17:32:20 UTC`, `HEAD
+1b0218d`, `git status --porcelain` =
+
+```
+ M packages/sindarian-server/src/exceptions/base-exception-filter.test.ts
+ M packages/sindarian-server/test/e2e/error-shape.spec.ts
+```
+
+```
+$ cd packages/sindarian-server && npx jest src/exceptions/base-exception-filter.test.ts
+rc=1
+Tests:       16 failed, 17 passed, 33 total
+  (13 of them on the record's new JSON shape, 3 on the physical-line cases)
+
+$ cd packages/sindarian-server && npm run test:e2e
+rc=1
+Tests:       4 failed, 25 passed, 29 total
+  ● keeps no part of an upstream problem object
+    Expected substring: not "\n"
+    Received string:        "Unhandled exception {
+  ● answers JSON with a body at all, for a thrown null
+    Expected substring: "\"value\":\"null\""
+    Received string:    "Unhandled exception { name: 'object', message: undefined, value: 'null' }"
+  ● answers JSON with a body at all, for a thrown undefined
+  ● redacts a thrown Error, host, port and taxpayer id
+```
+
+The two `Received string` lines are the defect itself, printed by the suite that could not
+see it before: the record arriving at the stream as a multi-line JavaScript literal instead
+of one parseable line.
+
+GREEN after the source change, `2026-09-15 17:33:16 UTC`, same HEAD, the filter now
+modified too:
+
+```
+$ cd packages/sindarian-server && npx jest src/exceptions/base-exception-filter.test.ts
+rc=0
+Tests:       33 passed, 33 total
+
+$ cd packages/sindarian-server && npm run test:e2e
+rc=0
+Tests:       29 passed, 29 total
+```
+
+Two of the four new cases are pins, not changes: `answers the message it was given, even a
+mutated empty one` and `answers 500 for a value that only looks like an ApiException` were
+GREEN at the RED head, because they record what the previous pass's two reductions already
+answer. A pin cannot go red on its own, so each is proved by a mutant instead, M14 and M15
+below, which is the only honest form of evidence available for a reduction whose whole
+claim is that nothing could tell it apart.
+
+The RED re-taken AT the code-final head is M16, which restores the record as an object and
+changes nothing else: `unit rc=1, 16 failed / 17 passed; e2e rc=1, 4 failed / 25 passed`,
+the same counts and the same case names as the RED above, at `b878660`.
 
 ### RED before GREEN, rebuilding the log record
 
@@ -743,7 +883,7 @@ Test Suites: 2 passed, 2 total
 Tests:       29 passed, 29 total
 ```
 
-Re-taken at the code-final head `4677bd4` (`2026-09-15 16:38:29 UTC`, `packages` clean
+Re-taken at that pass's code-final head `4677bd4` (`2026-09-15 16:38:29 UTC`, `packages` clean
 before), with only `base-exception-filter.ts` held at `8784c79`, the state this pass
 started from, and every assertion at HEAD. `dist` rebuilt in between, source restored with
 `git checkout HEAD -- <file>` and `git status --porcelain packages` empty afterwards. It
@@ -1014,10 +1154,12 @@ Tests:       39 passed, 39 total
 
 ### Mutants
 
-Each one applied at the code-final head `4677bd4`, `dist` rebuilt, run, then reverted with
+M1 to M12 were applied at `4677bd4`, `dist` rebuilt, run, then reverted with
 `git checkout -- <file>`, with `git status --porcelain` verified empty after every revert
-(`clean-after-Mn=0` printed each time). `2026-09-15 16:33:53 UTC` onward. Unit counts are
-out of 29, e2e out of 29.
+(`clean-after-Mn=0` printed each time), `2026-09-15 16:33:53 UTC` onward. M13 to M16 were
+applied the same way at the code-final head `b878660`, `2026-09-15 17:44:33 UTC` onward,
+each reverted with `git checkout -- <file>` and `clean-after-Mn=0` printed. Unit counts are
+out of 29 for M1 to M12 and out of 33 for M13 to M16; e2e is out of 29 throughout.
 
 The whole table was re-measured at this head rather than carried over, because the filter
 was rewritten under it twice. A review of the previous table reproduced every row except
@@ -1038,12 +1180,35 @@ described; M4 below is the mutation as written, with the numbers it actually pri
 | M10 | `customInspect: false` dropped, so rendering runs the value's own inspector again | unit rc=1, **1 failed** / 28 passed: `ignores a custom inspection function on the thrown value`; e2e rc=0, 29 passed |
 | M11 | the guard around the write removed | unit rc=1, **1 failed** / 28 passed: `answers a body when reading the thrown value throws`, which REJECTS rather than answering; e2e rc=0, 29 passed |
 | M12 | the bound dropped from `name` only | unit rc=1, **1 failed** / 28 passed: `bounds a name of a megabyte`; e2e rc=0, 29 passed |
+| M13 | `compact: true` dropped from the render, so the value breaks at three levels deep again | unit rc=1, **1 failed** / 32 passed: `writes a three-level upstream body on one line`; e2e rc=0, 29 passed |
+| M14 | the pre-PR `ApiException` fallback restored (`exception.message \|\| UNCLASSIFIED`), i.e. the previous version of this branch | unit rc=1, **1 failed** / 32 passed: `answers the message it was given, even a mutated empty one`; e2e rc=0, 29 passed |
+| M15 | the narrowing duck-typed (`instanceof ApiException \|\| typeof exception?.getStatus === 'function'`) | unit rc=1, **1 failed** / 32 passed: `answers 500 for a value that only looks like an ApiException`; e2e rc=1, **1 failed** / 28 passed: `answers 500 for a plain HttpException, and redacts it too` |
+| M16 | the record handed to `console.error` as an OBJECT again, i.e. the previous version of this branch | unit rc=1, **16 failed** / 17 passed; e2e rc=1, **4 failed** / 25 passed |
 
 M1 and M6 are the first pair, the two halves of one narrowing: M1 is the text reaching the
 wire, M6 is the text reaching nothing at all. M7, M8 and M9 are the log record's three, one
 per defect review found in it. M10, M11 and M12 are the fail-safe's three. Every one of
 them was live behaviour on some earlier head of this branch with no test that could see it,
 which is why they are recorded as previous versions rather than as invented edits.
+
+M13 to M16 are this pass, and M16 is the one that matters: it restores the record as an
+OBJECT, which is what the previous head shipped, and twenty cases go red where none could
+before. M13 is the narrower half, and it kills on the unit side only, which is correct and
+worth saying plainly: with the record serialised as JSON, a value broken over three lines
+is still ONE physical line, its breaks carried as escapes. Dropping `compact: true` costs
+readability inside the record, not the line, so the only assertion that can see it is the
+one reading `value` itself.
+
+M14 and M15 are pins for two reductions this branch made and argued in comments rather than
+measured. M14 is the `ApiException` message fallback: the reduction is unreachable through
+the constructor, which always substitutes a sentence, so the case mutates `.message` to
+empty AFTER construction, which is the only input that can tell the two versions apart.
+M15 is the `getStatus` guard the same pass deleted: the narrowing is `instanceof`, not a
+duck-type, and M15 proves it by making it a duck-type and watching a plain `HttpException`
+stop being redacted.
+
+Unit counts for M1 to M12 are out of 29, and for M13 to M16 out of 33: this pass added four
+cases, three reading the physical log line and one reading the mutated empty message.
 
 M5 is also the pin that closed a gap a review found: two e2e cases asserted the status and
 the message but not `code`, so the headline table was pinned for five of the seven routes
@@ -1073,8 +1238,8 @@ VERDICT: every value passing `instanceof ApiException` has a truthy getStatus: t
 ```
 
 The socket measurement in the table above ran under `unshare -rn` on ephemeral loopback
-ports at `9ded7ed`, at `24a7777`, and once more at the code-final head `4677bd4` with the
-command and exit code pasted beside the table. Identical output every time: this PR
+ports at `9ded7ed`, at `24a7777`, at `4677bd4`, and once more at the code-final head
+`b878660` with the command and exit code pasted beside the table. Identical output every time: this PR
 changes nothing on the transport frame, redaction included, because an `ApiException` is
 narrowed off before it.
 
