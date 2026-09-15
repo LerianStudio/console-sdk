@@ -111,12 +111,12 @@ JSON bodies. Every one of the six already produced a string:
 | 400, body classifying nothing | BadRequest (400) | `string` | `Upstream error body carried no problem details (status 400)` |
 
 That table was the one measurement block in this file with no command and no exit code.
-Re-run at the code-final head `712f004` (`2026-09-15 17:55:41 UTC`), six real sockets on
+Re-run at the code-final head `2f8936e` (`2026-09-15 18:04:53 UTC`), six real sockets on
 ephemeral loopback ports, harness at `/tmp/rv-sdkerr-sockets/probe.cjs` driving the built
 `dist` through a concrete `HttpService`. An earlier version of this paragraph named the
 previous pass's last CI commit, two changes below the shipping filter, so a negative claim
 the whole change rests on was labelled as re-run against code that had since been
-rewritten. The code-final head in this document is `712f004`, and every claim that has to
+rewritten. The code-final head in this document is `2f8936e`, and every claim that has to
 hold AT it was re-taken there: this socket table, the per-route and trap measurements, the
 eight gates and the mutants. A RED block belongs to the pass that produced it and names its
 own head, because a RED cannot be re-taken later without becoming a different measurement.
@@ -331,6 +331,31 @@ All three are cut at `MESSAGE_MAX_LENGTH`, the same 2000 characters a message is
 elsewhere in the package. There is no `stack` field: rendering an `Error` prints its stack,
 inside that bound.
 
+**The typed branch answers a string now too, which was the last shape defect in this
+file.** `ApiException`'s constructor produces a sentence, so the filter answered
+`exception.message` untouched, and that was the one place left trusting the value it was
+handed. `Error.message` is a writable property. Reassigned after construction, whatever it
+became went to the browser: measured on a 404, `e.message = { title: 'Gateway Timeout',
+detail: 'cpf 123.456.789-00' }` answered
+`{"message":{"title":"Gateway Timeout","detail":"cpf 123.456.789-00"}}`, an OBJECT under a
+field documented as a sentence with a taxpayer id inside it, and `e.message = undefined`
+answered `{}`, no field at all. Those are the two defects this lane was opened on, the
+object body and the missing field, surviving on the branch the lane narrowed off.
+
+A non-string is now replaced with `noProblemDetails(status)`, the constructor's OWN
+fallback, which names the real status. Deliberately not `UNCLASSIFIED`: a 404 reading
+`Internal server error` is the defect `names the real status when the message is empty`
+exists to prevent, and M18 is the mutant that stops this branch reintroducing it one
+mutation over. An empty string IS a string and passes through unchanged, so the pin from
+the previous commit still reads `{ message: '' }`, and M14, which restores the pre-PR
+`|| UNCLASSIFIED`, still kills.
+
+Found by CodeRabbit on this branch and verified against the code before being fixed. The
+reachability is the same thin one as the empty string, a post-construction mutation, and
+the answer is different because the OUTCOME is different: an empty sentence is a bad
+sentence, an object is not a sentence at all, and this file's whole claim is about the
+type.
+
 **And the record is written as JSON, on ONE physical line, which is the last defect this
 lane found in it.** Handing `console.error` a record OBJECT does not produce one line, and
 no option on our own `inspect` call can make it: Node renders a second argument with its
@@ -376,7 +401,7 @@ this lane opened on, reachable again through the line that was supposed to be th
 closes the getter and any proxy trap, and still writes `{ name: typeof exception }`, because
 a 500 with no log line is what moving the text there was meant to prevent.
 
-Measured at the code-final head `712f004`, four booby-trapped values plus the empty-message
+Measured at the code-final head `2f8936e`, four booby-trapped values plus the empty-message
 shape through the real filter, each answering a body and writing exactly one call on
 exactly one physical line. `physical_lines` is the count for the line `util.format` hands
 the stream, and `record` its byte count with the stack included rather than elided:
@@ -395,7 +420,7 @@ The same five at the previous head `1b0218d`, which is what the one-line rule bo
 bytes. Only the trap whose record is `{ name }` alone was ever short enough to survive
 Node's own `breakLength: 128`.
 
-Measured at the code-final head `712f004` through the REAL pipeline (`app.handler`,
+Measured at the code-final head `2f8936e` through the REAL pipeline (`app.handler`,
 the package's own e2e app, `dist` rebuilt), one row per throwing route, body read off the
 real `Response` and the `console.error` arguments formatted the way Node formats them. The
 `bytes` figure is the whole line INCLUDING any stack, not a harness-elided one, and
@@ -522,7 +547,7 @@ The filter's status line lost a second operand that could never be false:
 over from when `exception` was untyped and it did real work.
 
 **And a pull request now RUNS those e2e cases.** It did not. `jest.config.ts` ignores
-`<rootDir>/test`, so the package's `npm test` (38 suites, 869 tests) excludes every case
+`<rootDir>/test`, so the package's `npm test` (38 suites, 873 tests) excludes every case
 that reads a real `Response`, and `ci.yml` had only lint, test and build. The e2e suite
 ran solely in `release.yml`, AFTER merge, where a red job blocks a publish instead of a
 merge and the offending commit has to be reverted off `develop`. `ci.yml` gained a
@@ -556,12 +581,13 @@ says the session expired, a 404 still names what was not found, a 422 still list
 failed validation". The first two halves are right. The third is wrong twice over, and it
 is the sentence a consumer reads before accepting a breaking release.
 
-Measured at `4677bd4` (`2026-09-15 16:39:00 UTC`) by driving the REAL `BaseExceptionFilter`
-with real exception instances and reading the real `Response` body, and still exact at the
-code-final head `712f004`: the only executable change between the two is the log write,
-with the `ApiException` branch byte-identical (`git diff 4677bd4 712f004` over the filter,
-comments stripped, touches nothing else). Zero log lines were written on this branch, which
-is the other half of the narrowing:
+Re-measured at the code-final head `2f8936e` (`2026-09-15 18:05:39 UTC`) by driving the
+REAL `BaseExceptionFilter` with real exception instances and reading the real `Response`
+body, byte for byte what it printed at `4677bd4`. Re-taken rather than reasoned about,
+because this pass DID change the `ApiException` branch: a message that is not a string is
+now replaced. Every row below carries a string message from its constructor, so none of
+them reaches that arm, and the run is what says so. Zero log lines were written on this
+branch, which is the other half of the narrowing:
 
 ```
 ValidationApiException               -> 400 {"message":"Validation failed"}
@@ -702,17 +728,25 @@ remembering to write a catch-all filter is not a safe library.
    `customInspect: false`, with three cases and three mutants (M10, M11, M12). Recorded here
    because the reversal is the point: one trap read as a curiosity, two read as a hole.
 6. **A mutated `ApiException` answers a blank message.** The filter answers
-   `exception.message` with no fallback of its own, so `e.message = ''` assigned after
-   construction reads back `404 {"message":""}`, which a UI renders as empty rather than as
-   a sentence. Pinned, not fixed, and the reason is that the constructor makes it
-   unreachable: every message goes through `toProblemMessage`, which substitutes a sentence
-   naming the status. Restoring `|| UNCLASSIFIED` is one token and it is a product call,
-   not a defect to close quietly, because it puts a branch back for a state this package
-   cannot produce. The pin and M14 are what make either choice visible.
+   `exception.message` when it is a string, with no emptiness fallback of its own, so
+   `e.message = ''` assigned after construction reads back `404 {"message":""}`, which a UI
+   renders as empty rather than as a sentence. Pinned, not fixed, and the reason is that
+   the constructor makes it unreachable: every message goes through `toProblemMessage`,
+   which substitutes a sentence naming the status. Restoring `|| UNCLASSIFIED` is one token
+   and it is a product call, not a defect to close quietly, because it puts a branch back
+   for a state this package cannot produce. The pin and M14 are what make either choice
+   visible.
+
+   The SHAPE half of the same mutation was fixed rather than pinned, and the split is
+   deliberate. A non-string message put an object on the wire under a field documented as a
+   sentence, which is the defect this lane exists to close and which falsifies the headline
+   claim outright, so it is replaced with the constructor's own fallback. An empty string
+   keeps the type promise and only reads badly, which is a judgement about copy rather than
+   about a contract.
 
 ## Verification
 
-Eight gates at `712f004`, the code-final head: four at the package level and four at
+Eight gates at `2f8936e`, the code-final head: four at the package level and four at
 the monorepo root through turbo, counted against the block below rather than asserted. The
 two CI-job arms under it are a ninth and tenth invocation of one of those eight, pinned
 separately because the job's filter argument is what they check. Tree clean
@@ -722,7 +756,7 @@ separately because the job's filter argument is what they check. Tree clean
 $ cd packages/sindarian-server && npm test
 rc=0
 Test Suites: 38 passed, 38 total
-Tests:       869 passed, 869 total
+Tests:       873 passed, 873 total
 
 $ cd packages/sindarian-server && npm run test:e2e
 rc=0
@@ -821,8 +855,65 @@ below, which is the only honest form of evidence available for a reduction whose
 claim is that nothing could tell it apart.
 
 The RED re-taken AT the code-final head is M16, which restores the record as an object and
-changes nothing else: `unit rc=1, 16 failed / 17 passed; e2e rc=1, 4 failed / 25 passed`,
-the same counts and the same case names as the RED above, at `712f004`.
+changes nothing else: `unit rc=1, 16 failed / 21 passed; e2e rc=1, 4 failed / 25 passed`,
+the same sixteen and the same four case names as the RED above, at `2f8936e`.
+
+### RED before GREEN, a typed exception's message is a string
+
+The last change of this pass, found by CodeRabbit and verified against the code before
+being fixed. Assertions first, source untouched. Header at the RED: `2026-09-15 18:00:56
+UTC`, `HEAD b5cc94a`, `git status --porcelain` =
+
+```
+ M packages/sindarian-server/src/exceptions/base-exception-filter.test.ts
+```
+
+```
+$ cd packages/sindarian-server && npx jest src/exceptions/base-exception-filter.test.ts
+rc=1
+Tests:       4 failed, 33 passed, 37 total
+  ● names the real status for an upstream problem object
+    Expected: "string"   Received: "object"
+  ● names the real status for a number
+    Expected: "string"   Received: "number"
+  ● names the real status for undefined
+    Expected: "string"   Received: "undefined"
+  ● names the real status for null
+    Expected: "string"   Received: "object"
+```
+
+GREEN after the guard, `2026-09-15 18:01:20 UTC`, same HEAD, the filter modified too:
+
+```
+$ cd packages/sindarian-server && npx jest src/exceptions/base-exception-filter.test.ts
+rc=0
+Tests:       37 passed, 37 total
+```
+
+And the same five inputs through the real filter, reading the real `Response`, before and
+after. Before, at `b5cc94a`:
+
+```
+message = "" (the pinned case)   -> 404 {"message":""}  typeof message = string
+message = { title, detail }      -> 404 {"message":{"title":"Gateway Timeout","detail":"cpf 123.456.789-00"}}  typeof message = object
+message = 42                     -> 404 {"message":42}  typeof message = number
+message = undefined              -> 404 {}  typeof message = undefined
+message = null                   -> 404 {"message":null}  typeof message = object
+```
+
+After, at the code-final head `2f8936e`:
+
+```
+message = "" (the pinned case)   -> 404 {"message":""}  typeof message = string
+message = { title, detail }      -> 404 {"message":"Upstream error body carried no problem details (status 404)"}  typeof message = string
+message = 42                     -> 404 {"message":"Upstream error body carried no problem details (status 404)"}  typeof message = string
+message = undefined              -> 404 {"message":"Upstream error body carried no problem details (status 404)"}  typeof message = string
+message = null                   -> 404 {"message":"Upstream error body carried no problem details (status 404)"}  typeof message = string
+```
+
+The taxpayer id and the upstream's `title` are gone from the body, the field is never
+missing, the status is named rather than overwritten with a 500 sentence, and the pinned
+empty string is untouched.
 
 ### RED before GREEN, rebuilding the log record
 
@@ -1157,9 +1248,11 @@ Tests:       39 passed, 39 total
 M1 to M12 were applied at `4677bd4`, `dist` rebuilt, run, then reverted with
 `git checkout -- <file>`, with `git status --porcelain` verified empty after every revert
 (`clean-after-Mn=0` printed each time), `2026-09-15 16:33:53 UTC` onward. M13 to M16 were
-applied the same way at the code-final head `712f004`, `2026-09-15 17:53:28 UTC` onward,
+applied the same way at the code-final head `2f8936e`, `2026-09-15 18:02:18 UTC` onward,
 each reverted with `git checkout -- <file>` and `clean-after-Mn=0` printed. Unit counts are
-out of 29 for M1 to M12 and out of 33 for M13 to M16; e2e is out of 29 throughout.
+out of 29 for M1 to M12 and out of 37 for M13 to M18; e2e is out of 29 throughout. M13 to
+M16 were run twice, once at `712f004` and again here with identical results, because the
+`ApiException` fix moved the head under them.
 
 The whole table was re-measured at this head rather than carried over, because the filter
 was rewritten under it twice. A review of the previous table reproduced every row except
@@ -1183,7 +1276,9 @@ described; M4 below is the mutation as written, with the numbers it actually pri
 | M13 | `compact: true` dropped from the render, so the value breaks at three levels deep again | unit rc=1, **1 failed** / 32 passed: `writes a three-level upstream body on one line`; e2e rc=0, 29 passed |
 | M14 | the pre-PR `ApiException` fallback restored (`exception.message \|\| UNCLASSIFIED`), i.e. the previous version of this branch | unit rc=1, **1 failed** / 32 passed: `answers the message it was given, even a mutated empty one`; e2e rc=0, 29 passed |
 | M15 | the narrowing duck-typed (`instanceof ApiException \|\| typeof exception?.getStatus === 'function'`) | unit rc=1, **1 failed** / 32 passed: `answers 500 for a value that only looks like an ApiException`; e2e rc=1, **1 failed** / 28 passed: `answers 500 for a plain HttpException, and redacts it too` |
-| M16 | the record handed to `console.error` as an OBJECT again, i.e. the previous version of this branch | unit rc=1, **16 failed** / 17 passed; e2e rc=1, **4 failed** / 25 passed |
+| M16 | the record handed to `console.error` as an OBJECT again, i.e. the previous version of this branch | unit rc=1, **16 failed** / 21 passed; e2e rc=1, **4 failed** / 25 passed |
+| M17 | the string guard removed from the `ApiException` branch (`{ message: exception.message }`), i.e. the previous version of this branch | unit rc=1, **4 failed** / 33 passed, one per non-string shape; e2e rc=0, 29 passed |
+| M18 | the guard's fallback as `UNCLASSIFIED` instead of `noProblemDetails(status)`, so a 404 says `Internal server error` | unit rc=1, **4 failed** / 33 passed; e2e rc=0, 29 passed |
 
 M1 and M6 are the first pair, the two halves of one narrowing: M1 is the text reaching the
 wire, M6 is the text reaching nothing at all. M7, M8 and M9 are the log record's three, one
@@ -1198,6 +1293,11 @@ worth saying plainly: with the record serialised as JSON, a value broken over th
 is still ONE physical line, its breaks carried as escapes. Dropping `compact: true` costs
 readability inside the record, not the line, so the only assertion that can see it is the
 one reading `value` itself.
+
+M17 and M18 are the `ApiException` branch's two halves: M17 is a non-string message
+reaching the browser as it was, M18 is the replacement naming the wrong status. Both kill
+on the unit side only, because the e2e app's routes throw values a constructor never saw
+and no e2e route mutates a typed exception.
 
 M14 and M15 are pins for two reductions this branch made and argued in comments rather than
 measured. M14 is the `ApiException` message fallback: the reduction is unreachable through
@@ -1239,7 +1339,7 @@ VERDICT: every value passing `instanceof ApiException` has a truthy getStatus: t
 
 The socket measurement in the table above ran under `unshare -rn` on ephemeral loopback
 ports at `9ded7ed`, at `24a7777`, at `4677bd4`, and once more at the code-final head
-`712f004` with the command and exit code pasted beside the table. Identical output every time: this PR
+`2f8936e` with the command and exit code pasted beside the table. Identical output every time: this PR
 changes nothing on the transport frame, redaction included, because an `ApiException` is
 narrowed off before it.
 
