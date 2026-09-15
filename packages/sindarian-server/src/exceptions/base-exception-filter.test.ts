@@ -95,6 +95,33 @@ describe('BaseExceptionFilter', () => {
     )
   })
 
+  // What the ApiException branch answers when the message is falsy, which this
+  // pass reduced to a bare `exception.message` with no fallback of its own.
+  // Measured rather than argued: the previous head answered
+  // `{"message":"Internal server error"}` for this input and no case in the
+  // suite could tell the two apart, so the reduction shipped unpinned.
+  //
+  // The constructor cannot produce this. `api-exception.ts` runs every message
+  // through `toProblemMessage`, which substitutes a sentence naming the status,
+  // and the case above pins that. Only a post-construction mutation reaches
+  // here, and what it answers is the empty string it was given.
+  it('answers the message it was given, even a mutated empty one', async () => {
+    const exception = new ApiException(
+      '0003',
+      'Not Found',
+      'Ledger not found',
+      HttpStatus.NOT_FOUND
+    )
+    exception.message = ''
+
+    await filter.catch(exception)
+
+    expect(mockNextResponse.json).toHaveBeenCalledWith(
+      { message: '' },
+      { status: 404 }
+    )
+  })
+
   // The shape of an ordinary rethrow in a TypeScript route:
   // `catch (e) { throw { message: e.message } }`, or an upstream problem body
   // whose `message` is already a sentence. It is not an `Error`, so a
@@ -449,14 +476,27 @@ describe('BaseExceptionFilter', () => {
     })
   })
 
-  it('should return the NextResponse from NextResponse.json', async () => {
-    const mockResponse = { status: 400, statusText: 'Bad Request' }
-    mockNextResponse.json.mockReturnValue(mockResponse as any)
+  // Was named for `NextResponse.json`'s return value and asserted only that the
+  // filter hands it back, which is mock plumbing: that assertion holds whatever
+  // body, status or code the filter passed, so it read as coverage of a 400
+  // path this filter cannot produce. Return propagation is proved for real in
+  // the e2e suite, which reads a Response instead of a mock.
+  //
+  // What IS worth pinning is the `getStatus` stub the old name pointed at. The
+  // narrowing above is `instanceof ApiException`, not a duck-type, so a plain
+  // object carrying a `getStatus` method is still an unexpected error: the stub
+  // is never called and the answer is 500 with the constant body, not the 400
+  // the stub would have given.
+  it('answers 500 for a value that only looks like an ApiException', async () => {
+    const getStatus = jest.fn(() => 400)
 
-    const exception = { message: 'Test', getStatus: () => 400 }
-    const result = await filter.catch(exception)
+    await filter.catch({ message: 'Test', getStatus })
 
-    expect(result).toBe(mockResponse)
+    expect(mockNextResponse.json).toHaveBeenCalledWith(
+      { message: 'Internal server error', code: '0004' },
+      { status: 500 }
+    )
+    expect(getStatus).not.toHaveBeenCalled()
   })
 
   it('should handle ApiException with custom status codes', async () => {

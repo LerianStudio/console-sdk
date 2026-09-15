@@ -87,14 +87,17 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // be missing, so the second operand only invited a defensive branch for a
     // state that cannot occur.
     //
-    // No `toProblemMessage` either. The constructor already ran the message
-    // through it (`api-exception.ts`), so by the time the filter sees one it is
-    // a non-empty string under 2000 characters and a second call is the
-    // identity function. Measured before removing it: this line as
-    // `{ message: exception.message }`, and as the literal pre-PR
-    // `{ message: exception.message || UNCLASSIFIED }`, each gave 21/21 unit
-    // and 28/28 e2e. Nothing could tell the three apart, which is what an
-    // inert reduction looks like from the outside.
+    // No `toProblemMessage` and no `|| UNCLASSIFIED` either. The constructor
+    // already ran the message through it (`api-exception.ts`), so by the time
+    // the filter sees one it is a non-empty string under 2000 characters, and
+    // both a second call and a falsy fallback are unreachable through the
+    // constructor.
+    //
+    // Unreachable is not the same as equivalent, so what the reduction answers
+    // is pinned rather than argued: `answers the message it was given, even a
+    // mutated empty one` mutates `.message` to `''` after construction and
+    // reads back `{ message: '' }` at 404. Restoring the fallback turns that
+    // case red, which is the only way the difference is visible at all.
     if (exception instanceof ApiException) {
       return NextResponse.json(
         { message: exception.message },
