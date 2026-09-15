@@ -8,15 +8,17 @@ import {
 /**
  * A route may throw anything, not only an ApiException.
  *
- * The first four shapes are what actually reached the default exception filter
- * in production code and left the response body without a readable `message`.
- * They exist so the e2e suite reads a REAL Response, built by a real
- * NextResponse: the filter's own unit tests mock `NextResponse.json`, so they
- * can assert the arguments and never the body a caller parses.
+ * Every shape here is an unexpected error, and every one of them answers the
+ * same body. They exist so the e2e suite reads a REAL Response, built by a
+ * real NextResponse: the filter's own unit tests mock `NextResponse.json`, so
+ * they can assert the arguments and never the body a caller parses.
  *
- * The last two are the unexpected errors: a bare `Error` and a plain
- * `HttpException`. Neither puts its own text on the wire any more. See the
- * spec's second describe block.
+ * The shapes are the ones that actually reached the default exception filter
+ * in production code. Two of them carry the same internal host, port and
+ * taxpayer id under different shapes, `errorlike` and `error`, so the suite
+ * can assert that the thrown shape decides nothing a caller reads. The last
+ * one, a plain `HttpException`, additionally pins a status defect that stays
+ * open.
  */
 @Controller('/throwing')
 export class ThrowingController {
@@ -31,10 +33,28 @@ export class ThrowingController {
     }
   }
 
+  /**
+   * An upstream problem body whose `message` is already a sentence, which is
+   * also what `catch (e) { throw { message: e.message } }` produces.
+   *
+   * It carries the same internal host, port and taxpayer id as the `error`
+   * route below, and it is NOT an `Error`, so a redaction keyed off
+   * `instanceof Error` answered the generic sentence for one of these two and
+   * handed the browser the connection string for the other.
+   */
+  @Get('errorlike')
+  public errorlike(): never {
+    throw {
+      message:
+        'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00',
+      code: 'ECONNREFUSED'
+    }
+  }
+
   /** A value with nothing under `message` at all. */
   @Get('no-message')
   public noMessage(): never {
-    throw { code: 'E_NOPE' }
+    throw { code: 'E_NOPE', detail: 'timed out at db-primary.internal:8080' }
   }
 
   /** A bare string, which carries no `message` property. */

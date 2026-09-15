@@ -14,16 +14,26 @@ const mockNextResponse = NextResponse as jest.Mocked<typeof NextResponse>
 
 describe('BaseExceptionFilter', () => {
   let filter: BaseExceptionFilter
+  let consoleError: jest.SpyInstance
 
   beforeEach(() => {
     filter = new BaseExceptionFilter()
     jest.clearAllMocks()
+
+    // Hoisted, because every value that is not an ApiException now writes one
+    // line here, not only an Error. Without the spy these cases print the log
+    // of every shape they throw.
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
 
     // Mock NextResponse.json to return a mock response
     mockNextResponse.json.mockReturnValue({
       status: 500,
       statusText: 'Internal Server Error'
     } as any)
+  })
+
+  afterEach(() => {
+    consoleError.mockRestore()
   })
 
   it('should handle ApiException with getStatus method', async () => {
@@ -50,7 +60,7 @@ describe('BaseExceptionFilter', () => {
     await filter.catch(exception)
 
     expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: 'Test error message', code: '0004' },
+      { message: 'Internal server error', code: '0004' },
       { status: 500 }
     )
   })
@@ -79,16 +89,25 @@ describe('BaseExceptionFilter', () => {
     )
   })
 
+  // The shape of an ordinary rethrow in a TypeScript route:
+  // `catch (e) { throw { message: e.message } }`, or an upstream problem body
+  // whose `message` is already a sentence. It is not an `Error`, so a
+  // redaction keyed off `instanceof Error` let its text through, and this case
+  // asserted that it did.
   it('should handle non-ApiException', async () => {
     const exception = {
-      message: 'Non-API error'
+      message:
+        'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00'
     }
 
     await filter.catch(exception)
 
     expect(mockNextResponse.json).toHaveBeenCalledWith(
-      { message: 'Non-API error', code: '0004' },
+      { message: 'Internal server error', code: '0004' },
       { status: 500 }
+    )
+    expect(JSON.stringify(mockNextResponse.json.mock.calls)).not.toContain(
+      '123.456.789-00'
     )
   })
 
@@ -98,6 +117,12 @@ describe('BaseExceptionFilter', () => {
   // that classifies a failure with string methods, which is every Console
   // route reading `error.message`, got a dead branch and answered a 500, and
   // an object landed in the browser under a field documented as a sentence.
+  //
+  // Every case below throws a DIFFERENT shape and asserts the SAME body. That
+  // is the rule: past the ApiException narrowing, the thrown shape decides
+  // nothing a caller can read. The cases stay one per shape because the shapes
+  // are what a route actually throws, and a rule is only pinned where it can
+  // be broken one shape at a time.
   describe('the body always carries a string message', () => {
     const messageOf = () => mockNextResponse.json.mock.calls[0][0] as any
 
@@ -119,7 +144,7 @@ describe('BaseExceptionFilter', () => {
       )
     })
 
-    it('reduces an object message that classifies nothing', async () => {
+    it('names a fallback for an object message that classifies nothing', async () => {
       await filter.catch({
         message: { error: 'Complex error', details: ['detail1', 'detail2'] }
       })
@@ -131,11 +156,14 @@ describe('BaseExceptionFilter', () => {
       )
     })
 
-    // Same reduction the exception constructor already does one frame down:
-    // an upstream problem body classifies in `title` and `code`, and
-    // describes in `detail` and `errors[]`, which carry the caller's own
-    // rejected values and never leave the upstream.
-    it('reduces an object message to its classification only', async () => {
+    // The transport keeps an upstream's `title` because the transport knows it
+    // called an upstream and answers a typed exception for it. This frame does
+    // not: past the narrowing above, a `title` is a word some other system
+    // wrote about a failure this library could not classify, and passing it on
+    // under the code that means UNCLASSIFIED is what made the code unreadable.
+    // A caller reading `0004` can now trust that the sentence beside it is
+    // ours.
+    it('keeps no part of an upstream classification', async () => {
       await filter.catch({
         message: {
           title: 'Gateway Timeout',
@@ -143,7 +171,8 @@ describe('BaseExceptionFilter', () => {
         }
       })
 
-      expect(messageOf().message).toBe('Gateway Timeout')
+      expect(messageOf().message).toBe('Internal server error')
+      expect(JSON.stringify(messageOf())).not.toContain('Gateway Timeout')
       expect(JSON.stringify(messageOf())).not.toContain('123.456.789-00')
       expect(JSON.stringify(messageOf())).not.toContain('db-primary.internal')
     })
@@ -171,29 +200,27 @@ describe('BaseExceptionFilter', () => {
       )
     })
 
-    // The ApiException branch has been bounded since the message stopped
-    // being the upstream body; this branch serialised whatever it was handed.
-    it('caps an unbounded message', async () => {
+    // Length was the only thing that ever stood between an untyped message and
+    // the browser, and a 2000-character cap is not a redaction: the host, the
+    // port and the taxpayer id are in the first eighty. The cap is gone from
+    // this branch because the text is.
+    it('drops an unbounded message rather than capping it', async () => {
       await filter.catch({ message: 'x'.repeat(5000) })
 
-      expect(messageOf().message).toHaveLength(2000)
+      expect(messageOf().message).toBe('Internal server error')
     })
   })
 
   // What a route threw that this library does not model. Its text is the
   // failure's own words and it used to be the response body; it is now the log
   // line, and the caller is told only that the failure was not classified.
+  //
+  // The log line is the half that is easy to get wrong, because nothing a
+  // caller can see goes red when it is missing. An `Error` was the only shape
+  // that wrote one, so an operator paged on a spike of 500s had no host, no
+  // taxpayer id and no line to grep for every other shape, and the response no
+  // longer carried them either: the text was not redacted, it was deleted.
   describe('an unexpected error', () => {
-    let consoleError: jest.SpyInstance
-
-    beforeEach(() => {
-      consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
-    })
-
-    afterEach(() => {
-      consoleError.mockRestore()
-    })
-
     it('answers the generic sentence and the code, never the Error text', async () => {
       await filter.catch(new Error('connect ECONNREFUSED 10.0.0.5:8080'))
 
@@ -212,6 +239,58 @@ describe('BaseExceptionFilter', () => {
         name: 'Error',
         message: 'connect ECONNREFUSED 10.0.0.5:8080',
         stack: exception.stack
+      })
+    })
+
+    it('writes the text of a thrown object that is not an Error', async () => {
+      await filter.catch({
+        message: 'connect ECONNREFUSED 10.0.0.5:8080',
+        code: 'ECONNREFUSED'
+      })
+
+      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
+        name: 'object',
+        message: 'connect ECONNREFUSED 10.0.0.5:8080',
+        stack: undefined
+      })
+    })
+
+    // The upstream body a route rethrew has no `message` at all. It is handed
+    // over whole rather than stringified, because `String({...})` is
+    // `[object Object]` and the fields ARE the incident: this is the only copy
+    // left once the response stopped carrying them.
+    it('writes a thrown value that has no message at all', async () => {
+      const exception = { code: 'E_NOPE', detail: 'timed out at db-primary' }
+
+      await filter.catch(exception)
+
+      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
+        name: 'object',
+        message: exception,
+        stack: undefined
+      })
+    })
+
+    it('writes a thrown string', async () => {
+      await filter.catch('payment gateway rejected the settlement')
+
+      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
+        name: 'string',
+        message: 'payment gateway rejected the settlement',
+        stack: undefined
+      })
+    })
+
+    // A line even here, so a 500 in the log is never a 500 with no line. The
+    // reads are all optional: a filter that throws while handling a throw
+    // escapes the pipeline and the route answers no body at all.
+    it('writes a line for a thrown null without throwing', async () => {
+      await expect(filter.catch(null)).resolves.toBeDefined()
+
+      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
+        name: 'object',
+        message: null,
+        stack: undefined
       })
     })
 

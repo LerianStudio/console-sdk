@@ -22,17 +22,59 @@ const get = async (path: string) => {
   return { response, body: await response.json() }
 }
 
+/**
+ * Hoisted over both blocks below, because the log half of the rule is asserted
+ * in both: every shape that reaches this filter writes one line, and a shape
+ * that writes none has had its text deleted rather than moved.
+ */
+let consoleError: jest.SpyInstance
+
+beforeEach(() => {
+  consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+})
+
+afterEach(() => {
+  consoleError.mockRestore()
+})
+
+const logged = () => JSON.stringify(consoleError.mock.calls)
+
 describe('Whatever a route throws, the body carries a string message', () => {
   jest.setTimeout(10000)
 
-  it('reduces an upstream problem object to its classification', async () => {
+  it('keeps no part of an upstream problem object', async () => {
     const { response, body } = await get('object')
 
     expect(response.status).toBe(500)
     expect(typeof body.message).toBe('string')
-    expect(body.message).toBe('Gateway Timeout')
+    expect(body.message).toBe('Internal server error')
+    expect(body.code).toBe('0004')
+    expect(JSON.stringify(body)).not.toContain('Gateway Timeout')
     expect(JSON.stringify(body)).not.toContain('123.456.789-00')
     expect(JSON.stringify(body)).not.toContain('db-primary.internal')
+
+    expect(logged()).toContain('Gateway Timeout')
+    expect(logged()).toContain('123.456.789-00')
+  })
+
+  // The ordinary rethrow in a TypeScript route, and the shape that survived
+  // the first version of this redaction: not an `Error`, so a redaction keyed
+  // off `instanceof Error` handed the browser its text. Byte for byte the same
+  // text as the `error` route below, which was already redacted, so the pair
+  // reads as one rule rather than two.
+  it('keeps no part of a thrown object whose message is a string', async () => {
+    const { response, body } = await get('errorlike')
+
+    expect(response.status).toBe(500)
+    expect(body.message).toBe('Internal server error')
+    expect(body.code).toBe('0004')
+    expect(JSON.stringify(body)).not.toContain('db-primary.internal')
+    expect(JSON.stringify(body)).not.toContain('8080')
+    expect(JSON.stringify(body)).not.toContain('123.456.789-00')
+
+    expect(logged()).toContain(
+      'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00'
+    )
   })
 
   it('names a sentence when the thrown value has no message', async () => {
@@ -42,6 +84,8 @@ describe('Whatever a route throws, the body carries a string message', () => {
     expect(typeof body.message).toBe('string')
     expect(body.message).toBe('Internal server error')
     expect(body.code).toBe('0004')
+
+    expect(logged()).toContain('E_NOPE')
   })
 
   it('names a sentence for a thrown string', async () => {
@@ -50,6 +94,8 @@ describe('Whatever a route throws, the body carries a string message', () => {
     expect(response.status).toBe(500)
     expect(typeof body.message).toBe('string')
     expect(body.message).toBe('Internal server error')
+
+    expect(logged()).toContain('something went wrong')
   })
 
   // `throw null` used to make the filter throw while handling the throw, and a
@@ -64,34 +110,27 @@ describe('Whatever a route throws, the body carries a string message', () => {
     expect(response.headers.get('content-type')).toContain('application/json')
     expect(typeof body.message).toBe('string')
     expect(body.message).toBe('Internal server error')
+
+    expect(logged()).toContain('Unhandled exception')
   })
 })
 
 /**
  * An unexpected error is anything a route threw that this library does not
- * model: a bare `Error`, or a plain `HttpException`. Its text is the failure's
- * own words, whatever the throw site interpolated into them, and it used to
- * reach the browser verbatim: below, an internal host and port and a taxpayer
- * id.
+ * model, with no exception: an `Error`, a plain `HttpException`, an object
+ * carrying a string `message`, an upstream problem body, a string, a `null`.
+ * Its text is the failure's own words, whatever the throw site interpolated
+ * into them, and it used to reach the browser verbatim: below, an internal
+ * host and port and a taxpayer id.
  *
  * It now answers the generic sentence and the code, and the words go to the
  * server log instead, the way `HttpService` already writes an upstream
- * failure. The route above throws the SAME two values as a problem object and
- * they are stripped there too, which is the point of keeping the pair: the
- * shape a route happens to throw no longer decides whether a caller reads the
- * failure's own words.
+ * failure. The block above throws the SAME values under four different shapes
+ * and reads the same body back from every one, which is the point of keeping
+ * them together: the shape a route happens to throw no longer decides whether
+ * a caller reads the failure's own words.
  */
 describe('An unexpected error answers a generic body, never its own text', () => {
-  let consoleError: jest.SpyInstance
-
-  beforeEach(() => {
-    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
-  })
-
-  afterEach(() => {
-    consoleError.mockRestore()
-  })
-
   it('redacts a thrown Error, host, port and taxpayer id', async () => {
     const { response, body } = await get('error')
 
