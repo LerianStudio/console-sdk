@@ -1,8 +1,6 @@
 import { HttpStatus } from '@/constants/http-status'
 import {
   noProblemDetails,
-  readWireMessage,
-  readWireStatus,
   toProblemMessage
 } from '@/utils/error/to-problem-message'
 import { HttpException } from './http-exception'
@@ -39,21 +37,26 @@ export class ApiException extends HttpException {
    * contract.
    */
   /**
-   * `message` is read through `readWireMessage` rather than taken, because the
-   * constructor is not the only writer: `Error.message` is a writable property
-   * and a route that sets one after construction bypasses the reduction above.
-   * An application that renders this body itself - Console spreads it into its
-   * own envelope - was the caller still receiving an upstream object, a
-   * missing field, or five megabytes under a field this file documents as a
-   * string. The exception filter reads a message through the same function,
-   * which is why there is one and not two.
+   * `message` comes from the base class rather than being read again here.
+   *
+   * `HttpException.getResponse()` reads it through `readWireMessage`, because
+   * the constructor is not the only writer: `Error.message` is a writable
+   * property and a route that sets one after construction bypasses the
+   * reduction above. An application that renders this body itself, Console
+   * spreads it into its own envelope, was the caller still receiving an
+   * upstream object, a missing field, or five megabytes under a field this
+   * file documents as a string.
+   *
+   * Spreading the base class last is also what keeps metadata UNDER the named
+   * fields: a caller passing a `message` key cannot put back the object the
+   * constructor just reduced to a sentence.
    */
   getResponse() {
     return {
       ...this.metadata,
       code: this.code,
       title: this.title,
-      message: readWireMessage(this, noProblemDetails(readWireStatus(this)))
+      ...super.getResponse()
     }
   }
 }

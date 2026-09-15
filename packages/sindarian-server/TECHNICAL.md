@@ -178,10 +178,14 @@ The framework processes parameters through a multi-stage pipeline:
 
 #### Exception Hierarchy
 ```typescript
-// Base exception class
+// Base exception class. `getResponse()` reads the message off the exception
+// rather than taking it, because `Error.message` is writable: what a route
+// wrote after construction is bounded and reduced to a sentence here, at the
+// last frame before an application renders it
 export class HttpException extends Error {
   constructor(message: string, status?: number)
   getStatus(): number
+  getResponse(): { message: string }
 }
 
 // Adds the classification a caller reads, and coerces the message to a
@@ -207,7 +211,7 @@ export abstract class ExceptionFilter {
 - Answers anything else, an unexpected error, with `500 {"message":"Internal server error","code":"0004"}`: the thrown value's own text never reaches the response, and a status it carried of its own is not read (a plain `HttpException` is answered 500)
 - Writes the thrown value to the operator log at error level instead, as ONE physical line: the label `Unhandled exception` followed by `{ name, message, value }` serialised as JSON, every string bounded at 2000 characters. The transport's two failure logs, `Request failed` and `Request error`, are written the same way, so a line-oriented collector receives one parseable event per failure
 - **The record is unredacted.** It carries the whole thrown value within that bound, so a route that rethrows an upstream body puts that body, taxpayer ids and internal hosts included, into the operator log. This package redacts nothing there on purpose: it is the last remaining copy of what broke, and a projection would have to guess which key holds the incident. Redaction is the log pipeline's job. The cheaper fix is at the throw site: name what failed, not whose record it was
-- Answers an `ApiException` whose `message` was written after construction with the status-specific fallback sentence the constructor substitutes for a body that classifies nothing (`Upstream error body carried no problem details (status 404)`), never with the object, the missing field or the megabyte it was given. A message that IS a string is still the one the caller is told, bounded at 2000 characters. `ApiException.getResponse()` reads its message through the same function, so an application rendering its own envelope gets the same guarantee
+- Answers an `ApiException` whose `message` was written after construction with the status-specific fallback sentence the constructor substitutes for a body that classifies nothing (`Upstream error body carried no problem details (status 404)`), never with the object, the missing field or the megabyte it was given. A message that IS a string is still the one the caller is told, bounded at 2000 characters. The same read happens on `HttpException.getResponse()`, which `ApiException` inherits rather than repeating, so an application rendering its own envelope gets the same guarantee from a plain `HttpException` and from every typed subclass
 - Reads the status the same way: a `getStatus()` that throws, or that returns a status no response can carry a BODY with, answers 500 rather than taking the route's whole response down. Two sets of those, and neither is exotic: anything outside 200 to 599, which the runtime refuses with a `RangeError`, and the null-body statuses 204, 205 and 304, which it accepts as statuses and refuses with a `TypeError` the moment a body is attached. All three of the second set are members of this package's `HttpStatus` enum and type-legal in `ApiException`'s constructor
 
 #### Filter Registration
