@@ -33,6 +33,15 @@ import { MESSAGE_MAX_LENGTH } from './to-problem-message'
  * incident. A consumer whose routes carry a customer's data redacts in its own
  * log pipeline.
  *
+ * **Writing a line must not cost a caller its response.** `JSON.stringify`
+ * throws on a cycle, on a `bigint` and on a getter that throws, and
+ * `HttpService.describeRequestError` is documented as overridable, so a
+ * consumer decides part of what arrives here. The transport calls this from
+ * inside its own `try`, where a throw becomes the 503 that means "the upstream
+ * never answered" - for an upstream that answered 409 perfectly well. The
+ * label is therefore always written: a record that cannot be serialised is
+ * announced as one, and only its fields are lost.
+ *
  * @param label The greppable label, written as the first argument
  * @param record The fields of the failure, serialised beside it
  */
@@ -40,10 +49,15 @@ export function logErrorLine(
   label: string,
   record: Record<string, unknown>
 ): void {
-  console.error(
-    label,
-    JSON.stringify(record, (_key, value) =>
+  let line = '{"record":"unserialisable"}'
+
+  try {
+    line = JSON.stringify(record, (_key, value) =>
       typeof value === 'string' ? value.slice(0, MESSAGE_MAX_LENGTH) : value
     )
-  )
+  } catch {
+    // Keep the announcement, lose the fields.
+  }
+
+  console.error(label, line)
 }

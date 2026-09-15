@@ -5,7 +5,8 @@ import { ExceptionFilter } from './exception-filter'
 import { logErrorLine } from '@/utils/error/log-error-line'
 import {
   noProblemDetails,
-  readWireMessage
+  readWireMessage,
+  readWireStatus
 } from '@/utils/error/to-problem-message'
 import { NextResponse } from 'next/server'
 
@@ -120,28 +121,22 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // empty` exists to prevent, and this branch must not reintroduce it one
     // mutation over.
     //
-    // Both reads are inside the guard, and there is exactly one of each.
-    // `readWireMessage` owns the message read, for this branch and for
-    // `ApiException.getResponse()`, which is the other frame that answers one;
-    // the `try` here is for `getStatus`, which a subclass may override with
-    // anything. A status that could be read still names itself in the answer;
-    // one that could not leaves nothing to trust and answers 500.
+    // Two reads, each exactly once and each of a value a subclass owns, so
+    // each goes through the function that owns it. `ApiException.getResponse()`
+    // reads the same two the same way, which is what keeps the body an
+    // application renders itself and the body this filter renders from
+    // drifting apart. Neither can throw, and this matters more here than
+    // anywhere else in the file: this filter runs inside
+    // `ServerFactory._handleRequest`'s own catch block, which does not guard
+    // the call, so a throw escapes the pipeline and the route answers a
+    // ZERO-BYTE body.
     if (exception instanceof ApiException) {
-      let status: number = HttpStatus.INTERNAL_SERVER_ERROR
+      const status = readWireStatus(exception)
 
-      try {
-        status = exception.getStatus()
-
-        return NextResponse.json(
-          { message: readWireMessage(exception, noProblemDetails(status)) },
-          { status }
-        )
-      } catch {
-        return NextResponse.json(
-          { message: noProblemDetails(status) },
-          { status }
-        )
-      }
+      return NextResponse.json(
+        { message: readWireMessage(exception, noProblemDetails(status)) },
+        { status }
+      )
     }
 
     // The only remaining copy of what actually broke, written to the seam

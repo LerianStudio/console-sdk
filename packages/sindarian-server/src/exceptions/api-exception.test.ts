@@ -505,6 +505,40 @@ describe('ApiException', () => {
         ).toHaveLength(2000)
       })
 
+      // The status is read here too, to name it in the fallback, and it is
+      // read from a method a subclass may override with anything. An accessor
+      // that throws takes its route down with it, so both reads answer rather
+      // than throw, and a status no Response can carry is not one.
+      it.each([['a throw'], [0], [700]])(
+        'answers a body when getStatus gives %s',
+        (status) => {
+          const broken = (exception: NotFoundApiException) => {
+            exception.getStatus = () => {
+              if (status === 'a throw') throw new Error('trap')
+              return status as number
+            }
+            return exception
+          }
+
+          // A usable message is still answered, and the accessor does not
+          // throw on its way there.
+          expect(
+            broken(new NotFoundApiException('Ledger not found')).getResponse()
+          ).toMatchObject({
+            code: '0003',
+            title: 'Not Found',
+            message: 'Ledger not found'
+          })
+
+          // And a message that needs the fallback gets one naming a status a
+          // response can actually carry.
+          expect(
+            broken(mutated({ title: 'Gateway Timeout' }) as any).getResponse()
+              .message
+          ).toBe('Upstream error body carried no problem details (status 500)')
+        }
+      )
+
       // Reading it must not throw either: an application renders this body
       // itself, and an accessor that throws takes its route down with it.
       it('answers a sentence when the message getter throws', () => {

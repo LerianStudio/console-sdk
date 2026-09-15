@@ -1346,6 +1346,45 @@ describe('HttpService', () => {
       })
     })
 
+    // Writing the line must never cost the caller the status the upstream
+    // really sent. `describeRequestError` is documented as overridable, and an
+    // override can return a value JSON refuses: a cycle, a bigint, a getter
+    // that throws. This call sits inside `request`'s own try, so a throw here
+    // is caught one frame up and turned into the 503 that means "the upstream
+    // never answered" - for a 409 that answered perfectly well.
+    it('keeps the real status when the record cannot be serialised', async () => {
+      class CyclicHttpService extends HttpService {
+        public async testRequest<T>(request: Request): Promise<T> {
+          return this.request<T>(request)
+        }
+
+        protected createDefaults = jest.fn().mockResolvedValue({})
+
+        protected describeRequestError() {
+          const cyclic: Record<string, unknown> = { method: 'GET' }
+          cyclic.self = cyclic
+          return cyclic
+        }
+      }
+
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ title: 'Conflict' }), {
+          status: HttpStatus.CONFLICT,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+
+      const error = await new CyclicHttpService()
+        .testRequest(new Request('https://api.example.com/v1/accounts'))
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(ApiException)
+      expect(error).not.toBeInstanceOf(ServiceUnavailableApiException)
+      expect(error.getStatus()).toBe(HttpStatus.CONFLICT)
+      // And the failure is still announced, under its own label.
+      expect(consoleSpy.mock.calls[0][0]).toBe('Request error')
+    })
+
     // `cause` is an upstream's own text and has a size this package does not
     // control, the same argument the filter's record is bounded on.
     it('bounds what an upstream failure writes', async () => {

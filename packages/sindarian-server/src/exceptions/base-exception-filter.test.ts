@@ -265,12 +265,48 @@ describe('BaseExceptionFilter', () => {
       expect(statusOf()).toEqual({ status: 404 })
     })
 
+    // A status no Response can carry is the same failure as a `getStatus` that
+    // throws, one frame later: `NextResponse.json` rejects anything outside
+    // 200 to 599 with a `RangeError`, so a fallback that reuses the status it
+    // was handed throws from inside the very branch that was catching, and the
+    // route is back to a zero-byte body. The status is therefore checked, not
+    // caught.
+    it.each([[0], [700], [NaN], [199]])(
+      'answers 500 for the unusable status %s',
+      async (status) => {
+        const exception = notFound()
+        exception.getStatus = () => status
+
+        await filter.catch(exception)
+
+        // The status is the only thing that falls back: a message it can use
+        // is still the one the caller is told.
+        expect(statusOf()).toEqual({ status: 500 })
+        expect(bodyOf().message).toBe('Ledger not found')
+      }
+    )
+
     it('answers a body at 500 when getStatus throws', async () => {
       const exception = notFound()
 
       exception.getStatus = () => {
         throw new Error('trap')
       }
+
+      await filter.catch(exception)
+
+      expect(bodyOf().message).toBe('Ledger not found')
+      expect(statusOf()).toEqual({ status: 500 })
+    })
+
+    // Both unusable at once, which is the only shape that shows which status
+    // the sentence names: the fallback must not promise a 404 the response is
+    // not carrying.
+    it('names 500 in the fallback when neither read is usable', async () => {
+      const exception = notFound()
+
+      exception.getStatus = () => 700
+      ;(exception as any).message = { title: 'Gateway Timeout' }
 
       await filter.catch(exception)
 

@@ -2,6 +2,7 @@ import { HttpStatus } from '@/constants/http-status'
 import {
   noProblemDetails,
   readWireMessage,
+  readWireStatus,
   toProblemMessage
 } from '@/utils/error/to-problem-message'
 import { HttpException } from './http-exception'
@@ -52,7 +53,7 @@ export class ApiException extends HttpException {
       ...this.metadata,
       code: this.code,
       title: this.title,
-      message: readWireMessage(this, noProblemDetails(this.getStatus()))
+      message: readWireMessage(this, noProblemDetails(readWireStatus(this)))
     }
   }
 }
