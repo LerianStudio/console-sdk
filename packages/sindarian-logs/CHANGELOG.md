@@ -1,3 +1,18 @@
+## [2.0.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v2.0.0-beta.4...sindarian-logs-v2.0.0-beta.5) (2026-09-15)
+
+
+### Features
+
+* **sindarian-logs:** let a route opt out of the access line ([67f37f8](https://github.com/LerianStudio/console-sdk/commit/67f37f820e83bb51cca8cc3305f86e9ed5237a85))
+* **sindarian-logs:** read the ignored routes from the env ([3c1e2eb](https://github.com/LerianStudio/console-sdk/commit/3c1e2eb342e03b467c00880f6dde1ec9dca2792e))
+
+
+### Bug Fixes
+
+* **sindarian-logs:** keep an error event that hits the cap ([64fa3db](https://github.com/LerianStudio/console-sdk/commit/64fa3dbe30f843612fc2bc36f7a44008ae61bdb8)), closes [#189](https://github.com/LerianStudio/console-sdk/issues/189)
+* **sindarian-logs:** write a silenced route that answers 5xx ([bacc1aa](https://github.com/LerianStudio/console-sdk/commit/bacc1aaab8a6cf30ff77944e16bf709f6cb2c016))
+* **sindarian-ui:** keep the badge label on one line ([57e96b5](https://github.com/LerianStudio/console-sdk/commit/57e96b592ac582b79e35b7b8c1f9ceba12e344ae))
+
 ## [2.0.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v2.0.0-beta.3...sindarian-logs-v2.0.0-beta.4) (2026-09-14)
 
 
