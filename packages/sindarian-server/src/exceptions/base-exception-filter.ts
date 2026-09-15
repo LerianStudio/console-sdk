@@ -2,7 +2,10 @@ import { inspect } from 'node:util'
 import { HttpStatus } from '@/constants'
 import { ApiException } from './api-exception'
 import { ExceptionFilter } from './exception-filter'
-import { MESSAGE_MAX_LENGTH } from '@/utils/error/to-problem-message'
+import {
+  MESSAGE_MAX_LENGTH,
+  noProblemDetails
+} from '@/utils/error/to-problem-message'
 import { NextResponse } from 'next/server'
 
 /** What the caller is told when the thrown value classified nothing. */
@@ -98,10 +101,34 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // mutated empty one` mutates `.message` to `''` after construction and
     // reads back `{ message: '' }` at 404. Restoring the fallback turns that
     // case red, which is the only way the difference is visible at all.
+    //
+    // What the `typeof` IS for is the shape, not the emptiness, and it is the
+    // one place this filter was still handing over whatever it was given.
+    // `Error.message` is typed `string` and the constructor produces one, but
+    // it is a writable property: `e.message = upstreamBody` after construction
+    // put an OBJECT on the wire under a field documented as a sentence, with
+    // the upstream's `detail` and a taxpayer id inside it, and `e.message =
+    // undefined` left the field missing. Those are the two defects this filter
+    // answers for on every other path, surviving on the one branch that
+    // trusted its input. An empty string is a string and passes through
+    // unchanged, so the pin above still reads `{ message: '' }`.
+    //
+    // The fallback is the constructor's own, `noProblemDetails(status)`, which
+    // names the REAL status. Not `UNCLASSIFIED`: a 404 that says `Internal
+    // server error` is the defect `names the real status when the message is
+    // empty` exists to prevent, and this branch must not reintroduce it one
+    // mutation over.
     if (exception instanceof ApiException) {
+      const status = exception.getStatus()
+
       return NextResponse.json(
-        { message: exception.message },
-        { status: exception.getStatus() }
+        {
+          message:
+            typeof exception.message === 'string'
+              ? exception.message
+              : noProblemDetails(status)
+        },
+        { status }
       )
     }
 

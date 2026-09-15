@@ -124,6 +124,50 @@ describe('BaseExceptionFilter', () => {
     )
   })
 
+  // The same branch, for a message mutated to something that is not a string
+  // at all. This filter's whole claim is that the body carries a string
+  // `message` every time, and the ApiException branch was the one place left
+  // handing over whatever it was given: an object reached the browser under a
+  // field documented as a sentence, with an upstream's `detail` and a taxpayer
+  // id inside it, and an `undefined` left the field missing entirely. Both are
+  // the exact defects this filter answers for on every other path.
+  //
+  // The answer is the constructor's own fallback, which names the real status,
+  // not the 500 sentence: a 404 that says `Internal server error` is the defect
+  // `names the real status when the message is empty` exists to prevent.
+  describe('a mutated ApiException message that is not a string', () => {
+    const mutated = (value: unknown) => {
+      const exception = new ApiException(
+        '0003',
+        'Not Found',
+        'Ledger not found',
+        HttpStatus.NOT_FOUND
+      )
+      ;(exception as any).message = value
+      return exception
+    }
+
+    it.each([
+      [
+        'an upstream problem object',
+        { title: 'Gateway Timeout', detail: 'cpf 123.456.789-00' }
+      ],
+      ['a number', 42],
+      ['undefined', undefined],
+      ['null', null]
+    ])('names the real status for %s', async (_label, value) => {
+      await filter.catch(mutated(value))
+
+      const body = mockNextResponse.json.mock.calls[0][0] as any
+
+      expect(typeof body.message).toBe('string')
+      expect(body.message).toContain('404')
+      expect(JSON.stringify(body)).not.toContain('123.456.789-00')
+      expect(JSON.stringify(body)).not.toContain('Gateway Timeout')
+      expect(mockNextResponse.json.mock.calls[0][1]).toEqual({ status: 404 })
+    })
+  })
+
   // The shape of an ordinary rethrow in a TypeScript route:
   // `catch (e) { throw { message: e.message } }`, or an upstream problem body
   // whose `message` is already a sentence. It is not an `Error`, so a
