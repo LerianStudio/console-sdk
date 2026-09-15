@@ -10,7 +10,7 @@ A unified logging and tracing system for Sindarian Server applications. Every HT
 - 🎯 **Decorator-based tracing** — use `@Traceable()` on class methods for automatic operation naming
 - ⚡ **Non-class support** — use `withTrace()` for NextAuth callbacks, cron jobs, and other non-class code
 - 🌐 **HTTP service logging** — built-in `@LogHttpCall()` decorator and `LoggableHttpService` base class
-- 🔇 **Opt-out routes**: `ignorePaths` drops the access line for a noisy route and still writes its errors
+- 🔇 **Opt-out routes**: `ignorePaths` drops the access line for a noisy route, and keeps it whenever that request failed, at `error` level or with a 5xx
 - 🔧 **Zero configuration** — import `LoggerModule` and start logging
 
 ## 🚀 Quick start
@@ -149,8 +149,12 @@ surrounding spaces ignored):
 LOG_IGNORE_PATHS=/api/csp-report,/api/admin/health/*
 ```
 
-Those are Product Console's two uses: an anonymous violation sink that every
-browser tab can post to, and the two liveness probes Kubernetes calls on a timer.
+That example is the pair Product Console intends to silence: an anonymous
+violation sink that every browser tab can post to, and the health probes
+Kubernetes calls on a timer. Neither is silenced yet. The console still pins a
+1.x of this package, and its violation sink is itself unmerged, so the value
+above is what it will set once it crosses onto the 2.x line, not what it runs
+today.
 
 Constructing the aggregator yourself takes the same list as an option:
 
@@ -170,20 +174,40 @@ Two forms, no regex:
 | `/api/admin/health/*` | `/api/admin/health/alive`, `/api/admin/health/readyz`, and anything deeper | `/api/admin/health`, `/api/admin/healthz` |
 
 **A silenced route still reports its failures.** The line is dropped only when
-the request ends below `error`. An error thrown out of the handler, or recorded
-with `.error()`, escalates the whole request and writes the full entry with its
-events. That holds even for a request that already hit the 1000-event cap: an
-error arriving at the cap takes the oldest event's slot instead of being
-dropped. The bound applies to the routine hit, not to the incident.
-Everything below that, including `warn` and `audit`, stays silent, which is what
-makes the bound hold.
+the request ended below `error` AND answered with a status under 500. Either
+half keeps the entry, with every event in it:
+
+- the handler recorded an event with `.error()`;
+- the response was 5xx, whatever the handler recorded.
+
+The second half is the one that matters under `LoggerModule`, because a throw
+inside a sindarian-server controller never escapes the handler: the framework
+catches it and converts it into a 500 response, so the aggregator sees a normal
+return and records no error event. The status is the only evidence left, which
+is why the guard reads it. The same holds for a readiness probe that answers
+503 after a `logger.warn()`: the warn alone would be silenced, the 503 keeps it.
+
+A 4xx stays silent, and so does everything below `error` that ended under 500,
+`warn` and `audit` included. A malformed payload is the caller's problem, and a
+sink that warns on thousands of them would otherwise defeat the bound it was
+silenced for.
+
+The entry survives the 1000-event cap too: an error arriving at the cap takes
+the oldest event's slot instead of being dropped.
+
+One thing to know when reading the output: a request that only failed by status,
+with no error event recorded, is written at its escalated level, which is
+usually `info`, carrying `statusCode: 500`. Alert on the status, not on the
+level. Escalating the level from the status would change the level of every 5xx
+for every consumer of this package, silenced or not, so it is deliberately not
+done here.
 
 ## ⚙️ Configuration
 
 | Environment variable | Effect |
 | --- | --- |
 | `ENABLE_DEBUG=true` | Includes debug-level events in the aggregated output |
-| `LOG_IGNORE_PATHS=/a,/b/*` | Writes no access line for those paths unless the request ends at `error` (see [Silencing a noisy route](#silencing-a-noisy-route)) |
+| `LOG_IGNORE_PATHS=/a,/b/*` | Writes no access line for those paths, unless the request ends at `error` or answers 5xx (see [Silencing a noisy route](#silencing-a-noisy-route)) |
 | `NODE_ENV=development` | Enables `pino-pretty` formatted output for readability |
 | `NODE_ENV=test` | Disables `@Traceable()` decorator to avoid noise in tests |
 
@@ -214,7 +238,8 @@ Each request produces a single structured JSON log entry:
 
 Key characteristics of the output:
 
-- **One entry per request** — no matter how many `.info()`, `.error()`, or `.warn()` calls happen, the result is a single log line, or none at all for a path listed in `ignorePaths`
+- **One entry per request** — no matter how many `.info()`, `.error()`, or `.warn()` calls happen, the result is a single log line
+- **Or no entry at all**, for a path listed in `ignorePaths` whose request succeeded (see [Silencing a noisy route](#silencing-a-noisy-route))
 - **Level escalation** — the top-level `level` reflects the highest severity event in the request
 - **Transformed events** — timestamps are ISO strings, levels are uppercase
 - **Trace ID** — a UUID that ties all events to the same request, useful for filtering in log aggregation tools
