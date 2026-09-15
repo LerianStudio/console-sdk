@@ -1,3 +1,4 @@
+import { format } from 'node:util'
 import { app } from '../app/app'
 import { generateRequest } from './utils/generate-request'
 import { NextRequest } from 'next/server'
@@ -37,7 +38,18 @@ afterEach(() => {
   consoleError.mockRestore()
 })
 
-const logged = () => JSON.stringify(consoleError.mock.calls)
+/**
+ * What Node actually writes for each call, not what the spy was handed.
+ *
+ * `JSON.stringify` of the call arguments was one frame too early: it re-escapes
+ * the record, so an assertion could not read the wire text, and it could not
+ * see how many physical lines one failure becomes. `util.format` is what
+ * `console.error` hands the stream.
+ */
+const writtenLines = () =>
+  consoleError.mock.calls.map((call) => format(...call))
+
+const logged = () => writtenLines().join('\n')
 
 describe('Whatever a route throws, the body carries a string message', () => {
   jest.setTimeout(10000)
@@ -59,6 +71,11 @@ describe('Whatever a route throws, the body carries a string message', () => {
     // reads `errors: { payer: [Object] }` and the incident is gone from the
     // only place that still has it.
     expect(logged()).not.toContain('[Object]')
+    // And it is one event, not seven. Handing `console.error` a record object
+    // let Node break it across physical lines, which splits the taxpayer id
+    // from the label an operator greps for in any line-oriented collector.
+    expect(writtenLines()).toHaveLength(1)
+    expect(writtenLines()[0]).not.toContain('\n')
   })
 
   // The ordinary rethrow in a TypeScript route, and the shape that survived
@@ -170,9 +187,15 @@ describe('An unexpected error answers a generic body, never its own text', () =>
     expect(JSON.stringify(body)).not.toContain('8080')
     expect(JSON.stringify(body)).not.toContain('123.456.789-00')
 
-    expect(JSON.stringify(consoleError.mock.calls)).toContain(
+    expect(logged()).toContain(
       'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00'
     )
+    // The stack is the shape that broke this worst: rendered as a record object
+    // it cost thirteen physical lines. Its frames are still here, escaped
+    // inside one line.
+    expect(writtenLines()).toHaveLength(1)
+    expect(writtenLines()[0]).not.toContain('\n')
+    expect(writtenLines()[0]).toContain('\\n    at ')
   })
 
   // Found, not fixed: a plain `HttpException` carries a real status of its own
@@ -186,6 +209,6 @@ describe('An unexpected error answers a generic body, never its own text', () =>
     expect(body.code).toBe('0004')
     expect(JSON.stringify(body)).not.toContain('no such ledger')
 
-    expect(JSON.stringify(consoleError.mock.calls)).toContain('no such ledger')
+    expect(logged()).toContain('no such ledger')
   })
 })

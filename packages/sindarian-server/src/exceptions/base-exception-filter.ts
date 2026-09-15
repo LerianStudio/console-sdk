@@ -132,6 +132,23 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // There is no `stack` field: rendering an `Error` prints its stack, inside
     // the same bound.
     //
+    // **One failure is one physical line, and that is why the record is
+    // serialised here instead of handed over as an object.** Node renders a
+    // second argument with its OWN `util.inspect` defaults, `breakLength: 128`
+    // and `compact: 3`, which no option on the call below can reach: measured
+    // on an RFC 9457 body whose rejected value sits three levels down, the
+    // record printed across FIVE physical lines with `value` already flat, and
+    // an `Error` made it THIRTEEN. A line-oriented collector, the Docker
+    // json-file driver or Fluent Bit, ships each of those as a separate event,
+    // so the taxpayer id lands in a different event from the `Unhandled
+    // exception` label an operator greps for. A string argument is written
+    // through verbatim and JSON has no multi-line string, so a stack's
+    // newlines survive as escapes inside the one line rather than breaking it,
+    // and what a collector receives is also parseable. `compact: true` is the
+    // other half: without it `util.inspect` breaks a value nested three deep
+    // whatever `breakLength` says, and the escaped newlines would be inside
+    // `value` for no reason.
+    //
     // **This package applies NO redaction to what it writes here.** `value` is
     // what the route threw, verbatim within the bound, which is the opposite of
     // `HttpService.describeRequestError` one frame down: there the value is an
@@ -158,23 +175,30 @@ export class BaseExceptionFilter implements ExceptionFilter {
       const name = exception?.name
       const message = exception?.message
 
-      console.error('Unhandled exception', {
-        name:
-          typeof name === 'string'
-            ? name.slice(0, MESSAGE_MAX_LENGTH)
-            : typeof exception,
-        message:
-          typeof message === 'string'
-            ? message.slice(0, MESSAGE_MAX_LENGTH)
-            : undefined,
-        value: inspect(exception, {
-          depth: 4,
-          breakLength: Infinity,
-          customInspect: false
-        }).slice(0, MESSAGE_MAX_LENGTH)
-      })
+      console.error(
+        'Unhandled exception',
+        JSON.stringify({
+          name:
+            typeof name === 'string'
+              ? name.slice(0, MESSAGE_MAX_LENGTH)
+              : typeof exception,
+          message:
+            typeof message === 'string'
+              ? message.slice(0, MESSAGE_MAX_LENGTH)
+              : undefined,
+          value: inspect(exception, {
+            depth: 4,
+            breakLength: Infinity,
+            compact: true,
+            customInspect: false
+          }).slice(0, MESSAGE_MAX_LENGTH)
+        })
+      )
     } catch {
-      console.error('Unhandled exception', { name: typeof exception })
+      console.error(
+        'Unhandled exception',
+        JSON.stringify({ name: typeof exception })
+      )
     }
 
     return NextResponse.json(

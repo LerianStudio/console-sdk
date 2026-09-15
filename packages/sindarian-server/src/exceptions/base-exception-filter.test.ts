@@ -1,4 +1,6 @@
-import { inspect } from 'node:util'
+import { Console } from 'node:console'
+import { Writable } from 'node:stream'
+import { format, inspect } from 'node:util'
 import { BaseExceptionFilter } from './base-exception-filter'
 import { ApiException } from './api-exception'
 import { NextResponse } from 'next/server'
@@ -262,8 +264,14 @@ describe('BaseExceptionFilter', () => {
   // route threw and a rethrown upstream body has no size this package controls.
   describe('an unexpected error', () => {
     // What `console.error` was handed: the label is `[0][0]`, the record
-    // `[0][1]`. A case reads one field of it rather than restating all three.
-    const payloadOf = () => consoleError.mock.calls[0][1] as any
+    // `[0][1]`, which is JSON so that one failure is one physical line. A case
+    // reads one field of it rather than restating all three.
+    const payloadOf = () => JSON.parse(consoleError.mock.calls[0][1]) as any
+
+    // What Node writes for that call, which is one frame PAST the spy. Every
+    // other assertion in this file reads the arguments, so none of them can see
+    // how many lines the record becomes.
+    const written = () => format(...(consoleError.mock.calls[0] as [string]))
 
     it('answers the generic sentence and the code, never the Error text', async () => {
       await filter.catch(new Error('connect ECONNREFUSED 10.0.0.5:8080'))
@@ -305,9 +313,11 @@ describe('BaseExceptionFilter', () => {
     it('writes a thrown value that has no message at all', async () => {
       await filter.catch({ code: 'E_NOPE', detail: 'timed out at db-primary' })
 
-      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
+      // `message` is absent rather than `undefined`: the record is JSON, and a
+      // key with no value is a key JSON does not write. Absent and undefined
+      // say the same thing, that the thrown value carried no string message.
+      expect(payloadOf()).toEqual({
         name: 'object',
-        message: undefined,
         value: "{ code: 'E_NOPE', detail: 'timed out at db-primary' }"
       })
     })
@@ -368,9 +378,8 @@ describe('BaseExceptionFilter', () => {
     it('writes a thrown string', async () => {
       await filter.catch('payment gateway rejected the settlement')
 
-      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
+      expect(payloadOf()).toEqual({
         name: 'string',
-        message: undefined,
         value: "'payment gateway rejected the settlement'"
       })
     })
@@ -381,11 +390,7 @@ describe('BaseExceptionFilter', () => {
     it('writes a line for a thrown null without throwing', async () => {
       await expect(filter.catch(null)).resolves.toBeDefined()
 
-      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
-        name: 'object',
-        message: undefined,
-        value: 'null'
-      })
+      expect(payloadOf()).toEqual({ name: 'object', value: 'null' })
     })
 
     // Writing the log line must not cost the caller its response. The filter
@@ -408,9 +413,7 @@ describe('BaseExceptionFilter', () => {
         { status: 500 }
       )
       // Still a line, so a 500 in the log is never a 500 with no line.
-      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
-        name: 'object'
-      })
+      expect(payloadOf()).toEqual({ name: 'object' })
     })
 
     // Rendering a value runs its `[util.inspect.custom]` function unless that
@@ -436,11 +439,7 @@ describe('BaseExceptionFilter', () => {
         { message: 'Internal server error', code: '0004' },
         { status: 500 }
       )
-      expect(consoleError).toHaveBeenCalledWith('Unhandled exception', {
-        name: 'undefined',
-        message: undefined,
-        value: 'undefined'
-      })
+      expect(payloadOf()).toEqual({ name: 'undefined', value: 'undefined' })
     })
 
     // Length is no longer what stands between the text and the browser, so an
@@ -473,6 +472,89 @@ describe('BaseExceptionFilter', () => {
         { status: 404 }
       )
       expect(consoleError).not.toHaveBeenCalled()
+    })
+
+    // One failure has to be ONE log event, and handing `console.error` a record
+    // OBJECT does not give that. Node renders the second argument with its own
+    // `util.inspect` defaults, `breakLength: 128` and `compact: 3`, which no
+    // option on our own `inspect` call can reach: measured on this shape, the
+    // record printed across FIVE physical lines with the value already flat,
+    // and an `Error`'s stack made it THIRTEEN. A line-oriented collector, the
+    // Docker json-file driver or Fluent Bit, ships each of those as a separate
+    // event, so the taxpayer id arrives in a different event from the
+    // `Unhandled exception` label an operator greps for, which is the exact
+    // outcome moving the text to the log was meant to prevent.
+    //
+    // The record is therefore serialised here, not by Node: a string argument
+    // is written through verbatim, and JSON has no multi-line string, so a
+    // stack's newlines survive as escapes inside one line rather than breaking
+    // it. Every other assertion in this file reads the spy's ARGUMENTS, one
+    // frame before Node formats them, so none of them can see any of this.
+    describe('one failure is one physical log line', () => {
+      it('writes a three-level upstream body on one line', async () => {
+        await filter.catch({
+          message: {
+            title: 'Gateway Timeout',
+            detail: 'timed out at db-primary.internal:8080',
+            errors: { payer: { document: 'cpf 123.456.789-00' } }
+          }
+        })
+
+        expect(written()).not.toContain('\n')
+        // Same line, so a collector ships the incident with the label.
+        expect(written().startsWith('Unhandled exception ')).toBe(true)
+        expect(written()).toContain('123.456.789-00')
+        // And the value is flat inside the record, which is `compact: true`
+        // doing its half: without it `util.inspect` breaks a value nested three
+        // deep whatever `breakLength` says, and the break would ride along as
+        // an escape inside the record for no reason.
+        expect(payloadOf().value).not.toContain('\n')
+      })
+
+      it('writes an Error and its whole stack on one line', async () => {
+        await filter.catch(new Error('connect ECONNREFUSED 10.0.0.5:8080'))
+
+        expect(written()).not.toContain('\n')
+        // Not dropped, escaped: the frames are still there as the two
+        // characters `\` and `n`, so a consumer parsing the record gets the
+        // stack back and a collector still counts one event.
+        expect(written()).toContain('\\n    at ')
+      })
+
+      // The bytes themselves, with no `util.format` of ours in the way and no
+      // spy: a REAL `Console` writing to a captured stream, which is the frame
+      // a collector reads. Spying `process.stderr.write` does not reach it,
+      // because jest replaces the global console with one that buffers into the
+      // test report instead of writing to the process streams, so that spy
+      // captures nothing at all and would pass on an empty array.
+      it('reaches the stream as one write of one line', async () => {
+        const chunks: string[] = []
+        const sink = new Writable({
+          write(chunk, _encoding, done) {
+            chunks.push(String(chunk))
+            done()
+          }
+        })
+        const real = new Console({ stdout: sink, stderr: sink })
+        const saved = global.console
+
+        global.console = real as unknown as Console
+        try {
+          await filter.catch({
+            message: {
+              title: 'Gateway Timeout',
+              errors: { payer: { document: 'cpf 123.456.789-00' } }
+            }
+          })
+        } finally {
+          global.console = saved
+        }
+
+        expect(chunks).toHaveLength(1)
+        expect(chunks[0].endsWith('\n')).toBe(true)
+        expect(chunks[0].slice(0, -1)).not.toContain('\n')
+        expect(chunks[0]).toContain('123.456.789-00')
+      })
     })
   })
 
