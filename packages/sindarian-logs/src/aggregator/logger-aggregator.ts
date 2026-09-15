@@ -18,12 +18,35 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
 
 const MAX_EVENTS = 1000
 
+export type LoggerAggregatorOptions = {
+  /** Records debug-level events instead of dropping them. */
+  debug?: boolean
+  /**
+   * Request paths that write no access line, for routes whose volume carries no
+   * information: a violation sink, a health probe. Two forms, no regex:
+   *
+   * - `'/api/csp-report'` matches that path and nothing else
+   * - `'/api/admin/health/*'` matches everything under `/api/admin/health/`,
+   *   and neither `/api/admin/health` itself nor `/api/admin/healthz`
+   *
+   * A request that failed is written anyway: one recorded at `error` level, or
+   * one that answered 5xx. A throw inside a sindarian-server handler never
+   * reaches this context: it becomes the response a registered exception
+   * filter answers with, or a 500 when no filter answers it, so it is the
+   * status that keeps it. A filter mapping a typed exception to a 4xx, as
+   * Product Console's catch-all filter does, is silenced on a listed path like
+   * any other 4xx; any 5xx is written.
+   * Defaults to silencing nothing.
+   */
+  ignorePaths?: string[]
+}
+
 export class LoggerAggregator {
   private storage = new AsyncLocalStorage<RequestContext>()
 
   constructor(
     private readonly loggerRepository: LoggerRepository,
-    private readonly options: { debug?: boolean } = {}
+    private readonly options: LoggerAggregatorOptions = {}
   ) {}
 
   /**
@@ -89,7 +112,15 @@ export class LoggerAggregator {
 
     if (event.level === 'debug' && !this.options.debug) return
 
-    if (context.events.length >= MAX_EVENTS) return
+    if (context.events.length >= MAX_EVENTS) {
+      // An error always gets a slot, at the cost of the oldest event: it sets
+      // the level of the whole entry, so dropping it would both hide the
+      // failure and, on an ignored path, discard the entry altogether.
+      // The slot that goes is events[0] whatever it holds, so on a request
+      // that errored twice past the cap the first failure is the one lost.
+      if (event.level !== 'error') return
+      context.events.shift()
+    }
 
     context.events.push({
       ...event,
@@ -171,6 +202,18 @@ export class LoggerAggregator {
     const context = this.storage.getStore()
     if (!context) return
 
+    const escalatedLevel = this.escalateLevel(context.events)
+
+    // A silenced route is silent only when it succeeded. Recording an error is
+    // one way to fail; answering 5xx is the other, and on a sindarian-server
+    // route it is the only one left, because the framework turns a handler
+    // throw into a 5xx response before this context ends. A 4xx stays silent:
+    // that is the caller's problem, not the route's.
+    const failed =
+      escalatedLevel === 'error' || (context.statusCode ?? 0) >= 500
+
+    if (!failed && this.isIgnored(context.path)) return
+
     const duration = (Date.now() - context.startTime) / 1000
 
     const events: TransformedEvent[] = context.events.map((event) => {
@@ -189,8 +232,6 @@ export class LoggerAggregator {
       return transformed
     })
 
-    const escalatedLevel = this.escalateLevel(context.events)
-
     const log: AggregatedLog = {
       level: escalatedLevel,
       method: context.method,
@@ -204,6 +245,21 @@ export class LoggerAggregator {
     if (context.metadata.handler) log.handler = context.metadata.handler
 
     this.writeLog(escalatedLevel, log)
+  }
+
+  /**
+   * Matches a request path against the configured `ignorePaths`.
+   * `'/a/b/*'` keeps its trailing slash, so it covers `/a/b/c` but not `/a/bc`.
+   */
+  private isIgnored(path: string): boolean {
+    const patterns = this.options.ignorePaths
+    if (!patterns?.length) return false
+
+    return patterns.some((pattern) =>
+      pattern.endsWith('/*')
+        ? path.startsWith(pattern.slice(0, -1))
+        : path === pattern
+    )
   }
 
   /**
