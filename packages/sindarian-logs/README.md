@@ -181,11 +181,17 @@ half keeps the entry, with every event in it:
 - the response was 5xx, whatever the handler recorded.
 
 The second half is the one that matters under `LoggerModule`, because a throw
-inside a sindarian-server controller never escapes the handler: the framework
-catches it and converts it into a 500 response, so the aggregator sees a normal
-return and records no error event. The status is the only evidence left, which
-is why the guard reads it. The same holds for a readiness probe that answers
-503 after a `logger.warn()`: the warn alone would be silenced, the 503 keeps it.
+inside a sindarian-server controller never escapes the handler: it becomes the
+response a registered exception filter answers with, or a 500 when no filter
+answers it. Either way the aggregator sees a normal return and records no error
+event, so the status is the only evidence left, which is why the guard reads it.
+
+That makes the filter the deciding factor, not the throw. Product Console
+registers a catch-all filter that answers its own typed exceptions at their own
+status, so a thrown "not found" leaves a 404, which a listed path silences like
+any other 4xx. Only a 5xx is written, the unfiltered default included. The same
+holds for a readiness probe that answers 503 after a `logger.warn()`: the warn
+alone would be silenced, the 503 keeps it.
 
 A 4xx stays silent, and so does everything below `error` that ended under 500,
 `warn` and `audit` included. A malformed payload is the caller's problem, and a
@@ -239,7 +245,7 @@ Each request produces a single structured JSON log entry:
 Key characteristics of the output:
 
 - **One entry per request** — no matter how many `.info()`, `.error()`, or `.warn()` calls happen, the result is a single log line
-- **Or no entry at all**, for a path listed in `ignorePaths` whose request succeeded (see [Silencing a noisy route](#silencing-a-noisy-route))
+- **Or no entry at all**, for a path listed in `ignorePaths` whose request ended with a status under 500 (see [Silencing a noisy route](#silencing-a-noisy-route))
 - **Level escalation** — the top-level `level` reflects the highest severity event in the request
 - **Transformed events** — timestamps are ISO strings, levels are uppercase
 - **Trace ID** — a UUID that ties all events to the same request, useful for filtering in log aggregation tools
@@ -275,7 +281,7 @@ Key characteristics of the output:
 3. **Request completes** — the context is finalized, events are transformed, and a single `AggregatedLog` is written through Pino
 4. **Level is escalated** — the final log level is the highest severity event recorded during the request
 
-A path listed in `ignorePaths` stops at step 3: the context is finalized and nothing is written, unless the escalated level is `error`.
+A path listed in `ignorePaths` stops at step 3, the context finalized and nothing written, only when the request ended below `error` AND with a status under 500. Either half alone keeps the entry.
 
 ## 📄 License
 

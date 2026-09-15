@@ -30,8 +30,12 @@ export type LoggerAggregatorOptions = {
    *   and neither `/api/admin/health` itself nor `/api/admin/healthz`
    *
    * A request that failed is written anyway: one recorded at `error` level, or
-   * one that answered 5xx. A throw inside a sindarian-server handler becomes a
-   * 5xx response before this context ends, so it is the status that keeps it.
+   * one that answered 5xx. A throw inside a sindarian-server handler never
+   * reaches this context: it becomes the response a registered exception
+   * filter answers with, or a 500 when no filter answers it, so it is the
+   * status that keeps it. A filter mapping a typed exception to a 4xx, as
+   * Product Console's catch-all filter does, is silenced on a listed path like
+   * any other 4xx; any 5xx is written.
    * Defaults to silencing nothing.
    */
   ignorePaths?: string[]

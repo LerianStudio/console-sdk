@@ -421,6 +421,13 @@ than leave a lint-red commit in a history that merges commit by commit, both
 commits were rebuilt from the same tree with the wrap folded into the first.
 The sha above is the reachable one, re-run rather than re-labelled.
 
+The docs commit was then amended a second time, at 00:19:19 UTC, to correct the
+feature bullet at `README.md:13` that the prior review had asked for. That
+amend discarded `036ce0f` and made `774eff4` the reachable docs commit. The two
+trees differ by that one README line and by nothing under `packages/*/src`, so
+the gates below hold as measured, but `036ce0f` is contained by no branch and
+must not be cited as an anchor: `774eff4` is the code-final head.
+
 ### Mutants, all measured at the code-final head `774eff4`
 
 Each was applied with the Edit tool, run, then reverted with
