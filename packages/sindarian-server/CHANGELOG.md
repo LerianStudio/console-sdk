@@ -1,3 +1,13 @@
+## [2.0.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.4...sindarian-server-v2.0.0-beta.5) (2026-09-15)
+
+
+### Bug Fixes
+
+* **sindarian-server:** announce a record that serialises to nothing ([9a9e11a](https://github.com/LerianStudio/console-sdk/commit/9a9e11a7f91cb78b0abc763248dfd97ff7c7e639))
+* **sindarian-server:** answer a status no response can carry ([547f176](https://github.com/LerianStudio/console-sdk/commit/547f17608b84d4523d3b5201986f3d9a84dc47fe))
+* **sindarian-server:** bound and guard a mutated exception message ([a58ff52](https://github.com/LerianStudio/console-sdk/commit/a58ff52a3f1d8e61886807a961df43816c79aebf))
+* **sindarian-server:** write every failure log on one line ([2bc0c56](https://github.com/LerianStudio/console-sdk/commit/2bc0c56e6b9ee359ac361532ea7fabea0143ffb4))
+
 ## [2.0.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.3...sindarian-server-v2.0.0-beta.4) (2026-09-15)
 
 
