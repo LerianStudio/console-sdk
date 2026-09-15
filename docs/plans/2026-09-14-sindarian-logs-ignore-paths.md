@@ -469,6 +469,26 @@ $ grep -n "LoggerAggregatorOptions\|ignorePaths" \
 `npm run lint` is `eslint --fix` under turbo; `git status --porcelain` was empty
 after it, so it changed nothing.
 
+### Gates re-run after the prose fix pass, at `bc2eaf6`
+
+The prose pass changed three files and no behaviour: the README, the
+`ignorePaths` TSDoc, and this plan. Lint and the package suite were re-run at
+its head, so the two counts below are measured at `bc2eaf6` rather than
+re-labelled from the row above. The rest of the evidence in this document was
+measured at `774eff4` and is not restated here.
+
+```
+$ date -u                  Tue Sep 15 12:31:11 UTC 2026
+$ git rev-parse HEAD       bc2eaf622f25433fcf57cab280ea50e5990c5273
+$ git status --porcelain   (empty)
+
+$ npm run lint             Tasks: 5 successful, 5 total      GATE5-rc=0
+
+$ npm test -w packages/sindarian-logs
+   Test Suites: 9 passed, 9 total
+   Tests:       103 passed, 103 total                        GATE6-rc=0
+```
+
 ### Live proof, through `app.handler` this time
 
 A script requiring the BUILT `@lerianstudio/sindarian-logs` and
