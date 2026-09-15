@@ -1,3 +1,41 @@
+## [2.0.0-beta.4](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.3...sindarian-server-v2.0.0-beta.4) (2026-09-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sindarian-server:** an unexpected error, meaning anything a route threw that
+this library does not model, no longer carries the thrown value's own text
+in `message`. Every shape answers the same body, `500 {"message":"Internal
+server error","code":"0004"}`, and the real text goes to the operator log
+at error level. Do not branch on that message text, and do not re-point
+the branch at the status or the code: both are constants for every
+unexpected error alike, so a retry keyed on them would fire on a
+deterministic bug as readily as on a timeout. The discriminator now lives
+only in the log. Typed exceptions are unchanged: a 401, a 404 and a 400
+validation failure still carry the sentence this library wrote for them,
+unchanged to the byte.
+
+### Features
+
+* **sindarian-logs:** let a route opt out of the access line ([67f37f8](https://github.com/LerianStudio/console-sdk/commit/67f37f820e83bb51cca8cc3305f86e9ed5237a85))
+* **sindarian-logs:** read the ignored routes from the env ([3c1e2eb](https://github.com/LerianStudio/console-sdk/commit/3c1e2eb342e03b467c00880f6dde1ec9dca2792e))
+* **sindarian-server:** redact an unexpected error's text ([c29bc99](https://github.com/LerianStudio/console-sdk/commit/c29bc997548d3cb48e3d644fdedee70064bb1c63))
+
+
+### Bug Fixes
+
+* **sindarian-logs:** accept the 2.x server line as a peer ([d1cca61](https://github.com/LerianStudio/console-sdk/commit/d1cca61222fa12d00f0abce37347b7d2f7d03298))
+* **sindarian-logs:** keep an error event that hits the cap ([64fa3db](https://github.com/LerianStudio/console-sdk/commit/64fa3dbe30f843612fc2bc36f7a44008ae61bdb8)), closes [#189](https://github.com/LerianStudio/console-sdk/issues/189)
+* **sindarian-logs:** write a silenced route that answers 5xx ([bacc1aa](https://github.com/LerianStudio/console-sdk/commit/bacc1aaab8a6cf30ff77944e16bf709f6cb2c016))
+* **sindarian-server:** bound the operator log and keep every field ([4e2b1fe](https://github.com/LerianStudio/console-sdk/commit/4e2b1fe38d9ab64ea64c586e5a287f35811886b2))
+* **sindarian-server:** give every error body a string message ([79e4853](https://github.com/LerianStudio/console-sdk/commit/79e4853fe6e5caf104758312bf80a985148d5266))
+* **sindarian-server:** keep a typed exception's message a string ([2f8936e](https://github.com/LerianStudio/console-sdk/commit/2f8936ea41a9d7c85476d24b5fa1d02b3976a356))
+* **sindarian-server:** metadata never replaces the named fields ([63636f6](https://github.com/LerianStudio/console-sdk/commit/63636f65a1e562f8a0ccb5780f3f48aa49e571a8))
+* **sindarian-server:** never let the log line cost the response ([4677bd4](https://github.com/LerianStudio/console-sdk/commit/4677bd4a23adb071099b2ca3d27f157116869b57))
+* **sindarian-server:** redact every unexpected error, not only an Error ([487319b](https://github.com/LerianStudio/console-sdk/commit/487319b63c1e6d227e8e4ca7a5f3fdad61ca7e60))
+* **sindarian-server:** write one failure as one log line ([b878660](https://github.com/LerianStudio/console-sdk/commit/b8786601b59cb04a4d2a8cbd9fe4bd3037093ba1))
+* **sindarian-ui:** keep the badge label on one line ([57e96b5](https://github.com/LerianStudio/console-sdk/commit/57e96b592ac582b79e35b7b8c1f9ceba12e344ae))
+
 ## [2.0.0-beta.3](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.2...sindarian-server-v2.0.0-beta.3) (2026-09-13)
 
 
