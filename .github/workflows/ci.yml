@@ -112,7 +112,10 @@ jobs:
   # real Response body instead of the arguments of a mocked NextResponse.json,
   # which is exactly where a filter crash hides. Until now those cases ran only
   # in release.yml, after merge, where a red job blocks a publish instead of a
-  # merge. Packages with no test:e2e script are a no-op for turbo.
+  # merge. Every package defines test:e2e; the four that define it as `exit 0`
+  # stay a no-op. This job runs on every pull request touching a matched
+  # package, and no ruleset on develop makes it a required context, so a red
+  # one is visible before merge rather than a block on the merge button.
   test-e2e:
     name: Test E2E ${{ matrix.name }}
     runs-on: blacksmith-4vcpu-ubuntu-2404
