@@ -93,21 +93,43 @@ export function readWireMessage(
 }
 
 /**
+ * The statuses a response may not be paired with a body at all.
+ *
+ * These are not out of range and no range check sees them: the runtime accepts
+ * 204, 205 and 304 as statuses and then raises a `TypeError` the moment a body
+ * is attached, one frame after the `RangeError` the band below catches. Each is
+ * a member of this package's own `HttpStatus` enum and type-legal in
+ * `ApiException`'s constructor, so `new ApiException(code, title, message,
+ * HttpStatus.NO_CONTENT)` reached it with no override at all, and the filter
+ * left the route with a zero-byte body.
+ */
+const NULL_BODY_STATUSES: ReadonlySet<number> = new Set([
+  HttpStatus.NO_CONTENT,
+  HttpStatus.RESET_CONTENT,
+  HttpStatus.NOT_MODIFIED
+])
+
+/**
  * The status a response may actually be built with, read off an exception.
  *
  * `getStatus` is a method a subclass may override with anything, and both
  * frames that answer a typed exception have to read it: one to build the
- * response, one to name the status in a fallback sentence.
+ * response, one to name the status in a fallback sentence. An application that
+ * renders its own envelope is a third, which is why this is exported.
  *
  * Two ways it fails and one answer for both. An override that THROWS is the
- * `readWireMessage` story exactly. An override that RETURNS a number no
- * response can carry is worse, because it fails one frame later: the runtime
- * rejects anything outside 200 to 599 with a `RangeError`, measured, so a
- * guard that caught the throw and reused the status would throw from inside
- * its own fallback and leave the route with the zero-byte body again. The
- * status is therefore checked rather than caught, and anything unusable
- * answers 500, the status this library already gives a failure it cannot
- * classify.
+ * `readWireMessage` story exactly. A status that no response can CARRY A BODY
+ * WITH is worse, because it fails one frame later, where the body is attached:
+ * the runtime rejects anything outside 200 to 599 with a `RangeError` and the
+ * three null-body statuses above with a `TypeError`, both measured, so a guard
+ * that caught the throw and reused the status would throw from inside its own
+ * fallback and leave the route with the zero-byte body again. The status is
+ * therefore checked rather than caught, and anything unusable answers 500, the
+ * status this library already gives a failure it cannot classify.
+ *
+ * "Usable" is about the pairing, not about the number: a route that genuinely
+ * wants to answer 204 answers it with no body and never reaches an exception
+ * filter to do it.
  */
 export function readWireStatus(source: { getStatus?: () => unknown }): number {
   try {
@@ -116,7 +138,8 @@ export function readWireStatus(source: { getStatus?: () => unknown }): number {
     return typeof status === 'number' &&
       Number.isInteger(status) &&
       status >= 200 &&
-      status <= 599
+      status <= 599 &&
+      !NULL_BODY_STATUSES.has(status)
       ? status
       : HttpStatus.INTERNAL_SERVER_ERROR
   } catch {

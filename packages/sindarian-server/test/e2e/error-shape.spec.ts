@@ -253,6 +253,23 @@ describe('A typed exception carries a bounded sentence, however it was written',
     expect(body.message).toHaveLength(2000)
   })
 
+  // The status a response is BUILT with, which is the read this app makes
+  // itself, and the one case where a number inside 200 to 599 is still not
+  // usable: the runtime pairs no body with 204, 205 or 304 and raises a
+  // `TypeError` when one is attached. Measured through a real Response here,
+  // because the filter's unit tests mock `NextResponse.json` and no mock
+  // refuses a status.
+  it('answers a body for a status that carries none', async () => {
+    const { response, body } = await get('typed-nullbody')
+
+    expect(response.status).toBe(500)
+    expect(response.headers.get('content-type')).toContain('application/json')
+    // The status is the only thing that falls back: the sentence the route
+    // wrote is still the one the caller is told.
+    expect(body.message).toBe('Ledger not found')
+    expect(body.code).toBe('0003')
+  })
+
   // A filter that throws escapes the request pipeline, and the route answers a
   // ZERO-BYTE body with no content-type: `response.json()` below is the
   // assertion, because it is what raises `SyntaxError: Unexpected end of JSON

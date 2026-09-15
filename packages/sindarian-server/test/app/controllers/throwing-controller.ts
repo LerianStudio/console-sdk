@@ -1,4 +1,5 @@
 import {
+  ApiException,
   Controller,
   Get,
   HttpException,
@@ -137,6 +138,27 @@ export class ThrowingController {
     const exception = new NotFoundApiException('Ledger not found')
     exception.message = 'x'.repeat(5_000_000)
     throw exception
+  }
+
+  /**
+   * A typed exception carrying a status that may not be paired with a body.
+   *
+   * 204 is a member of this package's own `HttpStatus` enum and type-legal in
+   * `ApiException`'s constructor, so no override and no exotic value is needed
+   * to reach it: `new ApiException(code, title, message, HttpStatus.NO_CONTENT)`
+   * is what a route writes. The runtime refuses it with a `TypeError` the
+   * moment a body is attached, which is one frame LATER than the 200-to-599
+   * range check, and a filter that throws leaves the route with a zero-byte
+   * body and no content-type. 205 and 304 fail the same way.
+   */
+  @Get('typed-nullbody')
+  public typedNullBody(): never {
+    throw new ApiException(
+      '0003',
+      'Not Found',
+      'Ledger not found',
+      HttpStatus.NO_CONTENT
+    )
   }
 
   /** The read itself fails, which used to cost the route its whole response. */
