@@ -240,6 +240,45 @@ describe('sonner toast ink', () => {
 })
 
 /**
+ * Toast type hierarchy, and the two things that let it hold.
+ *
+ * Weight alone is not the rule: sonner injects its own `[data-styled='true']`
+ * rules at runtime, at (0,3,0), so a declaration in globals.css applies only
+ * if it matches that specificity AND carries !important. The title rule failed
+ * both halves once and rendered lighter than its own description — the defect
+ * is written up over the rules themselves in globals.css.
+ *
+ * `block()` resolving each opener is itself half the gate: drop the compound
+ * selector from either rule and the lookup throws before any weight is read.
+ */
+describe('toast text weights', () => {
+  const declaration = (opener: string) => {
+    const match = block(opener).match(/font-weight:\s*(\d+)\s*(!important)?/)
+    if (!match) throw new Error(`no font-weight in ${opener}`)
+
+    return { weight: Number(match[1]), important: Boolean(match[2]) }
+  }
+
+  const title = declaration(
+    "[data-sonner-toast][data-styled='true'] [data-title] {"
+  )
+  const description = declaration(
+    "[data-sonner-toast][data-styled='true'] [data-description] {"
+  )
+
+  it('sets the title heavier than the description', () => {
+    expect(title.weight).toBeGreaterThan(description.weight)
+  })
+
+  it.each([
+    ['title', title],
+    ['description', description]
+  ])('lets the %s declaration win the runtime sheet', (_name, rule) => {
+    expect(rule.important).toBe(true)
+  })
+})
+
+/**
  * The five tinted-pill families paint `text-system-<family>-text` on
  * `bg-system-<family>-surface`. The `@theme inline` map used to hand the ink
  * out at 70% opacity, which dropped every pill to between 3.1:1 and 3.5:1 —
