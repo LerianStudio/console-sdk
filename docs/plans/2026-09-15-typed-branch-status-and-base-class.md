@@ -817,9 +817,13 @@ comment's line count (see the correction in Epic 6.3).
 headline a second time.** Epic 11 guarded the metadata and the claim became "no unguarded read is
 left on the frame an application renders its own envelope from". Two were: `code` and `title` sat
 on that same line, taken exactly as the metadata had been. Neither needs an override or an exotic
-value. `code: string` is satisfied with no cast by the `any` a database row is, which is the
-premise Epic 11 itself rests on, and `title` is a writable property, which is how `message`
-reached the wire as an upstream object in the first place. A `code` getter that throws returned NO
+value. Both are declared `string` and both are satisfied with no cast by the `any` a database row
+is, which is the premise Epic 11 itself rests on, so `new ApiException(row.code, row.title, ...)`
+compiles. (**Corrected in fix pass 3**: this paragraph used to add "and `title` is a writable
+property, which is how `message` reached the wire as an upstream object in the first place".
+`title` is `readonly`; see Task 26.1. Writing either field after construction needs a cast, which
+is the one thing `message` never needed, and the reachability argument stands on the constructor
+alone.) A `code` getter that throws returned NO
 body at all, so the throw escaped `app.handler` above the frame that would have built a Response,
 and unlike the metadata case it wrote no operator line either. A `title` an upstream body had been
 written into serialised perfectly well and carried that body, internal host and all, to the
