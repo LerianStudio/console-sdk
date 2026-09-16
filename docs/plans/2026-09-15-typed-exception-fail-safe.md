@@ -122,7 +122,7 @@ upstream's own text.
   **Corrected 2026-09-16 by that same lane, fix pass 2: the sentence above blames the
   drift on the COPY, and the copy is not the variable.** The invocation is. Both
   reviewers of that lane raised it, and it reproduces on demand inside ONE copy, at
-  `eeb9ba3`, Node v24.21.0: `npx jest --verbose` over both e2e specs, which is the set
+  `d7d7d6e`, Node v24.21.0: `npx jest --verbose` over both e2e specs, which is the set
   the gate runs, prints `newlines=17 lines=18`, while `npx jest
   e2e/error-shape.spec.ts` prints `newlines=16 lines=17` with or without `-i`. Two
   specs make jest use a worker and the extra frame is the whole difference, so the

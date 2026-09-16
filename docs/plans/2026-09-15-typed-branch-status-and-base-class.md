@@ -3,7 +3,7 @@
 - **Repository**: `LerianStudio/console-sdk`, package `@lerianstudio/sindarian-server`
 - **Branch**: `fix/typed-branch-status-and-base-class`, cut from `origin/develop` at `19839e9`
 - **Baseline at the cut**: unit 897 passed / 38 suites, e2e 32 passed / 2 suites
-- **Code-final head**: `eeb9ba3`, unit 953 passed / 39 suites, e2e 40 passed / 2 suites (fix
+- **Code-final head**: `d7d7d6e`, unit 953 passed / 39 suites, e2e 40 passed / 2 suites (fix
   pass 2; fix pass 1 ended at `243cfa3` with 945 and 38, and every block written then keeps the
   head it was measured at). Every
   number in this document is measured at a head that is NAMED next to it; the earlier heads and
@@ -73,7 +73,7 @@
 | 18 | The documents say what was measured (fix pass 1) | `cc897fd`, `243cfa3` |
 | 19 | The code and title a route wrote are read, not taken (fix pass 2) | `615eb5e` |
 | 20 | One read of metadata, and a reason no value can give, are pinned (fix pass 2) | `e1e3c7c`, `6e5b30a` |
-| 21 | The documents qualify what the guards cost and keep (fix pass 2) | `4fb996d`, `eeb9ba3` |
+| 21 | The documents qualify what the guards cost and keep (fix pass 2) | `4fb996d`, `eeb9ba3`, `d7d7d6e` |
 
 ## Epic 1: the readers are published (`ecfb7eb`)
 
@@ -886,9 +886,9 @@ $ npm run build
 rc=0
 ```
 
-**Live, at the code-final head `eeb9ba3`, through a real `Response` built with the recipe
+**Live, at the code-final head `d7d7d6e`, through a real `Response` built with the recipe
 TECHNICAL.md prescribes** (`Response.json({ ...envelope, ...exception.getResponse() }, { status:
-readWireStatus(exception) })`), against the built `dist`, `2026-09-16 03:48:15 UTC`:
+readWireStatus(exception) })`), against the built `dist`, `2026-09-16 03:55:49 UTC`:
 
 ```
 code getter throws
@@ -932,7 +932,7 @@ override that throws a value with no path to a primitive at all, a null-prototyp
 upstream answered, and the announcement stands with no reason attached, because there is none to
 be had. Mutant N28 kills it.
 
-## Epic 21: the documents qualify what the guards cost and keep (`4fb996d`, `eeb9ba3`)
+## Epic 21: the documents qualify what the guards cost and keep (`4fb996d`, `eeb9ba3`, `d7d7d6e`)
 
 TECHNICAL.md, the `readWireMetadata` doc block and one comment in the filter, so all three sit at
 or before the code-final head rather than in the docs commit.
@@ -960,8 +960,15 @@ it already said and what the filter has done since Epic 2.
 **Task 21.4 (`eeb9ba3`).** Moving `UNCLASSIFIED_CODE` out of `base-exception-filter.ts` in Epic 19
 left its explanatory block sitting directly above `export class BaseExceptionFilter`, where a
 `/** */` block is read as the class's own documentation. It is a line comment now, so nothing
-attaches it to the class. Comment only; the six mutants and every gate above were re-run at this
-head after the change, with identical results.
+attaches it to the class.
+
+**Task 21.5 (`d7d7d6e`).** The provenance sentence said the major opened "six days and three
+releases before #190 merged", which reads as three releases having happened in between; two did.
+It now says the line was three releases old when that PR landed.
+
+Both are comment and prose only, and both are inside `packages/`, so each became the code-final
+head in turn. Every gate and all six mutants above were re-run at each of the three, with
+identical counts and case names.
 
 ## Found by the review round of this PR, and where each one lands
 
@@ -1076,7 +1083,7 @@ the headline itself, again with a live probe, which is Epic 19. Nothing below is
   comment and Epic 6.3 both refute, so one push was shipping both the wrong cause and its
   correction. Both reviewers of fix pass 1 raised it. Re-measured in situ here rather than
   repeated, by parsing the written line back and formatting it the old way inside that very test,
-  `2026-09-16 03:50:42 UTC`, head `eeb9ba3`, Node v24.21.0 with
+  `2026-09-16 03:58:25 UTC`, head `d7d7d6e`, Node v24.21.0 with
   `util.inspect.defaultOptions.breakLength` 80:
 
   ```
@@ -1106,9 +1113,9 @@ the headline itself, again with a live probe, which is Epic 19. Nothing below is
 
 Every command below was run verbatim in `/srv/worktrees/sdk-typed-fix1`.
 
-### Fix pass 2, at the code-final head `eeb9ba3`
+### Fix pass 2, at the code-final head `d7d7d6e`
 
-Package gates, `2026-09-16 03:48:15 UTC`, `git status --porcelain` empty:
+Package gates, `2026-09-16 03:55:49 UTC`, `git status --porcelain` empty:
 
 ```
 $ npm test
@@ -1128,7 +1135,7 @@ $ npm run build
 rc=0
 ```
 
-Monorepo root, `2026-09-16 03:48:45 UTC` onward, same head, `git status --porcelain` empty:
+Monorepo root, `2026-09-16 03:56:21 UTC` onward, same head, `git status --porcelain` empty:
 
 ```
 $ npm test
@@ -1254,11 +1261,11 @@ even after the source is restored.
 | N20 | the whole uniquifier dropped (re-take) | unit rc=1, **4 failed**, was 3: the three of the original row plus `bounds a key at two thousand characters`, which is the content pin of Epic 15 |
 | N21 | the mark grown one character per retry again (re-take) | unit rc=1, **1 failed**: `holds the ceiling against a record that occupies the candidates` |
 
-### Mutants of fix pass 2, at `eeb9ba3`
+### Mutants of fix pass 2, at `d7d7d6e`
 
-Six, `2026-09-16 03:49:26 UTC` onward, unit counts out of 953 and e2e out of 40. The same six were
-taken at `4fb996d` first, `2026-09-16 03:35:40 UTC`, and re-taken here after the comment-only
-commit with identical counts and case names. Each was applied
+Six, `2026-09-16 03:57:02 UTC` onward, unit counts out of 953 and e2e out of 40. The same six were
+taken at `4fb996d` and again at `eeb9ba3`, and re-taken here after each prose-only commit, with
+identical counts and case names all three times. Each was applied
 as an exact single-occurrence replacement, asserted as one occurrence before the run, and reverted
 with `clean-after=0` printed. `dist` was rebuilt from the clean head afterwards, because a
 mutant's own e2e `pretest` leaves the mutated build behind: measured this pass, a live probe run
