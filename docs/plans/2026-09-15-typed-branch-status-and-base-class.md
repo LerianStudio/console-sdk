@@ -3,7 +3,7 @@
 - **Repository**: `LerianStudio/console-sdk`, package `@lerianstudio/sindarian-server`
 - **Branch**: `fix/typed-branch-status-and-base-class`, cut from `origin/develop` at `19839e9`
 - **Baseline at the cut**: unit 897 passed / 38 suites, e2e 32 passed / 2 suites
-- **Code-final head**: `c5ee916`, unit 934 passed / 39 suites, e2e 33 passed / 2 suites
+- **Code-final head**: `d5d5e54`, unit 934 passed / 39 suites, e2e 33 passed / 2 suites
 - **Predecessor**: PR #191 (merged as `f4e17ae`, released `2.0.0-beta.5`). This lane closes what
   the review of that PR found after it merged, so every item here lands on `develop` as a
   follow-up rather than as a push to a closed branch.
@@ -25,6 +25,7 @@
 | 7 | The list shape of a bounded record pinned | `aed0e2a` |
 | 8 | A cut key never swallows another field (review round) | `d0683c6` |
 | 9 | A cut key never outgrows the ceiling either (review round) | `c5ee916` |
+| 10 | The adversarial key case walks the retry path in use (review round) | `d5d5e54` |
 
 ## Epic 1: the readers are published (`ecfb7eb`)
 
@@ -380,6 +381,19 @@ $ npm run build
 rc=0
 ```
 
+## Epic 10: the adversarial case walks the retry path in use (`d5d5e54`)
+
+**Raised by CodeRabbit on PR #192, third round, and right.** The record in Epic 9's case occupied
+the candidates the ONE-CHARACTER mark produced, which is what keeps that case red on the
+implementation it was written against, but means the decimal retry collides once rather than two
+thousand times. The case now occupies BOTH sequences, `~4200.1` through `~4200.2100` and the
+legacy `~4200`, `~4200~`, `~4200~~` chain, so the bounded path is walked to its end AND the case
+still fails on the growth it was written against.
+
+Verified at `2026-09-16 00:53:59 UTC`, head `d6332e8`: the reworked case passes on the current
+implementation (12 of 12 in that file) and, with mutant N21 applied, fails with `Expected: 2000`,
+which is the proof that it is still a regression test rather than only a shape test.
+
 ## Found, not fixed
 
 1. **Product Console still builds its response status with `exception.getStatus()`**
@@ -416,7 +430,7 @@ rc=0
 
 Every command below was run verbatim in `/srv/worktrees/sdk-typed-fix1`.
 
-Package gates, `2026-09-16 00:42:37 UTC`, head `c5ee916`, `git status --porcelain` empty:
+Package gates, `2026-09-16 00:54:18 UTC`, head `d5d5e54`, `git status --porcelain` empty:
 
 ```
 $ npm test
@@ -463,7 +477,7 @@ rc=0
 
 ### Mutants
 
-Eleven, all at the code-final head `c5ee916`, `2026-09-16 00:43:08 UTC` onward, each applied with
+Eleven, all at the code-final head `d5d5e54`, `2026-09-16 00:54:49 UTC` onward, each applied with
 an exact single-occurrence replacement, `dist` rebuilt by the e2e run, reverted with `git checkout
 -- packages`, and `clean-after-<id>=0` printed after every revert. Unit counts are out of 934 and
 e2e out of 33 throughout. Numbering continues #191's, which ended at N10.
@@ -479,5 +493,5 @@ e2e out of 33 throughout. Numbering continues #191's, which ended at N10.
 | N17 | `Number.isInteger` dropped | unit rc=1, **1 failed**: `answers 500 for the unusable status 404.5`; e2e rc=0. It survived every case of #191 |
 | N18 | the reason dropped from the announcement | unit rc=1, **4 failed**: the two build cases, the cyclic transport case and `announces a cyclic record with the reason`; e2e rc=0 |
 | N19 | an array rebuilt like any other object | unit rc=1, **1 failed**: `keeps an array a list even when it carries an oversized name`; e2e rc=0. It SURVIVED at `ba3bbd1` and is what Epic 7 exists for |
-| N20 | the whole uniquifier dropped, so cut keys merge again | unit rc=1, **3 failed**: the two `keeps both fields` cases and the ceiling case; e2e rc=0. It is the state the first review round found, and what Epic 8 exists for. Taken at `c5ee916` at `2026-09-16 00:45:52 UTC`, `clean-after-N20=0`. A narrower first version of this row, replacing only the FIRST candidate with the plain cut, survived and was discarded as equivalent: the retry loop recovers the mark, and a plain cut that collides with nothing is a correct name |
+| N20 | the whole uniquifier dropped, so cut keys merge again | unit rc=1, **3 failed**: the two `keeps both fields` cases and the ceiling case; e2e rc=0. It is the state the first review round found, and what Epic 8 exists for. A narrower first version of this row, replacing only the FIRST candidate with the plain cut, SURVIVED and was discarded as equivalent rather than recorded as a hole: the retry loop recovers the mark, and a plain cut that collides with nothing is a correct name |
 | N21 | the mark grown one character per retry again | unit rc=1, **1 failed**: `holds the ceiling against a record that occupies the candidates`; e2e rc=0. It is the state the second review round found, and what Epic 9 exists for |
