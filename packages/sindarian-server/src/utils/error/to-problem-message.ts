@@ -49,11 +49,15 @@ export const UNCLASSIFIED_CODE = '0004'
  *
  * `title` is a short summary of the problem type (RFC 9457), and the reason
  * phrase of the status the response is ACTUALLY built with is the one summary
- * that is always true of it. It is also the same words: every typed exception
- * in this package carries its status's phrase as its title, so a failed read
- * and a subclass answer a caller identically for the same status. The registry
- * has gaps inside 200 to 599, and a status with no phrase names itself rather
- * than borrowing 500's, which would tell a caller the wrong thing twice.
+ * that is always true of it. It is usually the same words as well: measured
+ * against `STATUS_CODES` on Node v24.21.0, seven of the eight typed exceptions
+ * in this package carry their status's phrase as their title, so for those a
+ * failed read and the subclass answer a caller identically. The exception is
+ * `ValidationApiException`, whose title is 'Validation Error' at 400, where
+ * the phrase is 'Bad Request' - so a rejected form whose title was overwritten
+ * is told 'Bad Request'. The registry also has gaps inside 200 to 599, and a
+ * status with no phrase names itself rather than borrowing 500's, which would
+ * tell a caller the wrong thing twice.
  */
 export const noProblemTitle = (status: number): string =>
   STATUS_CODES[status] ?? `Error ${status}`
@@ -80,6 +84,19 @@ export const noProblemTitle = (status: number): string =>
  *   envelope. Losing the field is bad; losing the response is the failure this
  *   package already closed once, for `throw null`.
  *
+ * A PRIMITIVE is stringified, not replaced. A pg `INT` error-code column and
+ * a driver's `bigint` are what the `any` a database row is actually carries,
+ * and the first of those served `{"code":5}` to a caller perfectly well before
+ * this package read the field at all. Substituting `0004` there would destroy
+ * a value that was fine and name it nowhere, the response and the operator log
+ * both, so a number as it is spelled (`NaN` and `Infinity` included), a
+ * `bigint`, a boolean and a string all answer their own text, bounded. What
+ * still answers nothing is a value whose text would be a SERIALISATION of
+ * something else: `String({})` is `[object Object]`, `String(['a'])` is `a`,
+ * and `null`, `undefined`, a function and a symbol are the absence of a field
+ * rather than a field. Those are the shapes an upstream body arrives as, which
+ * is the defect this reader exists for.
+ *
  * What it does NOT do is spend the fallback. A frame that answers a whole body
  * has to know a field was dropped in order to say so in the operator log, and
  * asking the value a second time to find out is the first rule above broken.
@@ -96,7 +113,12 @@ export function readWireField(
   try {
     const field = read()
 
-    return typeof field === 'string' ? field.slice(0, limit) : undefined
+    return typeof field === 'string' ||
+      typeof field === 'number' ||
+      typeof field === 'bigint' ||
+      typeof field === 'boolean'
+      ? String(field).slice(0, limit)
+      : undefined
   } catch {
     return undefined
   }

@@ -59,17 +59,24 @@ export class ApiException extends HttpException {
    * references: a class instance arrives as its data. This method is
    * documented as the body a caller receives, which is data.
    *
-   * The quantifier is not decoration, and both exceptions were measured. A
-   * root that carries its OWN `toJSON` now DECIDES the body, where the spread
-   * copied that function and the serialiser then dropped it: a money class
-   * passed as the whole metadata served its fields before and serves what its
-   * `toJSON` returns now. A root the round trip turns into something that is
-   * not an object, a `Date` becoming its ISO string, then spreads by index and
-   * serves numbered character keys. A `toJSON` on a value INSIDE the metadata
-   * is unaffected either way. Neither shape is one this package produces, and
-   * both are named in TECHNICAL.md rather than guarded against, because
-   * guarding the second would change what a plain string root has always
-   * served.
+   * The quantifier is not decoration, and every exception below was measured
+   * on a pre-fix build of this tree through a real `Response`, because the
+   * mechanism is not the same one twice. A root carrying a `toJSON` DECIDES
+   * the body now, and what it replaces depends on where that `toJSON` sits. On
+   * a class, where an ordinary one sits on the PROTOTYPE, the spread copied
+   * the instance's DATA and left the method behind, so a money class served
+   * `{"cents":1500}` and serves `{"amount":15}` now: a consumer reading
+   * `cents` reads nothing. As an OWN ENUMERABLE property, the spread copied
+   * the FUNCTION onto the body itself and the serialiser then called it, so
+   * what it returned became the WHOLE response - `{"amount":15}`, with the
+   * application's envelope and all three named fields gone. That shape is
+   * repaired here rather than changed. A root the round trip turns into
+   * something that is not an object, a `Date` becoming its ISO string, then
+   * spreads by index and serves numbered character keys where it served none.
+   * A `toJSON` on a value INSIDE the metadata is unaffected either way. None
+   * of these is a shape this package produces, and they are named in
+   * TECHNICAL.md rather than guarded against, because guarding the last would
+   * change what a plain string root has always served.
    *
    * A drop is never silent. The fields are gone from the body, so the reason
    * is the only thing left that explains them, and it goes to the operator log
@@ -77,16 +84,31 @@ export class ApiException extends HttpException {
    * reason is itself a read of a value this package does not own, so it happens
    * inside `logErrorLine`'s builder, where a `message` getter that throws is
    * announced rather than thrown a second time.
+   *
+   * The classification arrives as an ARGUMENT rather than being read here, and
+   * that is the one-read rule again rather than tidiness. This line names the
+   * incident with the route's `code` and `title`, and building it from
+   * `this.code` was itself an unguarded read of a value this frame already
+   * knows it cannot trust: when the code was the thing that had just failed,
+   * the builder threw, `logErrorLine` kept the label and lost the fields, and
+   * the line named the CODE's failure as the metadata's cause. Measured
+   * through a real Response before this was fixed: `Exception metadata dropped
+   * {"record":"unserialisable","cause":"code getter exploded"}`, with the
+   * metadata's own reason nowhere in it.
+   *
+   * @param classification The already-guarded `code` and `title`, read once
    */
-  private readWireMetadata(): object {
+  private readWireMetadata(classification: {
+    code: string
+    title: string
+  }): object {
     try {
       const serialised = JSON.stringify(this.metadata)
 
       return serialised === undefined ? {} : JSON.parse(serialised)
     } catch (failure) {
       logErrorLine('Exception metadata dropped', () => ({
-        code: this.code,
-        title: this.title,
+        ...classification,
         cause: (failure instanceof Error
           ? failure.message
           : String(failure)
@@ -101,19 +123,25 @@ export class ApiException extends HttpException {
    * The classification this body carries, each field read once.
    *
    * The last two values on this frame that were taken rather than read, and
-   * neither needs an override or a cast to go wrong. `code: string` is
-   * satisfied with no cast at all by the `any` a database row is, which is the
-   * premise the metadata guard above already rests on; `title` is a writable
-   * property, which is how `message` reached the wire as an upstream object.
-   * Measured through a real handler: a `code` getter that throws left the route
-   * with NO Response, above the frame that would have built one, and a `title`
-   * an upstream body had been written into reached the browser whole, internal
-   * host included, under a field this package documents as a classification.
+   * neither needs an override to go wrong. Both are declared `string` and both
+   * are satisfied with no cast at all by the `any` a database row is, which is
+   * the premise the metadata guard above already rests on: `new
+   * ApiException(row.code, row.title, ...)` compiles. Measured through a real
+   * handler: a `code` getter that throws left the route with NO Response,
+   * above the frame that would have built one, and a `title` an upstream body
+   * had been written into reached the browser whole, internal host included,
+   * under a field this package documents as a classification. Writing either
+   * of them AFTER construction does need a cast, both being `readonly`, which
+   * is the one thing `message` never needed: measured under strict `tsc`
+   * against the emitted types, `e.title = x` and `e.code = x` are both
+   * TS2540, and the constructor call above compiles.
    *
    * Bounded at `PROBLEM_FIELD_MAX_LENGTH` rather than the message ceiling,
    * which is the argument that constant already makes about these exact two
    * fields: they are written by an upstream, so their length is not ours to
-   * assume.
+   * assume. A primitive is stringified rather than replaced, for the reason
+   * `readWireField` gives: a pg `INT` code served a caller perfectly well
+   * before this package read the field, and a substitute would destroy it.
    *
    * A drop is never silent, and what the line names is the FIELD rather than
    * the reason. The reason lives in the value that failed, and the read of it
@@ -180,12 +208,29 @@ export class ApiException extends HttpException {
    * code and the title through `readWireClassification`. Every one of them
    * could cost this frame its whole response, and this frame is the one an
    * application that renders its own envelope calls. There is no unguarded
-   * read left on this line.
+   * read left on this line, and each field is read EXACTLY once: the
+   * classification is read first and handed to the metadata reader, which
+   * needs those two values to name an incident in the operator log and used to
+   * read them a second time to get them.
+   *
+   * The return type is written out rather than inferred, and the index
+   * signature is the load-bearing half. Metadata keys are part of this body -
+   * Console passes `{ details }` and reads `details` back - so a type narrowed
+   * to the three named fields is a compile error in a consumer that nothing in
+   * this package would notice. The e2e suite holds it: it resolves this
+   * package by `file:`, so it compiles against the emitted `.d.ts` a consumer
+   * installs.
    */
-  getResponse() {
+  getResponse(): {
+    message: string
+    code: string
+    title: string
+  } & Record<string, unknown> {
+    const classification = this.readWireClassification()
+
     return {
-      ...this.readWireMetadata(),
-      ...this.readWireClassification(),
+      ...this.readWireMetadata(classification),
+      ...classification,
       ...super.getResponse()
     }
   }

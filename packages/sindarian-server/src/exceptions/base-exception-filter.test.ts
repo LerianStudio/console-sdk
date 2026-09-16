@@ -152,7 +152,6 @@ describe('BaseExceptionFilter', () => {
         'an upstream problem object',
         { title: 'Gateway Timeout', detail: 'cpf 123.456.789-00' }
       ],
-      ['a number', 42],
       ['undefined', undefined],
       ['null', null]
     ])('names the real status for %s', async (_label, value) => {
@@ -164,6 +163,19 @@ describe('BaseExceptionFilter', () => {
       expect(body.message).toContain('404')
       expect(JSON.stringify(body)).not.toContain('123.456.789-00')
       expect(JSON.stringify(body)).not.toContain('Gateway Timeout')
+      expect(mockNextResponse.json.mock.calls[0][1]).toEqual({ status: 404 })
+    })
+
+    // A number is not one of those: it carries no upstream body and no free
+    // text, so it is stringified rather than replaced. The fallback is for a
+    // value whose text would be a serialisation of something a caller must not
+    // be shown, which is what the three rows above are.
+    it('reads a numeric message as its digits, at the real status', async () => {
+      await filter.catch(mutated(42))
+
+      expect(mockNextResponse.json.mock.calls[0][0]).toMatchObject({
+        message: '42'
+      })
       expect(mockNextResponse.json.mock.calls[0][1]).toEqual({ status: 404 })
     })
   })

@@ -1,5 +1,9 @@
 import { format } from 'node:util'
-import { noProblemDetails } from '@lerianstudio/sindarian-server'
+import {
+  ApiException,
+  HttpStatus,
+  noProblemDetails
+} from '@lerianstudio/sindarian-server'
 import { app } from '../app/app'
 import { generateRequest } from './utils/generate-request'
 import { NextRequest } from 'next/server'
@@ -378,5 +382,27 @@ describe('A typed exception carries a bounded sentence, however it was written',
       'Upstream error body carried no problem details (status 404)'
     )
     expect(body.code).toBe('0003')
+  })
+
+  // The TYPE this method emits, not the value it answers. An application that
+  // renders its own envelope spreads this body into it and reads metadata keys
+  // back off it - Console passes `{ details }` and reads `details` - so a
+  // return narrowed to the three named fields stops that consumer compiling at
+  // the 2.x bump, silently, because nothing in the package itself reads a
+  // metadata key. This suite is the only one here that type-checks, and it
+  // resolves the package through `file:../`, so what it compiles against is
+  // the emitted `.d.ts` a consumer installs. The read below IS the assertion:
+  // a narrowed type fails this suite before a single case runs.
+  it('lets a consumer read a metadata key off the body it emits', () => {
+    const body = new ApiException(
+      '0007',
+      'Validation Error',
+      'Invalid body',
+      HttpStatus.BAD_REQUEST,
+      { details: { requestId: 'r-1' } }
+    ).getResponse()
+
+    expect(body.details).toEqual({ requestId: 'r-1' })
+    expect(body.message).toBe('Invalid body')
   })
 })
