@@ -1436,6 +1436,48 @@ describe('HttpService', () => {
       })
     })
 
+    // Naming the reason is itself a read of a value a consumer threw, so it
+    // can throw too: `String(failure)` raises on a value with no path to a
+    // primitive at all, which a null-prototype object is - no `toString`, no
+    // `valueOf`, no `Symbol.toPrimitive`, and `JSON.parse` of a body carrying
+    // `__proto__` or an `Object.create(null)` config map is where one comes
+    // from. Unguarded, that second throw leaves the caller with the 503 that
+    // means the upstream never answered, for a 409 it answered perfectly well,
+    // and with no line at all: the same defect one frame further in.
+    it('keeps the real status when the reason cannot be read either', async () => {
+      class HostileHttpService extends HttpService {
+        public async testRequest<T>(request: Request): Promise<T> {
+          return this.request<T>(request)
+        }
+
+        protected createDefaults = jest.fn().mockResolvedValue({})
+
+        protected describeRequestError(): Record<string, unknown> {
+          throw Object.create(null)
+        }
+      }
+
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ title: 'Conflict' }), {
+          status: HttpStatus.CONFLICT,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+
+      const error = await new HostileHttpService()
+        .testRequest(new Request('https://api.example.com/v1/accounts'))
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(ApiException)
+      expect(error).not.toBeInstanceOf(ServiceUnavailableApiException)
+      expect(error.getStatus()).toBe(HttpStatus.CONFLICT)
+      // The announcement still stands, with no reason to give: there is no
+      // sentence to be had from that value, and inventing one is not worth a
+      // second throw on the last frame before the caller is answered.
+      expect(consoleSpy.mock.calls[0][0]).toBe('Request error')
+      expect(recordOf('Request error')).toEqual({ record: 'unserialisable' })
+    })
+
     // The reason is read off a value the override threw, so it is bounded like
     // every other string this package did not size.
     it('bounds the reason a record could not be built', async () => {
