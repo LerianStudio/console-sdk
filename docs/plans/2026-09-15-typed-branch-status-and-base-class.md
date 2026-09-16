@@ -3,14 +3,38 @@
 - **Repository**: `LerianStudio/console-sdk`, package `@lerianstudio/sindarian-server`
 - **Branch**: `fix/typed-branch-status-and-base-class`, cut from `origin/develop` at `19839e9`
 - **Baseline at the cut**: unit 897 passed / 38 suites, e2e 32 passed / 2 suites
-- **Code-final head**: `d5d5e54`, unit 934 passed / 39 suites, e2e 33 passed / 2 suites
+- **Code-final head**: `243cfa3`, unit 945 passed / 39 suites, e2e 38 passed / 2 suites. Every
+  number in this document is measured at a head that is NAMED next to it; the earlier heads and
+  their counts are kept where they are, because a RED block is only evidence at the head it was
+  taken on. The whole ladder was measured in fix pass 1, `2026-09-16 02:11:25 UTC` onward, by
+  running `npx jest` in `packages/sindarian-server` in a detached worktree of each head with
+  `node_modules` copied in: `aed0e2a` 930, `d0683c6` 932, `c5ee916` 934, `d5d5e54` 934,
+  `5f07567` 934, and this head 945
 - **Predecessor**: PR #191 (merged as `f4e17ae`, released `2.0.0-beta.5`). This lane closes what
   the review of that PR found after it merged, so every item here lands on `develop` as a
   follow-up rather than as a push to a closed branch.
-- **Not a breaking change.** Nothing a caller could reach through this package's own constructors
-  changes shape; what changes is what happens to the shapes that used to produce NO response at
-  all. The one wire-visible change of the 2.0.0 line, the operator log's second argument, shipped
-  in #190 and is restated below because the release notes could not carry it.
+- **Not a breaking change, with one caveat that is measured rather than argued.** What changes is
+  almost entirely what happens to the shapes that used to produce NO response at all. The
+  exception, found by the security review of this PR: a plain `HttpException` whose CONSTRUCTOR
+  message runs past 2000 characters now serves a truncated body, and that shape produced a
+  perfectly good response before. Measured on both builds,
+  `new HttpException('x'.repeat(5000), 404).getResponse().message.length` reads 5000 against
+  `origin/develop` (`getResponse()` there is `{ message: this.message }`) and 2000 here.
+  `ApiException` was already 2000 on both, so only the base class moves. The consumer that meets
+  it is Product Console, whose `toExceptionResponse(exception: HttpException)` spreads
+  `getResponse()` straight into its response. The release decision stands, everything landing
+  inside the already-open 2.0.0 major, but the justification had framed the guard as touching only
+  messages written AFTER construction, and that was false.
+- **Provenance of the 2.0.0 log-shape change, corrected.** The operator log's second argument
+  becoming a JSON STRING shipped with PR #191, released as `2.0.0-beta.5`. NOT with the #190 that
+  opened the major, which this document and the PR body both said. Measured:
+  `git ls-tree -r 92fadc7 -- packages/sindarian-server/src/utils/error/` (the #190 merge, whose
+  `package.json` reads `2.0.0-beta.3`) lists no `log-error-line.ts`, and at that commit
+  `http-service.ts:289` still reads `console.error('Request failed', {`, the record OBJECT.
+  `f4e17ae` (the #191 merge) is where the file first appears, and `19839e9` is the release commit
+  that bumped to beta.5. A consumer pinned to `2.0.0-beta.3` or `2.0.0-beta.4` still receives the
+  object and has nothing to change yet, which is the opposite of what a release-facing sentence
+  was telling them. TECHNICAL.md now names the release rather than the major.
 
 ## Phase overview
 
@@ -26,6 +50,14 @@
 | 8 | A cut key never swallows another field (review round) | `d0683c6` |
 | 9 | A cut key never outgrows the ceiling either (review round) | `c5ee916` |
 | 10 | The adversarial key case walks the retry path in use (review round) | `d5d5e54` |
+| 11 | The metadata a typed exception answers is read, not taken (fix pass 1) | `c59ccb4` |
+| 12 | The line an unreachable upstream writes is pinned (fix pass 1) | `dec2481` |
+| 13 | A record builder that throws a non-Error names the reason (fix pass 1) | `c4543ef` |
+| 14 | A record's keys are measured without reading its values (fix pass 1) | `179d6df` |
+| 15 | The mark on a cut key is documented as the code writes it (fix pass 1) | `ff1d297` |
+| 16 | The fallback sentence is published beside its readers (fix pass 1) | `7ff938c` |
+| 17 | Every null-body status is driven through a real Response (fix pass 1) | `85e6882` |
+| 18 | The documents say what was measured (fix pass 1) | `cc897fd`, `243cfa3` |
 
 ## Epic 1: the readers are published (`ecfb7eb`)
 
@@ -160,8 +192,14 @@ an override that throws turned an upstream 409 into the 503 that means "the upst
 answered", and wrote no line to say why.
 
 **Task 4.1.** `logErrorLine` takes a FUNCTION and calls it inside the same guard as the write.
-All four call sites hand one over, so every builder is covered, including the `String(error)` in
-`onRequestFailure` that throws on a symbol. **Task 4.2.** A record that cannot be built or cannot
+All four call sites hand one over, so every builder is covered, `onRequestFailure`'s included.
+**Corrected in fix pass 1:** this task originally justified itself with "the `String(error)` in
+`onRequestFailure` that throws on a symbol", and that mechanism does not exist. `String(sym)` is
+the one legal stringification of a symbol and never throws (only `${sym}` and `sym + ''` do), so
+a thrown symbol walks that builder to a perfectly good line, before this change as much as after.
+What actually throws in that builder is the read one operand over, `error.message`, when the
+thrown Error carries a getter that throws, and Epic 12 below is the case that pins it.
+**Task 4.2.** A record that cannot be built or cannot
 be serialised is announced with its bounded reason, so the missing fields have an explanation.
 The existing cyclic case gains that reason, which is a deliberate change to what that line says.
 
@@ -264,13 +302,32 @@ INSITU error newlines=16 lines=17
 INSITU object newlines=3 lines=4
 ```
 
-So SEVENTEEN is the line count here and sixteen is the newline count, and the file's own
-definition of one physical line, zero newlines, is the arithmetic that settles it. The review of
-#191 measured the same rendering in another copy and got 17 newlines / 18 lines: the count
-follows the stack's frames and what they render to, which is why the comment now says which
-number it is quoting and that one line is the only fact in it. The `SEVEN` and `fifteen` the
+So SEVENTEEN was the line count under that invocation and sixteen the newline count, and the
+file's own definition of one physical line, zero newlines, is the arithmetic that settles it.
+
+**Corrected in fix pass 1: the digit does not belong in the shipped comment, and the cause the
+comment gave for the drift was wrong.** It is not copy-to-copy variation. It is how the suite is
+invoked, and it reproduces on demand. Re-measured in situ on one build at `cc897fd`, by
+formatting the parsed record the old way inside that very test:
+
+```
+$ npm run test:e2e            # the gate: two specs, so this one runs in a jest worker
+INSITU error newlines=17 lines=18
+
+$ npx jest e2e/error-shape.spec.ts
+INSITU error newlines=16 lines=17
+
+$ npx jest -i e2e/error-shape.spec.ts
+INSITU error newlines=16 lines=17
+```
+
+Two suites make jest use a worker and the extra frame is the whole difference; `-i` changes
+nothing. So the number Epic 6.3 pasted is the single-spec one while the gate the repository runs
+gives one more, and a reader reproducing the comment's own procedure through `npm run test:e2e`
+could never arrive at the digit it named. The comment now states the fact that holds, which is
+the count this file actually asserts: one line, zero newlines. The `SEVEN` and `fifteen` the
 filter's own comment cites come from the #190 harness over a record that still held the thrown
-value itself, and both files now say so rather than implying one runner.
+value itself, and both files say so rather than implying one runner.
 
 **Task 6.4. TECHNICAL.md.** The status paragraph no longer equates "a number no response can
 carry" with "outside 200 to 599". The message paragraph names the base class as the reader.
@@ -319,12 +376,17 @@ rc=1
 Tests:       2 failed, 8 passed, 10 total
 ```
 
-GREEN, `2026-09-16 00:27:03 UTC`, same head:
+GREEN, `2026-09-16 00:27:03 UTC`, same head. **Re-measured in fix pass 1 and corrected**: this
+block pasted 934, and the tree it describes is the one `d0683c6` committed, which measures 932.
+The two unit totals in this document were transposed, 934 here and 932 in the Verification block,
+and both have now been re-run rather than reasoned about. Measured
+`2026-09-16 02:11:25 UTC` in a detached worktree of `d0683c6` with `node_modules` copied in:
 
 ```
 $ npx jest
 rc=0
-Tests:       934 passed, 934 total
+Test Suites: 39 passed, 39 total
+Tests:       932 passed, 932 total
 
 $ npm run test:e2e
 rc=0
@@ -336,6 +398,9 @@ rc=0
 $ npm run build
 rc=0
 ```
+
+The neighbouring heads were measured the same way in the same worktree, so the ladder is on the
+record rather than inferred: `c5ee916` and `d5d5e54` each read `Tests: 934 passed, 934 total`.
 
 ## Epic 9: a cut key never outgrows the ceiling either (`c5ee916`)
 
@@ -396,6 +461,338 @@ of 12 in that file) and, with mutant N21 applied, fails with `Expected: 2000`, w
 that it is still a regression test rather than only a shape test. The gates and the mutants below
 are re-taken after that commit, at a head that carries it.
 
+## Epic 11: the metadata a typed exception answers is read, not taken (`c59ccb4`)
+
+**Found by the contrarian of this PR, with a live probe at `15f53a3`, and it REFUTED the
+headline.** The claim was that a typed exception can no longer leave a route with no response at
+all on either frame that answers one. `ApiException.getResponse()` is
+`{ ...this.metadata, code, title, ...super.getResponse() }`: this lane guarded the message and the
+status on that line and left the THIRD value a route controls, the constructor's own fifth
+parameter, spread first and unguarded. A spread is a READ, so an own enumerable accessor that
+throws never produced a body; and a value `JSON.stringify` refuses, a `bigint`, which is what a pg
+driver hands back for an int64 amount, produced one that failed one frame later where the response
+is serialised. Both escaped `app.handler` with no Response object at all, which is the zero-byte
+failure this branch says it closes, reached through the recipe TECHNICAL.md prescribes.
+
+**Task 11.1.** Metadata is taken as a JSON ROUND TRIP rather than checked and then spread: a check
+on one read and a use of another is not a guard, the argument `readWireMessage` is built on. Every
+accessor runs exactly once, inside the try, and what comes back is by construction a thing the
+serialiser cannot refuse. **Task 11.2.** A round trip that fails answers `code`, `title` and
+`message` alone and the drop is announced on the operator log as `Exception metadata dropped`,
+with its bounded reason, built inside `logErrorLine`'s own guard so a reason that cannot be read
+is announced rather than thrown a second time. **Task 11.3.** Both probes become e2e routes,
+`typed-meta-trap` and `typed-meta-bigint`, driven through the real `app.handler`.
+
+RED, `2026-09-16 01:47:40 UTC`, head `15f53a3`, tree carrying only the two routes and their cases:
+
+```
+$ npm run test:e2e
+rc=1
+  ● A typed exception carries a bounded sentence, however it was written › answers a body at all for metadata carrying a getter that throws
+    Error: metadata getter exploded
+      at Object.get [as details] (app/controllers/throwing-controller.ts:179:15)
+      at ApiException.getResponse (../src/exceptions/api-exception.ts:51:15)
+      at AppExceptionFilter.catch (app/app-exception-filter.ts:31:24)
+  ● A typed exception carries a bounded sentence, however it was written › answers a body at all for metadata carrying a value that cannot be serialised
+    TypeError: Do not know how to serialize a BigInt
+      at NextResponse.json (../../../node_modules/next/src/server/web/spec-extension/response.ts:113:41)
+      at AppExceptionFilter.catch (app/app-exception-filter.ts:27:27)
+Tests:       2 failed, 33 passed, 35 total
+```
+
+Those two stacks are the finding: one throw inside `getResponse()`, one inside the serialiser,
+both above the frame that would have built a Response.
+
+GREEN, `2026-09-16 01:49:10 UTC` onward, same head:
+
+```
+$ npx jest
+rc=0
+Tests:       938 passed, 938 total
+
+$ npm run test:e2e
+rc=0
+Tests:       35 passed, 35 total
+```
+
+**What a caller could notice.** Nothing on the wire. The response is serialised with
+`JSON.stringify` anyway, and it drops the same functions, `undefined`s and symbols the round trip
+drops, in the same key order, so for every metadata that worked before the bytes are identical.
+What changes is `getResponse()` read IN MEMORY: a class instance arrives as its data rather than
+as itself. The method is documented as the body a caller receives, which is data. The metadata is
+NOT bounded at 2000 characters, which the fix brief offered as an option: `ValidationApiException`
+puts every Zod issue of a rejected form under `errors`, a legitimately wide shape a consumer
+renders per field, and cutting each of its strings would change a shipped behaviour to buy nothing
+against the defect actually found, which is about reads and serialisability rather than size.
+
+## Epic 12: the line an unreachable upstream writes is pinned (`dec2481`)
+
+**Found by the test reviewer of this PR.** Epic 4 moved four record builders inside the write
+guard. Three of them have cases; `onRequestFailure`'s had none, so reverting THAT call site to its
+eager form, which is exactly the shape this branch changed, survived every unit and e2e case in
+the package. The caller still receives its bounded exception either way, because `request`'s own
+`catch {}` swallows a failing failure-logger by design, so nothing else in the suite moves and the
+operator line simply disappears.
+
+**Task 12.1.** A service whose `onBeforeFetch` throws an `Error` carrying a throwing `message`
+getter asserts exactly ONE `Request failed` call, whose parsed record is the announcement with the
+bounded reason. That is the shape that actually throws in this builder, and it is what replaces
+the symbol the plan used to cite (see the correction in Epic 4).
+
+RED, `2026-09-16 01:51:00 UTC`, head `c59ccb4`, the eager call site applied as a single-occurrence
+replacement:
+
+```
+$ npx jest src/services/http-service.test.ts
+rc=1
+  ● HttpService › one failed call is one physical log line › announces an unreachable upstream whose reason cannot be read
+    expect(received).toHaveLength(expected)
+    Expected length: 1
+    Received length: 0
+    Received array:  []
+Tests:       1 failed, 68 passed, 69 total
+```
+
+Zero lines written, which is the loss the mutant makes invisible today.
+
+GREEN, `2026-09-16 01:51:16 UTC`, same head, the eager form reverted:
+
+```
+$ npx jest
+rc=0
+Tests:       939 passed, 939 total
+
+$ npm run lint
+rc=0
+```
+
+## Epic 13: a record builder that throws a non-Error names the reason (`c4543ef`)
+
+**Found by the code reviewer of this PR.** The announcement fell back to `typeof failure` when the
+thrown value had no string `message`, so a `describeRequestError` override writing
+`throw 'payer missing from body'`, which is a thing consumers write, produced
+`{"record":"unserialisable","cause":"string"}`. The doc block and TECHNICAL.md both promise the
+bounded REASON, and an operator reading the only sentence that explains an empty record got the
+name of a type. The package already had the pattern one file over: `onRequestFailure` writes
+`error instanceof Error ? error.message : String(error)`.
+
+**Task 13.1.** The reason is the bounded `String()` of whatever was thrown when it is not an
+`Error`. It is safe here for the same reason the `message` read above it is: the inner `try` falls
+back to the bare announcement when the read itself throws.
+
+RED, `2026-09-16 01:51:58 UTC`, head `dec2481`:
+
+```
+$ npx jest src/utils/error/log-error-line.test.ts
+rc=1
+  ● logErrorLine › names what a record builder threw when it was not an Error
+    Expected: "payer missing from body"
+    Received: "string"
+  ● logErrorLine › bounds what a record builder threw
+    Expected length: 2000
+    Received length: 6
+    Received string: "string"
+Tests:       2 failed, 12 passed, 14 total
+```
+
+GREEN, `2026-09-16 01:52:17 UTC`, same head:
+
+```
+$ npx jest
+rc=0
+Tests:       941 passed, 941 total
+
+$ npm run test:e2e
+rc=0
+Tests:       35 passed, 35 total
+
+$ npm run lint
+rc=0
+```
+
+## Epic 14: a record's keys are measured without reading its values (`179d6df`)
+
+**Found by the code reviewer of this PR.** Asking whether a key is over the ceiling is a question
+about the KEY, and `Object.entries` read every value in every object of every record to ask it. So
+a record carrying an accessor, which is what a `describeRequestError` override returning a class
+instance or a lazily computed field carries, ran that accessor TWICE per failed upstream call,
+once here and once in the serialiser, on the error path.
+
+**Task 14.1.** `Object.keys` answers the same question reading nothing; `Object.entries` moves
+into the rebuild branch, where the values are actually needed. The key order the two produce is
+the same, so the entry index the mark is built from is unchanged.
+
+RED, `2026-09-16 01:53:03 UTC`, head `c4543ef`:
+
+```
+$ npx jest src/utils/error/log-error-line.test.ts
+rc=1
+  ● logErrorLine › reads a record value once on the path that cuts nothing
+    Expected: 1
+    Received: 2
+Tests:       1 failed, 14 passed, 15 total
+```
+
+GREEN, `2026-09-16 01:53:18 UTC`, same head:
+
+```
+$ npx jest
+rc=0
+Tests:       942 passed, 942 total
+
+$ npm run lint
+rc=0
+```
+
+## Epic 15: the mark on a cut key is documented as the code writes it (`ff1d297`)
+
+**Found by the code reviewer of this PR.** `boundKey`'s doc said a cut key carries a mark only
+when it would land on a name already in the object. The code marks EVERY cut key: a record with a
+single 5000-character key and nothing to collide with is written as `KKK...KKK~0`, so an operator
+debugging that `~0` went looking for a duplicate that was never there. The two `bounds a key`
+cases assert a length and never look at the text, so neither the unconditional mark nor a change
+to it was pinned.
+
+**Task 15.1.** The doc says what the code does: every cut key carries `~<index>`, which is what
+tells an operator the name was cut, and what a collision costs is the retry `~<index>.<attempt>`.
+**Task 15.2.** The emitted key content is pinned once. **Task 15.3.** The 116-column comment line
+the review flagged is rewrapped to the file's 80.
+
+The gain is a mutant that used to survive. The plan's N20 row records that a narrower first
+version, replacing only the FIRST candidate with the plain cut, SURVIVED and was discarded as
+equivalent. With the content pinned it is a kill, taken at `ff1d297` as the mark dropped from the
+first candidate:
+
+```
+$ npx jest src/utils/error/log-error-line.test.ts
+rc=1
+  ● logErrorLine › bounds a key at two thousand characters
+    Expected: "KKK...KKK~0"
+    Received: "KKK...KKK"
+Tests:       1 failed, 14 passed, 15 total
+```
+
+It is re-taken at the code-final head as N26 in the table below.
+
+## Epic 16: the fallback sentence is published beside its readers (`7ff938c`)
+
+**Found by the code reviewer of this PR.** Epic 1 exported `readWireMessage` and `readWireStatus`
+for the frame this package does not own, and left `noProblemDetails` module-private. An
+application calling `readWireMessage(exception, fallback)` therefore had to invent its own
+sentence, so the same failed read would read one way from this package's filter and another from
+the consumer's, which is precisely the drift the export exists to close.
+
+RED, `2026-09-16 01:55:42 UTC`, head `ff1d297`, tree carrying only the e2e case that imports it:
+
+```
+$ npm run test:e2e
+rc=1
+e2e/error-shape.spec.ts:2:10 - error TS2305: Module '"@lerianstudio/sindarian-server"' has no exported member 'noProblemDetails'.
+Tests:       21 passed, 21 total
+```
+
+GREEN, `2026-09-16 01:55:54 UTC`, same head:
+
+```
+$ npm run test:e2e
+rc=0
+Tests:       36 passed, 36 total
+
+$ npx jest
+rc=0
+Tests:       942 passed, 942 total
+```
+
+## Epic 17: every null-body status is driven through a real Response (`85e6882`)
+
+**Found by the test and security reviewers of this PR, as an overstated claim rather than a
+defect.** The lane said all three null-body statuses were measured through a real `Response`; only
+204 was. There was one route, `typed-nullbody`, and 205 and 304 rested on `readWireStatus`'s own
+unit rows, which are an assertion about a set-membership table rather than about the runtime that
+refuses the members. The package filter's own unusable-status table had the same hole from the
+other side: its rows were 0, 700, NaN and 199, and the comment above them stated only the
+`RangeError` half of the rule, in the very file this lane exists for.
+
+**Task 17.1.** Three routes, `typed-nullbody-204`, `-205` and `-304`, each driven through the real
+app handler. **Task 17.2.** The filter's table gains `[204]`, `[205]` and `[304]`, and its comment
+states both halves: the `RangeError` outside 200 to 599 AND the runtime's `TypeError` on a
+null-body status INSIDE the band.
+
+RED, `2026-09-16 01:56:58 UTC`, head `7ff938c`, with the null-body half of `readWireStatus`
+removed:
+
+```
+$ npx jest src/exceptions/base-exception-filter.test.ts
+rc=1
+  ● BaseExceptionFilter › answers 500 for the unusable status 204
+  ● BaseExceptionFilter › answers 500 for the unusable status 205
+  ● BaseExceptionFilter › answers 500 for the unusable status 304
+Tests:       3 failed, 47 passed, 50 total
+
+$ npm run test:e2e
+rc=1
+  ● answers a body for the status 204, which carries none
+    TypeError: Response constructor: Invalid response status code 204
+  ● answers a body for the status 205, which carries none
+    TypeError: Response constructor: Invalid response status code 205
+  ● answers a body for the status 304, which carries none
+    TypeError: Response constructor: Invalid response status code 304
+Tests:       3 failed, 35 passed, 38 total
+```
+
+Three real `TypeError`s from three real `Response` constructions, where before this epic the
+mutation produced one. GREEN, `2026-09-16 01:57:16 UTC`, same head, guard restored,
+`clean-after-N11=0`:
+
+```
+$ npx jest
+rc=0
+Tests:       945 passed, 945 total
+
+$ npm run test:e2e
+rc=0
+Tests:       38 passed, 38 total
+
+$ npm run lint
+rc=0
+```
+
+## Epic 18: the documents say what was measured (`cc897fd`, `243cfa3`)
+
+Both commits touch `packages/`, so both sit before the code-final head rather than in the docs
+commit that closes this pass. `cc897fd` carries TECHNICAL.md: the release the log shape changed in
+(see the provenance bullet at the top), the metadata read of Epic 11, and `noProblemDetails` named
+as the fallback an adopting application should take rather than invent. `243cfa3` carries the e2e
+comment's line count (see the correction in Epic 6.3).
+
+## Found by the review round of this PR, and where each one lands
+
+Three reviewers plus a contrarian, on `15f53a3`. The contrarian REFUTED the lane's headline with
+a live probe, which is Epic 11. Nothing below is dismissed: each is closed by code or answered
+here by name.
+
+| Found | Where it lands |
+|---|---|
+| Contrarian, live at HEAD: `metadata` is the third unguarded read on the `getResponse()` frame | Epic 11, code |
+| Contrarian: the log-shape change is attributed to #190 and shipped in #191 / `2.0.0-beta.5` | Provenance bullet at the top; TECHNICAL.md, `cc897fd` |
+| Test reviewer: the `onRequestFailure` half of Epic 4 has no test | Epic 12, code |
+| Code reviewer: a non-Error thrown by a record builder announces `cause: "string"` | Epic 13, code |
+| Code reviewer: `Object.entries` evaluates every accessor twice to measure key lengths | Epic 14, code |
+| Code reviewer: `boundKey`'s doc says a mark only on collision; the code marks every cut key | Epic 15, code |
+| Code reviewer, Info: one comment line left at 116 columns | Epic 15, Task 15.3 |
+| Code reviewer: `noProblemDetails` is not exported beside the two readers | Epic 16, code |
+| Test reviewer: the package filter's unusable-status table has no 204/205/304 row | Epic 17, code |
+| Test and security reviewers, contrarian: only 204 is driven through a real `Response` | Epic 17, code |
+| Test reviewer: Task 4.1's "`String(error)` throws on a symbol" is false | Epic 4, corrected in place |
+| All three reviewers and the contrarian: the Verification block pastes 932 at a head measuring 934 | Verification, both blocks re-taken at `243cfa3` |
+| Test reviewer: Epic 8's GREEN pastes 934 where the tree measures 932 | Epic 8, re-measured at `d0683c6` |
+| Code, test and security reviewers: the cross-document RED citation is by line number | Corrections section, cited by heading |
+| Test and security reviewers: `SEVENTEEN PHYSICAL LINES` does not reproduce, and the stated cause is wrong | Epic 6.3, re-measured three ways; the digit is out of the shipped comment, `243cfa3` |
+| Security reviewer: "Not a breaking change" is false for a long plain `HttpException` message | Caveat bullet at the top, measured on both builds |
+| All three reviewers and the contrarian: the PR body is three code commits stale | The body is rewritten at the code-final head |
+| Security reviewer, Info: the `cause` field widens the unredacted operator-log surface | Found, not fixed, item 4 |
+| Test reviewer: two assertions pin a V8 internal error string | Found, not fixed, item 7 |
+
 ## Found, not fixed
 
 1. **Product Console still builds its response status with `exception.getStatus()`**
@@ -413,6 +810,24 @@ are re-taken after that commit, at a head that carries it.
    throw site.
 5. **A plain `HttpException` is still answered 500 by the package filter**, whatever status it
    carries. Pinned by an e2e case since #190, unchanged here.
+6. **Metadata is guarded but not BOUNDED.** Epic 11 makes it impossible for metadata to cost a
+   route its response; it does not cap its size. `ValidationApiException` puts every Zod issue of
+   a rejected form under `errors`, which a consumer renders per field, so a per-string cut at 2000
+   would change a shipped behaviour to buy nothing against the defect that was found. A route
+   attaching a megabyte to metadata serves a megabyte, exactly as before.
+7. **Two assertions pin a V8 error string**, `Converting circular structure to JSON`, in
+   `log-error-line.test.ts` and `http-service.test.ts`. That text is the engine's wording for a
+   cycle, not a contract this package owns, so a Node change turns both red for a behaviour that
+   did not move. Raised by the test reviewer of this PR. Left alone deliberately: the propagation
+   of a reason is pinned exactly elsewhere, on strings this repository controls
+   (`cannot read properties of undefined (reading payer)`, and now `payer missing from body`), so
+   the cost of the engine string is a false red rather than a missed defect, and relaxing the two
+   assertions is a change to tests this pass did not otherwise touch.
+8. **The cut-key retry loop still reads values on the rebuild path.** Epic 14 removed the read
+   from the measuring path, which is every record. An object that actually needs a key cut is
+   rebuilt through `Object.entries`, so its accessors run once there and once in the serialiser's
+   walk of the copy. That is one read of the original, not two, and it is the path where the
+   values are genuinely needed.
 
 ## Corrections to earlier plans in this repository
 
@@ -425,27 +840,36 @@ are re-taken after that commit, at a head that carries it.
   given, even a mutated empty one`. The row now says five and names the head.
 - `docs/plans/2026-09-15-typed-exception-fail-safe.md`: the `breakLength: 128` figure is corrected
   to the measured 80, and the "seventeen physical lines" line now says which count it is.
-- PR #191's body says "Two RED blocks before their fixes" while its plan documents FOUR, at lines
-  178, 237, 283 and 313 of that file. A merged body cannot be corrected; it is recorded here.
+- PR #191's body says "Two RED blocks before their fixes" while its plan documents FOUR. A merged
+  body cannot be corrected; it is recorded here. The four are cited by HEADING, not by line
+  number: `### RED before GREEN: a typed exception's message`, `: one line per failed call`,
+  `: a message read twice` and `: the review round`. An earlier version of this line gave the
+  offsets 178, 237, 283 and 313, which were the numbers at `origin/develop` and which THIS PR
+  invalidates, because its own hunks add five lines to that same file above all four of them. A
+  heading survives an edit above it; an offset does not.
 
 ## Verification
 
 Every command below was run verbatim in `/srv/worktrees/sdk-typed-fix1`.
 
-Package gates, `2026-09-16 01:02:11 UTC`, head `5f07567`, `git status --porcelain` empty. That
-head is two docs commits past the code-final `d5d5e54` and `git diff d5d5e54 HEAD -- packages`
-prints nothing, so these are the code-final numbers measured after it, not before:
+**Both blocks below were re-taken from scratch at the code-final head of fix pass 1.** The
+previous package block pasted `Tests: 932 passed` under a header arguing the block was fresh, and
+932 was the total two code commits earlier, at `d0683c6`. Three reviewers raised it and one
+CodeRabbit thread was resolved with the number still wrong. Nothing here is carried over from an
+earlier head: every line below is output from the run named above it.
+
+Package gates, `2026-09-16 02:04:43 UTC`, head `243cfa3`, `git status --porcelain` empty:
 
 ```
 $ npm test
 rc=0
 Test Suites: 39 passed, 39 total
-Tests:       932 passed, 932 total
+Tests:       945 passed, 945 total
 
 $ npm run test:e2e
 rc=0
 Test Suites: 2 passed, 2 total
-Tests:       33 passed, 33 total
+Tests:       38 passed, 38 total
 
 $ npm run lint
 rc=0
@@ -454,7 +878,7 @@ $ npm run build
 rc=0
 ```
 
-Monorepo root, `2026-09-16 01:02:38 UTC` onward, same head:
+Monorepo root, `2026-09-16 02:05:07 UTC` onward, same head, `git status --porcelain` empty:
 
 ```
 $ npm test
@@ -475,16 +899,22 @@ rc=0
 
 $ npm run test:e2e -- --filter=@lerianstudio/sindarian-server   # the CI job's arm
 rc=0
-@lerianstudio/sindarian-server:test:e2e: Tests:       33 passed, 33 total
+@lerianstudio/sindarian-server:test:e2e: Tests:       38 passed, 38 total
  Tasks:    1 successful, 1 total
 ```
 
 ### Mutants
 
-Eleven, all at the code-final head `d5d5e54` itself, `2026-09-16 00:54:49 UTC` onward, each
-applied with an exact single-occurrence replacement, `dist` rebuilt by the e2e run, reverted with `git checkout
--- packages`, and `clean-after-<id>=0` printed after every revert. Unit counts are out of 934 and
-e2e out of 33 throughout. Numbering continues #191's, which ended at N10.
+Eleven were taken at `d5d5e54`, the code-final head before fix pass 1, `2026-09-16 00:54:49 UTC`
+onward, each applied with an exact single-occurrence replacement, `dist` rebuilt by the e2e run,
+reverted with `git checkout -- packages`, and `clean-after-<id>=0` printed after every revert.
+Unit counts in that table are out of 934 and e2e out of 33. Numbering continues #191's, which
+ended at N10.
+
+**Fix pass 1 re-took eleven at its own code-final head `243cfa3`**, `2026-09-16 02:05:56 UTC`
+onward, each reverted with `clean-after=0` printed: the five new ones, N22 to N26, plus N11 and
+the five that touch `log-error-line.ts`, because this pass changed that file. Their table follows
+this one. Unit counts there are out of 945 and e2e out of 38.
 
 | # | Mutation | Result |
 |---|---|---|
@@ -499,3 +929,24 @@ e2e out of 33 throughout. Numbering continues #191's, which ended at N10.
 | N19 | an array rebuilt like any other object | unit rc=1, **1 failed**: `keeps an array a list even when it carries an oversized name`; e2e rc=0. It SURVIVED at `ba3bbd1` and is what Epic 7 exists for |
 | N20 | the whole uniquifier dropped, so cut keys merge again | unit rc=1, **3 failed**: the two `keeps both fields` cases and the ceiling case; e2e rc=0. It is the state the first review round found, and what Epic 8 exists for. A narrower first version of this row, replacing only the FIRST candidate with the plain cut, SURVIVED and was discarded as equivalent rather than recorded as a hole: the retry loop recovers the mark, and a plain cut that collides with nothing is a correct name |
 | N21 | the mark grown one character per retry again | unit rc=1, **1 failed**: `holds the ceiling against a record that occupies the candidates`; e2e rc=0. It is the state the second review round found, and what Epic 9 exists for |
+
+### Mutants of fix pass 1, at `243cfa3`
+
+Unit counts out of 945, e2e out of 38. Every row was applied as an exact single-occurrence
+replacement and reverted with `clean-after=0`. `dist` was rebuilt after the last row, and the
+package e2e re-run green, because a mutant's own `pretest` build leaves the mutated `dist` behind
+even after the source is restored.
+
+| # | Mutation | Result |
+|---|---|---|
+| N22 | the metadata guard removed, `...this.readWireMetadata()` back to `...this.metadata` | unit rc=1, **3 failed**: the three `metadata a route attached` cases; e2e rc=1, **2 failed**: `answers a body at all for metadata carrying a getter that throws` and `... a value that cannot be serialised`. This is Epic 11 and the contrarian's refutation |
+| N23 | `onRequestFailure`'s record built eagerly again | unit rc=1, **1 failed**: `announces an unreachable upstream whose reason cannot be read`; e2e rc=0. It SURVIVED every case before Epic 12 |
+| N24 | the reason for a non-Error back to `typeof failure` | unit rc=1, **2 failed**: `names what a record builder threw when it was not an Error` and `bounds what a record builder threw` |
+| N25 | the keys measured through `Object.entries` again | unit rc=1, **1 failed**: `reads a record value once on the path that cuts nothing` |
+| N26 | the mark dropped from a cut key's FIRST candidate | unit rc=1, **1 failed**: `bounds a key at two thousand characters`. This is the narrower version of N20 that SURVIVED at `d5d5e54` and was recorded there as equivalent; the key-content pin of Epic 15 is what makes it a kill |
+| N11 | the null-body statuses admitted again (re-take) | unit rc=1, **7 failed**, was 4 at `d5d5e54`: the three `readWireStatus` rows, the three new `BaseExceptionFilter` rows of Epic 17, and `names 500 when the status cannot be used either`; e2e rc=1, **3 failed**, was 1: the 204, 205 and 304 routes |
+| N14 | the key bound removed (re-take) | unit rc=1, **5 failed**: both `bounds a key` cases, `keeps both fields when two keys share their first two thousand characters`, `keeps every cut key within the ceiling when it has to retry` and the ceiling case |
+| N15 | the key bound narrowed to the top level (re-take) | unit rc=1, **1 failed**: `bounds a key three levels down`. Narrower than the row it re-takes: this replacement keeps the string-value bound at depth and drops only the KEY half at depth, which is the half `Object.keys` touched |
+| N18 | the reason dropped from the announcement (re-take) | unit rc=1, **7 failed**, was 4: the four of the original row plus the two new non-Error cases of Epic 13 and the new `onRequestFailure` case of Epic 12 |
+| N20 | the whole uniquifier dropped (re-take) | unit rc=1, **4 failed**, was 3: the three of the original row plus `bounds a key at two thousand characters`, which is the content pin of Epic 15 |
+| N21 | the mark grown one character per retry again (re-take) | unit rc=1, **1 failed**: `holds the ceiling against a record that occupies the candidates` |
