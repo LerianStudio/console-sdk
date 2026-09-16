@@ -85,7 +85,9 @@ as JSON beside it, every string at any depth cut at `MESSAGE_MAX_LENGTH`.
 upstream data are in the transport: `onRequestFailure` wrote `console.error('Request
 failed', { method, url, cause })` and the default `catch` wrote `console.error('Request
 error', describeRequestError(...))`. Node renders a second argument with its own
-`util.inspect` defaults, `breakLength: 128` and `compact: 3`. A real ledger URL beside a
+`util.inspect` defaults, `compact: 3` and a `breakLength` this row gave as 128; measured on
+the runtime, `util.inspect.defaultOptions.breakLength` is 80 (Node v24.21.0), corrected
+2026-09-16 by the follow-up lane `fix/typed-branch-status-and-base-class`. A real ledger URL beside a
 connection string is already past that, so the first record broke across FIVE physical
 lines and the second across EIGHT, measured in the RED below. A line-oriented collector,
 the Docker json-file driver or Fluent Bit, ships each as a separate event, so the
@@ -112,8 +114,11 @@ upstream's own text.
 - The e2e comment claiming thirteen physical lines for a record object named a number
   no frame produces. Measured here by formatting the same three fields the old way:
   seventeen under the jest e2e runner, against the fifteen the filter's comment cites
-  for the ts-node harness. The count follows the stack's depth, so the comment now
-  names its frame.
+  for a harness that rendered a different record shape. The count follows the stack's
+  depth, so the comment now names its frame. (Which count it was, lines or newlines, was
+  not stated and the two differ by one: re-measured in situ 2026-09-16 by the follow-up
+  lane `fix/typed-branch-status-and-base-class` as seventeen LINES and sixteen newlines,
+  and the same rendering in another copy gave one more of each.)
 - `2026-09-14-server-error-message-string.md`: rows M13 to M16 carried counts from
   heads the prose did not name, and two sentences in the preamble could not both be
   true. Each row now names the head and the case basis it was taken at, the false
