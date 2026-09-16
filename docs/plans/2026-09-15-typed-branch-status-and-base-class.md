@@ -1125,15 +1125,23 @@ The return type is now written out as those three fields intersected with
 `Record<string, unknown>`. Measured against the emitted `.d.ts` with strict `tsc`:
 `getResponse().details` compiles as `unknown`, `getResponse().message` is still a `string`, and
 `(getResponse().details as X).requestId` compiles. **The residue, which is in the PR body's
-caveats**: reading THROUGH such a key with no cast, `getResponse().details.requestId`, compiled on
-`develop` where the type was `any` and now reads `TS18046: 'body.details' is of type 'unknown'`.
-That is the only type-level change in the 2.x line and TECHNICAL.md names it.
+caveats**: reading THROUGH such a key with no cast compiled on `develop` where the type was `any`
+and now does not. The two-step form `const body = e.getResponse(); body.details.requestId` reads
+`TS18046: 'body.details' is of type 'unknown'` and the one-step form
+`e.getResponse().details.requestId` reads `TS2571: Object is of type 'unknown'` (fix pass 4: an
+earlier version quoted the first error for the second expression). It is not the only type-level
+change in the 2.x line, only the one a consumer reading this body meets; TECHNICAL.md lists the
+others, after the pass-3 security review diffed the emitted declarations against
+`sindarian-server-v1.4.0-beta.1` (fix pass 4).
 
 **The pin is in the e2e suite, not the unit suite, and that is not a preference.** This package's
 unit jest runs through ts-jest with `isolatedModules: true` in `tsconfig.eslint.json`, so it
 TRANSPILES and type-checks nothing: the same probe placed in `api-exception.test.ts` ran green
-against the narrow type. The e2e suite has no such setting and resolves the package through
-`file:../`, so it compiles against the emitted `.d.ts` a consumer installs. RED there is the whole
+against the narrow type. The e2e suite has no such setting, and its import reaches the package through the workspace
+symlink `node_modules/@lerianstudio/sindarian-server` (`test/` has no `node_modules`; its
+`file:../` dependency is declared and never installed), so it compiles against the emitted
+`dist/index.d.ts` a consumer installs (fix pass 4: an earlier version said `file:../` did the
+resolving). RED there is the whole
 suite refusing to run: `e2e/error-shape.spec.ts:405:17 - error TS2339: Property 'details' does not
 exist on type '{ message: string; code: string; title: string; }'`. Mutant N37 restores it.
 
@@ -1181,8 +1189,10 @@ mutations, `N11` to `N32`, before this pass. Runs: eleven rows at `d5d5e54`, ele
 and six taken at each of three heads in fix pass 2, which is eighteen, so FORTY runs, not the
 twenty-eight the PR body claimed and not the twenty-two the Found-by row described. This pass adds
 five mutations, `N33` to `N37`, in six runs (N37 twice, the first of them cached), so the branch
-total is **twenty-seven distinct mutations, `N11` to `N37`, in forty-six runs**. The same two
-numbers are now in the PR body.
+total was **twenty-seven distinct mutations, `N11` to `N37`, in forty-six runs** at the end of fix
+pass 3, N37's cached first run included. Fix pass 4 adds four mutations, `N38` to `N41`, in four
+runs, and re-takes N34, N35 and N37 once each, so the branch total is **thirty-one distinct
+mutations, `N11` to `N41`, in fifty-three runs**. The same two numbers are in the PR body.
 
 ## Found by the review round of this PR, and where each one lands
 
@@ -1254,6 +1264,31 @@ sentences and one narrowing nobody had noticed. Nothing below is dismissed.
 | Contrarian and security reviewer: the mutant run counts disagree between the body and this plan | Epic 26, Task 26.7, recounted |
 | Security reviewer, Info: the round-trip cost did not reproduce within 50% (29.1 to 29.6 ms against 18.4) | Left as it stands: both documents already say to read the magnitude and not the digits, and the reviewer's own scaling puts the two runs on one machine's spread |
 
+## Found by the review round of fix pass 3, and where each one lands
+
+Two reviewers plus a contrarian, on `f967f41`. The contrarian REFUTED narrowly: the behaviour
+reproduced end to end in its own copy, the pass's RED block did not. Fix pass 4 was done by hand
+in the orchestrating session, with every number below re-measured at the head it names.
+
+| Found | Where it lands |
+|---|---|
+| Test reviewer and security reviewer and contrarian: the fix-pass-3 RED block (`7 failed, 157 passed, 164 total`) reproduces at no file state | Re-measured at `4c45798` with the final test files, `6 failed, 160 passed, 166 total`, block replaced and the old numbers named |
+| Test reviewer: a FUNCTION and a SYMBOL have no fallback row, and widening the allow-list to functions survives every gate | Two rows in the classification fallback table; mutants N39 and N40 |
+| Test reviewer and security reviewer: the type pin passes green from jest's cache with the type narrowed | `test/package.json` runs `jest --no-cache`; N37 re-taken from a warm cache, the suite refuses to run |
+| Test reviewer: the primitive rule changed a RELEASED behaviour of `message` and deleted the rows that pinned it | Reverted: `readWireMessage` keeps the text rule of `2.0.0-beta.5`, the three `['a number', 42]` rows are back, the three digits cases are gone; mutant N38; TECHNICAL.md says which field has which rule |
+| Test reviewer: "each field is read EXACTLY once" is false for the status | The comment names the status as the one value read twice, on purpose |
+| Test reviewer and security reviewer: the caveat's "before" holds for object, array and `null`, not for a function, `undefined` or a symbol, which served NO `code` key | TECHNICAL.md, PR body caveat 3 and item 11 above rewritten; `JSON.stringify` drops all three, measured |
+| Test reviewer: the N35 row reads as a full list of its thirteen kills and names eight | Row says "among them"; re-taken at `c3e5870` with every name |
+| Test reviewer: the "bounded" half of the primitive rule has no test | `bounds a numeric code where it bounds a string one`; mutant N41 |
+| Test reviewer, security reviewer: "resolves this package by `file:`" is not the mechanism | Comment, spec, plan and PR body name the workspace symlink |
+| Test reviewer: forty-six runs headline over a forty-five-run enumeration | Recount above, with fix pass 4's runs added |
+| Security reviewer: "the only type-level change in the 2.x line" is false | Sentence dropped in TECHNICAL.md, the plan and the PR body; the other declaration changes listed |
+| Security reviewer: the quoted compiler error belongs to the two-step expression, not the one named | Both forms quoted with their own error |
+| Security reviewer: the PR body counts eleven found-not-fixed items and lists ten clauses | The list carries every item, thirteen now |
+| Contrarian: the claim's "Only a value whose text would be a serialisation of something else" omits `undefined` and a symbol | The reader's doc and TECHNICAL.md name both; the claim was not an artefact |
+| Contrarian: the metadata line is not universal when the failure's own message getter throws | Item 13 above, answered by name |
+| Security reviewer, Info: everything else reproduced; no security issue | Recorded |
+
 ## Found, not fixed
 
 1. **Product Console still builds its response status with `exception.getStatus()`**
@@ -1302,7 +1337,7 @@ sentences and one narrowing nobody had noticed. Nothing below is dismissed.
     before Epic 11. Documented in TECHNICAL.md and in the code rather than guarded, because
     refusing a non-object root would change what a plain string root has always served, which is
     those same numbered keys. Raised by the security reviewer of fix pass 1.
-11. **A `code` or `title` that is an object, an array, `null` or a function is replaced, and its
+11. **A `code` or `title` that is an object, an array or `null` is replaced, and its
     own value is named nowhere.** It serialised into the body before this branch, so the shape
     produced a good response; the operator line names the FIELD and the status, never what the
     field held, because naming it would mean reading the value a second time or serialising a
@@ -1310,6 +1345,18 @@ sentences and one narrowing nobody had noticed. Nothing below is dismissed.
     reachable half (a pg `INT` code); what is left is the half whose text would be a serialisation
     of an object, and that is the defect the guard exists for. Raised by the contrarian and the
     security reviewer of fix pass 2, and listed in the PR body's caveats.
+
+12. **This package's unit suite type-checks nothing.** `tsconfig.eslint.json` sets
+    `isolatedModules: true`, which puts ts-jest in transpile mode, and the build's tsconfig
+    excludes `**/*.test.ts`, so no gate compiles the unit tests and a type regression is caught
+    only by the e2e suite. That suite now runs `jest --no-cache` (fix pass 4), because jest caches
+    a spec's type check across a change to the declarations it compiled against and mutant N37
+    passed green from a warm cache. Found by the pass-3 test and security reviews.
+13. **The metadata-drop line can still lose its fields when the failure itself cannot be
+    described.** A metadata getter that throws an Error whose own `message` getter throws leaves
+    `Exception metadata dropped {"record":"unserialisable","cause":"boom"}` with no `code` and no
+    `title`: that is `logErrorLine`'s documented nested guard answering for a builder that threw,
+    not a second read of the fields, which fix pass 3 removed. Found by the pass-3 contrarian.
 
 ## Corrections to earlier plans in this repository
 
@@ -1357,22 +1404,67 @@ sentences and one narrowing nobody had noticed. Nothing below is dismissed.
 
 Every command below was run verbatim in `/srv/worktrees/sdk-typed-fix1`.
 
-### Fix pass 3, at the code-final head `ab7ee5b`
+### Fix pass 4, at the code-final head `c3e5870`
 
-**RED, `2026-09-16 04:57:46 UTC`, head `4c45798`**, `git status --porcelain` showing the three
-test files only. Every case the new rules produce fails before the code changes:
+By hand in the orchestrating session, in `/srv/worktrees/sdk-typed-fix1`. Two of the four new
+cases are guards rather than reds: the function and symbol rows and the bounded-numeric case were
+green at `f967f41` and turn red only under N39, N40 and N41.
+
+**RED, `2026-09-16 06:03:16 UTC`, head `f967f41`**, `git status --porcelain` showing the three test
+files and `test/package.json` modified, the source untouched:
 
 ```
 $ npx jest src/exceptions
 rc=1
-Tests:       7 failed, 157 passed, 164 total
-  ApiException > message coercion > a message written after construction > reads a numeric message as its digits
-  ApiException > the classification a route wrote > reads the code once when the metadata drops beside it
+Tests:       3 failed, 163 passed, 166 total
+  ApiException > message coercion > a message written after construction > names the real status for a number
+  BaseExceptionFilter > a mutated ApiException message that is not a string > names the real status for a number
+  HttpException > a message written after construction > answers a sentence naming the real status for a number
+```
+
+**GREEN, `2026-09-16 06:03:20 UTC`**, the reader split applied (working tree of `49dee40`):
+
+```
+$ npx jest
+rc=0
+Test Suites: 39 passed, 39 total
+Tests:       967 passed, 967 total
+```
+
+**Gates, `2026-09-16 06:05:38 UTC` to `06:05:59 UTC`, head `c3e5870`, `git status --porcelain`
+empty**, each run on its own in `packages/sindarian-server`:
+
+```
+$ npx jest              Test Suites: 39 passed, 39 total / Tests: 967 passed, 967 total   rc=0
+$ npm run test:e2e      Test Suites: 2 passed, 2 total / Tests: 41 passed, 41 total       rc=0
+$ npm run lint                                                                            rc=0
+$ npm run build                                                                           rc=0
+```
+
+The root turbo commands were not re-run here; CI runs them on the push.
+
+### Fix pass 3, at the code-final head `ab7ee5b`
+
+**RED, re-measured in fix pass 4 at `2026-09-16 06:04:53 UTC`, head `4c45798`**, with the test
+files as they stand at `c3e5870` copied in: `git status --porcelain` shows `api-exception.test.ts`
+and `base-exception-filter.test.ts` modified (`http-exception.test.ts` is identical to `4c45798`
+again) plus the `node_modules` symlink the throwaway worktree needs. An earlier version of this
+block pasted `7 failed, 157 passed, 164 total` and seven names; no file state on the branch
+produces those numbers (the pass-3 review measured `8 failed, 155 passed, 163 total` for the state
+the header named, with an eighth case the list omitted). The numeric-message cases it listed no
+longer exist: fix pass 4 put the text rule back for `message`, so the reds are the classification
+rows alone.
+
+```
+$ npx jest src/exceptions
+rc=1
+Tests:       6 failed, 160 passed, 166 total
   ApiException > the classification a route wrote > answers a pg INT code as its digits
   ApiException > the classification a route wrote > answers a driver's bigint code as its digits
   ApiException > the classification a route wrote > answers a boolean code as its digits
   ApiException > the classification a route wrote > answers a NaN code, spelled as it reads as its digits
-  HttpException > a message written after construction > reads a numeric message as its digits
+  ApiException > the classification a route wrote > bounds a numeric code where it bounds a string one
+  ApiException > the classification a route wrote > reads the code once when the metadata drops beside it
 ```
 
 **RED for the type, `2026-09-16 04:59:52 UTC`, same head.** The whole suite refuses to run, which
@@ -1648,10 +1740,27 @@ from the clean head afterwards and the emitted type read back, because a mutant'
 | # | Mutation | Result |
 |---|---|---|
 | N33 | the metadata log line built from `this.code` and `this.title` again, the pass-2 shape | unit rc=1, **1 failed**: `reads the code once when the metadata drops beside it` |
-| N34 | `readWireField` back to strings only, so a primitive is replaced again | unit rc=1, **7 failed**: the four `as its digits` classification rows and the three numeric-message cases in `api-exception`, `http-exception` and `base-exception-filter` |
-| N35 | the type filter dropped, so everything but `null` and `undefined` is stringified | unit rc=1, **13 failed**: both non-primitive classification rows, the both-fallbacks case, the object-title case, the rejected-form parity case and every upstream-problem-object message case across the three suites |
+| N34 | `readWireField` back to strings only, so a primitive is replaced again | unit rc=1, **7 failed** at `ab7ee5b`: the four `as its digits` classification rows and the three numeric-message cases in `api-exception`, `http-exception` and `base-exception-filter`. Re-taken at `c3e5870` in fix pass 4, **5 failed**: the four rows and `bounds a numeric code where it bounds a string one`; the message cases are gone with the text rule restored |
+| N35 | the type filter dropped, so everything but `null` and `undefined` is stringified | unit rc=1, **13 failed** at `ab7ee5b`, among them both non-primitive classification rows, the both-fallbacks case, the object-title case, the rejected-form parity case and the upstream-problem-object message cases across the three suites (eight of the thirteen named; fix pass 4 corrects a row that read as a full list). Re-taken at `c3e5870`, **7 failed**: the object, array, function and symbol rows, `answers the status title when the title is an object`, `answers both fallbacks in one line when neither is readable` and `answers Bad Request, not Validation Error, for a rejected form`; `message` no longer goes through this rule |
 | N36 | the metadata round trip back to check-then-spread (a re-take of N27, for the new case) | unit rc=1, **3 failed**: `reads a metadata value once...`, `keeps the named fields when a metadata root has its own toJSON` and the new `lets a metadata root whose class has a toJSON decide the body` |
 | N37 | the emitted return type narrowed back to the three named fields | unit rc=0 and build rc=0, both blind to it; e2e rc=1, **the suite refuses to run**: `TS2339: Property 'details' does not exist on type '{ message: string; code: string; title: string; }'`. It SURVIVED its first run at 964 unit and 41 e2e, from jest's cache, and is a kill with `--no-cache` |
 
 N37's first run is the sixth, and it is left in the count rather than tidied away: a cached type
 check is exactly the way this pin could rot without anyone noticing.
+
+### Mutants of fix pass 4, at `c3e5870`
+
+Four mutations in four runs plus three re-takes, `2026-09-16 06:04:59 UTC` to `06:08:13 UTC`, unit
+counts out of 967 and e2e out of 41. Each applied as an exact single-occurrence replacement
+(asserted), the unit suite run in full, `git checkout -- src` after each and `git status
+--porcelain` empty at the end.
+
+| # | Mutation | Result |
+|---|---|---|
+| N38 | `readWireMessage` back on the classification rule, so a numeric message reads as digits | unit rc=1, **3 failed**: the three `names the real status for a number` cases (`api-exception`, `http-exception`, `base-exception-filter`) |
+| N39 | the classification rule widened to `typeof value === 'function'` | unit rc=1, **1 failed**: `answers the unclassified code for a function` |
+| N40 | the classification rule widened to `typeof value === 'symbol'` | unit rc=1, **1 failed**: `answers the unclassified code for a symbol` |
+| N41 | the slice skipped for a non-string primitive | unit rc=1, **1 failed**: `bounds a numeric code where it bounds a string one` |
+| N34 | re-take, strings only | unit rc=1, **5 failed**, named in its row above |
+| N35 | re-take, everything but `null` and `undefined` stringified | unit rc=1, **7 failed**, named in its row above |
+| N37 | re-take, the emitted return type narrowed, from a WARM cache (the e2e suite had just run green) | e2e rc=1, **the suite refuses to run**: `e2e/error-shape.spec.ts:410:17 - error TS2339: Property 'details' does not exist on type '{ message: string; code: string; title: string; }'`; `Test Suites: 1 failed, 1 passed`. The `--no-cache` in the test script is what makes a warm cache irrelevant |
