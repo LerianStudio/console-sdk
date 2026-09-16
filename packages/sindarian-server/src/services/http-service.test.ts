@@ -1381,11 +1381,87 @@ describe('HttpService', () => {
       expect(error).toBeInstanceOf(ApiException)
       expect(error).not.toBeInstanceOf(ServiceUnavailableApiException)
       expect(error.getStatus()).toBe(HttpStatus.CONFLICT)
-      // And the failure is still announced, under its own label.
+      // And the failure is still announced, under its own label and with the
+      // reason the serialiser gave. That reason is multi-line text, and it
+      // stays inside the one line as escapes, which is what JSON buys here.
       expect(consoleSpy.mock.calls[0][0]).toBe('Request error')
-      expect(JSON.parse(consoleSpy.mock.calls[0][1])).toEqual({
-        record: 'unserialisable'
+      expect(recordOf('Request error').record).toBe('unserialisable')
+      expect(recordOf('Request error').cause).toContain(
+        'Converting circular structure to JSON'
+      )
+      expect(consoleSpy.mock.calls[0][1]).not.toContain('\n')
+    })
+
+    // Serialising the record is guarded; BUILDING it was not. The record comes
+    // from `describeRequestError`, documented as overridable, and it used to be
+    // evaluated as the ARGUMENT to the write, one frame outside the guard and
+    // inside `request`'s own try. An override that throws - an upstream whose
+    // body changed shape under a reader that assumed it - therefore turned a
+    // 409 the upstream answered perfectly well into the 503 that means it never
+    // answered, and wrote no line at all, so nothing said why.
+    it('keeps the real status when the record cannot be built', async () => {
+      class UnbuildableHttpService extends HttpService {
+        public async testRequest<T>(request: Request): Promise<T> {
+          return this.request<T>(request)
+        }
+
+        protected createDefaults = jest.fn().mockResolvedValue({})
+
+        protected describeRequestError(): Record<string, unknown> {
+          throw new Error('cannot read properties of undefined (reading payer)')
+        }
+      }
+
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ title: 'Conflict' }), {
+          status: HttpStatus.CONFLICT,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+
+      const error = await new UnbuildableHttpService()
+        .testRequest(new Request('https://api.example.com/v1/accounts'))
+        .catch((thrown) => thrown)
+
+      expect(error).toBeInstanceOf(ApiException)
+      expect(error).not.toBeInstanceOf(ServiceUnavailableApiException)
+      expect(error.getStatus()).toBe(HttpStatus.CONFLICT)
+      // And the failure is still announced, under its own label and with the
+      // reason, which is the only thing that says why the fields are missing.
+      expect(consoleSpy.mock.calls[0][0]).toBe('Request error')
+      expect(recordOf('Request error')).toEqual({
+        record: 'unserialisable',
+        cause: 'cannot read properties of undefined (reading payer)'
       })
+    })
+
+    // The reason is read off a value the override threw, so it is bounded like
+    // every other string this package did not size.
+    it('bounds the reason a record could not be built', async () => {
+      class LoudHttpService extends HttpService {
+        public async testRequest<T>(request: Request): Promise<T> {
+          return this.request<T>(request)
+        }
+
+        protected createDefaults = jest.fn().mockResolvedValue({})
+
+        protected describeRequestError(): Record<string, unknown> {
+          throw new Error('x'.repeat(1_000_000))
+        }
+      }
+
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ title: 'Conflict' }), {
+          status: HttpStatus.CONFLICT,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+
+      await new LoudHttpService()
+        .testRequest(new Request('https://api.example.com/v1/accounts'))
+        .catch(() => {})
+
+      expect(recordOf('Request error').cause).toHaveLength(2000)
     })
 
     // The other way a record refuses to serialise, and it does not throw:

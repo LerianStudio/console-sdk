@@ -200,18 +200,20 @@ export class BaseExceptionFilter implements ExceptionFilter {
       const name = exception?.name
       const message = exception?.message
 
-      logErrorLine('Unhandled exception', {
+      const value = inspect(exception, {
+        depth: 4,
+        breakLength: Infinity,
+        compact: true,
+        customInspect: false
+      })
+
+      logErrorLine('Unhandled exception', () => ({
         name: typeof name === 'string' ? name : typeof exception,
         message: typeof message === 'string' ? message : undefined,
-        value: inspect(exception, {
-          depth: 4,
-          breakLength: Infinity,
-          compact: true,
-          customInspect: false
-        })
-      })
+        value
+      }))
     } catch {
-      logErrorLine('Unhandled exception', { name: typeof exception })
+      logErrorLine('Unhandled exception', () => ({ name: typeof exception }))
     }
 
     return NextResponse.json(
