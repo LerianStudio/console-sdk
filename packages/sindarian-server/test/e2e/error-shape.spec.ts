@@ -192,17 +192,21 @@ describe('An unexpected error answers a generic body, never its own text', () =>
       'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00'
     )
     // The stack is the shape that broke this worst: handed over as a record
-    // OBJECT, these same three fields render across SEVENTEEN PHYSICAL LINES
-    // under this runner, measured in situ by formatting them the old way and
-    // counting `split('\n').length`, which is sixteen newline characters. The
-    // two are not the same number and the distinction is the whole point of
-    // counting: the file's own definition of one physical line, one line below,
-    // is zero newlines. The count follows the stack's frames and what they
-    // render to, so it moves between copies - the same measurement in another
-    // worktree came out one line longer, and the filter's own comment cites
-    // fifteen for a harness that rendered a different record shape. No single
-    // number is the fact here. One line is. Its frames are still inside it,
-    // escaped.
+    // OBJECT, these same three fields render across MANY physical lines,
+    // measured in situ by formatting them the old way and counting
+    // `split('\n').length`.
+    //
+    // No digit is written here, because the digit is a property of how the
+    // suite was INVOKED, not of this package. Measured on one build: the gate,
+    // which runs both specs and so runs this one in a jest worker, renders 18
+    // lines; this spec alone, with or without `-i`, renders 17, because the
+    // worker contributes a frame. An earlier version of this comment named one
+    // of those numbers as the fact and blamed the drift on copy-to-copy
+    // variation, which sent a reader looking for something unreproducible when
+    // it reproduces on demand from the command.
+    //
+    // What does not move is the count this file asserts: ONE line, which is
+    // zero newlines. Its frames are still inside it, escaped.
     expect(writtenLines()).toHaveLength(1)
     expect(writtenLines()[0]).not.toContain('\n')
     expect(writtenLines()[0]).toContain('\\n    at ')
