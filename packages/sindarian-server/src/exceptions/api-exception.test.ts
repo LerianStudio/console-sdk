@@ -603,6 +603,68 @@ describe('ApiException', () => {
         expect(consoleError).not.toHaveBeenCalled()
       })
 
+      // The whole argument for taking the round trip as the value rather than
+      // checking one read and spreading another. The shape is not exotic: a
+      // memoising or retrying accessor over a pg row answers a number first
+      // and the driver's `bigint` second, and a check-then-spread hands the
+      // second one to the frame that serialises the response, which refuses it
+      // and leaves the route with no Response at all.
+      it('reads a metadata value once, so a second read cannot decide the body', () => {
+        let reads = 0
+        const metadata: Record<string, unknown> = {}
+
+        Object.defineProperty(metadata, 'amount', {
+          enumerable: true,
+          get() {
+            reads += 1
+
+            return reads === 1 ? 1 : BigInt('9007199254740993')
+          }
+        })
+
+        const body = new ApiException(
+          '0003',
+          'Not Found',
+          'Ledger not found',
+          HttpStatus.NOT_FOUND,
+          metadata
+        ).getResponse()
+
+        expect(reads).toBe(1)
+        expect(body).toEqual({
+          amount: 1,
+          code: '0003',
+          title: 'Not Found',
+          message: 'Ledger not found'
+        })
+        // The frame that used to fail, one after this one.
+        expect(JSON.stringify(body)).toContain('"amount":1')
+        expect(consoleError).not.toHaveBeenCalled()
+      })
+
+      // What the round trip does change, and the one shape it changes for: a
+      // metadata root that carries its OWN `toJSON` now decides the body,
+      // where the pre-fix spread copied the function and the serialiser then
+      // dropped it. A `toJSON` on a value INSIDE the metadata is unaffected,
+      // because the response was always serialised with `JSON.stringify`.
+      it('lets a metadata root with its own toJSON decide the body', () => {
+        const body = new ApiException(
+          '0003',
+          'Not Found',
+          'Ledger not found',
+          HttpStatus.NOT_FOUND,
+          { cents: 1500, toJSON: () => ({ amount: 15 }) }
+        ).getResponse()
+
+        expect(body).toEqual({
+          amount: 15,
+          code: '0003',
+          title: 'Not Found',
+          message: 'Ledger not found'
+        })
+        expect(consoleError).not.toHaveBeenCalled()
+      })
+
       it('answers the named fields when a metadata getter throws', () => {
         const metadata: Record<string, unknown> = {}
 
