@@ -602,8 +602,32 @@
   --normal-border: hsl(var(--border));
 }
 
-[data-sonner-toast] [data-title] {
-  font-weight: 600;
+/*
+  The title outranks the description, and both rules have to WIN the cascade
+  for that to mean anything. Sonner ships
+  `[data-sonner-toast][data-styled='true'] [data-title]` at font-weight 500 and
+  its description twin at 400 — both (0,3,0), both injected at runtime.
+  The title rule here was a plain `[data-sonner-toast] [data-title]` (0,2,0):
+  it declared 600 and rendered at 500, losing outright, while the description
+  carried `!important` and rendered at 600. The hierarchy came out inverted on
+  every toast in the kit, the long line heavier than the label naming it.
+
+  Both now take the compound selector plus !important — the shape the
+  close-button rules below already use against this same stylesheet, and for
+  the same reason: source order cannot settle a tie with a sheet that is
+  injected at runtime.
+
+  The description returns to 400. It is the running text of a toast, and 14px
+  semibold across a full sentence reads as emphasis with nothing left to
+  emphasise; the family ink already carries the severity. Its `color` override
+  keeps !important on its own merits — sonner hardcodes #3f3f3f there, plus a
+  dark-theme rule of its own on top.
+
+  `toast text weights` in src/__tests__/tokens-contract.test.ts holds the order
+  and the two properties that let it apply.
+*/
+[data-sonner-toast][data-styled='true'] [data-title] {
+  font-weight: 600 !important;
   font-size: 0.875rem;
   line-height: 1.25rem;
 }
@@ -611,7 +635,7 @@
 [data-sonner-toast] [data-description],
 [data-sonner-toast][data-styled='true'] [data-description] {
   font-size: 0.875rem;
-  font-weight: 600 !important;
+  font-weight: 400 !important;
   line-height: 1.25rem;
   color: var(--normal-text) !important;
 }
