@@ -3,7 +3,9 @@
 - **Repository**: `LerianStudio/console-sdk`, package `@lerianstudio/sindarian-server`
 - **Branch**: `fix/typed-branch-status-and-base-class`, cut from `origin/develop` at `19839e9`
 - **Baseline at the cut**: unit 897 passed / 38 suites, e2e 32 passed / 2 suites
-- **Code-final head**: `243cfa3`, unit 945 passed / 39 suites, e2e 38 passed / 2 suites. Every
+- **Code-final head**: `eeb9ba3`, unit 953 passed / 39 suites, e2e 40 passed / 2 suites (fix
+  pass 2; fix pass 1 ended at `243cfa3` with 945 and 38, and every block written then keeps the
+  head it was measured at). Every
   number in this document is measured at a head that is NAMED next to it; the earlier heads and
   their counts are kept where they are, because a RED block is only evidence at the head it was
   taken on. The whole ladder was measured in fix pass 1, `2026-09-16 02:11:25 UTC` onward, by
@@ -25,11 +27,22 @@
   `getResponse()` straight into its response. The release decision stands, everything landing
   inside the already-open 2.0.0 major, but the justification had framed the guard as touching only
   messages written AFTER construction, and that was false.
-- **Provenance of the 2.0.0 log-shape change, corrected.** The operator log's second argument
-  becoming a JSON STRING shipped with PR #191, released as `2.0.0-beta.5`. NOT with the #190 that
-  opened the major, which this document and the PR body both said. Measured:
+- **Provenance of the 2.0.0 log-shape change, corrected twice.** The operator log's second
+  argument becoming a JSON STRING shipped with PR #191, released as `2.0.0-beta.5`. NOT with #190,
+  which shipped as `2.0.0-beta.4`. **Corrected again in fix pass 2, after the contrarian refuted
+  the replacement sentence as well**: fix pass 1 wrote that #190 "opened the major" and that its
+  release was `2.0.0-beta.3`, and both are false. `git log --format='%h %ad %s' --date=iso-strict
+  -- packages/sindarian-server/package.json` puts `2.0.0-beta.1` at `c471157`,
+  `2026-09-09T14:06:18Z`, immediately after PR #183, six days and three releases before #190
+  merged at `92fadc7`, `2026-09-15T18:25:01Z`; `7dd44f6 chore(sindarian-server): release
+  v2.0.0-beta.4` lands 94 seconds after that merge, so `2.0.0-beta.3` is the version in the TREE
+  at the merge, before semantic-release bumped, and `2.0.0-beta.4` is the release #190 shipped as.
+  `git ls-tree -r 7dd44f6 -- packages/sindarian-server/src/utils/error/` lists no
+  `log-error-line.ts`, so the practical guidance stands unchanged; the release it names did not.
+  Measured also:
   `git ls-tree -r 92fadc7 -- packages/sindarian-server/src/utils/error/` (the #190 merge, whose
-  `package.json` reads `2.0.0-beta.3`) lists no `log-error-line.ts`, and at that commit
+  `package.json` reads `2.0.0-beta.3` for that reason) lists no `log-error-line.ts`, and at that
+  commit
   `http-service.ts:289` still reads `console.error('Request failed', {`, the record OBJECT.
   `f4e17ae` (the #191 merge) is where the file first appears, and `19839e9` is the release commit
   that bumped to beta.5. A consumer pinned to `2.0.0-beta.3` or `2.0.0-beta.4` still receives the
@@ -58,6 +71,9 @@
 | 16 | The fallback sentence is published beside its readers (fix pass 1) | `7ff938c` |
 | 17 | Every null-body status is driven through a real Response (fix pass 1) | `85e6882` |
 | 18 | The documents say what was measured (fix pass 1) | `cc897fd`, `243cfa3` |
+| 19 | The code and title a route wrote are read, not taken (fix pass 2) | `615eb5e` |
+| 20 | One read of metadata, and a reason no value can give, are pinned (fix pass 2) | `e1e3c7c`, `6e5b30a` |
+| 21 | The documents qualify what the guards cost and keep (fix pass 2) | `4fb996d`, `eeb9ba3` |
 
 ## Epic 1: the readers are published (`ecfb7eb`)
 
@@ -343,6 +359,17 @@ failed', { method: 'GET' })` or a console-to-structured-logger bridge, sees a st
 shipped inside the 2.0.0 major that #190 opened, so this lane is not breaking and carries no
 footer, but the sentence now exists in TECHNICAL.md, which is what the release notes could not
 carry.
+
+**Corrected in fix pass 2: "since 2.0.0" is false for two of the five published 2.0.0 versions,
+and #190 did not open the major.** Raised by the test reviewer, who found that this paragraph
+still carried the pre-correction provenance while the header bullet above it carried the
+correction, with nothing here flagging it, and by the contrarian, who found the header bullet's
+replacement wrong as well. The measured sequence: the major opened at `2.0.0-beta.1`
+(`c471157`, 2026-09-09); `beta.2` and `beta.3` follow; #190 merged (`92fadc7`) and shipped as
+`beta.4` (`7dd44f6`); #191 merged (`f4e17ae`) and shipped as `beta.5` (`19839e9`), and that is
+where `log-error-line.ts` first exists. So a consumer on `beta.3` or `beta.4` still receives the
+record OBJECT and has nothing to change. What is not breaking is unchanged: everything lands
+inside an already-open major. TECHNICAL.md names both releases and says neither opened the line.
 
 ## Epic 7: the list shape of a bounded record (`aed0e2a`)
 
@@ -765,6 +792,171 @@ commit that closes this pass. `cc897fd` carries TECHNICAL.md: the release the lo
 as the fallback an adopting application should take rather than invent. `243cfa3` carries the e2e
 comment's line count (see the correction in Epic 6.3).
 
+## Epic 19: the code and title a route wrote are read, not taken (`615eb5e`)
+
+**Found by the security review of fix pass 1, with a live probe, and it refuted the lane's
+headline a second time.** Epic 11 guarded the metadata and the claim became "no unguarded read is
+left on the frame an application renders its own envelope from". Two were: `code` and `title` sat
+on that same line, taken exactly as the metadata had been. Neither needs an override or an exotic
+value. `code: string` is satisfied with no cast by the `any` a database row is, which is the
+premise Epic 11 itself rests on, and `title` is a writable property, which is how `message`
+reached the wire as an upstream object in the first place. A `code` getter that throws returned NO
+body at all, so the throw escaped `app.handler` above the frame that would have built a Response,
+and unlike the metadata case it wrote no operator line either. A `title` an upstream body had been
+written into serialised perfectly well and carried that body, internal host and all, to the
+browser under a field this package documents as a short classification.
+
+**Task 19.1.** The reader family gets its one implementation, `readWireField(read, limit)`: one
+read, bounded at a ceiling the caller names, cannot throw, and it answers `undefined` rather than
+spending a fallback, because a frame that answers a whole body has to KNOW a field was dropped in
+order to announce it, and asking the value a second time is the rule the family exists to keep.
+`readWireMessage` is now that function plus its fallback, so there is one guard rather than two.
+
+**Task 19.2.** `ApiException.getResponse()` reads both fields through it, bounded at
+`PROBLEM_FIELD_MAX_LENGTH`, which is the argument that constant already makes about these exact
+two fields. A `code` that does not read back as a string answers `UNCLASSIFIED_CODE`, the `0004`
+this library already gives a failure it cannot classify; a `title` answers `noProblemTitle(status)`,
+the reason phrase of the status the response actually carries, which is the title every typed
+exception in this file already uses for its own status. `UNCLASSIFIED_CODE` moves from the filter
+to sit beside the readers, because the filter imports `ApiException` and could not be imported
+back.
+
+**Task 19.3.** The drop is announced as `Exception classification dropped`, naming the FIELD and
+the status rather than a reason. The reason lives in the value that failed and the read of it is
+what failed, so naming it would break Task 19.1; the field name plus the substitute is the whole
+story here, which is exactly what the metadata line cannot say.
+
+**Task 19.4.** Both shapes get an e2e route and are driven through the real handler.
+
+RED, `2026-09-16 03:20:05 UTC`, head `17d7acd`, tree carrying only the test changes:
+
+```
+$ npx jest src/exceptions/api-exception.test.ts
+rc=1
+  ● ApiException › the classification a route wrote › answers the unclassified code when the code getter throws
+  ● ApiException › the classification a route wrote › answers the status title when the title is an object
+  ● ApiException › the classification a route wrote › answers both fallbacks in one line when neither is readable
+  ● ApiException › the classification a route wrote › bounds a code and a title an upstream sized
+  ● ApiException › the classification a route wrote › names a status the registry has no phrase for
+Tests:       5 failed, 52 passed, 57 total
+
+$ npm run test:e2e
+rc=1
+  ● A typed exception carries a bounded sentence, however it was written › answers a body at all when reading the code throws
+
+    code getter exploded
+
+      at NotFoundApiException.get [as code] (app/controllers/throwing-controller.ts:252:15)
+      at NotFoundApiException.getResponse (../src/exceptions/api-exception.ts:111:18)
+      at AppExceptionFilter.catch (app/app-exception-filter.ts:31:24)
+      at ServerFactory._handleRequest (../src/server/server-factory.ts:216:46)
+
+  ● A typed exception carries a bounded sentence, however it was written › answers a string title when a route wrote an object
+
+    Expected: "Not Found"
+    Received: {"detail": "timed out at db-primary.internal:8080", "title": "Gateway Timeout"}
+
+Tests:       2 failed, 38 passed, 40 total
+```
+
+The first stack is the whole point: the throw leaves `app.handler` itself, above the frame that
+would have built a Response, so the caller receives nothing at all rather than a body.
+
+GREEN, `2026-09-16 03:22:25 UTC`, same head, guard added:
+
+```
+$ npx jest
+rc=0
+Tests:       950 passed, 950 total
+
+$ npm run test:e2e
+rc=0
+Tests:       40 passed, 40 total
+
+$ npm run lint
+rc=0
+
+$ npm run build
+rc=0
+```
+
+**Live, at the code-final head `eeb9ba3`, through a real `Response` built with the recipe
+TECHNICAL.md prescribes** (`Response.json({ ...envelope, ...exception.getResponse() }, { status:
+readWireStatus(exception) })`), against the built `dist`, `2026-09-16 03:48:15 UTC`:
+
+```
+code getter throws
+  status=404 body={"timestamp":"...","code":"0004","title":"Not Found","message":"Ledger not found"}
+  operator lines: Exception classification dropped {"dropped":["code"],"status":404}
+title is an upstream object
+  status=404 body={"timestamp":"...","code":"0003","title":"Not Found","message":"Ledger not found"}
+  operator lines: Exception classification dropped {"dropped":["title"],"status":404}
+code is a bigint from a row
+  status=404 body={"timestamp":"...","code":"0004","title":"Not Found","message":"Ledger not found"}
+  operator lines: Exception classification dropped {"dropped":["code"],"status":404}
+nothing wrong
+  status=404 body={"timestamp":"...","code":"0003","title":"Not Found","message":"Ledger not found"}
+  operator lines: (none)
+```
+
+The bigint row is the shape a pg driver produces and it never had a test: it does not throw, it
+simply is not a string, and it used to travel to the wire as one.
+
+## Epic 20: one read, and a reason no value can give (`e1e3c7c`, `6e5b30a`)
+
+Two properties that hold in shipped code and had nothing holding them. Neither has a RED at this
+head, because both pin behaviour that is already correct; the RED is the mutant, and both mutants
+are in the fix pass 2 table below.
+
+**Task 20.1, the one-read property of Epic 11.** Rewriting `readWireMetadata` to check one read
+and spread another passes all 945 unit and all 38 e2e cases of fix pass 1, and puts the route back
+where it was. The case is a metadata value that answers `1` on its first read and a driver's
+`bigint` on its second, which is what a memoising or retrying accessor over a ledger row does. It
+asserts one read and a body that survives serialisation. Mutant N27 kills it.
+
+**Task 20.2, what the round trip changes.** One case pins the shape the security reviewer found:
+a metadata root carrying its OWN `toJSON` now decides the body, where the spread copied the
+function and the serialiser dropped it.
+
+**Task 20.3, the inner reason guard of Epic 13.** `String(failure)` replaced a `typeof` that
+cannot throw, and nothing covered the new throw path: deleting that guard passes every gate and
+restores the 503-for-a-409 defect Epic 4 exists to close. The case is a `describeRequestError`
+override that throws a value with no path to a primitive at all, a null-prototype object with no
+`toString`, no `valueOf` and no `Symbol.toPrimitive`. The caller still receives the 409 the
+upstream answered, and the announcement stands with no reason attached, because there is none to
+be had. Mutant N28 kills it.
+
+## Epic 21: the documents qualify what the guards cost and keep (`4fb996d`, `eeb9ba3`)
+
+TECHNICAL.md, the `readWireMetadata` doc block and one comment in the filter, so all three sit at
+or before the code-final head rather than in the docs commit.
+
+**Task 21.1.** "For any metadata that worked before, the bytes on the wire are unchanged" was an
+absolute, and two roots break it. Measured on this build, the shipped `getResponse()` against the
+frame it replaced: a plain object, an array, a string, a number and a nested `toJSON` are
+identical; a root carrying its own `toJSON` served `{"cents":1500,...}` before and serves
+`{"amount":15,...}` now; a `Date` root served nothing before and now serves twenty-four numbered
+character keys, because the round trip turns it into a string and a string spreads by index. The
+sentence is now quantified in both places. The `Date` root is named rather than guarded: refusing
+a non-object root would also change what a plain string root has always served.
+
+**Task 21.2.** What the round trip COSTS was written nowhere, next to a sentence saying the size
+behaviour had not moved. Measured with the 4.1 MB `{ errors: [...] }` a rejected form produces:
+`getResponse()` costs roughly 18 ms (18.4 and 18.9 in two runs, each the mean of five calls on a
+shared box) against 0.001 ms for the spread it replaced, on top of the 6.5 ms the response
+serialisation always cost. Error path only, and a caller sizes it by sending a body that fails
+validation. The magnitude is the fact; the digits are one machine's.
+
+**Task 21.3.** The filter bullet saying an `ApiException` is answered "at its own status from
+`getStatus()`" now says it is read through `readWireStatus`, which is what the two bullets below
+it already said and what the filter has done since Epic 2.
+
+**Task 21.4 (`eeb9ba3`).** Moving `UNCLASSIFIED_CODE` out of `base-exception-filter.ts` in Epic 19
+left its explanatory block sitting directly above `export class BaseExceptionFilter`, where a
+`/** */` block is read as the class's own documentation. It is a line comment now, so nothing
+attaches it to the class. Comment only; the six mutants and every gate above were re-run at this
+head after the change, with identical results.
+
 ## Found by the review round of this PR, and where each one lands
 
 Three reviewers plus a contrarian, on `15f53a3`. The contrarian REFUTED the lane's headline with
@@ -792,6 +984,26 @@ here by name.
 | All three reviewers and the contrarian: the PR body is three code commits stale | The body is rewritten at the code-final head |
 | Security reviewer, Info: the `cause` field widens the unredacted operator-log surface | Found, not fixed, item 4 |
 | Test reviewer: two assertions pin a V8 internal error string | Found, not fixed, item 7 |
+
+## Found by the review round of fix pass 1, and where each one lands
+
+Two reviewers plus a contrarian, on `17d7acd`. The contrarian confirmed the metadata guard against
+thirteen hostile inputs and refuted one named conjunct of the claim; the security reviewer refuted
+the headline itself, again with a live probe, which is Epic 19. Nothing below is dismissed.
+
+| Found | Where it lands |
+|---|---|
+| Security reviewer, live at HEAD: `code` and `title` are the last two unguarded reads on the `getResponse()` frame | Epic 19, code |
+| Test reviewer: the one-read property of the metadata guard has no test | Epic 20, Task 20.1, code |
+| Test reviewer: the inner reason guard's new throw path has no test | Epic 20, Task 20.3, code |
+| Test and security reviewers: "the bytes on the wire are unchanged" is false for a root `toJSON` and for a non-object root | Epic 21, Task 21.1, in all four places, plus a case |
+| Security reviewer: the round trip's cost on the error path is undocumented | Epic 21, Task 21.2, measured |
+| Contrarian: #190 did not open the major, and shipped as `2.0.0-beta.4`, not `beta.3` | Provenance bullet at the top, re-measured; TECHNICAL.md |
+| Test reviewer: Epic 6's log-shape paragraph carries the pre-correction provenance with no marker | Epic 6, correction added |
+| Test and security reviewers: the #191 plan still blames the physical-line drift on another copy | Corrections section, re-measured in situ here |
+| Contrarian: the PR body's "found, not fixed" list drops item 8, which qualifies a claim in the body | The body is rewritten at the code-final head |
+| Test reviewer, Info: "twenty-two mutants" counts six re-takes as separate mutations | The body now says sixteen distinct mutations in twenty-two runs |
+| Security reviewer, Info: `Exception metadata dropped` is a new unredacted operator-log sink | Found, not fixed, item 9 |
 
 ## Found, not fixed
 
@@ -828,6 +1040,19 @@ here by name.
    rebuilt through `Object.entries`, so its accessors run once there and once in the serialiser's
    walk of the copy. That is one read of the original, not two, and it is the path where the
    values are genuinely needed.
+9. **`Exception metadata dropped` is a second unredacted operator-log sink**, carrying a route's
+   own failure text: a metadata getter that interpolates a customer's data into its error writes
+   that text under `cause`, bounded at 2000 characters and redacted by nothing. Raised by the
+   security reviewer of fix pass 1 as an Info, because item 4 above enumerates only the
+   record-builder reason and a reader auditing the log surface from that list would not find this
+   one. Consistent with the declared posture, so no fix is requested; named here so the list is
+   the whole surface. The classification line added in Epic 19 is NOT a third: it carries a field
+   name and a status, both of them this package's own words.
+10. **A metadata root that is not an object after the round trip serves numbered character keys.**
+    A `Date` passed as the whole metadata is the reachable case, and it served nothing at all
+    before Epic 11. Documented in TECHNICAL.md and in the code rather than guarded, because
+    refusing a non-object root would change what a plain string root has always served, which is
+    those same numbered keys. Raised by the security reviewer of fix pass 1.
 
 ## Corrections to earlier plans in this repository
 
@@ -840,6 +1065,29 @@ here by name.
   given, even a mutated empty one`. The row now says five and names the head.
 - `docs/plans/2026-09-15-typed-exception-fail-safe.md`: the `breakLength: 128` figure is corrected
   to the measured 80, and the "seventeen physical lines" line now says which count it is.
+- `docs/plans/2026-09-15-typed-exception-fail-safe.md` again, in fix pass 2. The correction this
+  PR wrote into that file blamed the one-line drift on "another copy", which this PR's own shipped
+  comment and Epic 6.3 both refute, so one push was shipping both the wrong cause and its
+  correction. Both reviewers of fix pass 1 raised it. Re-measured in situ here rather than
+  repeated, by parsing the written line back and formatting it the old way inside that very test,
+  `2026-09-16 03:50:42 UTC`, head `eeb9ba3`, Node v24.21.0 with
+  `util.inspect.defaultOptions.breakLength` 80:
+
+  ```
+  $ npx jest --verbose            # both specs, which is the set the gate runs
+  INSITU2 newlines=17 lines=18
+
+  $ npx jest e2e/error-shape.spec.ts
+  INSITU2 newlines=16 lines=17
+
+  $ npx jest -i e2e/error-shape.spec.ts
+  INSITU2 newlines=16 lines=17
+  ```
+
+  The copy is not the variable; the invocation is, and two specs make jest use a worker whose
+  extra frame is the whole difference. `--verbose` is needed only to SEE the line: a multi-suite
+  run swallows a passing test's console output, which is why the instrumented gate run printed
+  nothing at all the first time. That file's sentence now names the invocation.
 - PR #191's body says "Two RED blocks before their fixes" while its plan documents FOUR. A merged
   body cannot be corrected; it is recorded here. The four are cited by HEADING, not by line
   number: `### RED before GREEN: a typed exception's message`, `: one line per failed call`,
@@ -851,6 +1099,55 @@ here by name.
 ## Verification
 
 Every command below was run verbatim in `/srv/worktrees/sdk-typed-fix1`.
+
+### Fix pass 2, at the code-final head `eeb9ba3`
+
+Package gates, `2026-09-16 03:48:15 UTC`, `git status --porcelain` empty:
+
+```
+$ npm test
+rc=0
+Test Suites: 39 passed, 39 total
+Tests:       953 passed, 953 total
+
+$ npm run test:e2e
+rc=0
+Test Suites: 2 passed, 2 total
+Tests:       40 passed, 40 total
+
+$ npm run lint
+rc=0
+
+$ npm run build
+rc=0
+```
+
+Monorepo root, `2026-09-16 03:48:45 UTC` onward, same head, `git status --porcelain` empty:
+
+```
+$ npm test
+rc=0
+ Tasks:    6 successful, 6 total
+
+$ npm run test:e2e
+rc=0
+ Tasks:    5 successful, 5 total
+
+$ npm run lint
+rc=0
+ Tasks:    5 successful, 5 total
+
+$ npm run build
+rc=0
+ Tasks:    5 successful, 5 total
+
+$ npx turbo run test:e2e --filter=@lerianstudio/sindarian-server --force   # the CI job's arm
+rc=0
+@lerianstudio/sindarian-server:test:e2e: Tests:       40 passed, 40 total
+ Tasks:    1 successful, 1 total
+```
+
+The blocks for fix pass 1 follow, at the head they were taken on.
 
 **Both blocks below were re-taken from scratch at the code-final head of fix pass 1.** The
 previous package block pasted `Tests: 932 passed` under a header arguing the block was fresh, and
@@ -950,3 +1247,23 @@ even after the source is restored.
 | N18 | the reason dropped from the announcement (re-take) | unit rc=1, **7 failed**, was 4: the four of the original row plus the two new non-Error cases of Epic 13 and the new `onRequestFailure` case of Epic 12 |
 | N20 | the whole uniquifier dropped (re-take) | unit rc=1, **4 failed**, was 3: the three of the original row plus `bounds a key at two thousand characters`, which is the content pin of Epic 15 |
 | N21 | the mark grown one character per retry again (re-take) | unit rc=1, **1 failed**: `holds the ceiling against a record that occupies the candidates` |
+
+### Mutants of fix pass 2, at `eeb9ba3`
+
+Six, `2026-09-16 03:49:26 UTC` onward, unit counts out of 953 and e2e out of 40. The same six were
+taken at `4fb996d` first, `2026-09-16 03:35:40 UTC`, and re-taken here after the comment-only
+commit with identical counts and case names. Each was applied
+as an exact single-occurrence replacement, asserted as one occurrence before the run, and reverted
+with `clean-after=0` printed. `dist` was rebuilt from the clean head afterwards, because a
+mutant's own e2e `pretest` leaves the mutated build behind: measured this pass, a live probe run
+against that stale `dist` reported a drop with NO operator line and was a measurement of N31, not
+of the head.
+
+| # | Mutation | Result |
+|---|---|---|
+| N27 | the metadata round trip back to check-then-spread, `JSON.stringify(this.metadata); return { ...this.metadata }`, which is the shape the doc block forbids | unit rc=1, **2 failed**: `reads a metadata value once, so a second read cannot decide the body` (`Expected: 1, Received: 2`) and `lets a metadata root with its own toJSON decide the body`. It SURVIVED all 945 unit and all 38 e2e cases of fix pass 1 |
+| N28 | the inner reason guard deleted, so `String(failure)` runs unguarded | unit rc=1, **1 failed**: `keeps the real status when the reason cannot be read either`, on `Expected constructor: not ServiceUnavailableApiException`, which is the 503-for-a-409 defect restored. It SURVIVED all 945 unit and all 38 e2e cases of fix pass 1 |
+| N29 | the code guard removed, `readWireField(() => this.code, ...)` back to `this.code` | unit rc=1, **3 failed**: the throwing-getter case, the both-fallbacks case and the bound case; e2e rc=1, **1 failed**: `answers a body at all when reading the code throws` |
+| N30 | the title guard removed, the same way | unit rc=1, **3 failed**: the object-title case, the both-fallbacks case and the bound case; e2e rc=1, **1 failed**: `answers a string title when a route wrote an object` |
+| N31 | the drop announced to nobody, the line and its field list deleted | unit rc=1, **4 failed**: all four classification cases that read the line; e2e rc=1, **2 failed**: both new routes |
+| N32 | the classification bound widened to the message ceiling | unit rc=1, **1 failed**: `bounds a code and a title an upstream sized` |

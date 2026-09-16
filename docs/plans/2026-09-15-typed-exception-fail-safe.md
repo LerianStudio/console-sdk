@@ -119,6 +119,17 @@ upstream's own text.
   not stated and the two differ by one: re-measured in situ 2026-09-16 by the follow-up
   lane `fix/typed-branch-status-and-base-class` as seventeen LINES and sixteen newlines,
   and the same rendering in another copy gave one more of each.)
+  **Corrected 2026-09-16 by that same lane, fix pass 2: the sentence above blames the
+  drift on the COPY, and the copy is not the variable.** The invocation is. Both
+  reviewers of that lane raised it, and it reproduces on demand inside ONE copy, at
+  `eeb9ba3`, Node v24.21.0: `npx jest --verbose` over both e2e specs, which is the set
+  the gate runs, prints `newlines=17 lines=18`, while `npx jest
+  e2e/error-shape.spec.ts` prints `newlines=16 lines=17` with or without `-i`. Two
+  specs make jest use a worker and the extra frame is the whole difference, so the
+  digits above are the single-spec ones and the repository's own gate renders one more
+  of each. No digit belongs in the shipped comment at all, which is why that lane
+  removed it: what the file asserts is ONE line and zero newlines, and that does not
+  move.
 - `2026-09-14-server-error-message-string.md`: rows M13 to M16 carried counts from
   heads the prose did not name, and two sentences in the preamble could not both be
   true. Each row now names the head and the case basis it was taken at, the false
