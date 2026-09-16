@@ -33,8 +33,12 @@
   the replacement sentence as well**: fix pass 1 wrote that #190 "opened the major" and that its
   release was `2.0.0-beta.3`, and both are false. `git log --format='%h %ad %s' --date=iso-strict
   -- packages/sindarian-server/package.json` puts `2.0.0-beta.1` at `c471157`,
-  `2026-09-09T14:06:18Z`, immediately after PR #183, six days and three releases before #190
-  merged at `92fadc7`, `2026-09-15T18:25:01Z`; `7dd44f6 chore(sindarian-server): release
+  `2026-09-09T14:06:18Z`, immediately after PR #183, which left the line six days and three
+  releases old (`beta.1`, `beta.2`, `beta.3`) by the time #190 merged at `92fadc7`,
+  `2026-09-15T18:25:01Z` (**corrected in fix pass 3**: the earlier phrasing, "six days and three
+  releases before #190 merged", reads as three releases having happened in between, and two did,
+  `beta.2` at `0259453` and `beta.3` at `b6d0be6`; Task 21.5 declared this corrected while
+  correcting TECHNICAL.md and the PR body only); `7dd44f6 chore(sindarian-server): release
   v2.0.0-beta.4` lands 94 seconds after that merge, so `2.0.0-beta.3` is the version in the TREE
   at the merge, before semantic-release bumped, and `2.0.0-beta.4` is the release #190 shipped as.
   `git ls-tree -r 7dd44f6 -- packages/sindarian-server/src/utils/error/` lists no
@@ -548,11 +552,20 @@ rc=0
 Tests:       35 passed, 35 total
 ```
 
-**What a caller could notice.** Nothing on the wire. The response is serialised with
+**What a caller could notice.** **Corrected in fix pass 2 and again in fix pass 3 (2026-09-16),
+where the absolute this paragraph used to state was still standing after Task 21.1 reported it
+closed.** Nothing on the wire FOR A ROOT THAT IS A PLAIN OBJECT CARRYING NO `toJSON` OF ITS OWN,
+which is every shape this package and Console pass: the response is serialised with
 `JSON.stringify` anyway, and it drops the same functions, `undefined`s and symbols the round trip
-drops, in the same key order, so for every metadata that worked before the bytes are identical.
-What changes is `getResponse()` read IN MEMORY: a class instance arrives as its data rather than
-as itself. The method is documented as the body a caller receives, which is data. The metadata is
+drops, in the same key order, so for those the bytes are identical. Three roots are not that
+shape, all three measured on a pre-fix build against this one: a class whose `toJSON` sits on the
+PROTOTYPE served the instance's data (`{"cents":1500}`) and serves what `toJSON` returns
+(`{"amount":15}`); a root carrying `toJSON` as an OWN ENUMERABLE property had that function copied
+onto the body, where the serialiser CALLED it, so its return became the whole response
+(`{"amount":15}` and nothing else, envelope and named fields gone) and now sits under the named
+fields; and a `Date` root serves twenty-four numbered character keys where it served none. What
+changes for everything else is `getResponse()` read IN MEMORY: a class instance arrives as its
+data rather than as itself. The method is documented as the body a caller receives, which is data. The metadata is
 NOT bounded at 2000 characters, which the fix brief offered as an option: `ValidationApiException`
 puts every Zod issue of a rejected form under `errors`, a legitimately wide shape a consumer
 renders per field, and cutting each of its strings would change a shipped behaviour to buy nothing
@@ -905,8 +918,15 @@ nothing wrong
   operator lines: (none)
 ```
 
-The bigint row is the shape a pg driver produces and it never had a test: it does not throw, it
-simply is not a string, and it used to travel to the wire as one.
+The bigint row is the shape a pg driver produces and it never had a test. **Corrected in fix pass
+3 (2026-09-16), the contrarian having refuted the sentence that stood here.** It said the value
+"does not throw, it simply is not a string, and it used to travel to the wire as one". It did not
+travel anywhere: re-measured on a pre-fix build of this tree through a real `Response`, a bigint
+`code` ESCAPED with `TypeError: Do not know how to serialize a BigInt` and produced NO Response at
+all, which is the same zero-response failure this branch documents for bigint METADATA, so the row
+is more severe than the sentence said. After Epic 22 below, a bigint `code` reads as its digits
+(`"10"`) and a pg INT `5` reads as `"5"`, so neither costs the route anything and neither is
+replaced.
 
 ## Epic 20: one read, and a reason no value can give (`e1e3c7c`, `6e5b30a`)
 
@@ -943,7 +963,12 @@ frame it replaced: a plain object, an array, a string, a number and a nested `to
 identical; a root carrying its own `toJSON` served `{"cents":1500,...}` before and serves
 `{"amount":15,...}` now; a `Date` root served nothing before and now serves twenty-four numbered
 character keys, because the round trip turns it into a string and a string spreads by index. The
-sentence is now quantified in both places. The `Date` root is named rather than guarded: refusing
+sentence is now quantified in both places. **Fix pass 3 correction (2026-09-16): two, not four.**
+Epic 11's "What a caller could notice" above and the Found-by row below both said the quantifier
+had landed everywhere it was named; it had landed in `api-exception.ts` and TECHNICAL.md, and the
+plan's own Epic 11 copy still stated the absolute. It is corrected there now, and the mechanism
+for the OWN-ENUMERABLE root, which this task also got wrong, is in Epic 23. The `Date` root is
+named rather than guarded: refusing
 a non-object root would also change what a plain string root has always served.
 
 **Task 21.2.** What the round trip COSTS was written nowhere, next to a sentence saying the size
@@ -969,6 +994,191 @@ It now says the line was three releases old when that PR landed.
 Both are comment and prose only, and both are inside `packages/`, so each became the code-final
 head in turn. Every gate and all six mutants above were re-run at each of the three, with
 identical counts and case names.
+
+## Epic 22: a primitive code or title keeps its own value (`b49c3d7`)
+
+**Found by the contrarian of fix pass 2, live.** The guard of Epic 19 treated everything that was
+not a `string` as a failed read, and the contrarian measured what that costs: `new
+ApiException(row.error_code, ...)` with a pg `INT` column served `{"code":5,...}` at 404 before
+the guard, perfectly well, and served `{"code":"0004",...}` after it, with the route's real code
+surviving in neither the body nor the operator line, which names the field and not its value. The
+substitute destroyed a value that was fine.
+
+**The product decision taken here.** A PRIMITIVE is stringified and bounded, not replaced.
+`readWireField` answers `String(value)` for a string, a number as it is spelled (`NaN` and
+`Infinity` included), a `bigint` and a boolean, cut at the caller's limit. An object, an array, a
+function, a symbol, `null` and `undefined` still answer `undefined`, so the caller spends its
+fallback and announces the drop: those are the shapes an upstream BODY arrives as, and
+`String({})` is `[object Object]`, which is a serialisation and not a classification.
+`readWireMessage` is `readWireField` plus a fallback, so it inherits the rule and a numeric
+message now reads as its digits.
+
+Measured at `ab7ee5b` through a real `Response` against the built dist, beside a pre-fix build of
+the same tree:
+
+```
+code is a pg INT 5      before {"code":5,...}      now {"code":"5",...}     no operator line
+code is a bigint 10n    before NO RESPONSE:        now {"code":"10",...}    no operator line
+                        Do not know how to serialize a BigInt
+code is true            before {"code":true,...}   now {"code":"true",...}  no operator line
+title is a number 502   before {"title":502,...}   now {"title":"502",...}  no operator line
+code is an object       before {"code":{"a":1},..} now {"code":"0004",...}  Exception classification dropped {"dropped":["code"],"status":404}
+code is an array        before {"code":["a"],...}  now {"code":"0004",...}  the same line
+code is null            before {"code":null,...}   now {"code":"0004",...}  the same line
+```
+
+**Every pass-2 case that assumed a bigint answers `0004` was re-run and rewritten.** `answers both
+fallbacks in one line when neither is readable` used `BigInt(7)` for the code and a cycle for the
+title; it uses an upstream object for the code now, which is the shape the fallback exists for,
+and keeps the cycle. Three `it.each` rows asserting that a numeric MESSAGE answers the fallback
+sentence (in `api-exception.test.ts`, `http-exception.test.ts` and `base-exception-filter.test.ts`)
+were removed and replaced by three cases naming the new rule, `reads a numeric message as its
+digits`.
+
+Mutants N34 and N35 are the two directions of the rule.
+
+## Epic 23: what each metadata root served, measured rather than described (`b49c3d7`, `ab7ee5b`)
+
+**Found by the test reviewer of fix pass 2.** The case Epic 21 added to close the "bytes on the
+wire" finding pins `{ cents: 1500, toJSON: () => ({ amount: 15 }) }`, an object literal whose
+`toJSON` is an OWN ENUMERABLE property, while the sentence above it, TECHNICAL.md and the PR body
+all describe a money CLASS, whose `toJSON` sits on the prototype. Those are two different
+mechanisms and the documents named neither correctly: a prototype `toJSON` is never copied by a
+spread, and an own-enumerable one is copied and then CALLED, not "dropped".
+
+**Both measured on a pre-fix build of this tree** (the guard reverted on `getResponse()`, `dist`
+rebuilt, `2026-09-16 04:54:58 UTC`), and again at this head, through
+`Response.json({ ...envelope, ...exception.getResponse() }, { status: readWireStatus(exception) })`:
+
+```
+root = new Money(1500), toJSON on the PROTOTYPE
+  before {"timestamp":"T","cents":1500,"code":"0003","title":"Not Found","message":"Ledger not found"}
+  now    {"timestamp":"T","amount":15,"code":"0003","title":"Not Found","message":"Ledger not found"}
+root = { cents: 1500, toJSON: () => ({ amount: 15 }) }, OWN ENUMERABLE
+  before {"amount":15}          <- the WHOLE response: envelope and all three named fields gone
+  now    {"timestamp":"T","amount":15,"code":"0003","title":"Not Found","message":"Ledger not found"}
+```
+
+So the caveat the documents carry is true of the CLASS shape and only that one: a consumer reading
+`cents` reads nothing after this release. The own-enumerable shape is REPAIRED rather than changed,
+and before the fix it was the worst root of the three, because the serialiser called the copied
+function and let its return replace the application's own envelope. The reverted build and a
+reconstruction of the same frame inside one process agreed row for row, which is what makes the
+reconstruction usable for the rest of the table.
+
+A case for the class shape is added, `lets a metadata root whose class has a toJSON decide the
+body`, and the mechanism sentence is rewritten in all three places it appears: the test comment,
+the `readWireMetadata` doc block and TECHNICAL.md. Epic 11's "What a caller could notice" is
+corrected too, which is the other half of the finding that Task 21.1 reported closed and was not.
+
+## Epic 24: the metadata line is built from a read that happened (`b49c3d7`)
+
+**Found by both reviewers of fix pass 2, Medium.** `readWireMetadata`'s log builder read
+`this.code` and `this.title` raw, the two values the same commit had just established cannot be
+trusted. When both guards fire, each field was read TWICE inside one `getResponse()`, which makes
+the "each field read once" sentence shipped in the code comment, in TECHNICAL.md and in the PR
+body false on exactly the path fix pass 2 added. Worse than the count: the builder THROWS on the
+first of those reads, so `logErrorLine` keeps the label, loses the fields and names the cause it
+can still reach.
+
+Measured before the fix, through a real `Response`, with a throwing `code` getter and a throwing
+metadata getter on one exception:
+
+```
+Exception metadata dropped {"record":"unserialisable","cause":"code getter exploded"}
+Exception classification dropped {"dropped":["code"],"status":404}
+```
+
+The metadata line names the CODE's failure as its own cause, has lost both identifying fields, and
+the metadata's real reason (`md exploded`) appears nowhere. At `ab7ee5b`, the same input:
+
+```
+Exception classification dropped {"dropped":["code"],"status":404}
+Exception metadata dropped {"code":"0004","title":"Not Found","cause":"md exploded"}
+```
+
+**The fix.** `getResponse()` reads the classification FIRST, into a local, and hands it to
+`readWireMetadata`, which spreads it into the log record. The body's key order is untouched,
+metadata still under the three named fields. The alternative the brief offered, emitting the
+metadata line with field NAMES only as the classification line does, was rejected: the fields are
+what ties a metadata drop to the route that caused it, and the guarded read already has them.
+What changed observably in the log is the ORDER of the two lines when both fire, the
+classification's now being written first, because that is the order the reads happen in.
+
+RED is `reads the code once when the metadata drops beside it`, which counts the reads with a
+getter counter and asserts one body with the real status, exactly one read of `code`, both lines
+written and no false cause. Mutant N33 restores the raw read.
+
+## Epic 25: the type a consumer compiles against (`b49c3d7`)
+
+**Found by the security reviewer of fix pass 2, Low.** The metadata guard of Epic 11 narrowed the
+emitted type of `ApiException.getResponse()` from `any` (which `...this.metadata` widened it to on
+`develop`) to `{ message: string; code: string; title: string }`. Metadata keys are part of this
+body by design, so a consumer that spreads it into its own envelope and reads one back, which is
+what Product Console does with `{ details }`, stops compiling at the 2.x bump.
+
+The return type is now written out as those three fields intersected with
+`Record<string, unknown>`. Measured against the emitted `.d.ts` with strict `tsc`:
+`getResponse().details` compiles as `unknown`, `getResponse().message` is still a `string`, and
+`(getResponse().details as X).requestId` compiles. **The residue, which is in the PR body's
+caveats**: reading THROUGH such a key with no cast, `getResponse().details.requestId`, compiled on
+`develop` where the type was `any` and now reads `TS18046: 'body.details' is of type 'unknown'`.
+That is the only type-level change in the 2.x line and TECHNICAL.md names it.
+
+**The pin is in the e2e suite, not the unit suite, and that is not a preference.** This package's
+unit jest runs through ts-jest with `isolatedModules: true` in `tsconfig.eslint.json`, so it
+TRANSPILES and type-checks nothing: the same probe placed in `api-exception.test.ts` ran green
+against the narrow type. The e2e suite has no such setting and resolves the package through
+`file:../`, so it compiles against the emitted `.d.ts` a consumer installs. RED there is the whole
+suite refusing to run: `e2e/error-shape.spec.ts:405:17 - error TS2339: Property 'details' does not
+exist on type '{ message: string; code: string; title: string; }'`. Mutant N37 restores it.
+
+**A trap worth writing down.** N37 SURVIVED its first run: jest's cache keys a spec by its own
+content and its transform config, not by the `.d.ts` of a package it imports, so a spec that
+compiled once keeps compiling from cache while the emitted type changes underneath it. It is a
+kill with `--no-cache` (`1 failed, 1 passed`, the error above, e2e rc=1), and the final e2e gate
+was re-run with `--no-cache` for the same reason.
+
+## Epic 26: the documents and the numbers (`ab7ee5b`, this plan)
+
+**Task 26.1, `title` is not writable.** The contrarian measured it: the constructor declares
+`public readonly title`, the PR's own e2e route concedes it with `(exception as any).title = ...`,
+and under strict `tsc` against the emitted types both `e.title = x` and `e.code = x` are TS2540
+while `new ApiException(row.code, row.title, ...)` with an `any` row compiles (positive and
+negative control in one file, rc=2 and rc=0). "Or a cast" and the writable-title clause are gone
+from the `readWireClassification` doc block, TECHNICAL.md, the test's describe comment and the PR
+body; the `any`-row premise stays, and it is true of both fields.
+
+**Task 26.2, the caveats.** TECHNICAL.md's "which is the only shape here that produced a good
+response before" was false. After Epic 22 the measured pair is: a `code` or `title` past 200
+characters is truncated, and one that is an object, an array, `null` or a function is replaced by
+the fallback with its value surviving nowhere. Both are in TECHNICAL.md, in the PR body's caveats
+and in "Found, not fixed" where the second belongs.
+
+**Task 26.3, the one title that is not a status phrase.** The justification on `noProblemTitle`
+claimed every typed exception in this package carries its status's reason phrase as its title.
+Measured against `STATUS_CODES` on Node v24.21.0 for all eight: seven match,
+`ValidationApiException` does not, being 'Validation Error' at 400 where the phrase is 'Bad
+Request'. That is the class Console raises for every rejected form. The sentence now says seven of
+eight and names the exception, in the doc block, in TECHNICAL.md and in the test comment, and a
+case pins the answer: `answers Bad Request, not Validation Error, for a rejected form`.
+
+**Task 26.4, the bigint row.** Corrected in Epic 19's live block above, re-measured on a pre-fix
+build.
+
+**Task 26.5, the quantifier places.** Corrected in Epic 11 and in Task 21.1 above, which is where
+the Found-by row said they already were.
+
+**Task 26.6, the provenance bullet.** Corrected at the top of this document, which is where Task
+21.5 said it was.
+
+**Task 26.7, the counts, recounted from the tables in this document.** Twenty-two DISTINCT
+mutations, `N11` to `N32`, before this pass. Runs: eleven rows at `d5d5e54`, eleven at `243cfa3`,
+and six taken at each of three heads in fix pass 2, which is eighteen, so FORTY runs, not the
+twenty-eight the PR body claimed and not the twenty-two the Found-by row described. This pass adds
+five mutations, `N33` to `N37`, in six runs (N37 twice, the first of them cached), so the branch
+total is **twenty-seven distinct mutations, `N11` to `N37`, in forty-six runs**. The same two
+numbers are now in the PR body.
 
 ## Found by the review round of this PR, and where each one lands
 
@@ -1009,14 +1219,36 @@ the headline itself, again with a live probe, which is Epic 19. Nothing below is
 | Security reviewer, live at HEAD: `code` and `title` are the last two unguarded reads on the `getResponse()` frame | Epic 19, code |
 | Test reviewer: the one-read property of the metadata guard has no test | Epic 20, Task 20.1, code |
 | Test reviewer: the inner reason guard's new throw path has no test | Epic 20, Task 20.3, code |
-| Test and security reviewers: "the bytes on the wire are unchanged" is false for a root `toJSON` and for a non-object root | Epic 21, Task 21.1, in all four places, plus a case |
+| Test and security reviewers: "the bytes on the wire are unchanged" is false for a root `toJSON` and for a non-object root | Epic 21, Task 21.1, in two of the four places named, plus a case. **The remaining two are corrected in fix pass 3**, Epic 23 |
 | Security reviewer: the round trip's cost on the error path is undocumented | Epic 21, Task 21.2, measured |
 | Contrarian: #190 did not open the major, and shipped as `2.0.0-beta.4`, not `beta.3` | Provenance bullet at the top, re-measured; TECHNICAL.md |
 | Test reviewer: Epic 6's log-shape paragraph carries the pre-correction provenance with no marker | Epic 6, correction added |
 | Test and security reviewers: the #191 plan still blames the physical-line drift on another copy | Corrections section, re-measured in situ here |
 | Contrarian: the PR body's "found, not fixed" list drops item 8, which qualifies a claim in the body | The body is rewritten at the code-final head |
-| Test reviewer, Info: "twenty-two mutants" counts six re-takes as separate mutations | The body now says sixteen distinct mutations in twenty-two runs |
+| Test reviewer, Info: "twenty-two mutants" counts six re-takes as separate mutations | The body says twenty-two distinct mutations, N11 to N32. **The run count it carried, twenty-eight, was wrong and is corrected in fix pass 3**: forty, because the last six were taken at three heads. Recounted from the tables below in Epic 26 |
 | Security reviewer, Info: `Exception metadata dropped` is a new unredacted operator-log sink | Found, not fixed, item 9 |
+
+## Found by the review round of fix pass 2, and where each one lands
+
+Two reviewers plus a contrarian, on `4c45798`. The contrarian drove sixteen hostile shapes through
+a real `Response` against the built dist and found no escape; both reviewers report that every
+value a route controls on that frame is read inside a guard. What they refuted is four measured
+sentences and one narrowing nobody had noticed. Nothing below is dismissed.
+
+| Found | Where it lands |
+|---|---|
+| Both reviewers, Medium: the metadata log builder still reads `this.code` and `this.title` raw, so a field is read twice and the line can name a false cause | Epic 24, code |
+| Contrarian: a `code` that is a primitive but not a string served a good response before and is now replaced, its value named nowhere | Epic 22, code, as a product decision |
+| Test reviewer, Medium: the toJSON case pins one shape and the documents describe another, and the mechanism sentence is false for both | Epic 23, a case plus three rewrites |
+| Security reviewer, Low: `getResponse()`'s emitted type narrowed from `any`, so a consumer reading a metadata key stops compiling | Epic 25, code plus a compile pin in the e2e suite |
+| Security reviewer, Low: `noProblemTitle`'s justification is false for `ValidationApiException` | Epic 26, Task 26.3, corrected and pinned |
+| Contrarian: `title` is `readonly`, not "writable after construction" | Epic 26, Task 26.1, corrected in four places |
+| Contrarian and security reviewer: the caveat list misses a `code` or `title` that is not a string at all | Epic 26, Task 26.2, and Found-not-fixed item 11 |
+| Contrarian: the bigint row escaped at serialisation, it never reached the wire | Epic 26, Task 26.4, re-measured |
+| Both reviewers: the quantifier correction landed in two places, not the four the table claimed | Epic 26, Task 26.5 |
+| Both reviewers: the provenance bullet still carries the phrasing Task 21.5 declared corrected | Epic 26, Task 26.6 |
+| Contrarian and security reviewer: the mutant run counts disagree between the body and this plan | Epic 26, Task 26.7, recounted |
+| Security reviewer, Info: the round-trip cost did not reproduce within 50% (29.1 to 29.6 ms against 18.4) | Left as it stands: both documents already say to read the magnitude and not the digits, and the reviewer's own scaling puts the two runs on one machine's spread |
 
 ## Found, not fixed
 
@@ -1066,6 +1298,14 @@ the headline itself, again with a live probe, which is Epic 19. Nothing below is
     before Epic 11. Documented in TECHNICAL.md and in the code rather than guarded, because
     refusing a non-object root would change what a plain string root has always served, which is
     those same numbered keys. Raised by the security reviewer of fix pass 1.
+11. **A `code` or `title` that is an object, an array, `null` or a function is replaced, and its
+    own value is named nowhere.** It serialised into the body before this branch, so the shape
+    produced a good response; the operator line names the FIELD and the status, never what the
+    field held, because naming it would mean reading the value a second time or serialising a
+    thing this frame has just decided it cannot trust. Epic 22 keeps every PRIMITIVE, which is the
+    reachable half (a pg `INT` code); what is left is the half whose text would be a serialisation
+    of an object, and that is the defect the guard exists for. Raised by the contrarian and the
+    security reviewer of fix pass 2, and listed in the PR body's caveats.
 
 ## Corrections to earlier plans in this repository
 
@@ -1112,6 +1352,118 @@ the headline itself, again with a live probe, which is Epic 19. Nothing below is
 ## Verification
 
 Every command below was run verbatim in `/srv/worktrees/sdk-typed-fix1`.
+
+### Fix pass 3, at the code-final head `ab7ee5b`
+
+**RED, `2026-09-16 04:57:46 UTC`, head `4c45798`**, `git status --porcelain` showing the three
+test files only. Every case the new rules produce fails before the code changes:
+
+```
+$ npx jest src/exceptions
+rc=1
+Tests:       7 failed, 157 passed, 164 total
+  ApiException > message coercion > a message written after construction > reads a numeric message as its digits
+  ApiException > the classification a route wrote > reads the code once when the metadata drops beside it
+  ApiException > the classification a route wrote > answers a pg INT code as its digits
+  ApiException > the classification a route wrote > answers a driver's bigint code as its digits
+  ApiException > the classification a route wrote > answers a boolean code as its digits
+  ApiException > the classification a route wrote > answers a NaN code, spelled as it reads as its digits
+  HttpException > a message written after construction > reads a numeric message as its digits
+```
+
+**RED for the type, `2026-09-16 04:59:52 UTC`, same head.** The whole suite refuses to run, which
+is the point of putting the pin where the compiler looks:
+
+```
+$ npm run test:e2e
+rc=1
+FAIL e2e/error-shape.spec.ts
+  ● Test suite failed to run
+    e2e/error-shape.spec.ts:405:17 - error TS2339: Property 'details' does not exist on type
+    '{ message: string; code: string; title: string; }'.
+Test Suites: 1 failed, 1 passed, 2 total
+```
+
+One more case went red with the fix rather than before it and is counted with the rest:
+`BaseExceptionFilter > ... > names the real status for a number`, which asserted the old rule; it
+is replaced by `reads a numeric message as its digits, at the real status`.
+
+**GREEN, package gates at `ab7ee5b`, `2026-09-16 05:07:56 UTC`**, `git status --porcelain` empty:
+
+```
+$ npm test
+rc=0
+Test Suites: 39 passed, 39 total
+Tests:       964 passed, 964 total
+
+$ npm run test:e2e
+rc=0
+Test Suites: 2 passed, 2 total
+Tests:       41 passed, 41 total
+
+$ npm run lint
+rc=0
+
+$ npm run build
+rc=0
+```
+
+Monorepo root, `2026-09-16 05:08:19 UTC` onward:
+
+```
+$ npm test
+rc=0
+ Tasks:    6 successful, 6 total
+
+$ npm run test:e2e
+rc=0
+ Tasks:    5 successful, 5 total
+
+$ npm run lint
+rc=0
+ Tasks:    5 successful, 5 total
+
+$ npm run build
+rc=0
+ Tasks:    5 successful, 5 total
+
+$ npx turbo run test:e2e --filter=@lerianstudio/sindarian-server --force
+rc=0
+ Tasks:    1 successful, 1 total
+```
+
+And the e2e re-run with the cache disabled, `2026-09-16 05:12:37 UTC`, after the mutants and the
+rebuild, because Epic 25 found that jest caches a spec's type check across a `.d.ts` change:
+
+```
+$ npx jest --no-cache            # in packages/sindarian-server/test
+rc=0
+Test Suites: 2 passed, 2 total
+Tests:       41 passed, 41 total
+```
+
+**LIVE at `ab7ee5b`**, through a real `Response` with the recipe TECHNICAL.md prescribes, against
+the dist rebuilt from the clean head (`build rc=0`, emitted type re-read as
+`... & Record<string, unknown>`):
+
+```
+code is a pg INT 5      404 {"timestamp":"T","code":"5","title":"Not Found","message":"Ledger not found"}       (none)
+code is a bigint 10n    404 {"timestamp":"T","code":"10",...}                                                   (none)
+title is a number 502   404 {"timestamp":"T","code":"0003","title":"502",...}                                   (none)
+code is an object       404 {"timestamp":"T","code":"0004",...}    Exception classification dropped {"dropped":["code"],"status":404}
+code getter throws      404 {"timestamp":"T","code":"0004",...}    the same line
+title is an object      404 {"timestamp":"T","code":"0003","title":"Not Found",...}   the same line, dropped ["title"]
+code getter throws AND metadata getter throws
+                        404 {"timestamp":"T","code":"0004","title":"Not Found","message":"Ledger not found"}
+                        Exception classification dropped {"dropped":["code"],"status":404}
+                        Exception metadata dropped {"code":"0004","title":"Not Found","cause":"md exploded"}
+nothing wrong           404 {"timestamp":"T","code":"0003","title":"Not Found",...}   (none)
+```
+
+The last row of the group is the one Epic 24 is about: the metadata line carries its own reason
+and the fields that identify the incident, where before it carried `{"record":"unserialisable",
+"cause":"code getter exploded"}` and nothing else. The package renders no UI, so there is no
+browser artefact; the two e2e routes drive the same frame through the real `app.handler`.
 
 ### Fix pass 2, at the code-final head `d7d7d6e`
 
@@ -1280,3 +1632,22 @@ of the head.
 | N30 | the title guard removed, the same way | unit rc=1, **3 failed**: the object-title case, the both-fallbacks case and the bound case; e2e rc=1, **1 failed**: `answers a string title when a route wrote an object` |
 | N31 | the drop announced to nobody, the line and its field list deleted | unit rc=1, **4 failed**: all four classification cases that read the line; e2e rc=1, **2 failed**: both new routes |
 | N32 | the classification bound widened to the message ceiling | unit rc=1, **1 failed**: `bounds a code and a title an upstream sized` |
+
+### Mutants of fix pass 3, at `ab7ee5b`
+
+Five mutations in six runs, `2026-09-16 05:09:33 UTC` onward, unit counts out of 964 and e2e out
+of 41. Each was applied as an exact single-occurrence replacement, which the editor asserts by
+refusing a match that is not unique, and reverted with `clean-after=0` printed. `dist` was rebuilt
+from the clean head afterwards and the emitted type read back, because a mutant's own e2e
+`pretest` leaves the mutated build behind.
+
+| # | Mutation | Result |
+|---|---|---|
+| N33 | the metadata log line built from `this.code` and `this.title` again, the pass-2 shape | unit rc=1, **1 failed**: `reads the code once when the metadata drops beside it` |
+| N34 | `readWireField` back to strings only, so a primitive is replaced again | unit rc=1, **7 failed**: the four `as its digits` classification rows and the three numeric-message cases in `api-exception`, `http-exception` and `base-exception-filter` |
+| N35 | the type filter dropped, so everything but `null` and `undefined` is stringified | unit rc=1, **13 failed**: both non-primitive classification rows, the both-fallbacks case, the object-title case, the rejected-form parity case and every upstream-problem-object message case across the three suites |
+| N36 | the metadata round trip back to check-then-spread (a re-take of N27, for the new case) | unit rc=1, **3 failed**: `reads a metadata value once...`, `keeps the named fields when a metadata root has its own toJSON` and the new `lets a metadata root whose class has a toJSON decide the body` |
+| N37 | the emitted return type narrowed back to the three named fields | unit rc=0 and build rc=0, both blind to it; e2e rc=1, **the suite refuses to run**: `TS2339: Property 'details' does not exist on type '{ message: string; code: string; title: string; }'`. It SURVIVED its first run at 964 unit and 41 e2e, from jest's cache, and is a kill with `--no-cache` |
+
+N37's first run is the sixth, and it is left in the count rather than tidied away: a cached type
+check is exactly the way this pin could rot without anyone noticing.
