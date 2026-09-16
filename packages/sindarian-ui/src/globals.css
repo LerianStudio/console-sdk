@@ -541,7 +541,7 @@
   }
 }
 
-/* Sonner toast overrides — solid bold backgrounds (Radix parity) */
+/* Sonner toast overrides — tinted surfaces from the system token families */
 [data-sonner-toaster] {
   --width: 420px;
   pointer-events: auto !important;
@@ -559,41 +559,41 @@
 }
 
 /*
-  Type fills come from the system token families, so a toast themes with the
-  rest of the app. All three coloured types take ONE ink, --accent-foreground:
-  a solid system fill is bright enough to need near-black ink in BOTH themes,
-  and that token is the only one in this sheet that is near-black in both.
+  Each coloured type paints the `surface` + `text` + `border` trio of its own
+  family — the pairing every other tinted component in the kit already uses
+  (`components/ui/badge/index.tsx`, `enterprise/alert-banner/index.tsx`).
+  `surface` is the only slot in a system family built to sit BEHIND content: it
+  darkens on the dark canvas, while `base` and `h1a` are fill and ink slots
+  that INVERT between themes (`--system-success-h1a` is #166534 in light and
+  #BBF7D0 in dark). Grounding toast text on either of those forces a different
+  ink per theme, and the toast stops tracking the family it names.
 
-  It replaced the per-family reasoning that stood here, which routed success
-  and error through --primary-foreground because that token inverts (white in
-  light, base/800 in dark). Inverting was the bug: white ink on the LIGHT
-  fills measured 3.35:1 on --system-success and 3.78:1 on --system-error,
-  both under AA, and no token value can fix that from the white side — the
-  light green/600 and red/500 fills sit mid-luminance, so white caps at ~3.8
-  while near-black reaches 5.9 and 5.3. Ratios now, ink over fill:
-  light 5.93 / 5.25 / 11.17 and dark 11.39 / 7.23 / 13.00
-  (success / error / warning). The dark pairs were already passing at
-  8.51 / 5.41 / 13.00 and only gained. `toast ink` in
-  src/__tests__/tokens-contract.test.ts recomputes all six from these
-  declarations, so the next token edit that drops a pair under 4.5 fails
-  instead of shipping.
+  Ink over ground, light / dark: success 6.81 / 10.62, error 7.60 / 8.51,
+  warning 6.62 / 11.70 — every half clear of the 4.5 floor by more than two
+  points. `system text tokens` in `src/__tests__/tokens-contract.test.ts`
+  already measures this pair for all five families, so the toast is covered by
+  the gate that guards the pills rather than by a rule written for it alone;
+  `sonner toast ink` there reads whichever pair these rules declare.
+
+  `info` stays neutral on `--card`: an informational toast is the unstyled
+  case, not a fourth colour.
 */
 [data-sonner-toast][data-type='success'] {
-  --normal-bg: hsl(var(--system-success));
-  --normal-text: hsl(var(--accent-foreground));
-  --normal-border: transparent;
+  --normal-bg: hsl(var(--system-success-surface));
+  --normal-text: hsl(var(--system-success-text));
+  --normal-border: hsl(var(--system-success-border));
 }
 
 [data-sonner-toast][data-type='error'] {
-  --normal-bg: hsl(var(--system-error));
-  --normal-text: hsl(var(--accent-foreground));
-  --normal-border: transparent;
+  --normal-bg: hsl(var(--system-error-surface));
+  --normal-text: hsl(var(--system-error-text));
+  --normal-border: hsl(var(--system-error-border));
 }
 
 [data-sonner-toast][data-type='warning'] {
-  --normal-bg: hsl(var(--system-alert));
-  --normal-text: hsl(var(--accent-foreground));
-  --normal-border: transparent;
+  --normal-bg: hsl(var(--system-alert-surface));
+  --normal-text: hsl(var(--system-alert-text));
+  --normal-border: hsl(var(--system-alert-border));
 }
 
 [data-sonner-toast][data-type='info'] {
