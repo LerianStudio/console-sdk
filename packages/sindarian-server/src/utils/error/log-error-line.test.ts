@@ -162,14 +162,23 @@ describe('logErrorLine', () => {
     const withMark = (mark: string) =>
       prefix.slice(0, 2000 - mark.length) + mark
     const record: Record<string, unknown> = {}
+    const seeds = 2100
 
-    // The oversized key goes in last, so its index is the seed count and the
-    // names it will reach for are `~2100`, then that mark grown once per retry.
-    let mark = '~2100'
-    for (let taken = 0; taken < 2100; taken++) {
-      record[withMark(mark)] = taken
-      mark += '~'
+    // The oversized key goes in LAST, so its index is the seed count and every
+    // name it reaches for is built from `~4200`. Both retry sequences are
+    // occupied: the decimal one this counts in today, so the bounded path is
+    // walked to its end rather than once, and the one-character-per-retry one
+    // it used to count in, so this case stays red on that implementation.
+    for (let attempt = 1; attempt <= seeds; attempt++) {
+      record[withMark(`~${seeds * 2}.${attempt}`)] = attempt
     }
+
+    let legacy = `~${seeds * 2}`
+    for (let taken = 0; taken < seeds; taken++) {
+      record[withMark(legacy)] = taken
+      legacy += '~'
+    }
+
     record[prefix] = 'the oversized one'
 
     logErrorLine('Request error', () => record)
@@ -181,7 +190,7 @@ describe('logErrorLine', () => {
     )
 
     expect(longest).toBe(2000)
-    expect(Object.keys(written)).toHaveLength(2101)
+    expect(Object.keys(written)).toHaveLength(seeds * 2 + 1)
     expect(Object.values(written)).toContain('the oversized one')
   })
 
