@@ -555,5 +555,486 @@ describe('ApiException', () => {
         )
       })
     })
+
+    // The third value this frame reads, and the last one that was still taken
+    // rather than read. Spreading metadata invokes every own enumerable
+    // accessor the route attached, and the body is serialised one frame later,
+    // so the two ways a route's own object breaks this accessor are a getter
+    // that throws and a value JSON refuses.
+    describe('metadata a route attached', () => {
+      let consoleError: jest.SpyInstance
+
+      beforeEach(() => {
+        consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+      })
+
+      afterEach(() => {
+        consoleError.mockRestore()
+      })
+
+      const announced = () =>
+        JSON.parse(
+          consoleError.mock.calls.find(
+            (call) => call[0] === 'Exception metadata dropped'
+          )?.[1] as string
+        )
+
+      // Nothing an ordinary route writes moves. Console passes `{ details }`
+      // here today, and `ValidationApiException` passes every Zod issue of a
+      // rejected form, so this is the shape the guard must leave alone.
+      it('carries a plain object through unchanged', () => {
+        const details = { field: 'payer', issues: ['required'] }
+
+        expect(
+          new ApiException(
+            '0007',
+            'Validation Error',
+            'Invalid payload',
+            HttpStatus.BAD_REQUEST,
+            { details }
+          ).getResponse()
+        ).toEqual({
+          details,
+          code: '0007',
+          title: 'Validation Error',
+          message: 'Invalid payload'
+        })
+
+        expect(consoleError).not.toHaveBeenCalled()
+      })
+
+      // The whole argument for taking the round trip as the value rather than
+      // checking one read and spreading another. The shape is not exotic: a
+      // memoising or retrying accessor over a pg row answers a number first
+      // and the driver's `bigint` second, and a check-then-spread hands the
+      // second one to the frame that serialises the response, which refuses it
+      // and leaves the route with no Response at all.
+      it('reads a metadata value once, so a second read cannot decide the body', () => {
+        let reads = 0
+        const metadata: Record<string, unknown> = {}
+
+        Object.defineProperty(metadata, 'amount', {
+          enumerable: true,
+          get() {
+            reads += 1
+
+            return reads === 1 ? 1 : BigInt('9007199254740993')
+          }
+        })
+
+        const body = new ApiException(
+          '0003',
+          'Not Found',
+          'Ledger not found',
+          HttpStatus.NOT_FOUND,
+          metadata
+        ).getResponse()
+
+        expect(reads).toBe(1)
+        expect(body).toEqual({
+          amount: 1,
+          code: '0003',
+          title: 'Not Found',
+          message: 'Ledger not found'
+        })
+        // The frame that used to fail, one after this one.
+        expect(JSON.stringify(body)).toContain('"amount":1')
+        expect(consoleError).not.toHaveBeenCalled()
+      })
+
+      // What the round trip does change, and the two roots it changes it for.
+      // Both were measured on a pre-fix build of this tree, through a real
+      // `Response`, rather than reasoned about, because the mechanism is not
+      // the same one twice.
+      //
+      // A root whose `toJSON` is an OWN ENUMERABLE property is the worse of
+      // the two before the fix: the spread copied that function onto the body
+      // itself, so the body had a `toJSON` and the serialiser called it. What
+      // it returned became the WHOLE response - `{"amount":15}`, with the
+      // application's own envelope and all three named fields gone with it.
+      // The round trip asks the value once, so what it returns is metadata and
+      // sits under the named fields like any other.
+      it('keeps the named fields when a metadata root has its own toJSON', () => {
+        const body = new ApiException(
+          '0003',
+          'Not Found',
+          'Ledger not found',
+          HttpStatus.NOT_FOUND,
+          { cents: 1500, toJSON: () => ({ amount: 15 }) }
+        ).getResponse()
+
+        expect(body).toEqual({
+          amount: 15,
+          code: '0003',
+          title: 'Not Found',
+          message: 'Ledger not found'
+        })
+        expect(consoleError).not.toHaveBeenCalled()
+      })
+
+      // The other root, and the shape the caveat in TECHNICAL.md is about: a
+      // money CLASS whose `toJSON` sits on the PROTOTYPE, which is what an
+      // ordinary class gives you. A spread copies own properties only, so the
+      // method was left behind and the body carried the instance's DATA:
+      // `{"cents":1500,...}` on a pre-fix build of this tree. The round trip
+      // asks the value what it is, and it answers `{"amount":15}`, so a
+      // consumer reading `cents` reads nothing after this release. Nothing
+      // pinned it until this case.
+      it('lets a metadata root whose class has a toJSON decide the body', () => {
+        class Money {
+          constructor(private readonly cents: number) {}
+
+          toJSON() {
+            return { amount: this.cents / 100 }
+          }
+        }
+
+        const body = new ApiException(
+          '0003',
+          'Not Found',
+          'Ledger not found',
+          HttpStatus.NOT_FOUND,
+          new Money(1500)
+        ).getResponse()
+
+        expect(body).toEqual({
+          amount: 15,
+          code: '0003',
+          title: 'Not Found',
+          message: 'Ledger not found'
+        })
+        expect(consoleError).not.toHaveBeenCalled()
+      })
+
+      it('answers the named fields when a metadata getter throws', () => {
+        const metadata: Record<string, unknown> = {}
+
+        Object.defineProperty(metadata, 'details', {
+          enumerable: true,
+          get() {
+            throw new Error('metadata getter exploded')
+          }
+        })
+
+        expect(
+          new ApiException(
+            '0003',
+            'Not Found',
+            'Ledger not found',
+            HttpStatus.NOT_FOUND,
+            metadata
+          ).getResponse()
+        ).toEqual({
+          code: '0003',
+          title: 'Not Found',
+          message: 'Ledger not found'
+        })
+
+        expect(announced()).toEqual({
+          code: '0003',
+          title: 'Not Found',
+          cause: 'metadata getter exploded'
+        })
+      })
+
+      // A `bigint` is what a pg driver hands back for an int64 amount, so a
+      // ledger route reaches this with no override at all. Nothing throws
+      // while this body is built; the throw lands where it is serialised.
+      it('answers the named fields for a value JSON refuses', () => {
+        expect(
+          new ApiException(
+            '0003',
+            'Not Found',
+            'Ledger not found',
+            HttpStatus.NOT_FOUND,
+            { amount: BigInt('9007199254740993') }
+          ).getResponse()
+        ).toEqual({
+          code: '0003',
+          title: 'Not Found',
+          message: 'Ledger not found'
+        })
+
+        expect(announced().cause).toBe('Do not know how to serialize a BigInt')
+      })
+
+      // The reason is an override's own text and has a size this package does
+      // not control, the same argument every other string here is bounded on.
+      it('bounds the reason the metadata was dropped', () => {
+        const metadata: Record<string, unknown> = {}
+
+        Object.defineProperty(metadata, 'details', {
+          enumerable: true,
+          get() {
+            throw new Error('x'.repeat(1_000_000))
+          }
+        })
+
+        new ApiException(
+          '0003',
+          'Not Found',
+          'Ledger not found',
+          HttpStatus.NOT_FOUND,
+          metadata
+        ).getResponse()
+
+        expect(announced().cause).toHaveLength(2000)
+      })
+    })
+  })
+
+  // The last two values this body answers, and the two that were still taken
+  // rather than read after the metadata guard landed. Neither needs an
+  // override to go wrong: `code: string` and `title: string` are both
+  // satisfied with no cast at all by the `any` a database row is, which is
+  // how a pg `code` column reaches this constructor.
+  describe('the classification a route wrote', () => {
+    let consoleError: jest.SpyInstance
+
+    beforeEach(() => {
+      consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      consoleError.mockRestore()
+    })
+
+    const writtenAs = (label: string) =>
+      JSON.parse(
+        consoleError.mock.calls.find((call) => call[0] === label)?.[1] as string
+      )
+
+    const announced = () => writtenAs('Exception classification dropped')
+
+    it('answers the unclassified code when the code getter throws', () => {
+      const exception = new NotFoundApiException('Ledger not found')
+
+      Object.defineProperty(exception, 'code', {
+        get() {
+          throw new Error('code getter exploded')
+        }
+      })
+
+      expect(exception.getResponse()).toEqual({
+        code: '0004',
+        title: 'Not Found',
+        message: 'Ledger not found'
+      })
+
+      expect(announced()).toEqual({ dropped: ['code'], status: 404 })
+    })
+
+    it('answers the status title when the title is an object', () => {
+      const exception = new NotFoundApiException('Ledger not found')
+      ;(exception as any).title = {
+        title: 'Gateway Timeout',
+        detail: 'timed out at db-primary.internal:8080'
+      }
+
+      expect(exception.getResponse()).toEqual({
+        code: '0003',
+        title: 'Not Found',
+        message: 'Ledger not found'
+      })
+
+      expect(announced()).toEqual({ dropped: ['title'], status: 404 })
+    })
+
+    // The metadata guard and this one on the same frame, which is the only
+    // path that could read a field twice. Building the metadata line was
+    // itself an unguarded read of `code` and `title`, so when the code was the
+    // thing that had just failed, the line lost both identifying fields and
+    // named the CODE's failure as the metadata's cause: measured through a
+    // real Response before this fix, `Exception metadata dropped
+    // {"record":"unserialisable","cause":"code getter exploded"}`, with the
+    // metadata's own reason nowhere. The classification is read once, first,
+    // and the line is built from what that read answered.
+    it('reads the code once when the metadata drops beside it', () => {
+      let reads = 0
+      const metadata: Record<string, unknown> = {}
+
+      Object.defineProperty(metadata, 'details', {
+        enumerable: true,
+        get() {
+          throw new Error('metadata getter exploded')
+        }
+      })
+
+      const exception = new ApiException(
+        '0003',
+        'Not Found',
+        'Ledger not found',
+        HttpStatus.NOT_FOUND,
+        metadata
+      )
+
+      Object.defineProperty(exception, 'code', {
+        get() {
+          reads += 1
+
+          throw new Error('code getter exploded')
+        }
+      })
+
+      expect(exception.getResponse()).toEqual({
+        code: '0004',
+        title: 'Not Found',
+        message: 'Ledger not found'
+      })
+
+      expect(reads).toBe(1)
+      expect(writtenAs('Exception metadata dropped')).toEqual({
+        code: '0004',
+        title: 'Not Found',
+        cause: 'metadata getter exploded'
+      })
+      expect(announced()).toEqual({ dropped: ['code'], status: 404 })
+    })
+
+    // A primitive is not a failed read and is not replaced. A pg INT error
+    // code and a driver's `bigint` are the two shapes a database row hands
+    // back, and before this package read these fields at all the first served
+    // `{"code":5}` perfectly well while the second cost the route its whole
+    // response at serialisation. Both now answer their digits, bounded like
+    // any other string, so the route's real code survives in the body.
+    it.each([
+      ['a pg INT code', 5, '5'],
+      ["a driver's bigint code", BigInt(10), '10'],
+      ['a boolean code', true, 'true'],
+      ['a NaN code, spelled as it reads', NaN, 'NaN']
+    ])('answers %s as its digits', (_label, code, expected) => {
+      const body = new ApiException(
+        code as any,
+        'Not Found',
+        'Ledger not found',
+        HttpStatus.NOT_FOUND
+      ).getResponse()
+
+      expect(body.code).toBe(expected)
+      expect(consoleError).not.toHaveBeenCalled()
+    })
+
+    // Bounded like a string one: the ceiling is on the TEXT the field becomes,
+    // not on the type it arrived as, so a 300-digit bigint is cut where a
+    // 300-character string is.
+    it('bounds a numeric code where it bounds a string one', () => {
+      const body = new ApiException(
+        BigInt('9'.repeat(300)) as any,
+        'Not Found',
+        'Ledger not found',
+        HttpStatus.NOT_FOUND
+      ).getResponse()
+
+      expect(body.code).toBe('9'.repeat(200))
+      expect(consoleError).not.toHaveBeenCalled()
+    })
+
+    // The line between the two rules: a primitive is stringified, anything
+    // whose text would be a serialisation of an object is not. `String({})`
+    // is `[object Object]` and `String(['a'])` is `a`, and neither is a
+    // classification; `null` and `undefined` are the absence of one. A
+    // function and a symbol stringify without throwing too, to their own
+    // SOURCE TEXT and to `Symbol(k)`, which is why each has a row: widening
+    // the rule to either of them put server source in a response body with
+    // every gate green.
+    it.each([
+      ['an object', { a: 1 }],
+      ['an array', ['a']],
+      ['null', null],
+      ['undefined', undefined],
+      [
+        'a function',
+        function secretCheck() {
+          return 1
+        }
+      ],
+      ['a symbol', Symbol('k')]
+    ])('answers the unclassified code for %s', (_label, code) => {
+      const body = new ApiException(
+        code as any,
+        'Not Found',
+        'Ledger not found',
+        HttpStatus.NOT_FOUND
+      ).getResponse()
+
+      expect(body.code).toBe('0004')
+      expect(announced()).toEqual({ dropped: ['code'], status: 404 })
+    })
+
+    // Both at once, in the two shapes that are not primitives at all: an
+    // upstream body written into `code`, which serialised perfectly well
+    // before and carried an internal host under a field documented as a
+    // classification, and a cycle, which is what a title built from a graph
+    // carries and what took the frame that serialises the response.
+    it('answers both fallbacks in one line when neither is readable', () => {
+      const cyclic: Record<string, unknown> = {}
+      cyclic.self = cyclic
+
+      const body = new ApiException(
+        { detail: 'db-primary.internal:8080' } as any,
+        cyclic as any,
+        'Ledger not found',
+        HttpStatus.NOT_FOUND
+      ).getResponse()
+
+      expect(body).toEqual({
+        code: '0004',
+        title: 'Not Found',
+        message: 'Ledger not found'
+      })
+      // The frame that used to fail, one after this one.
+      expect(() => JSON.stringify(body)).not.toThrow()
+      expect(consoleError).toHaveBeenCalledTimes(1)
+      expect(announced()).toEqual({ dropped: ['code', 'title'], status: 404 })
+    })
+
+    // Both are written by an upstream as often as by a route, which is the
+    // argument `PROBLEM_FIELD_MAX_LENGTH` already makes for the same two
+    // fields when a body is reduced to a sentence.
+    it('bounds a code and a title an upstream sized', () => {
+      const body = new ApiException(
+        'x'.repeat(5000),
+        'y'.repeat(5000),
+        'Ledger not found',
+        HttpStatus.NOT_FOUND
+      ).getResponse()
+
+      expect(body.code).toHaveLength(200)
+      expect(body.title).toHaveLength(200)
+      expect(consoleError).not.toHaveBeenCalled()
+    })
+
+    // The fallback title is the reason phrase of the status the response is
+    // actually built with, which is the title seven of the eight typed
+    // exceptions in this file already carry for their own status. A status the
+    // registry has no phrase for names itself rather than borrowing 500's.
+    it('names a status the registry has no phrase for', () => {
+      const body = new ApiException(
+        '0003',
+        undefined as any,
+        'Ledger not found',
+        599
+      ).getResponse()
+
+      expect(body.title).toBe('Error 599')
+      expect(announced()).toEqual({ dropped: ['title'], status: 599 })
+    })
+
+    // The eighth, and the one exception to the parity above: this is the class
+    // Console raises for every rejected form, and its title is not the reason
+    // phrase of its status. A rejected form whose title an upstream body was
+    // written into is therefore told 'Bad Request' where the subclass says
+    // 'Validation Error'. Measured against `STATUS_CODES` on Node v24.21.0;
+    // the other seven match, and this case is what keeps the doc honest.
+    it('answers Bad Request, not Validation Error, for a rejected form', () => {
+      const exception = new ValidationApiException('Invalid body')
+      ;(exception as any).title = { title: 'Gateway Timeout' }
+
+      expect(exception.getResponse()).toMatchObject({
+        code: '0007',
+        title: 'Bad Request'
+      })
+      expect(announced()).toEqual({ dropped: ['title'], status: 400 })
+    })
   })
 })

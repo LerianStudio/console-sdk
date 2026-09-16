@@ -287,11 +287,11 @@ export abstract class HttpService {
   protected onRequestFailure(request: Request, error: unknown): void {
     const { origin, pathname } = new URL(request.url)
 
-    logErrorLine('Request failed', {
+    logErrorLine('Request failed', () => ({
       method: request.method,
       url: `${origin}${pathname}`,
       cause: error instanceof Error ? error.message : String(error)
-    })
+    }))
   }
 
   /**
@@ -351,8 +351,12 @@ export abstract class HttpService {
    * `text/plain` body, `undefined` when the response carried no JSON object
    */
   protected async catch(request: Request, response: Response, error: any) {
-    logErrorLine(
-      'Request error',
+    // Handed over as a function, not as a value: this call sits inside
+    // `request`'s own try, and `describeRequestError` is a hook a consumer
+    // overrides, so building the record HERE would put an override's throw
+    // outside the writer's guard and turn the upstream's real status into a
+    // 503.
+    logErrorLine('Request error', () =>
       this.describeRequestError(request, response, error)
     )
   }

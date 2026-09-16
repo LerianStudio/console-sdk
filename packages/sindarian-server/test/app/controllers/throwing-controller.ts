@@ -1,4 +1,5 @@
 import {
+  ApiException,
   Controller,
   Get,
   HttpException,
@@ -136,6 +137,139 @@ export class ThrowingController {
   public typedHuge(): never {
     const exception = new NotFoundApiException('Ledger not found')
     exception.message = 'x'.repeat(5_000_000)
+    throw exception
+  }
+
+  /**
+   * A typed exception carrying a status that may not be paired with a body.
+   *
+   * Each of the three is a member of this package's own `HttpStatus` enum and
+   * type-legal in `ApiException`'s constructor, so no override and no exotic
+   * value is needed to reach one: `new ApiException(code, title, message,
+   * HttpStatus.NO_CONTENT)` is what a route writes. The runtime refuses each
+   * with a `TypeError` the moment a body is attached, which is one frame LATER
+   * than the 200-to-599 range check, and a filter that throws leaves the route
+   * with a zero-byte body and no content-type.
+   *
+   * All three have a route, because the reader's own table is a set membership
+   * and a real `Response` is the only thing that says the set is the right one.
+   */
+  @Get('typed-nullbody-204')
+  public typedNullBody204(): never {
+    throw new ApiException(
+      '0003',
+      'Not Found',
+      'Ledger not found',
+      HttpStatus.NO_CONTENT
+    )
+  }
+
+  /** The same, at 205. */
+  @Get('typed-nullbody-205')
+  public typedNullBody205(): never {
+    throw new ApiException(
+      '0003',
+      'Not Found',
+      'Ledger not found',
+      HttpStatus.RESET_CONTENT
+    )
+  }
+
+  /** The same, at 304. */
+  @Get('typed-nullbody-304')
+  public typedNullBody304(): never {
+    throw new ApiException(
+      '0003',
+      'Not Found',
+      'Ledger not found',
+      HttpStatus.NOT_MODIFIED
+    )
+  }
+
+  /**
+   * A typed exception whose METADATA cannot be read.
+   *
+   * Metadata is the constructor's own fifth parameter, written by the route,
+   * and `getResponse()` spreads it: a spread invokes every own enumerable
+   * accessor, so a getter that throws takes the whole response down exactly as
+   * a `message` getter did, two lines up in the same function.
+   */
+  @Get('typed-meta-trap')
+  public typedMetaTrap(): never {
+    const metadata: Record<string, unknown> = {}
+
+    Object.defineProperty(metadata, 'details', {
+      enumerable: true,
+      get() {
+        throw new Error('metadata getter exploded')
+      }
+    })
+
+    throw new ApiException(
+      '0003',
+      'Not Found',
+      'Ledger not found',
+      HttpStatus.NOT_FOUND,
+      metadata
+    )
+  }
+
+  /**
+   * The same frame, one field the JSON serialiser refuses.
+   *
+   * Nothing throws while the body is built here; the throw lands one frame
+   * later, where the body is serialised, which is the same place a null-body
+   * status fails. A `bigint` is what a pg driver hands back for an int64
+   * amount, so a ledger route reaches this with no override and no exotic
+   * value at all.
+   */
+  @Get('typed-meta-bigint')
+  public typedMetaBigint(): never {
+    throw new ApiException(
+      '0003',
+      'Not Found',
+      'Ledger not found',
+      HttpStatus.NOT_FOUND,
+      { amount: BigInt('9007199254740993') }
+    )
+  }
+
+  /**
+   * A typed exception whose CODE cannot be read.
+   *
+   * The same frame again, one field over. `code` and `title` were the last two
+   * values this body answers that were still taken rather than read, and
+   * `code: string` is satisfied by an `any` with no cast at all, which is what
+   * a database row is. A getter that throws here never returns a body, so the
+   * throw escapes the handler above the frame that would have built a Response.
+   */
+  @Get('typed-code-trap')
+  public typedCodeTrap(): never {
+    const exception = new NotFoundApiException('Ledger not found')
+
+    Object.defineProperty(exception, 'code', {
+      get() {
+        throw new Error('code getter exploded')
+      }
+    })
+    throw exception
+  }
+
+  /**
+   * A typed exception whose TITLE is an object.
+   *
+   * Nothing throws: the object serialises perfectly well, and that is the
+   * defect. A field this package documents as a short classification carried an
+   * upstream body to the browser, internal host and all, which is exactly what
+   * `message` did before it was read rather than taken.
+   */
+  @Get('typed-title-object')
+  public typedTitleObject(): never {
+    const exception = new NotFoundApiException('Ledger not found')
+    ;(exception as any).title = {
+      title: 'Gateway Timeout',
+      detail: 'timed out at db-primary.internal:8080'
+    }
     throw exception
   }
 

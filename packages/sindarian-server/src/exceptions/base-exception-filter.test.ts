@@ -152,9 +152,9 @@ describe('BaseExceptionFilter', () => {
         'an upstream problem object',
         { title: 'Gateway Timeout', detail: 'cpf 123.456.789-00' }
       ],
-      ['a number', 42],
       ['undefined', undefined],
-      ['null', null]
+      ['null', null],
+      ['a number', 42]
     ])('names the real status for %s', async (_label, value) => {
       await filter.catch(mutated(value))
 
@@ -266,12 +266,17 @@ describe('BaseExceptionFilter', () => {
     })
 
     // A status no Response can carry is the same failure as a `getStatus` that
-    // throws, one frame later: `NextResponse.json` rejects anything outside
-    // 200 to 599 with a `RangeError`, so a fallback that reuses the status it
-    // was handed throws from inside the very branch that was catching, and the
+    // throws, one frame later, and there are TWO ways to be that status.
+    // `NextResponse.json` rejects anything outside 200 to 599 with a
+    // `RangeError`, and it rejects 204, 205 and 304 with a `TypeError` the
+    // moment a body is attached, although each of those is a perfectly
+    // ordinary status inside the band and a member of this package's own
+    // `HttpStatus` enum. Either way a fallback that reuses the status it was
+    // handed throws from inside the very branch that was catching, and the
     // route is back to a zero-byte body. The status is therefore checked, not
-    // caught.
-    it.each([[0], [700], [NaN], [199]])(
+    // caught, and the frame this package OWNS states both halves of the rule
+    // rather than inheriting one of them from the reader's own table.
+    it.each([[0], [700], [NaN], [199], [204], [205], [304]])(
       'answers 500 for the unusable status %s',
       async (status) => {
         const exception = notFound()
@@ -683,11 +688,15 @@ describe('BaseExceptionFilter', () => {
 
     // One failure has to be ONE log event, and handing `console.error` a record
     // OBJECT does not give that. Node renders the second argument with its own
-    // `util.inspect` defaults, `breakLength: 128` and `compact: 3`, which no
+    // `util.inspect` defaults, measured as `breakLength: 80` and `compact: 3`
+    // on this runtime (`util.inspect.defaultOptions`, Node v24.21.0), which no
     // option on our own `inspect` call can reach: measured through the real
     // request pipeline, this shape printed across SEVEN physical lines and a
     // thrown `Error` fifteen, and flattening the value alone only shortens the
-    // first one to five. A line-oriented collector, the
+    // first one to five. Those three counts are from the harness that measured
+    // them, over a record shape that then held the thrown value itself rather
+    // than a pre-rendered string; the e2e spec measures its own, in situ, and
+    // gets different ones. A line-oriented collector, the
     // Docker json-file driver or Fluent Bit, ships each of those as a separate
     // event, so the taxpayer id arrives in a different event from the
     // `Unhandled exception` label an operator greps for, which is the exact

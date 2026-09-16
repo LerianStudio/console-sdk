@@ -1,4 +1,4 @@
-import { toProblemMessage } from './to-problem-message'
+import { readWireStatus, toProblemMessage } from './to-problem-message'
 
 // The only thing standing between an upstream's free text and the sentence
 // `getResponse()` serialises to the browser. Every row here is a body shape
@@ -122,5 +122,55 @@ describe('toProblemMessage', () => {
     ])('uses the fallback for %s', (_label, value) => {
       expect(toProblemMessage(value, fallback)).toBe(fallback)
     })
+  })
+})
+
+// The band a response may actually be built with, pinned on the function
+// rather than through a frame: every caller of it answers a Response, and both
+// frames that read a status mock `NextResponse.json` in their own tests, so
+// nothing there can refuse a status the runtime refuses.
+describe('readWireStatus', () => {
+  const statusOf = (status: unknown) =>
+    readWireStatus({ getStatus: () => status })
+
+  // Both ends of the band, so an off-by-one on either side is a red test. 600
+  // is the likeliest wrong value after 700, being just past the end, and it
+  // was the one value no case covered.
+  it.each([[200], [404], [599]])('answers %s as it is given', (status) =>
+    expect(statusOf(status)).toBe(status)
+  )
+
+  // A number a Response refuses, whichever way it refuses it. 199 and 600 are
+  // outside the range and raise a `RangeError`; 204, 205 and 304 are inside it
+  // and raise a `TypeError` the moment a body is attached, which is the failure
+  // one frame later and the one the range check cannot see. A fraction is a
+  // number no status line has, and it is what `Number.isInteger` is for.
+  it.each([[199], [600], [204], [205], [304], [0], [700], [NaN], [404.5]])(
+    'answers 500 for the unusable status %s',
+    (status) => expect(statusOf(status)).toBe(500)
+  )
+
+  it.each([
+    ['a string', '404'],
+    ['undefined', undefined],
+    ['null', null]
+  ])('answers 500 for %s', (_label, status) =>
+    expect(statusOf(status)).toBe(500)
+  )
+
+  // The accessor belongs to a subclass, so it may not be there and it may
+  // throw. Neither costs the route its response.
+  it('answers 500 when getStatus throws', () => {
+    expect(
+      readWireStatus({
+        getStatus: () => {
+          throw new Error('trap')
+        }
+      })
+    ).toBe(500)
+  })
+
+  it('answers 500 when there is no getStatus at all', () => {
+    expect(readWireStatus({})).toBe(500)
   })
 })

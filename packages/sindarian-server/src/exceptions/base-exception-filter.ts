@@ -4,6 +4,7 @@ import { ApiException } from './api-exception'
 import { ExceptionFilter } from './exception-filter'
 import { logErrorLine } from '@/utils/error/log-error-line'
 import {
+  UNCLASSIFIED_CODE,
   noProblemDetails,
   readWireMessage,
   readWireStatus
@@ -13,19 +14,18 @@ import { NextResponse } from 'next/server'
 /** What the caller is told when the thrown value classified nothing. */
 const UNCLASSIFIED = 'Internal server error'
 
-/**
- * The code that goes with it, which is the one this library already uses for
- * an unclassified 500 (`InternalServerErrorApiException`).
- *
- * A caller reading codes can tell this envelope from a sentence an upstream
- * actually wrote, because the two never arrive together: an upstream's own
- * classification reaches a caller as an `ApiException`, which is answered
- * above with no code at all, and nothing that gets this far keeps a word of
- * what it was carrying. An earlier version of this filter stamped `0004` on an
- * upstream's `title` and made the code unreadable, which is what the e2e case
- * `keeps no part of an upstream problem object` now pins.
- */
-const UNCLASSIFIED_CODE = '0004'
+// The code that goes with it is `UNCLASSIFIED_CODE`, imported above. It moved
+// next to the readers when `ApiException.getResponse()` started spending it too,
+// for a `code` of its own that could not be read; this file cannot own a
+// constant that file needs, because this one imports it.
+//
+// A caller reading codes can tell this envelope from a sentence an upstream
+// actually wrote, because the two never arrive together: an upstream's own
+// classification reaches a caller as an `ApiException`, which is answered below
+// with no code at all, and nothing that gets past that keeps a word of what it
+// was carrying. An earlier version of this filter stamped `0004` on an
+// upstream's `title` and made the code unreadable, which is what the e2e case
+// `keeps no part of an upstream problem object` now pins.
 
 export class BaseExceptionFilter implements ExceptionFilter {
   /**
@@ -169,10 +169,14 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // an RFC 9457 body whose rejected value sits three levels down printed
     // across SEVEN physical lines as a record object, and a thrown `Error`
     // fifteen. Flattening the value alone does not fix that, it only shortens
-    // the first one to five. `compact: true` here is the other half: without
-    // it `util.inspect` breaks a value nested three deep whatever
-    // `breakLength` says, and the escaped newlines would ride inside `value`
-    // for no reason.
+    // the first one to five. Those counts belong to the harness that took
+    // them, over a record that still held the thrown value itself; what a
+    // count is worth here is the sign, not the digit, because it moves with
+    // the value, the stack and the renderer. One line does not move.
+    // `compact: true` here is the other half: without it `util.inspect` breaks
+    // a value nested three deep whatever `breakLength` says (measured as 80 on
+    // this runtime), and the escaped newlines would ride inside `value` for no
+    // reason.
     //
     // **This package applies NO redaction to what it writes here.** `value` is
     // what the route threw, verbatim within the bound, which is the opposite of
@@ -200,18 +204,20 @@ export class BaseExceptionFilter implements ExceptionFilter {
       const name = exception?.name
       const message = exception?.message
 
-      logErrorLine('Unhandled exception', {
+      const value = inspect(exception, {
+        depth: 4,
+        breakLength: Infinity,
+        compact: true,
+        customInspect: false
+      })
+
+      logErrorLine('Unhandled exception', () => ({
         name: typeof name === 'string' ? name : typeof exception,
         message: typeof message === 'string' ? message : undefined,
-        value: inspect(exception, {
-          depth: 4,
-          breakLength: Infinity,
-          compact: true,
-          customInspect: false
-        })
-      })
+        value
+      }))
     } catch {
-      logErrorLine('Unhandled exception', { name: typeof exception })
+      logErrorLine('Unhandled exception', () => ({ name: typeof exception }))
     }
 
     return NextResponse.json(

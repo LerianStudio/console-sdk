@@ -1,4 +1,9 @@
 import { format } from 'node:util'
+import {
+  ApiException,
+  HttpStatus,
+  noProblemDetails
+} from '@lerianstudio/sindarian-server'
 import { app } from '../app/app'
 import { generateRequest } from './utils/generate-request'
 import { NextRequest } from 'next/server'
@@ -191,12 +196,21 @@ describe('An unexpected error answers a generic body, never its own text', () =>
       'connect ECONNREFUSED db-primary.internal:8080 for cpf 123.456.789-00'
     )
     // The stack is the shape that broke this worst: handed over as a record
-    // OBJECT, these same three fields render across seventeen physical lines
-    // under this runner, measured by formatting them the old way. The count
-    // follows the stack's depth and so differs by frame - fifteen through the
-    // ts-node harness the filter's own comment cites, which is why no single
-    // number is the fact here. One line is. Its frames are still inside it,
-    // escaped.
+    // OBJECT, these same three fields render across MANY physical lines,
+    // measured in situ by formatting them the old way and counting
+    // `split('\n').length`.
+    //
+    // No digit is written here, because the digit is a property of how the
+    // suite was INVOKED, not of this package. Measured on one build: the gate,
+    // which runs both specs and so runs this one in a jest worker, renders 18
+    // lines; this spec alone, with or without `-i`, renders 17, because the
+    // worker contributes a frame. An earlier version of this comment named one
+    // of those numbers as the fact and blamed the drift on copy-to-copy
+    // variation, which sent a reader looking for something unreproducible when
+    // it reproduces on demand from the command.
+    //
+    // What does not move is the count this file asserts: ONE line, which is
+    // zero newlines. Its frames are still inside it, escaped.
     expect(writtenLines()).toHaveLength(1)
     expect(writtenLines()[0]).not.toContain('\n')
     expect(writtenLines()[0]).toContain('\\n    at ')
@@ -246,11 +260,114 @@ describe('A typed exception carries a bounded sentence, however it was written',
     expect(JSON.stringify(body)).not.toContain('Gateway Timeout')
   })
 
+  // The sentence a failed read falls back to is published beside the readers
+  // that take it. An application rendering its own envelope had to invent its
+  // own, so the same failed read read differently depending on which frame
+  // answered it, which is the drift exporting the readers exists to close. The
+  // literal is asserted here as well, so this is a pin rather than a tautology.
+  it('publishes the fallback sentence it answers', async () => {
+    const { body } = await get('typed-object')
+
+    expect(body.message).toBe(noProblemDetails(404))
+    expect(noProblemDetails(404)).toBe(
+      'Upstream error body carried no problem details (status 404)'
+    )
+  })
+
   it('bounds a five-megabyte message at two thousand characters', async () => {
     const { response, body } = await get('typed-huge')
 
     expect(response.status).toBe(404)
     expect(body.message).toHaveLength(2000)
+  })
+
+  // The status a response is BUILT with, which is the read this app makes
+  // itself, and the one case where a number inside 200 to 599 is still not
+  // usable: the runtime pairs no body with 204, 205 or 304 and raises a
+  // `TypeError` when one is attached. Measured through a real Response here,
+  // because the filter's unit tests mock `NextResponse.json` and no mock
+  // refuses a status.
+  //
+  // All THREE are driven, not one. What the reader holds is a set, and a set
+  // is only as right as its members: a real `Response` is the only thing in
+  // this repository that refuses one, so a member covered by the reader's own
+  // table alone is covered by an assertion about the table.
+  it.each([[204], [205], [304]])(
+    'answers a body for the status %s, which carries none',
+    async (status) => {
+      const { response, body } = await get(`typed-nullbody-${status}`)
+
+      expect(response.status).toBe(500)
+      expect(response.headers.get('content-type')).toContain('application/json')
+      // The status is the only thing that falls back: the sentence the route
+      // wrote is still the one the caller is told.
+      expect(body.message).toBe('Ledger not found')
+      expect(body.code).toBe('0003')
+    }
+  )
+
+  // The third value this frame reads, after the message and the status. The
+  // body is `{ ...metadata, code, title, ...super.getResponse() }`, and the
+  // spread is a read of every own enumerable accessor the route attached: a
+  // getter that throws never returns a body at all, and a `bigint` returns one
+  // the serialiser refuses one frame later. Both escape `app.handler` with no
+  // Response, which is the zero-byte failure this whole branch exists to
+  // close, so both are driven through the real handler here.
+  it.each([
+    ['a getter that throws', 'typed-meta-trap', 'metadata getter exploded'],
+    [
+      'a value that cannot be serialised',
+      'typed-meta-bigint',
+      'Do not know how to serialize a BigInt'
+    ]
+  ])(
+    'answers a body at all for metadata carrying %s',
+    async (_shape, path, reason) => {
+      const { response, body } = await get(path)
+
+      expect(response.status).toBe(404)
+      expect(response.headers.get('content-type')).toContain('application/json')
+      // The metadata is the only thing that falls back: the sentence the route
+      // wrote and its classification are still what the caller is told.
+      expect(body.message).toBe('Ledger not found')
+      expect(body.code).toBe('0003')
+      expect(body.title).toBe('Not Found')
+      // And the drop is not silent. The fields are gone from the body, so the
+      // reason they are gone is the only thing left that explains it.
+      expect(logged()).toContain('Exception metadata dropped')
+      expect(logged()).toContain(reason)
+    }
+  )
+
+  // The last two values this frame answers. A `code` getter that throws never
+  // returns a body at all, so the throw escapes `app.handler` above the frame
+  // that would have built a Response, and it did so writing no operator line
+  // either, which is worse than the metadata case above.
+  it('answers a body at all when reading the code throws', async () => {
+    const { response, body } = await get('typed-code-trap')
+
+    expect(response.status).toBe(404)
+    expect(response.headers.get('content-type')).toContain('application/json')
+    // The code is the only thing that falls back: the sentence the route
+    // wrote, its title and its status are still what the caller is told.
+    expect(body.code).toBe('0004')
+    expect(body.title).toBe('Not Found')
+    expect(body.message).toBe('Ledger not found')
+    expect(logged()).toContain('Exception classification dropped')
+  })
+
+  // Nothing throws for this one, which is why no guard caught it: an object
+  // serialises, and a field documented as a short classification carried an
+  // upstream body with an internal host in it all the way to the browser.
+  it('answers a string title when a route wrote an object', async () => {
+    const { response, body } = await get('typed-title-object')
+
+    expect(response.status).toBe(404)
+    expect(body.title).toBe('Not Found')
+    expect(JSON.stringify(body)).not.toContain('db-primary.internal')
+    expect(body.code).toBe('0003')
+    expect(body.message).toBe('Ledger not found')
+    expect(logged()).toContain('Exception classification dropped')
   })
 
   // A filter that throws escapes the request pipeline, and the route answers a
@@ -265,5 +382,32 @@ describe('A typed exception carries a bounded sentence, however it was written',
       'Upstream error body carried no problem details (status 404)'
     )
     expect(body.code).toBe('0003')
+  })
+
+  // The TYPE this method emits, not the value it answers. An application that
+  // renders its own envelope spreads this body into it and reads metadata keys
+  // back off it - Console passes `{ details }` and reads `details` - so a
+  // return narrowed to the three named fields stops that consumer compiling at
+  // the 2.x bump, silently, because nothing in the package itself reads a
+  // metadata key. This suite is the only one here that type-checks, and its
+  // import reaches the package through the workspace symlink
+  // `node_modules/@lerianstudio/sindarian-server` (the `file:../` dependency
+  // in test/package.json is declared and never installed), so what it
+  // compiles against is the emitted `dist/index.d.ts` a consumer installs. The
+  // read below IS the assertion: a narrowed type fails this suite before a
+  // single case runs, and `jest --no-cache` in the test script is what keeps
+  // that true, because jest caches a spec's type check across a change to
+  // the declarations it compiled against.
+  it('lets a consumer read a metadata key off the body it emits', () => {
+    const body = new ApiException(
+      '0007',
+      'Validation Error',
+      'Invalid body',
+      HttpStatus.BAD_REQUEST,
+      { details: { requestId: 'r-1' } }
+    ).getResponse()
+
+    expect(body.details).toEqual({ requestId: 'r-1' })
+    expect(body.message).toBe('Invalid body')
   })
 })

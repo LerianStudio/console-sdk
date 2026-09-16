@@ -27,9 +27,23 @@ export { APP_PIPE } from './services/pipes'
 export { FetchModuleOptions, HttpService } from './services/http-service'
 // The bounds a `catch` or `describeRequestError` override is told to respect,
 // and the reducer that applies them.
+//
+// The two readers are here for the frame this package does not own: an
+// application that renders its own envelope reads the status and the message
+// off the exception itself, and both are values a subclass controls. Reading
+// them any other way is what leaves a route with no response at all.
+//
+// `noProblemDetails` comes with them because it is the FALLBACK those readers
+// take, and an application that has to invent its own sentence drifts from the
+// one this package answers: the same failed read would then read differently
+// depending on which frame answered it, which is the drift the readers were
+// exported to close.
 export {
   MESSAGE_MAX_LENGTH,
   PROBLEM_FIELD_MAX_LENGTH,
+  noProblemDetails,
+  readWireMessage,
+  readWireStatus,
   toProblemMessage
 } from './utils/error/to-problem-message'
 export { APP_MIDDLEWARE } from './services/middleware'

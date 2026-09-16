@@ -6,7 +6,7 @@
     "prebuild": "cd .. && npm run build",
     "dev": "npm run prebuild && ts-node index.ts",
     "pretest": "npm run prebuild",
-    "test": "jest"
+    "test": "jest --no-cache"
   },
   "dependencies": {
     "@lerianstudio/sindarian-server": "file:../",

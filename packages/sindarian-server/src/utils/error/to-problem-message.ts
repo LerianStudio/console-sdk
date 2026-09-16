@@ -1,3 +1,4 @@
+import { STATUS_CODES } from 'node:http'
 import { HttpStatus } from '@/constants/http-status'
 
 /**
@@ -32,21 +33,107 @@ export const noProblemDetails = (status: number) =>
   `Upstream error body carried no problem details (status ${status})`
 
 /**
- * Reduces whatever arrived to a sentence that is safe to show and to store.
+ * The code a body carries when the one a route wrote could not be read.
  *
- * An RFC 9457 problem body classifies the failure in `type`, `title` and
- * `code`, and describes it in `detail` and `errors[]`. Only the classification
- * is bounded and free of the request's own values, so only the classification
- * survives: `detail` carries a free-text sentence and `errors[]` carries the
- * rejected values themselves — destination URLs, taxpayer ids, whatever the
- * caller submitted. Anything the object cannot classify becomes `fallback`,
- * never a serialisation of the object.
- *
- * This is the one place that argument lives; the transport points here.
- *
- * @param value A string, a parsed problem body, or nothing
- * @param fallback The sentence to use when `value` classifies nothing
+ * The one this library already uses for a failure it cannot classify, which is
+ * what an unreadable classification is: `InternalServerErrorApiException` and
+ * `BaseExceptionFilter`'s own generic body both answer it. It lives here
+ * rather than in the filter because the filter imports `ApiException` and
+ * `ApiException` needs this, and a fallback both frames spend belongs beside
+ * the readers that spend it.
  */
+export const UNCLASSIFIED_CODE = '0004'
+
+/**
+ * The title a body carries when the one a route wrote could not be read.
+ *
+ * `title` is a short summary of the problem type (RFC 9457), and the reason
+ * phrase of the status the response is ACTUALLY built with is the one summary
+ * that is always true of it. It is usually the same words as well: measured
+ * against `STATUS_CODES` on Node v24.21.0, seven of the eight typed exceptions
+ * in this package carry their status's phrase as their title, so for those a
+ * failed read and the subclass answer a caller identically. The exception is
+ * `ValidationApiException`, whose title is 'Validation Error' at 400, where
+ * the phrase is 'Bad Request' - so a rejected form whose title was overwritten
+ * is told 'Bad Request'. The registry also has gaps inside 200 to 599, and a
+ * status with no phrase names itself rather than borrowing 500's, which would
+ * tell a caller the wrong thing twice.
+ */
+export const noProblemTitle = (status: number): string =>
+  STATUS_CODES[status] ?? `Error ${status}`
+
+/**
+ * One guarded read of a string that another frame's code owns.
+ *
+ * Every field an exception answers goes through here, and every one of them is
+ * a value a route or an upstream wrote: the message, the code, the title.
+ *
+ * Three things, all of them about the read and none about the value:
+ *
+ * - ONE read. A check on one read and a use of another is not a guard: a
+ *   `message` getter answering a sentence first and an object second passed a
+ *   `typeof` and handed the object over.
+ * - Bounded, at a ceiling the caller names, because a value written after
+ *   construction, or copied out of an upstream body, has a size this package
+ *   does not control.
+ * - It cannot throw. Every caller is the last frame before a body: the
+ *   exception filter runs inside `ServerFactory._handleRequest`'s own catch
+ *   block, which does not guard it, so a throw here escapes the request
+ *   pipeline and the route answers a ZERO-BYTE body with no content-type -
+ *   `SyntaxError: Unexpected end of JSON input` for a caller promised an
+ *   envelope. Losing the field is bad; losing the response is the failure this
+ *   package already closed once, for `throw null`.
+ *
+ * What counts as a usable string is the caller's rule, and there are two. The
+ * default is the CLASSIFICATION rule, for `code` and `title`, which are
+ * identifiers: a PRIMITIVE is stringified, not replaced. A pg `INT` error-code
+ * column and a driver's `bigint` are what the `any` a database row is actually
+ * carries, and the first of those served `{"code":5}` to a caller perfectly
+ * well before this package read the field at all. Substituting `0004` there
+ * would destroy a value that was fine and name it nowhere, the response and the
+ * operator log both, so a number as it is spelled (`NaN` and `Infinity`
+ * included), a `bigint`, a boolean and a string all answer their own text,
+ * bounded. What still answers nothing is a value whose text would be a
+ * SERIALISATION of something else: `String({})` is `[object Object]`,
+ * `String(['a'])` is `a`, a function stringifies to its own source and a symbol
+ * to `Symbol(k)`, and `null` and `undefined` are the absence of a field rather
+ * than a field. Those are the shapes an upstream body arrives as, which is the
+ * defect this reader exists for. The other rule is TEXT, for a `message`,
+ * which is a sentence: only a string is one, so `readWireMessage` passes it.
+ *
+ * What it does NOT do is spend the fallback. A frame that answers a whole body
+ * has to know a field was dropped in order to say so in the operator log, and
+ * asking the value a second time to find out is the first rule above broken.
+ * So a read that gives no usable string gives `undefined` back, and the caller
+ * both names the substitute and announces the drop.
+ *
+ * @param read Takes the value, once, inside the guard
+ * @param limit The ceiling the string is cut at
+ * @param keeps Which values are usable text; the classification rule unless
+ *   the caller says otherwise
+ */
+export function readWireField(
+  read: () => unknown,
+  limit: number,
+  keeps: (value: unknown) => boolean = classification
+): string | undefined {
+  try {
+    const field = read()
+
+    return keeps(field) ? String(field).slice(0, limit) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+const classification = (value: unknown): boolean =>
+  typeof value === 'string' ||
+  typeof value === 'number' ||
+  typeof value === 'bigint' ||
+  typeof value === 'boolean'
+
+const text = (value: unknown): boolean => typeof value === 'string'
+
 /**
  * Reads the message off an exception that is about to be answered.
  *
@@ -59,20 +146,12 @@ export const noProblemDetails = (status: number) =>
  * the same function because an empty string is a legitimate message once a
  * route has written one, and the constructor substitutes for it.
  *
- * Three things, all of them about the read and none about the value:
- *
- * - ONE read. A check on one read and a use of another is not a guard: a
- *   `message` getter answering a sentence first and an object second passed a
- *   `typeof` and handed the object over.
- * - Bounded, at the ceiling the constructor uses, because a message written
- *   after construction has a size this package does not control.
- * - It cannot throw. Both callers are the last frame before a body: the
- *   exception filter runs inside `ServerFactory._handleRequest`'s own catch
- *   block, which does not guard it, so a throw here escapes the request
- *   pipeline and the route answers a ZERO-BYTE body with no content-type -
- *   `SyntaxError: Unexpected end of JSON input` for a caller promised an
- *   envelope. Losing the sentence is bad; losing the response is the failure
- *   this package already closed once, for `throw null`.
+ * The fallback is spent here rather than by the caller because a message is
+ * never absent from a body: there is no shape of this response that carries no
+ * sentence, so there is nothing for a caller to decide. And a sentence is a
+ * string: a number written into `message` answers the fallback, which is what
+ * `2.0.0-beta.5` shipped and what a consumer's error copy still gets. The
+ * primitive rule above is for an identifier, and `message` is not one.
  *
  * @param source The exception whose `message` is about to be answered
  * @param fallback The sentence to use when the read gives no usable string
@@ -81,33 +160,49 @@ export function readWireMessage(
   source: { message?: unknown },
   fallback: string
 ): string {
-  try {
-    const message = source.message
-
-    return typeof message === 'string'
-      ? message.slice(0, MESSAGE_MAX_LENGTH)
-      : fallback
-  } catch {
-    return fallback
-  }
+  return (
+    readWireField(() => source.message, MESSAGE_MAX_LENGTH, text) ?? fallback
+  )
 }
+
+/**
+ * The statuses a response may not be paired with a body at all.
+ *
+ * These are not out of range and no range check sees them: the runtime accepts
+ * 204, 205 and 304 as statuses and then raises a `TypeError` the moment a body
+ * is attached, one frame after the `RangeError` the band below catches. Each is
+ * a member of this package's own `HttpStatus` enum and type-legal in
+ * `ApiException`'s constructor, so `new ApiException(code, title, message,
+ * HttpStatus.NO_CONTENT)` reached it with no override at all, and the filter
+ * left the route with a zero-byte body.
+ */
+const NULL_BODY_STATUSES: ReadonlySet<number> = new Set([
+  HttpStatus.NO_CONTENT,
+  HttpStatus.RESET_CONTENT,
+  HttpStatus.NOT_MODIFIED
+])
 
 /**
  * The status a response may actually be built with, read off an exception.
  *
  * `getStatus` is a method a subclass may override with anything, and both
  * frames that answer a typed exception have to read it: one to build the
- * response, one to name the status in a fallback sentence.
+ * response, one to name the status in a fallback sentence. An application that
+ * renders its own envelope is a third, which is why this is exported.
  *
  * Two ways it fails and one answer for both. An override that THROWS is the
- * `readWireMessage` story exactly. An override that RETURNS a number no
- * response can carry is worse, because it fails one frame later: the runtime
- * rejects anything outside 200 to 599 with a `RangeError`, measured, so a
- * guard that caught the throw and reused the status would throw from inside
- * its own fallback and leave the route with the zero-byte body again. The
- * status is therefore checked rather than caught, and anything unusable
- * answers 500, the status this library already gives a failure it cannot
- * classify.
+ * `readWireMessage` story exactly. A status that no response can CARRY A BODY
+ * WITH is worse, because it fails one frame later, where the body is attached:
+ * the runtime rejects anything outside 200 to 599 with a `RangeError` and the
+ * three null-body statuses above with a `TypeError`, both measured, so a guard
+ * that caught the throw and reused the status would throw from inside its own
+ * fallback and leave the route with the zero-byte body again. The status is
+ * therefore checked rather than caught, and anything unusable answers 500, the
+ * status this library already gives a failure it cannot classify.
+ *
+ * "Usable" is about the pairing, not about the number: a route that genuinely
+ * wants to answer 204 answers it with no body and never reaches an exception
+ * filter to do it.
  */
 export function readWireStatus(source: { getStatus?: () => unknown }): number {
   try {
@@ -116,7 +211,8 @@ export function readWireStatus(source: { getStatus?: () => unknown }): number {
     return typeof status === 'number' &&
       Number.isInteger(status) &&
       status >= 200 &&
-      status <= 599
+      status <= 599 &&
+      !NULL_BODY_STATUSES.has(status)
       ? status
       : HttpStatus.INTERNAL_SERVER_ERROR
   } catch {
@@ -124,6 +220,22 @@ export function readWireStatus(source: { getStatus?: () => unknown }): number {
   }
 }
 
+/**
+ * Reduces whatever arrived to a sentence that is safe to show and to store.
+ *
+ * An RFC 9457 problem body classifies the failure in `type`, `title` and
+ * `code`, and describes it in `detail` and `errors[]`. Only the classification
+ * is bounded and free of the request's own values, so only the classification
+ * survives: `detail` carries a free-text sentence and `errors[]` carries the
+ * rejected values themselves, destination URLs, taxpayer ids, whatever the
+ * caller submitted. Anything the object cannot classify becomes `fallback`,
+ * never a serialisation of the object.
+ *
+ * This is the one place that argument lives; the transport points here.
+ *
+ * @param value A string, a parsed problem body, or nothing
+ * @param fallback The sentence to use when `value` classifies nothing
+ */
 export function toProblemMessage(value: unknown, fallback: string): string {
   if (typeof value === 'string') {
     return value ? value.slice(0, MESSAGE_MAX_LENGTH) : fallback
