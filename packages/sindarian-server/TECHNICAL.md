@@ -189,7 +189,9 @@ export class HttpException extends Error {
 }
 
 // Adds the classification a caller reads, and coerces the message to a
-// bounded string: an upstream body handed in here keeps only its title or code
+// bounded string: an upstream body handed in here keeps only its title or code.
+// `metadata` is spread UNDER the three named fields, and it is read rather than
+// taken: see the metadata paragraph below
 export class ApiException extends HttpException {
   constructor(code: string, title: string, message: unknown, status?: HttpStatus, metadata?: any)
   getResponse(): { code: string; title: string; message: string }
@@ -225,9 +227,11 @@ const status = readWireStatus(exception) // never exception.getStatus() here
 return NextResponse.json({ ...envelope, ...exception.getResponse() }, { status })
 ```
 
-`readWireMessage(source, fallback)` is exported beside it, for a filter that reads a message off something that is not one of this package's exceptions at all. Neither can throw, and both answer the fallback rather than the failure.
+`readWireMessage(source, fallback)` is exported beside it, for a filter that reads a message off something that is not one of this package's exceptions at all. Neither can throw, and both answer the fallback rather than the failure. `noProblemDetails(status)` is exported with them, and it is the fallback they take: use it rather than inventing a sentence, so the same failed read does not read one way from this package's filter and another from yours.
 
-**A change for log consumers, shipped in 2.0.0.** The second argument of every `console.error` this package writes, the exception filter's `Unhandled exception` and the transport's `Request failed` and `Request error`, is now a JSON STRING and no longer a record OBJECT. A consumer that read that argument as an object, a test asserting `toHaveBeenCalledWith('Request failed', { method: 'GET' })` or a console-to-structured-logger bridge forwarding it onward, reads a string now and parses it with `JSON.parse`. What a line-oriented collector receives is unchanged in content and is now one event instead of several.
+**Metadata a route attaches is read, not taken.** `ApiException.getResponse()` spreads the constructor's fifth parameter under the three named fields, and a spread is a READ: it invokes every own enumerable accessor the route attached. A getter that throws produced no body at all, and a value `JSON.stringify` refuses, a `bigint`, which is what a pg driver hands back for an int64 amount, produced one that failed where the response is serialised. Both left the route with no Response, which is the same zero-byte failure a null-body status caused, reached through the recipe above. The metadata is now taken as a JSON round trip: every accessor runs exactly once, inside a guard, and what comes back cannot be refused. For metadata that worked before, the bytes on the wire are unchanged, because the response is serialised with `JSON.stringify` anyway and it drops the same functions, `undefined`s and symbols in the same key order. What a caller reading `getResponse()` in memory loses is live references: a class instance arrives as its data. When the round trip fails, the answer carries `code`, `title` and `message` alone and the drop is written to the operator log as `Exception metadata dropped`, with its bounded reason.
+
+**A change for log consumers, shipped in 2.0.0-beta.5.** The second argument of every `console.error` this package writes, the exception filter's `Unhandled exception` and the transport's `Request failed` and `Request error`, is now a JSON STRING and no longer a record OBJECT. The release matters: this arrived with PR #191, not with the #190 that opened the 2.0.0 line, so a consumer pinned to `2.0.0-beta.3` or `2.0.0-beta.4` still receives the object and has nothing to change yet. A consumer that read that argument as an object, a test asserting `toHaveBeenCalledWith('Request failed', { method: 'GET' })` or a console-to-structured-logger bridge forwarding it onward, reads a string now and parses it with `JSON.parse`. What a line-oriented collector receives is unchanged in content and is now one event instead of several.
 
 #### Filter Registration
 1. **Global Filters**: `app.useGlobalFilters(filter)`
