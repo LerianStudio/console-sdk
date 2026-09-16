@@ -335,6 +335,37 @@ describe('A typed exception carries a bounded sentence, however it was written',
     }
   )
 
+  // The last two values this frame answers. A `code` getter that throws never
+  // returns a body at all, so the throw escapes `app.handler` above the frame
+  // that would have built a Response, and it did so writing no operator line
+  // either, which is worse than the metadata case above.
+  it('answers a body at all when reading the code throws', async () => {
+    const { response, body } = await get('typed-code-trap')
+
+    expect(response.status).toBe(404)
+    expect(response.headers.get('content-type')).toContain('application/json')
+    // The code is the only thing that falls back: the sentence the route
+    // wrote, its title and its status are still what the caller is told.
+    expect(body.code).toBe('0004')
+    expect(body.title).toBe('Not Found')
+    expect(body.message).toBe('Ledger not found')
+    expect(logged()).toContain('Exception classification dropped')
+  })
+
+  // Nothing throws for this one, which is why no guard caught it: an object
+  // serialises, and a field documented as a short classification carried an
+  // upstream body with an internal host in it all the way to the browser.
+  it('answers a string title when a route wrote an object', async () => {
+    const { response, body } = await get('typed-title-object')
+
+    expect(response.status).toBe(404)
+    expect(body.title).toBe('Not Found')
+    expect(JSON.stringify(body)).not.toContain('db-primary.internal')
+    expect(body.code).toBe('0003')
+    expect(body.message).toBe('Ledger not found')
+    expect(logged()).toContain('Exception classification dropped')
+  })
+
   // A filter that throws escapes the request pipeline, and the route answers a
   // ZERO-BYTE body with no content-type: `response.json()` below is the
   // assertion, because it is what raises `SyntaxError: Unexpected end of JSON

@@ -679,4 +679,120 @@ describe('ApiException', () => {
       })
     })
   })
+
+  // The last two values this body answers, and the two that were still taken
+  // rather than read after the metadata guard landed. Neither needs an
+  // override or a cast to go wrong: `code: string` is satisfied by the `any` a
+  // database row is, and `title` is a writable property a route can set after
+  // construction, which is how `message` reached the wire as an object.
+  describe('the classification a route wrote', () => {
+    let consoleError: jest.SpyInstance
+
+    beforeEach(() => {
+      consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      consoleError.mockRestore()
+    })
+
+    const announced = () =>
+      JSON.parse(
+        consoleError.mock.calls.find(
+          (call) => call[0] === 'Exception classification dropped'
+        )?.[1] as string
+      )
+
+    it('answers the unclassified code when the code getter throws', () => {
+      const exception = new NotFoundApiException('Ledger not found')
+
+      Object.defineProperty(exception, 'code', {
+        get() {
+          throw new Error('code getter exploded')
+        }
+      })
+
+      expect(exception.getResponse()).toEqual({
+        code: '0004',
+        title: 'Not Found',
+        message: 'Ledger not found'
+      })
+
+      expect(announced()).toEqual({ dropped: ['code'], status: 404 })
+    })
+
+    it('answers the status title when the title is an object', () => {
+      const exception = new NotFoundApiException('Ledger not found')
+      ;(exception as any).title = {
+        title: 'Gateway Timeout',
+        detail: 'timed out at db-primary.internal:8080'
+      }
+
+      expect(exception.getResponse()).toEqual({
+        code: '0003',
+        title: 'Not Found',
+        message: 'Ledger not found'
+      })
+
+      expect(announced()).toEqual({ dropped: ['title'], status: 404 })
+    })
+
+    // Both at once, in the two shapes the serialiser refuses rather than the
+    // two a read refuses: a `bigint` is what a pg driver hands back for an
+    // int64, and a cycle is what a record built from a graph carries. Neither
+    // throws while this body is built; both take the frame that serialises it.
+    it('answers both fallbacks in one line when neither is readable', () => {
+      const cyclic: Record<string, unknown> = {}
+      cyclic.self = cyclic
+
+      const body = new ApiException(
+        BigInt(7) as any,
+        cyclic as any,
+        'Ledger not found',
+        HttpStatus.NOT_FOUND
+      ).getResponse()
+
+      expect(body).toEqual({
+        code: '0004',
+        title: 'Not Found',
+        message: 'Ledger not found'
+      })
+      // The frame that used to fail, one after this one.
+      expect(() => JSON.stringify(body)).not.toThrow()
+      expect(consoleError).toHaveBeenCalledTimes(1)
+      expect(announced()).toEqual({ dropped: ['code', 'title'], status: 404 })
+    })
+
+    // Both are written by an upstream as often as by a route, which is the
+    // argument `PROBLEM_FIELD_MAX_LENGTH` already makes for the same two
+    // fields when a body is reduced to a sentence.
+    it('bounds a code and a title an upstream sized', () => {
+      const body = new ApiException(
+        'x'.repeat(5000),
+        'y'.repeat(5000),
+        'Ledger not found',
+        HttpStatus.NOT_FOUND
+      ).getResponse()
+
+      expect(body.code).toHaveLength(200)
+      expect(body.title).toHaveLength(200)
+      expect(consoleError).not.toHaveBeenCalled()
+    })
+
+    // The fallback title is the reason phrase of the status the response is
+    // actually built with, which is the title every typed exception in this
+    // file already carries for its own status. A status the registry has no
+    // phrase for names itself rather than borrowing 500's.
+    it('names a status the registry has no phrase for', () => {
+      const body = new ApiException(
+        '0003',
+        undefined as any,
+        'Ledger not found',
+        599
+      ).getResponse()
+
+      expect(body.title).toBe('Error 599')
+      expect(announced()).toEqual({ dropped: ['title'], status: 599 })
+    })
+  })
 })

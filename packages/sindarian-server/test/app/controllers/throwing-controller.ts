@@ -234,6 +234,45 @@ export class ThrowingController {
     )
   }
 
+  /**
+   * A typed exception whose CODE cannot be read.
+   *
+   * The same frame again, one field over. `code` and `title` were the last two
+   * values this body answers that were still taken rather than read, and
+   * `code: string` is satisfied by an `any` with no cast at all, which is what
+   * a database row is. A getter that throws here never returns a body, so the
+   * throw escapes the handler above the frame that would have built a Response.
+   */
+  @Get('typed-code-trap')
+  public typedCodeTrap(): never {
+    const exception = new NotFoundApiException('Ledger not found')
+
+    Object.defineProperty(exception, 'code', {
+      get() {
+        throw new Error('code getter exploded')
+      }
+    })
+    throw exception
+  }
+
+  /**
+   * A typed exception whose TITLE is an object.
+   *
+   * Nothing throws: the object serialises perfectly well, and that is the
+   * defect. A field this package documents as a short classification carried an
+   * upstream body to the browser, internal host and all, which is exactly what
+   * `message` did before it was read rather than taken.
+   */
+  @Get('typed-title-object')
+  public typedTitleObject(): never {
+    const exception = new NotFoundApiException('Ledger not found')
+    ;(exception as any).title = {
+      title: 'Gateway Timeout',
+      detail: 'timed out at db-primary.internal:8080'
+    }
+    throw exception
+  }
+
   /** The read itself fails, which used to cost the route its whole response. */
   @Get('typed-trap')
   public typedTrap(): never {

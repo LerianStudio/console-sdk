@@ -1,3 +1,4 @@
+import { STATUS_CODES } from 'node:http'
 import { HttpStatus } from '@/constants/http-status'
 
 /**
@@ -32,6 +33,76 @@ export const noProblemDetails = (status: number) =>
   `Upstream error body carried no problem details (status ${status})`
 
 /**
+ * The code a body carries when the one a route wrote could not be read.
+ *
+ * The one this library already uses for a failure it cannot classify, which is
+ * what an unreadable classification is: `InternalServerErrorApiException` and
+ * `BaseExceptionFilter`'s own generic body both answer it. It lives here
+ * rather than in the filter because the filter imports `ApiException` and
+ * `ApiException` needs this, and a fallback both frames spend belongs beside
+ * the readers that spend it.
+ */
+export const UNCLASSIFIED_CODE = '0004'
+
+/**
+ * The title a body carries when the one a route wrote could not be read.
+ *
+ * `title` is a short summary of the problem type (RFC 9457), and the reason
+ * phrase of the status the response is ACTUALLY built with is the one summary
+ * that is always true of it. It is also the same words: every typed exception
+ * in this package carries its status's phrase as its title, so a failed read
+ * and a subclass answer a caller identically for the same status. The registry
+ * has gaps inside 200 to 599, and a status with no phrase names itself rather
+ * than borrowing 500's, which would tell a caller the wrong thing twice.
+ */
+export const noProblemTitle = (status: number): string =>
+  STATUS_CODES[status] ?? `Error ${status}`
+
+/**
+ * One guarded read of a string that another frame's code owns.
+ *
+ * Every field an exception answers goes through here, and every one of them is
+ * a value a route or an upstream wrote: the message, the code, the title.
+ *
+ * Three things, all of them about the read and none about the value:
+ *
+ * - ONE read. A check on one read and a use of another is not a guard: a
+ *   `message` getter answering a sentence first and an object second passed a
+ *   `typeof` and handed the object over.
+ * - Bounded, at a ceiling the caller names, because a value written after
+ *   construction, or copied out of an upstream body, has a size this package
+ *   does not control.
+ * - It cannot throw. Every caller is the last frame before a body: the
+ *   exception filter runs inside `ServerFactory._handleRequest`'s own catch
+ *   block, which does not guard it, so a throw here escapes the request
+ *   pipeline and the route answers a ZERO-BYTE body with no content-type -
+ *   `SyntaxError: Unexpected end of JSON input` for a caller promised an
+ *   envelope. Losing the field is bad; losing the response is the failure this
+ *   package already closed once, for `throw null`.
+ *
+ * What it does NOT do is spend the fallback. A frame that answers a whole body
+ * has to know a field was dropped in order to say so in the operator log, and
+ * asking the value a second time to find out is the first rule above broken.
+ * So a read that gives no usable string gives `undefined` back, and the caller
+ * both names the substitute and announces the drop.
+ *
+ * @param read Takes the value, once, inside the guard
+ * @param limit The ceiling the string is cut at
+ */
+export function readWireField(
+  read: () => unknown,
+  limit: number
+): string | undefined {
+  try {
+    const field = read()
+
+    return typeof field === 'string' ? field.slice(0, limit) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * Reads the message off an exception that is about to be answered.
  *
  * `toProblemMessage` above runs once, in the constructor, over a value an
@@ -43,20 +114,9 @@ export const noProblemDetails = (status: number) =>
  * the same function because an empty string is a legitimate message once a
  * route has written one, and the constructor substitutes for it.
  *
- * Three things, all of them about the read and none about the value:
- *
- * - ONE read. A check on one read and a use of another is not a guard: a
- *   `message` getter answering a sentence first and an object second passed a
- *   `typeof` and handed the object over.
- * - Bounded, at the ceiling the constructor uses, because a message written
- *   after construction has a size this package does not control.
- * - It cannot throw. Both callers are the last frame before a body: the
- *   exception filter runs inside `ServerFactory._handleRequest`'s own catch
- *   block, which does not guard it, so a throw here escapes the request
- *   pipeline and the route answers a ZERO-BYTE body with no content-type -
- *   `SyntaxError: Unexpected end of JSON input` for a caller promised an
- *   envelope. Losing the sentence is bad; losing the response is the failure
- *   this package already closed once, for `throw null`.
+ * The fallback is spent here rather than by the caller because a message is
+ * never absent from a body: there is no shape of this response that carries no
+ * sentence, so there is nothing for a caller to decide.
  *
  * @param source The exception whose `message` is about to be answered
  * @param fallback The sentence to use when the read gives no usable string
@@ -65,15 +125,7 @@ export function readWireMessage(
   source: { message?: unknown },
   fallback: string
 ): string {
-  try {
-    const message = source.message
-
-    return typeof message === 'string'
-      ? message.slice(0, MESSAGE_MAX_LENGTH)
-      : fallback
-  } catch {
-    return fallback
-  }
+  return readWireField(() => source.message, MESSAGE_MAX_LENGTH) ?? fallback
 }
 
 /**

@@ -4,6 +4,7 @@ import { ApiException } from './api-exception'
 import { ExceptionFilter } from './exception-filter'
 import { logErrorLine } from '@/utils/error/log-error-line'
 import {
+  UNCLASSIFIED_CODE,
   noProblemDetails,
   readWireMessage,
   readWireStatus
@@ -14,8 +15,11 @@ import { NextResponse } from 'next/server'
 const UNCLASSIFIED = 'Internal server error'
 
 /**
- * The code that goes with it, which is the one this library already uses for
- * an unclassified 500 (`InternalServerErrorApiException`).
+ * The code that goes with it is `UNCLASSIFIED_CODE`, imported above.
+ *
+ * It moved next to the readers when `ApiException.getResponse()` started
+ * spending it too, for a `code` of its own that could not be read; this file
+ * cannot own a constant that file needs, because this one imports it.
  *
  * A caller reading codes can tell this envelope from a sentence an upstream
  * actually wrote, because the two never arrive together: an upstream's own
@@ -25,7 +29,6 @@ const UNCLASSIFIED = 'Internal server error'
  * upstream's `title` and made the code unreadable, which is what the e2e case
  * `keeps no part of an upstream problem object` now pins.
  */
-const UNCLASSIFIED_CODE = '0004'
 
 export class BaseExceptionFilter implements ExceptionFilter {
   /**

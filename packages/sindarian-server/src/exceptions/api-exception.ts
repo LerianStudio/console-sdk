@@ -2,7 +2,12 @@ import { HttpStatus } from '@/constants/http-status'
 import { logErrorLine } from '@/utils/error/log-error-line'
 import {
   MESSAGE_MAX_LENGTH,
+  PROBLEM_FIELD_MAX_LENGTH,
+  UNCLASSIFIED_CODE,
   noProblemDetails,
+  noProblemTitle,
+  readWireField,
+  readWireStatus,
   toProblemMessage
 } from '@/utils/error/to-problem-message'
 import { HttpException } from './http-exception'
@@ -80,6 +85,63 @@ export class ApiException extends HttpException {
   }
 
   /**
+   * The classification this body carries, each field read once.
+   *
+   * The last two values on this frame that were taken rather than read, and
+   * neither needs an override or a cast to go wrong. `code: string` is
+   * satisfied with no cast at all by the `any` a database row is, which is the
+   * premise the metadata guard above already rests on; `title` is a writable
+   * property, which is how `message` reached the wire as an upstream object.
+   * Measured through a real handler: a `code` getter that throws left the route
+   * with NO Response, above the frame that would have built one, and a `title`
+   * an upstream body had been written into reached the browser whole, internal
+   * host included, under a field this package documents as a classification.
+   *
+   * Bounded at `PROBLEM_FIELD_MAX_LENGTH` rather than the message ceiling,
+   * which is the argument that constant already makes about these exact two
+   * fields: they are written by an upstream, so their length is not ours to
+   * assume.
+   *
+   * A drop is never silent, and what the line names is the FIELD rather than
+   * the reason. The reason lives in the value that failed, and the read of it
+   * is what failed; asking again is the one-read rule broken. The field name
+   * plus the substitute is the whole story here anyway, which is what the
+   * metadata line cannot say, its fields having gone with no names at all.
+   */
+  private readWireClassification(): { code: string; title: string } {
+    const code = readWireField(() => this.code, PROBLEM_FIELD_MAX_LENGTH)
+    const title = readWireField(() => this.title, PROBLEM_FIELD_MAX_LENGTH)
+
+    if (code === undefined || title === undefined) {
+      const dropped: string[] = []
+
+      if (code === undefined) {
+        dropped.push('code')
+      }
+
+      if (title === undefined) {
+        dropped.push('title')
+      }
+
+      // Read once, here, and only on the path that spends it: the status is a
+      // subclass's to override too, and this frame already reads it twice.
+      const status = readWireStatus(this)
+
+      logErrorLine('Exception classification dropped', () => ({
+        dropped,
+        status
+      }))
+
+      return {
+        code: code ?? UNCLASSIFIED_CODE,
+        title: title ?? noProblemTitle(status)
+      }
+    }
+
+    return { code, title }
+  }
+
+  /**
    * The body a caller receives.
    *
    * Metadata is spread UNDER the three named fields, not over them. Spreading
@@ -99,17 +161,18 @@ export class ApiException extends HttpException {
    * file documents as a string. Spreading the base class LAST is what keeps
    * the reduced sentence on top of any `message` key metadata carries.
    *
-   * All three values a route controls are now READ rather than taken: the
-   * message and the status through their own readers in the base class, the
-   * metadata through `readWireMetadata` above. Every one of them could cost
-   * this frame its whole response, and this frame is the one an application
-   * that renders its own envelope calls.
+   * Every value a route controls is now READ rather than taken, and there are
+   * five of them on this frame: the message and the status through their own
+   * readers in the base class, the metadata through `readWireMetadata`, the
+   * code and the title through `readWireClassification`. Every one of them
+   * could cost this frame its whole response, and this frame is the one an
+   * application that renders its own envelope calls. There is no unguarded
+   * read left on this line.
    */
   getResponse() {
     return {
       ...this.readWireMetadata(),
-      code: this.code,
-      title: this.title,
+      ...this.readWireClassification(),
       ...super.getResponse()
     }
   }
