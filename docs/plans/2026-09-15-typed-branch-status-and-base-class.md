@@ -3,21 +3,28 @@
 - **Repository**: `LerianStudio/console-sdk`, package `@lerianstudio/sindarian-server`
 - **Branch**: `fix/typed-branch-status-and-base-class`, cut from `origin/develop` at `19839e9`
 - **Baseline at the cut**: unit 897 passed / 38 suites, e2e 32 passed / 2 suites
-- **Code-final head**: `d7d7d6e`, unit 953 passed / 39 suites, e2e 40 passed / 2 suites (fix
-  pass 2; fix pass 1 ended at `243cfa3` with 945 and 38, and every block written then keeps the
-  head it was measured at). Every
+- **Code-final head**: `c3e5870`, unit 967 passed / 39 suites, e2e 41 passed / 2 suites (fix
+  pass 4, merged in #192 as `9fecade`). The earlier passes ended at `ab7ee5b` (fix pass 3, 964
+  and 41), `d7d7d6e` (fix pass 2, 953 and 40) and `243cfa3` (fix pass 1, 945 and 38), and every
+  block written in a pass keeps the head it was measured at. Every
   number in this document is measured at a head that is NAMED next to it; the earlier heads and
   their counts are kept where they are, because a RED block is only evidence at the head it was
   taken on. The whole ladder was measured in fix pass 1, `2026-09-16 02:11:25 UTC` onward, by
   running `npx jest` in `packages/sindarian-server` in a detached worktree of each head with
   `node_modules` copied in: `aed0e2a` 930, `d0683c6` 932, `c5ee916` 934, `d5d5e54` 934,
-  `5f07567` 934, and this head 945
+  `5f07567` 934, and `243cfa3` 945, the head that pass ended at
 - **Predecessor**: PR #191 (merged as `f4e17ae`, released `2.0.0-beta.5`). This lane closes what
   the review of that PR found after it merged, so every item here lands on `develop` as a
   follow-up rather than as a push to a closed branch.
-- **Not a breaking change, with one caveat that is measured rather than argued.** What changes is
-  almost entirely what happens to the shapes that used to produce NO response at all. The
-  exception, found by the security review of this PR: a plain `HttpException` whose CONSTRUCTOR
+- **Not a breaking change, with four caveats, all measured rather than argued.** What changes is
+  almost entirely what happens to the shapes that used to produce NO response at all. The PR body
+  lists the four: the one below on the base class; a `code` or `title` past 200 characters is
+  truncated; a `code` or `title` that is an object, an array or `null` is replaced by the
+  fallback (`undefined`, a function or a symbol served no key at all before); and the emitted
+  return type of `ApiException.getResponse()` is the three named fields plus an index signature
+  where 1.x inferred `any`. Fix passes 3 and 4 measured the last three; this paragraph was written
+  in fix pass 1, when there was one. The first, found by the security review of this PR: a plain
+  `HttpException` whose CONSTRUCTOR
   message runs past 2000 characters now serves a truncated body, and that shape produced a
   perfectly good response before. Measured on both builds,
   `new HttpException('x'.repeat(5000), 404).getResponse().message.length` reads 5000 against
