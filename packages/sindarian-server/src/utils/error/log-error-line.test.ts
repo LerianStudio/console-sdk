@@ -46,6 +46,27 @@ describe('logErrorLine', () => {
     expect(Object.keys(recordOf())[0]).toHaveLength(2000)
   })
 
+  // Asking whether a key needs cutting is a question about the KEY, and the
+  // values in a record are a consumer's: `describeRequestError` may return a
+  // class instance or a lazily computed field. Reading them to measure their
+  // names ran every accessor twice, on the error path, for a question none of
+  // them answers.
+  it('reads a record value once on the path that cuts nothing', () => {
+    let reads = 0
+    const record = {
+      get upstream() {
+        reads++
+
+        return { status: 409 }
+      }
+    }
+
+    logErrorLine('Request error', () => record)
+
+    expect(recordOf().upstream).toEqual({ status: 409 })
+    expect(reads).toBe(1)
+  })
+
   // Depth, which is the half nothing pinned: the record this package writes is
   // flat, so a top-level-only bound was indistinguishable from this one.
   it('bounds a string three levels down', () => {

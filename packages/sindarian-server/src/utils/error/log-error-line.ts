@@ -70,20 +70,22 @@ const boundStrings = (_key: string, value: unknown): unknown => {
     return value
   }
 
-  const entries = Object.entries(value)
+  // Keys, not entries: whether a name is over the ceiling is a question about
+  // the name, and the values are a consumer's. `Object.entries` READ every one
+  // of them to ask it, so a record carrying an accessor, which is what a
+  // `describeRequestError` override returning a class instance or a lazily
+  // computed field carries, ran that accessor twice per failed upstream call -
+  // once here and once in the serialiser - on the error path.
+  const keys = Object.keys(value)
 
-  if (!entries.some(([key]) => key.length > MESSAGE_MAX_LENGTH)) {
+  if (!keys.some((key) => key.length > MESSAGE_MAX_LENGTH)) {
     return value
   }
 
-  const taken = new Set(
-    entries
-      .map(([key]) => key)
-      .filter((key) => key.length <= MESSAGE_MAX_LENGTH)
-  )
+  const taken = new Set(keys.filter((key) => key.length <= MESSAGE_MAX_LENGTH))
 
   return Object.fromEntries(
-    entries.map(([key, field], index) => {
+    Object.entries(value).map(([key, field], index) => {
       const bounded = boundKey(key, index, taken)
       taken.add(bounded)
 
