@@ -485,6 +485,7 @@ describe('ApiException', () => {
           'an upstream problem object',
           { title: 'Gateway Timeout', detail: 'cpf 123.456.789-00' }
         ],
+        ['a number', 42],
         ['undefined', undefined],
         ['null', null]
       ])('names the real status for %s', (_label, value) => {
@@ -496,14 +497,6 @@ describe('ApiException', () => {
         expect(response.code).toBe('0003')
         expect(JSON.stringify(response)).not.toContain('123.456.789-00')
         expect(JSON.stringify(response)).not.toContain('Gateway Timeout')
-      })
-
-      // A number is not an object and carries no upstream body, so it is
-      // stringified rather than replaced, the same rule the classification
-      // fields answer by. What the fallback exists for is a value whose TEXT
-      // would be a serialisation of something a caller must not be shown.
-      it('reads a numeric message as its digits', () => {
-        expect(mutated(42).getResponse().message).toBe('42')
       })
 
       it('bounds a message written after construction', () => {
@@ -921,15 +914,41 @@ describe('ApiException', () => {
       expect(consoleError).not.toHaveBeenCalled()
     })
 
+    // Bounded like a string one: the ceiling is on the TEXT the field becomes,
+    // not on the type it arrived as, so a 300-digit bigint is cut where a
+    // 300-character string is.
+    it('bounds a numeric code where it bounds a string one', () => {
+      const body = new ApiException(
+        BigInt('9'.repeat(300)) as any,
+        'Not Found',
+        'Ledger not found',
+        HttpStatus.NOT_FOUND
+      ).getResponse()
+
+      expect(body.code).toBe('9'.repeat(200))
+      expect(consoleError).not.toHaveBeenCalled()
+    })
+
     // The line between the two rules: a primitive is stringified, anything
     // whose text would be a serialisation of an object is not. `String({})`
     // is `[object Object]` and `String(['a'])` is `a`, and neither is a
-    // classification; `null` and `undefined` are the absence of one.
+    // classification; `null` and `undefined` are the absence of one. A
+    // function and a symbol stringify without throwing too, to their own
+    // SOURCE TEXT and to `Symbol(k)`, which is why each has a row: widening
+    // the rule to either of them put server source in a response body with
+    // every gate green.
     it.each([
       ['an object', { a: 1 }],
       ['an array', ['a']],
       ['null', null],
-      ['undefined', undefined]
+      ['undefined', undefined],
+      [
+        'a function',
+        function secretCheck() {
+          return 1
+        }
+      ],
+      ['a symbol', Symbol('k')]
     ])('answers the unclassified code for %s', (_label, code) => {
       const body = new ApiException(
         code as any,

@@ -208,18 +208,23 @@ export class ApiException extends HttpException {
    * code and the title through `readWireClassification`. Every one of them
    * could cost this frame its whole response, and this frame is the one an
    * application that renders its own envelope calls. There is no unguarded
-   * read left on this line, and each field is read EXACTLY once: the
-   * classification is read first and handed to the metadata reader, which
-   * needs those two values to name an incident in the operator log and used to
-   * read them a second time to get them.
+   * read left on this line, and the code, the title, the message and the
+   * metadata are each read EXACTLY once: the classification is read first and
+   * handed to the metadata reader, which needs those two values to name an
+   * incident in the operator log and used to read them a second time to get
+   * them. The status is the one value read twice, on purpose, once for the
+   * response and once to name it in the fallback sentence; the comment on the
+   * classification reader above says so where it happens.
    *
    * The return type is written out rather than inferred, and the index
    * signature is the load-bearing half. Metadata keys are part of this body -
    * Console passes `{ details }` and reads `details` back - so a type narrowed
    * to the three named fields is a compile error in a consumer that nothing in
-   * this package would notice. The e2e suite holds it: it resolves this
-   * package by `file:`, so it compiles against the emitted `.d.ts` a consumer
-   * installs.
+   * this package would notice. The e2e suite holds it: `test/` has no
+   * `node_modules` of its own (its `file:../` dependency is declared, never
+   * installed), so the import resolves through the workspace symlink
+   * `node_modules/@lerianstudio/sindarian-server` to this package's `types`,
+   * the emitted `dist/index.d.ts` a consumer installs.
    */
   getResponse(): {
     message: string

@@ -84,18 +84,22 @@ export const noProblemTitle = (status: number): string =>
  *   envelope. Losing the field is bad; losing the response is the failure this
  *   package already closed once, for `throw null`.
  *
- * A PRIMITIVE is stringified, not replaced. A pg `INT` error-code column and
- * a driver's `bigint` are what the `any` a database row is actually carries,
- * and the first of those served `{"code":5}` to a caller perfectly well before
- * this package read the field at all. Substituting `0004` there would destroy
- * a value that was fine and name it nowhere, the response and the operator log
- * both, so a number as it is spelled (`NaN` and `Infinity` included), a
- * `bigint`, a boolean and a string all answer their own text, bounded. What
- * still answers nothing is a value whose text would be a SERIALISATION of
- * something else: `String({})` is `[object Object]`, `String(['a'])` is `a`,
- * and `null`, `undefined`, a function and a symbol are the absence of a field
- * rather than a field. Those are the shapes an upstream body arrives as, which
- * is the defect this reader exists for.
+ * What counts as a usable string is the caller's rule, and there are two. The
+ * default is the CLASSIFICATION rule, for `code` and `title`, which are
+ * identifiers: a PRIMITIVE is stringified, not replaced. A pg `INT` error-code
+ * column and a driver's `bigint` are what the `any` a database row is actually
+ * carries, and the first of those served `{"code":5}` to a caller perfectly
+ * well before this package read the field at all. Substituting `0004` there
+ * would destroy a value that was fine and name it nowhere, the response and the
+ * operator log both, so a number as it is spelled (`NaN` and `Infinity`
+ * included), a `bigint`, a boolean and a string all answer their own text,
+ * bounded. What still answers nothing is a value whose text would be a
+ * SERIALISATION of something else: `String({})` is `[object Object]`,
+ * `String(['a'])` is `a`, a function stringifies to its own source and a symbol
+ * to `Symbol(k)`, and `null` and `undefined` are the absence of a field rather
+ * than a field. Those are the shapes an upstream body arrives as, which is the
+ * defect this reader exists for. The other rule is TEXT, for a `message`,
+ * which is a sentence: only a string is one, so `readWireMessage` passes it.
  *
  * What it does NOT do is spend the fallback. A frame that answers a whole body
  * has to know a field was dropped in order to say so in the operator log, and
@@ -105,24 +109,30 @@ export const noProblemTitle = (status: number): string =>
  *
  * @param read Takes the value, once, inside the guard
  * @param limit The ceiling the string is cut at
+ * @param keeps Which values are usable text; the classification rule unless
+ *   the caller says otherwise
  */
 export function readWireField(
   read: () => unknown,
-  limit: number
+  limit: number,
+  keeps: (value: unknown) => boolean = classification
 ): string | undefined {
   try {
     const field = read()
 
-    return typeof field === 'string' ||
-      typeof field === 'number' ||
-      typeof field === 'bigint' ||
-      typeof field === 'boolean'
-      ? String(field).slice(0, limit)
-      : undefined
+    return keeps(field) ? String(field).slice(0, limit) : undefined
   } catch {
     return undefined
   }
 }
+
+const classification = (value: unknown): boolean =>
+  typeof value === 'string' ||
+  typeof value === 'number' ||
+  typeof value === 'bigint' ||
+  typeof value === 'boolean'
+
+const text = (value: unknown): boolean => typeof value === 'string'
 
 /**
  * Reads the message off an exception that is about to be answered.
@@ -138,7 +148,10 @@ export function readWireField(
  *
  * The fallback is spent here rather than by the caller because a message is
  * never absent from a body: there is no shape of this response that carries no
- * sentence, so there is nothing for a caller to decide.
+ * sentence, so there is nothing for a caller to decide. And a sentence is a
+ * string: a number written into `message` answers the fallback, which is what
+ * `2.0.0-beta.5` shipped and what a consumer's error copy still gets. The
+ * primitive rule above is for an identifier, and `message` is not one.
  *
  * @param source The exception whose `message` is about to be answered
  * @param fallback The sentence to use when the read gives no usable string
@@ -147,7 +160,9 @@ export function readWireMessage(
   source: { message?: unknown },
   fallback: string
 ): string {
-  return readWireField(() => source.message, MESSAGE_MAX_LENGTH) ?? fallback
+  return (
+    readWireField(() => source.message, MESSAGE_MAX_LENGTH, text) ?? fallback
+  )
 }
 
 /**

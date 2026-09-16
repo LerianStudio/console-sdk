@@ -389,10 +389,15 @@ describe('A typed exception carries a bounded sentence, however it was written',
   // back off it - Console passes `{ details }` and reads `details` - so a
   // return narrowed to the three named fields stops that consumer compiling at
   // the 2.x bump, silently, because nothing in the package itself reads a
-  // metadata key. This suite is the only one here that type-checks, and it
-  // resolves the package through `file:../`, so what it compiles against is
-  // the emitted `.d.ts` a consumer installs. The read below IS the assertion:
-  // a narrowed type fails this suite before a single case runs.
+  // metadata key. This suite is the only one here that type-checks, and its
+  // import reaches the package through the workspace symlink
+  // `node_modules/@lerianstudio/sindarian-server` (the `file:../` dependency
+  // in test/package.json is declared and never installed), so what it
+  // compiles against is the emitted `dist/index.d.ts` a consumer installs. The
+  // read below IS the assertion: a narrowed type fails this suite before a
+  // single case runs, and `jest --no-cache` in the test script is what keeps
+  // that true, because jest caches a spec's type check across a change to
+  // the declarations it compiled against.
   it('lets a consumer read a metadata key off the body it emits', () => {
     const body = new ApiException(
       '0007',

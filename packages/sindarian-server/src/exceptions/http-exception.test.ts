@@ -48,7 +48,8 @@ describe('HttpException', () => {
         'an upstream problem object',
         { title: 'Gateway Timeout', detail: 'cpf 123.456.789-00' }
       ],
-      ['undefined', undefined]
+      ['undefined', undefined],
+      ['a number', 42]
     ])('answers a sentence naming the real status for %s', (_label, value) => {
       const response = mutated(value).getResponse()
 
@@ -56,14 +57,6 @@ describe('HttpException', () => {
         'Upstream error body carried no problem details (status 404)'
       )
       expect(JSON.stringify(response)).not.toContain('123.456.789-00')
-    })
-
-    // A primitive is stringified rather than replaced: the fallback is for a
-    // value whose text would be a serialisation of something a caller must
-    // not be shown, and `42` is neither. The base class inherits that rule
-    // from the same reader the classification fields use.
-    it('reads a numeric message as its digits', () => {
-      expect(mutated(42).getResponse().message).toBe('42')
     })
 
     // A rethrown upstream body used to become a response of the same size.
