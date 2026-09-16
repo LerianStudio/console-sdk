@@ -50,13 +50,26 @@ export class ApiException extends HttpException {
    * A check on one read and a use of another is not a guard, so this does not
    * check and then spread: it takes the ROUND TRIP as the value. Every
    * accessor runs exactly once, inside the try, and what comes back is by
-   * construction a thing `JSON.stringify` cannot refuse. For any metadata that
-   * worked before, the bytes on the wire are unchanged: the response is
-   * serialised with `JSON.stringify` anyway, and it drops the same functions,
-   * `undefined`s and symbols this round trip does, in the same key order. What
-   * a caller reading `getResponse()` in memory loses is live references: a
-   * class instance arrives as its data. This method is documented as the body
-   * a caller receives, which is data.
+   * construction a thing `JSON.stringify` cannot refuse. For metadata whose
+   * ROOT is a plain object carrying no `toJSON` of its own, which is every
+   * shape this package and Console pass, the bytes on the wire are unchanged:
+   * the response is serialised with `JSON.stringify` anyway, and it drops the
+   * same functions, `undefined`s and symbols this round trip does, in the same
+   * key order. What a caller reading `getResponse()` in memory loses is live
+   * references: a class instance arrives as its data. This method is
+   * documented as the body a caller receives, which is data.
+   *
+   * The quantifier is not decoration, and both exceptions were measured. A
+   * root that carries its OWN `toJSON` now DECIDES the body, where the spread
+   * copied that function and the serialiser then dropped it: a money class
+   * passed as the whole metadata served its fields before and serves what its
+   * `toJSON` returns now. A root the round trip turns into something that is
+   * not an object, a `Date` becoming its ISO string, then spreads by index and
+   * serves numbered character keys. A `toJSON` on a value INSIDE the metadata
+   * is unaffected either way. Neither shape is one this package produces, and
+   * both are named in TECHNICAL.md rather than guarded against, because
+   * guarding the second would change what a plain string root has always
+   * served.
    *
    * A drop is never silent. The fields are gone from the body, so the reason
    * is the only thing left that explains them, and it goes to the operator log
