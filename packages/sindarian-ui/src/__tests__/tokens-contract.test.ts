@@ -242,11 +242,12 @@ describe('sonner toast ink', () => {
 /**
  * Toast type hierarchy, and the two things that let it hold.
  *
- * Weight alone is not the rule: sonner injects its own `[data-styled='true']`
- * rules at runtime, at (0,3,0), so a declaration in globals.css applies only
- * if it matches that specificity AND carries !important. The title rule failed
- * both halves once and rendered lighter than its own description — the defect
- * is written up over the rules themselves in globals.css.
+ * Weight alone is not the rule: sonner injects its own
+ * `[data-sonner-toast][data-styled='true']` rules at runtime, at (0,3,0), so a
+ * declaration in globals.css applies only if it matches that specificity AND
+ * carries !important. The title rule failed both halves once and rendered
+ * lighter than its own description — the defect is written up over the rules
+ * themselves in globals.css.
  *
  * `block()` resolving each opener is itself half the gate: drop the compound
  * selector from either rule and the lookup throws before any weight is read.

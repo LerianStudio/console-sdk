@@ -604,9 +604,9 @@
 
 /*
   The title outranks the description, and both rules have to WIN the cascade
-  for that to mean anything. Sonner ships a `[data-styled='true'] [data-title]`
-  rule at font-weight 500 and its description twin at 400 — both (0,3,0), both
-  injected at runtime.
+  for that to mean anything. Sonner ships
+  `[data-sonner-toast][data-styled='true'] [data-title]` at font-weight 500 and
+  its description twin at 400 — both (0,3,0), both injected at runtime.
   The title rule here was a plain `[data-sonner-toast] [data-title]` (0,2,0):
   it declared 600 and rendered at 500, losing outright, while the description
   carried `!important` and rendered at 600. The hierarchy came out inverted on
