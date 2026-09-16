@@ -7,10 +7,16 @@ import { MESSAGE_MAX_LENGTH } from './to-problem-message'
  * map keyed by long URNs is exactly that shape, would make them ONE key, and an
  * object holds one of those: the later field wins and the earlier one leaves no
  * trace at all. A bound that loses a field is worse than the length it saved,
- * this record being the last copy of what broke, so a cut key that would land
- * on a name already in the object carries a mark instead. The entry's own index
- * is what the mark is built from, so it is stable for a given record rather
- * than a count of collisions seen so far.
+ * this record being the last copy of what broke.
+ *
+ * So EVERY cut key carries a mark, not only one that collides: `~<index>`,
+ * built from the entry's own position, which makes it unique against every
+ * other cut in the object without looking at them and stable for a given
+ * record rather than a count of collisions seen so far. An operator reading a
+ * key that ends in `~7` is reading a key this function cut, which is worth
+ * saying once per key rather than only when two of them happened to clash.
+ * What a collision costs is the retry, `~<index>.<attempt>`, and a record
+ * whose own keys occupy those candidates is what the digits above are for.
  *
  * A key that was never over the ceiling is never renamed: those are seeded into
  * `taken` before any cutting, so it is always the cut one that moves.
@@ -107,13 +113,13 @@ const boundStrings = (_key: string, value: unknown): unknown => {
  * package is built against, `util.inspect.defaultOptions` reads `breakLength:
  * 80` and `compact: 3` (Node v24.21.0), and a real ledger URL beside a
  * connection string is already past 80 characters on its own, so these records
- * printed across several physical lines each. A line-oriented collector, the Docker json-file driver or Fluent Bit,
- * ships each of those as a separate event, so the internal host and the
- * taxpayer id an upstream failure carries land in a different event from the
- * label an operator greps for. A string argument is written through verbatim,
- * and JSON has no multi-line string, so a stack's newlines survive as escapes
- * inside the one line rather than breaking it, and what a collector receives
- * is parseable as well as whole.
+ * printed across several physical lines each. A line-oriented collector, the
+ * Docker json-file driver or Fluent Bit, ships each of those as a separate
+ * event, so the internal host and the taxpayer id an upstream failure carries
+ * land in a different event from the label an operator greps for. A string
+ * argument is written through verbatim, and JSON has no multi-line string, so
+ * a stack's newlines survive as escapes inside the one line rather than
+ * breaking it, and what a collector receives is parseable as well as whole.
  *
  * **Why the bound is here.** Every one of these records carries text this
  * package does not size: an upstream's own error, a rethrown body, a message

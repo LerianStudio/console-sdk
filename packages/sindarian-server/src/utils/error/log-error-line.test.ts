@@ -44,6 +44,11 @@ describe('logErrorLine', () => {
     logErrorLine('Request error', () => ({ ['K'.repeat(5000)]: 'v' }))
 
     expect(Object.keys(recordOf())[0]).toHaveLength(2000)
+    // What the key SAYS, not only how long it is. Every cut key carries the
+    // mark, including this one, which collides with nothing: the mark is what
+    // tells an operator the name was cut, and dropping it for the
+    // no-collision case is a mutation the length alone cannot see.
+    expect(Object.keys(recordOf())[0]).toBe(`${'K'.repeat(1998)}~0`)
   })
 
   // Asking whether a key needs cutting is a question about the KEY, and the
