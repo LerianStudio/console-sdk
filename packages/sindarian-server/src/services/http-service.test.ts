@@ -1501,6 +1501,59 @@ describe('HttpService', () => {
       })
     })
 
+    // The sibling call site, and the one that had no case of its own.
+    // `describeRequestError` has two above; the record `onRequestFailure`
+    // builds had none, so reverting THAT call site to its eager form, which is
+    // the shape this branch changed, survived every unit and e2e case in the
+    // package and silently lost the line. Its builder reads `error.message`,
+    // and the error is whatever a hook threw, so the read is exactly the
+    // defect the builder one frame down has.
+    //
+    // Not a symbol: `String(Symbol('boom'))` is the one legal stringification
+    // of a symbol and never throws, so a symbol walks this builder to a
+    // perfectly good line. What throws is a read of a value the throw site
+    // owns - a getter, a `toString` - which is why the builder is called
+    // inside the write guard rather than outside it.
+    it('announces an unreachable upstream whose reason cannot be read', async () => {
+      class TrappedHookHttpService extends HttpService {
+        public async testRequest<T>(request: Request): Promise<T> {
+          return this.request<T>(request)
+        }
+
+        protected createDefaults = jest.fn().mockResolvedValue({})
+
+        protected onBeforeFetch(): void {
+          const error = new Error('never read')
+
+          Object.defineProperty(error, 'message', {
+            get() {
+              throw new Error('message getter trap')
+            }
+          })
+
+          throw error
+        }
+      }
+
+      const error = await new TrappedHookHttpService()
+        .testRequest(new Request('https://api.example.com/v1/accounts'))
+        .catch((thrown) => thrown)
+
+      // The caller still gets its bounded exception either way, which is why
+      // nothing else in the suite moves when the line disappears.
+      expect(error).toBeInstanceOf(ServiceUnavailableApiException)
+      // Built eagerly, the throw happened inside `request`'s own catch, which
+      // swallows it so a failing failure-logger cannot replace the exception,
+      // and NOTHING was written at all.
+      expect(
+        consoleSpy.mock.calls.filter((call) => call[0] === 'Request failed')
+      ).toHaveLength(1)
+      expect(recordOf('Request failed')).toEqual({
+        record: 'unserialisable',
+        cause: 'message getter trap'
+      })
+    })
+
     // `cause` is an upstream's own text and has a size this package does not
     // control, the same argument the filter's record is bounded on.
     it('bounds what an upstream failure writes', async () => {
