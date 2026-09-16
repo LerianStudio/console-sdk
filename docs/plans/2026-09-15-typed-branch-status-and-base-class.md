@@ -360,8 +360,14 @@ shipped inside the 2.0.0 major that #190 opened, so this lane is not breaking an
 footer, but the sentence now exists in TECHNICAL.md, which is what the release notes could not
 carry.
 
-**Corrected in fix pass 2: "since 2.0.0" is false for two of the five published 2.0.0 versions,
-and #190 did not open the major.** Raised by the test reviewer, who found that this paragraph
+**Corrected in fix pass 2: "since 2.0.0" is false for FOUR of the five published 2.0.0 versions,
+and #190 did not open the major.** Four, not the two the reviewer who raised it named and not the
+two an earlier draft of this paragraph repeated: `git ls-tree -r <release> --
+packages/sindarian-server/src/utils/error/` lists no `log-error-line.ts` at `c471157` (beta.1),
+`0259453` (beta.2), `b6d0be6` (beta.3) or `7dd44f6` (beta.4), and lists it at `19839e9` (beta.5).
+The three middle releases still carry the record OBJECT literally, `console.error('Request
+failed', {` in `http-service.ts`; beta.1 predates that writer entirely and logs
+`console.error('Request error', { response, error })`, an object as well. Raised by the test reviewer, who found that this paragraph
 still carried the pre-correction provenance while the header bullet above it carried the
 correction, with nothing here flagging it, and by the contrarian, who found the header bullet's
 replacement wrong as well. The measured sequence: the major opened at `2.0.0-beta.1`
