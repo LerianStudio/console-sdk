@@ -14,21 +14,18 @@ import { NextResponse } from 'next/server'
 /** What the caller is told when the thrown value classified nothing. */
 const UNCLASSIFIED = 'Internal server error'
 
-/**
- * The code that goes with it is `UNCLASSIFIED_CODE`, imported above.
- *
- * It moved next to the readers when `ApiException.getResponse()` started
- * spending it too, for a `code` of its own that could not be read; this file
- * cannot own a constant that file needs, because this one imports it.
- *
- * A caller reading codes can tell this envelope from a sentence an upstream
- * actually wrote, because the two never arrive together: an upstream's own
- * classification reaches a caller as an `ApiException`, which is answered
- * above with no code at all, and nothing that gets this far keeps a word of
- * what it was carrying. An earlier version of this filter stamped `0004` on an
- * upstream's `title` and made the code unreadable, which is what the e2e case
- * `keeps no part of an upstream problem object` now pins.
- */
+// The code that goes with it is `UNCLASSIFIED_CODE`, imported above. It moved
+// next to the readers when `ApiException.getResponse()` started spending it too,
+// for a `code` of its own that could not be read; this file cannot own a
+// constant that file needs, because this one imports it.
+//
+// A caller reading codes can tell this envelope from a sentence an upstream
+// actually wrote, because the two never arrive together: an upstream's own
+// classification reaches a caller as an `ApiException`, which is answered below
+// with no code at all, and nothing that gets past that keeps a word of what it
+// was carrying. An earlier version of this filter stamped `0004` on an
+// upstream's `title` and made the code unreadable, which is what the e2e case
+// `keeps no part of an upstream problem object` now pins.
 
 export class BaseExceptionFilter implements ExceptionFilter {
   /**
