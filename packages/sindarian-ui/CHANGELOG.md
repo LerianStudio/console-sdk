@@ -1,3 +1,10 @@
+## [2.0.0-beta.8](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.7...sindarian-ui-v2.0.0-beta.8) (2026-09-16)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** restore the toast title weight ([ea36d3a](https://github.com/LerianStudio/console-sdk/commit/ea36d3a3e0737f58bb43106ebb0258a3739c07d2))
+
 ## [2.0.0-beta.7](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.6...sindarian-ui-v2.0.0-beta.7) (2026-09-16)
 
 
