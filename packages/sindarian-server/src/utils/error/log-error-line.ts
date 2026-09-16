@@ -1,6 +1,37 @@
 import { MESSAGE_MAX_LENGTH } from './to-problem-message'
 
 /**
+ * A key cut to the ceiling, and still the only one of its name in its object.
+ *
+ * Cutting two keys that share their first 2000 characters, an upstream field
+ * map keyed by long URNs is exactly that shape, would make them ONE key, and an
+ * object holds one of those: the later field wins and the earlier one leaves no
+ * trace at all. A bound that loses a field is worse than the length it saved,
+ * this record being the last copy of what broke, so a cut key that would land
+ * on a name already in the object carries a mark instead. The entry's own index
+ * is what the mark is built from, so it is stable for a given record rather
+ * than a count of collisions seen so far.
+ *
+ * A key that was never over the ceiling is never renamed: those are seeded into
+ * `taken` before any cutting, so it is always the cut one that moves.
+ */
+const boundKey = (key: string, index: number, taken: Set<string>): string => {
+  if (key.length <= MESSAGE_MAX_LENGTH) {
+    return key
+  }
+
+  let mark = `~${index}`
+  let candidate = key.slice(0, MESSAGE_MAX_LENGTH - mark.length) + mark
+
+  while (taken.has(candidate)) {
+    mark += '~'
+    candidate = key.slice(0, MESSAGE_MAX_LENGTH - mark.length) + mark
+  }
+
+  return candidate
+}
+
+/**
  * Cuts every string the record carries, as a key or as a value, at any depth.
  *
  * A value is replaced in place. A KEY cannot be: `JSON.stringify` hands a
@@ -27,11 +58,24 @@ const boundStrings = (_key: string, value: unknown): unknown => {
 
   const entries = Object.entries(value)
 
-  return entries.some(([key]) => key.length > MESSAGE_MAX_LENGTH)
-    ? Object.fromEntries(
-        entries.map(([key, field]) => [key.slice(0, MESSAGE_MAX_LENGTH), field])
-      )
-    : value
+  if (!entries.some(([key]) => key.length > MESSAGE_MAX_LENGTH)) {
+    return value
+  }
+
+  const taken = new Set(
+    entries
+      .map(([key]) => key)
+      .filter((key) => key.length <= MESSAGE_MAX_LENGTH)
+  )
+
+  return Object.fromEntries(
+    entries.map(([key, field], index) => {
+      const bounded = boundKey(key, index, taken)
+      taken.add(bounded)
+
+      return [bounded, field]
+    })
+  )
 }
 
 /**

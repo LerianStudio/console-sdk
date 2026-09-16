@@ -87,6 +87,44 @@ describe('logErrorLine', () => {
     expect(recordOf().errors).toEqual(['a', 'b'])
   })
 
+  // Cutting a key can make two keys the SAME key, and an object cannot hold
+  // both: the later field wins and the earlier one leaves the record with
+  // nothing saying it was there. An upstream field map keyed by long URNs is
+  // exactly the shape that shares a prefix, and the bound must not be the
+  // reason a field is missing from the last copy of what broke.
+  it('keeps both fields when two keys share their first two thousand characters', () => {
+    const prefix = 'K'.repeat(2000)
+
+    logErrorLine('Request error', () => ({
+      [`${prefix}-first`]: 'a',
+      [`${prefix}-second`]: 'b'
+    }))
+
+    const written = recordOf()
+
+    expect(Object.keys(written)).toHaveLength(2)
+    expect(Object.values(written).sort()).toEqual(['a', 'b'])
+    expect(Object.keys(written).every((key) => key.length <= 2000)).toBe(true)
+  })
+
+  // The other collision: a key that is already exactly at the ceiling, and an
+  // oversized one whose cut lands on it. The one that was never over the
+  // ceiling keeps its name; the cut one moves.
+  it('keeps both fields when a cut key lands on an existing one', () => {
+    const atCeiling = 'K'.repeat(2000)
+
+    logErrorLine('Request error', () => ({
+      [atCeiling]: 'a',
+      [`${atCeiling}-over`]: 'b'
+    }))
+
+    const written = recordOf()
+
+    expect(Object.keys(written)).toHaveLength(2)
+    expect(written[atCeiling]).toBe('a')
+    expect(Object.values(written).sort()).toEqual(['a', 'b'])
+  })
+
   // The identity of an object that needs no cutting is preserved, which is what
   // lets the serialiser see a cycle as a cycle and refuse it once, instead of
   // recursing through copies.
