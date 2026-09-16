@@ -1,3 +1,58 @@
+## [2.0.0-beta.7](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.6...sindarian-ui-v2.0.0-beta.7) (2026-09-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sindarian-server:** an unexpected error, meaning anything a route threw that
+this library does not model, no longer carries the thrown value's own text
+in `message`. Every shape answers the same body, `500 {"message":"Internal
+server error","code":"0004"}`, and the real text goes to the operator log
+at error level. Do not branch on that message text, and do not re-point
+the branch at the status or the code: both are constants for every
+unexpected error alike, so a retry keyed on them would fire on a
+deterministic bug as readily as on a timeout. The discriminator now lives
+only in the log. Typed exceptions are unchanged: a 401, a 404 and a 400
+validation failure still carry the sentence this library wrote for them,
+unchanged to the byte.
+
+### Features
+
+* **sindarian-logs:** let a route opt out of the access line ([67f37f8](https://github.com/LerianStudio/console-sdk/commit/67f37f820e83bb51cca8cc3305f86e9ed5237a85))
+* **sindarian-logs:** read the ignored routes from the env ([3c1e2eb](https://github.com/LerianStudio/console-sdk/commit/3c1e2eb342e03b467c00880f6dde1ec9dca2792e))
+* **sindarian-server:** redact an unexpected error's text ([c29bc99](https://github.com/LerianStudio/console-sdk/commit/c29bc997548d3cb48e3d644fdedee70064bb1c63))
+
+
+### Bug Fixes
+
+* **sindarian-logs:** keep an error event that hits the cap ([64fa3db](https://github.com/LerianStudio/console-sdk/commit/64fa3dbe30f843612fc2bc36f7a44008ae61bdb8)), closes [#189](https://github.com/LerianStudio/console-sdk/issues/189)
+* **sindarian-logs:** write a silenced route that answers 5xx ([bacc1aa](https://github.com/LerianStudio/console-sdk/commit/bacc1aaab8a6cf30ff77944e16bf709f6cb2c016))
+* **sindarian-server:** announce a record that serialises to nothing ([9a9e11a](https://github.com/LerianStudio/console-sdk/commit/9a9e11a7f91cb78b0abc763248dfd97ff7c7e639))
+* **sindarian-server:** answer a status no response can carry ([547f176](https://github.com/LerianStudio/console-sdk/commit/547f17608b84d4523d3b5201986f3d9a84dc47fe))
+* **sindarian-server:** bound and guard a mutated exception message ([a58ff52](https://github.com/LerianStudio/console-sdk/commit/a58ff52a3f1d8e61886807a961df43816c79aebf))
+* **sindarian-server:** bound record keys at any depth ([31c9fd5](https://github.com/LerianStudio/console-sdk/commit/31c9fd533f00f78497adace3f5afe45c66ec4240))
+* **sindarian-server:** bound the operator log and keep every field ([4e2b1fe](https://github.com/LerianStudio/console-sdk/commit/4e2b1fe38d9ab64ea64c586e5a287f35811886b2))
+* **sindarian-server:** build the log record inside the write guard ([0ea9582](https://github.com/LerianStudio/console-sdk/commit/0ea9582a69f001e695c92a989d6f782ddbf37465))
+* **sindarian-server:** count a cut key's mark in digits ([c5ee916](https://github.com/LerianStudio/console-sdk/commit/c5ee91630d0bb3b4a868f375f41f76c442447b16))
+* **sindarian-server:** export the fallback sentence beside its readers ([7ff938c](https://github.com/LerianStudio/console-sdk/commit/7ff938c62b24999c131758fbbf6c18d8f1520666))
+* **sindarian-server:** export the two exception readers ([ecfb7eb](https://github.com/LerianStudio/console-sdk/commit/ecfb7ebd5c00df2d2951789a77cda59463b7b40f))
+* **sindarian-server:** give every error body a string message ([79e4853](https://github.com/LerianStudio/console-sdk/commit/79e4853fe6e5caf104758312bf80a985148d5266))
+* **sindarian-server:** guard the message the base class answers ([f82cc22](https://github.com/LerianStudio/console-sdk/commit/f82cc2283014df3df88d2afd1b2d36f7a2385bf2))
+* **sindarian-server:** guard the metadata a typed exception answers ([c59ccb4](https://github.com/LerianStudio/console-sdk/commit/c59ccb4bdc2fefbfa24b0fe6c1da9278af516fcb))
+* **sindarian-server:** keep a message a sentence, a code a primitive ([49dee40](https://github.com/LerianStudio/console-sdk/commit/49dee404ceae2592be8c4894124af77bb09a7a1b))
+* **sindarian-server:** keep a typed exception's message a string ([2f8936e](https://github.com/LerianStudio/console-sdk/commit/2f8936ea41a9d7c85476d24b5fa1d02b3976a356))
+* **sindarian-server:** keep every field when a key is cut ([d0683c6](https://github.com/LerianStudio/console-sdk/commit/d0683c64a21892ed5ce8fc561a0b646caea06c5c))
+* **sindarian-server:** metadata never replaces the named fields ([63636f6](https://github.com/LerianStudio/console-sdk/commit/63636f65a1e562f8a0ccb5780f3f48aa49e571a8))
+* **sindarian-server:** name what a record builder threw ([c4543ef](https://github.com/LerianStudio/console-sdk/commit/c4543ef95302e8727df8a9d24fbd845ac34b3a8c))
+* **sindarian-server:** never let the log line cost the response ([4677bd4](https://github.com/LerianStudio/console-sdk/commit/4677bd4a23adb071099b2ca3d27f157116869b57))
+* **sindarian-server:** read a record's keys without its values ([179d6df](https://github.com/LerianStudio/console-sdk/commit/179d6dfa02bbd7e2113d1339ca52a7973e65be18))
+* **sindarian-server:** read every field a route wrote exactly once ([b49c3d7](https://github.com/LerianStudio/console-sdk/commit/b49c3d770fbfd10fa8e8c64637b141e1e4b2ddb3))
+* **sindarian-server:** read the code and title a route wrote ([615eb5e](https://github.com/LerianStudio/console-sdk/commit/615eb5e69c52802029dc60f40dae492616b38684))
+* **sindarian-server:** redact every unexpected error, not only an Error ([487319b](https://github.com/LerianStudio/console-sdk/commit/487319b63c1e6d227e8e4ca7a5f3fdad61ca7e60))
+* **sindarian-server:** refuse a status that carries no body ([798bc6c](https://github.com/LerianStudio/console-sdk/commit/798bc6c35caf88b2efe0648bbca58ea0d9607b08))
+* **sindarian-server:** write every failure log on one line ([2bc0c56](https://github.com/LerianStudio/console-sdk/commit/2bc0c56e6b9ee359ac361532ea7fabea0143ffb4))
+* **sindarian-server:** write one failure as one log line ([b878660](https://github.com/LerianStudio/console-sdk/commit/b8786601b59cb04a4d2a8cbd9fe4bd3037093ba1))
+* **sindarian-ui:** tint toast surfaces per family ([07da0dc](https://github.com/LerianStudio/console-sdk/commit/07da0dc55e6f23beb40e249c3e01ad7deece9998))
+
 ## [2.0.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.5...sindarian-ui-v2.0.0-beta.6) (2026-09-14)
 
 
