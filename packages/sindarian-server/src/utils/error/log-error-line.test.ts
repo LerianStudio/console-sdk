@@ -1,0 +1,88 @@
+import { logErrorLine } from './log-error-line'
+
+/**
+ * The bound, tested on the function rather than through a caller.
+ *
+ * Every other assertion of it in this package reads a TOP-LEVEL field of one of
+ * the three records this package itself writes, and all three are flat with
+ * fixed keys. So a bound narrowed to the top level, or one that never looked at
+ * a key at all, passed the whole suite. What reaches here from a consumer is
+ * neither flat nor named by us: `describeRequestError` is documented as
+ * overridable, and an override that spreads part of an upstream body brings
+ * both the depth and the keys with it.
+ */
+describe('logErrorLine', () => {
+  let consoleError: jest.SpyInstance
+
+  beforeEach(() => {
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleError.mockRestore()
+  })
+
+  const recordOf = () => JSON.parse(consoleError.mock.calls[0][1] as string)
+
+  it('writes the label and one physical line', () => {
+    logErrorLine('Request error', () => ({ status: 409 }))
+
+    expect(consoleError.mock.calls[0][0]).toBe('Request error')
+    expect(consoleError.mock.calls[0][1]).toBe('{"status":409}')
+  })
+
+  it('bounds a string value at two thousand characters', () => {
+    logErrorLine('Request error', () => ({ detail: 'x'.repeat(5000) }))
+
+    expect(recordOf().detail).toHaveLength(2000)
+  })
+
+  // A KEY is text the consumer chose too, and nothing was cutting it: an
+  // override that turns an upstream's field map into keys writes them here at
+  // whatever length that upstream sent.
+  it('bounds a key at two thousand characters', () => {
+    logErrorLine('Request error', () => ({ ['K'.repeat(5000)]: 'v' }))
+
+    expect(Object.keys(recordOf())[0]).toHaveLength(2000)
+  })
+
+  // Depth, which is the half nothing pinned: the record this package writes is
+  // flat, so a top-level-only bound was indistinguishable from this one.
+  it('bounds a string three levels down', () => {
+    logErrorLine('Request error', () => ({
+      upstream: { body: { detail: 'x'.repeat(5000) } }
+    }))
+
+    expect(recordOf().upstream.body.detail).toHaveLength(2000)
+  })
+
+  it('bounds a key three levels down', () => {
+    logErrorLine('Request error', () => ({
+      upstream: { body: { ['K'.repeat(5000)]: 'v' } }
+    }))
+
+    expect(Object.keys(recordOf().upstream.body)[0]).toHaveLength(2000)
+  })
+
+  // Bounding a key means rebuilding the object it belongs to, and an array is
+  // an object: rebuilt as one it would reach a collector as `{"0":...}` and
+  // stop being a list.
+  it('keeps an array a list', () => {
+    logErrorLine('Request error', () => ({ errors: ['a', 'b'] }))
+
+    expect(recordOf().errors).toEqual(['a', 'b'])
+  })
+
+  // The identity of an object that needs no cutting is preserved, which is what
+  // lets the serialiser see a cycle as a cycle and refuse it once, instead of
+  // recursing through copies.
+  it('announces a cyclic record with the reason', () => {
+    const cyclic: Record<string, unknown> = { method: 'GET' }
+    cyclic.self = cyclic
+
+    logErrorLine('Request error', () => cyclic)
+
+    expect(recordOf().record).toBe('unserialisable')
+    expect(recordOf().cause).toContain('Converting circular structure to JSON')
+  })
+})

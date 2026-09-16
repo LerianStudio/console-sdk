@@ -1,6 +1,40 @@
 import { MESSAGE_MAX_LENGTH } from './to-problem-message'
 
 /**
+ * Cuts every string the record carries, as a key or as a value, at any depth.
+ *
+ * A value is replaced in place. A KEY cannot be: `JSON.stringify` hands a
+ * replacer the value and takes back only a value, so bounding a key means
+ * handing back an object with the key renamed, and the serialiser then walks
+ * that one instead. Which is why it happens ONLY when a key is actually over
+ * the ceiling: an object that needs no cutting is returned as itself, keeping
+ * the identity the serialiser's own cycle detection works on. A cyclic record
+ * with an oversized key is the one shape that runs out of stack rather than
+ * being refused as a cycle, and the guard around this writes the same line for
+ * both.
+ *
+ * An array is an object, and rebuilding one turns a list into `{"0":...}`, so
+ * it is left alone: its keys are indices, not text anyone chose.
+ */
+const boundStrings = (_key: string, value: unknown): unknown => {
+  if (typeof value === 'string') {
+    return value.slice(0, MESSAGE_MAX_LENGTH)
+  }
+
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return value
+  }
+
+  const entries = Object.entries(value)
+
+  return entries.some(([key]) => key.length > MESSAGE_MAX_LENGTH)
+    ? Object.fromEntries(
+        entries.map(([key, field]) => [key.slice(0, MESSAGE_MAX_LENGTH), field])
+      )
+    : value
+}
+
+/**
  * Writes one operator record, as ONE physical line, at error level.
  *
  * Every write in this package that describes a failure goes through here: the
@@ -23,10 +57,13 @@ import { MESSAGE_MAX_LENGTH } from './to-problem-message'
  * **Why the bound is here.** Every one of these records carries text this
  * package does not size: an upstream's own error, a rethrown body, a message
  * a throw site interpolated. One bad upstream must not fill a log sink, so
- * every string in the record, at any depth, is cut at the ceiling a message
- * is. The cut is by CHARACTER, and JSON escaping then expands a control
- * character to six bytes, so a pathological record is several times its
- * character count in bytes. Still bounded, which is what the bound is for.
+ * every string in the record, at any depth and as a KEY as much as a value, is
+ * cut at the ceiling a message is. The cut is by CHARACTER, and JSON escaping
+ * then expands a control character to six bytes, so a pathological record is
+ * several times its character count in bytes. It bounds each string, not their
+ * number: a record of ten thousand short fields is ten thousand short fields.
+ * Nothing this package writes has more than six, and an override that returns
+ * an upstream's field map decides its own width.
  *
  * **No redaction.** These records are the last remaining copy of what broke,
  * so nothing is projected away and nothing guesses which key holds the
@@ -60,10 +97,7 @@ export function logErrorLine(
   let line = '{"record":"unserialisable"}'
 
   try {
-    line =
-      JSON.stringify(record(), (_key, value) =>
-        typeof value === 'string' ? value.slice(0, MESSAGE_MAX_LENGTH) : value
-      ) ?? line
+    line = JSON.stringify(record(), boundStrings) ?? line
   } catch (failure) {
     // Keep the announcement, name why, lose the fields. Reading the reason is
     // itself a read of a value this package does not own, so it happens inside
