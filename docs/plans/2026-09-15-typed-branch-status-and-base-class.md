@@ -3,7 +3,7 @@
 - **Repository**: `LerianStudio/console-sdk`, package `@lerianstudio/sindarian-server`
 - **Branch**: `fix/typed-branch-status-and-base-class`, cut from `origin/develop` at `19839e9`
 - **Baseline at the cut**: unit 897 passed / 38 suites, e2e 32 passed / 2 suites
-- **Code-final head**: `d0683c6`, unit 932 passed / 39 suites, e2e 33 passed / 2 suites
+- **Code-final head**: `c5ee916`, unit 934 passed / 39 suites, e2e 33 passed / 2 suites
 - **Predecessor**: PR #191 (merged as `f4e17ae`, released `2.0.0-beta.5`). This lane closes what
   the review of that PR found after it merged, so every item here lands on `develop` as a
   follow-up rather than as a push to a closed branch.
@@ -24,6 +24,7 @@
 | 6 | Two orphaned doc blocks reattached, three numbers corrected | `ba3bbd1` |
 | 7 | The list shape of a bounded record pinned | `aed0e2a` |
 | 8 | A cut key never swallows another field (review round) | `d0683c6` |
+| 9 | A cut key never outgrows the ceiling either (review round) | `c5ee916` |
 
 ## Epic 1: the readers are published (`ecfb7eb`)
 
@@ -322,7 +323,51 @@ GREEN, `2026-09-16 00:27:03 UTC`, same head:
 ```
 $ npx jest
 rc=0
-Tests:       932 passed, 932 total
+Tests:       934 passed, 934 total
+
+$ npm run test:e2e
+rc=0
+Tests:       33 passed, 33 total
+
+$ npm run lint
+rc=0
+
+$ npm run build
+rc=0
+```
+
+## Epic 9: a cut key never outgrows the ceiling either (`c5ee916`)
+
+**Raised by CodeRabbit on PR #192, second round, and real.** The mark that keeps a cut key unique
+grew by one character per retry, and the slice that makes room for it was not floored: a record
+whose keys are an upstream's own can occupy the first candidates deliberately, and after about two
+thousand of them the slice end went negative and the writer emitted a key SEVEN THOUSAND
+characters long, inside the guard whose whole point is that one bad upstream cannot fill a log
+sink. Verified against the code as it stood before the fix, first as a standalone reproduction of
+`boundKey` with 2100 candidates occupied (`candidate length = 7000`), then in situ.
+
+**Task 9.1.** The mark counts in DIGITS, `~<index>` then `~<index>.<attempt>`, so its length grows
+logarithmically and cannot approach the ceiling before the record runs out of names to collide
+with. The slice end is floored at zero, and the retry loop is bounded by `taken.size`, which is at
+most one name per entry.
+
+RED, `2026-09-16 00:41:30 UTC`, head `1c72d16`:
+
+```
+$ npx jest src/utils/error/log-error-line.test.ts
+rc=1
+  ● logErrorLine › holds the ceiling against a record that occupies the candidates
+    Expected: 2000
+    Received: 7000
+Tests:       1 failed, 11 passed, 12 total
+```
+
+GREEN, `2026-09-16 00:42:37 UTC`, same head:
+
+```
+$ npx jest
+rc=0
+Tests:       934 passed, 934 total
 
 $ npm run test:e2e
 rc=0
@@ -371,7 +416,7 @@ rc=0
 
 Every command below was run verbatim in `/srv/worktrees/sdk-typed-fix1`.
 
-Package gates, `2026-09-16 00:30:34 UTC`, head `d0683c6`, `git status --porcelain` empty:
+Package gates, `2026-09-16 00:42:37 UTC`, head `c5ee916`, `git status --porcelain` empty:
 
 ```
 $ npm test
@@ -391,7 +436,7 @@ $ npm run build
 rc=0
 ```
 
-Monorepo root, `2026-09-16 00:30:34 UTC` onward, same head:
+Monorepo root, `2026-09-16 00:46:45 UTC` onward, same head:
 
 ```
 $ npm test
@@ -418,9 +463,9 @@ rc=0
 
 ### Mutants
 
-Ten, all at the code-final head `d0683c6`, `2026-09-16 00:27:56 UTC` onward, each applied with an
-exact single-occurrence replacement, `dist` rebuilt by the e2e run, reverted with `git checkout --
-packages`, and `clean-after-<id>=0` printed after every revert. Unit counts are out of 932 and
+Eleven, all at the code-final head `c5ee916`, `2026-09-16 00:43:08 UTC` onward, each applied with
+an exact single-occurrence replacement, `dist` rebuilt by the e2e run, reverted with `git checkout
+-- packages`, and `clean-after-<id>=0` printed after every revert. Unit counts are out of 934 and
 e2e out of 33 throughout. Numbering continues #191's, which ended at N10.
 
 | # | Mutation | Result |
@@ -428,10 +473,11 @@ e2e out of 33 throughout. Numbering continues #191's, which ended at N10.
 | N11 | the null-body statuses admitted again | unit rc=1, **4 failed**: the three `readWireStatus` rows and `names 500 when the status cannot be used either`; e2e rc=1, **1 failed**: `answers a body for a status that carries none` |
 | N12 | the base class returns its message unread | unit rc=1, **15 failed** across both exception suites; e2e rc=1, **3 failed**: the object, the five-megabyte body and the throwing getter |
 | N13 | the record built outside the write guard again | unit rc=1, **2 failed**: `keeps the real status when the record cannot be built` and `bounds the reason a record could not be built`; e2e rc=0 |
-| N14 | the key bound removed | unit rc=1, **3 failed**: both `bounds a key` cases and the prefix collision; e2e rc=0 |
-| N15 | the bound narrowed to the top level | unit rc=1, **4 failed**: both three-levels-down cases and both collision cases; e2e rc=0 |
+| N14 | the key bound removed | unit rc=1, **5 failed**: both `bounds a key` cases and the three collision cases; e2e rc=0 |
+| N15 | the bound narrowed to the top level | unit rc=1, **5 failed**: both three-levels-down cases and the three collision cases; e2e rc=0 |
 | N16 | the band widened by one, `status <= 600` | unit rc=1, **1 failed**: `answers 500 for the unusable status 600`; e2e rc=0. It survived every case of #191 |
 | N17 | `Number.isInteger` dropped | unit rc=1, **1 failed**: `answers 500 for the unusable status 404.5`; e2e rc=0. It survived every case of #191 |
 | N18 | the reason dropped from the announcement | unit rc=1, **4 failed**: the two build cases, the cyclic transport case and `announces a cyclic record with the reason`; e2e rc=0 |
 | N19 | an array rebuilt like any other object | unit rc=1, **1 failed**: `keeps an array a list even when it carries an oversized name`; e2e rc=0. It SURVIVED at `ba3bbd1` and is what Epic 7 exists for |
-| N20 | the collision mark dropped, so cut keys merge again | unit rc=1, **2 failed**: both `keeps both fields` cases; e2e rc=0. It is the state the review round found, and what Epic 8 exists for |
+| N20 | the whole uniquifier dropped, so cut keys merge again | unit rc=1, **3 failed**: the two `keeps both fields` cases and the ceiling case; e2e rc=0. It is the state the first review round found, and what Epic 8 exists for. Taken at `c5ee916` at `2026-09-16 00:45:52 UTC`, `clean-after-N20=0`. A narrower first version of this row, replacing only the FIRST candidate with the plain cut, survived and was discarded as equivalent: the retry loop recovers the mark, and a plain cut that collides with nothing is a correct name |
+| N21 | the mark grown one character per retry again | unit rc=1, **1 failed**: `holds the ceiling against a record that occupies the candidates`; e2e rc=0. It is the state the second review round found, and what Epic 9 exists for |
