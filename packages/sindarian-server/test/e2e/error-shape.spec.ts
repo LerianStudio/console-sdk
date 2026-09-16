@@ -1,4 +1,5 @@
 import { format } from 'node:util'
+import { noProblemDetails } from '@lerianstudio/sindarian-server'
 import { app } from '../app/app'
 import { generateRequest } from './utils/generate-request'
 import { NextRequest } from 'next/server'
@@ -249,6 +250,20 @@ describe('A typed exception carries a bounded sentence, however it was written',
     expect(JSON.stringify(body)).not.toContain('123.456.789-00')
     expect(JSON.stringify(body)).not.toContain('db-primary.internal')
     expect(JSON.stringify(body)).not.toContain('Gateway Timeout')
+  })
+
+  // The sentence a failed read falls back to is published beside the readers
+  // that take it. An application rendering its own envelope had to invent its
+  // own, so the same failed read read differently depending on which frame
+  // answered it, which is the drift exporting the readers exists to close. The
+  // literal is asserted here as well, so this is a pin rather than a tautology.
+  it('publishes the fallback sentence it answers', async () => {
+    const { body } = await get('typed-object')
+
+    expect(body.message).toBe(noProblemDetails(404))
+    expect(noProblemDetails(404)).toBe(
+      'Upstream error body carried no problem details (status 404)'
+    )
   })
 
   it('bounds a five-megabyte message at two thousand characters', async () => {
