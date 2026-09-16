@@ -206,4 +206,26 @@ describe('logErrorLine', () => {
     expect(recordOf().record).toBe('unserialisable')
     expect(recordOf().cause).toContain('Converting circular structure to JSON')
   })
+
+  // A record builder is a consumer's code, and a consumer may throw anything.
+  // A bare `throw 'payer missing from body'` carries no `message` at all, and
+  // the name of its TYPE is not a reason: this line is the only sentence that
+  // says why the fields are missing, so it carries what was thrown.
+  it('names what a record builder threw when it was not an Error', () => {
+    logErrorLine('Request error', (): Record<string, unknown> => {
+      throw 'payer missing from body'
+    })
+
+    expect(recordOf().record).toBe('unserialisable')
+    expect(recordOf().cause).toBe('payer missing from body')
+  })
+
+  // And it is a string this package did not size either.
+  it('bounds what a record builder threw', () => {
+    logErrorLine('Request error', (): Record<string, unknown> => {
+      throw 'x'.repeat(1_000_000)
+    })
+
+    expect(recordOf().cause).toHaveLength(2000)
+  })
 })

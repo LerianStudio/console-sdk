@@ -162,15 +162,22 @@ export function logErrorLine(
     // itself a read of a value this package does not own, so it happens inside
     // a guard as well: an override that throws an object with a `message`
     // getter that throws must not become the second throw.
+    //
+    // A value that is not an `Error` is stringified rather than named by its
+    // TYPE. A record builder is a consumer's code and `throw 'payer missing
+    // from body'` is a thing consumers write; answering `"string"` there put
+    // the name of a type where the only sentence explaining an empty record
+    // belongs. `String` is what the transport one file over already uses for
+    // the same question, and it is safe here for the same reason the read
+    // above is: it can throw, and the bare announcement is what stands when it
+    // does.
     try {
       const cause = (failure as { message?: unknown } | null)?.message
+      const reason = typeof cause === 'string' ? cause : String(failure)
 
       line = JSON.stringify({
         record: 'unserialisable',
-        cause:
-          typeof cause === 'string'
-            ? cause.slice(0, MESSAGE_MAX_LENGTH)
-            : typeof failure
+        cause: reason.slice(0, MESSAGE_MAX_LENGTH)
       })
     } catch {
       // The bare announcement above stands.
