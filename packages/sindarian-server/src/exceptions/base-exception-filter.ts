@@ -169,10 +169,14 @@ export class BaseExceptionFilter implements ExceptionFilter {
     // an RFC 9457 body whose rejected value sits three levels down printed
     // across SEVEN physical lines as a record object, and a thrown `Error`
     // fifteen. Flattening the value alone does not fix that, it only shortens
-    // the first one to five. `compact: true` here is the other half: without
-    // it `util.inspect` breaks a value nested three deep whatever
-    // `breakLength` says, and the escaped newlines would ride inside `value`
-    // for no reason.
+    // the first one to five. Those counts belong to the harness that took
+    // them, over a record that still held the thrown value itself; what a
+    // count is worth here is the sign, not the digit, because it moves with
+    // the value, the stack and the renderer. One line does not move.
+    // `compact: true` here is the other half: without it `util.inspect` breaks
+    // a value nested three deep whatever `breakLength` says (measured as 80 on
+    // this runtime), and the escaped newlines would ride inside `value` for no
+    // reason.
     //
     // **This package applies NO redaction to what it writes here.** `value` is
     // what the route threw, verbatim within the bound, which is the opposite of

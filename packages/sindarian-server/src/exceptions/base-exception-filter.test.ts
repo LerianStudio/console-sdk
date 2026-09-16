@@ -683,11 +683,15 @@ describe('BaseExceptionFilter', () => {
 
     // One failure has to be ONE log event, and handing `console.error` a record
     // OBJECT does not give that. Node renders the second argument with its own
-    // `util.inspect` defaults, `breakLength: 128` and `compact: 3`, which no
+    // `util.inspect` defaults, measured as `breakLength: 80` and `compact: 3`
+    // on this runtime (`util.inspect.defaultOptions`, Node v24.21.0), which no
     // option on our own `inspect` call can reach: measured through the real
     // request pipeline, this shape printed across SEVEN physical lines and a
     // thrown `Error` fifteen, and flattening the value alone only shortens the
-    // first one to five. A line-oriented collector, the
+    // first one to five. Those three counts are from the harness that measured
+    // them, over a record shape that then held the thrown value itself rather
+    // than a pre-rendered string; the e2e spec measures its own, in situ, and
+    // gets different ones. A line-oriented collector, the
     // Docker json-file driver or Fluent Bit, ships each of those as a separate
     // event, so the taxpayer id arrives in a different event from the
     // `Unhandled exception` label an operator greps for, which is the exact

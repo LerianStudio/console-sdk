@@ -32,22 +32,6 @@ export const noProblemDetails = (status: number) =>
   `Upstream error body carried no problem details (status ${status})`
 
 /**
- * Reduces whatever arrived to a sentence that is safe to show and to store.
- *
- * An RFC 9457 problem body classifies the failure in `type`, `title` and
- * `code`, and describes it in `detail` and `errors[]`. Only the classification
- * is bounded and free of the request's own values, so only the classification
- * survives: `detail` carries a free-text sentence and `errors[]` carries the
- * rejected values themselves — destination URLs, taxpayer ids, whatever the
- * caller submitted. Anything the object cannot classify becomes `fallback`,
- * never a serialisation of the object.
- *
- * This is the one place that argument lives; the transport points here.
- *
- * @param value A string, a parsed problem body, or nothing
- * @param fallback The sentence to use when `value` classifies nothing
- */
-/**
  * Reads the message off an exception that is about to be answered.
  *
  * `toProblemMessage` above runs once, in the constructor, over a value an
@@ -147,6 +131,22 @@ export function readWireStatus(source: { getStatus?: () => unknown }): number {
   }
 }
 
+/**
+ * Reduces whatever arrived to a sentence that is safe to show and to store.
+ *
+ * An RFC 9457 problem body classifies the failure in `type`, `title` and
+ * `code`, and describes it in `detail` and `errors[]`. Only the classification
+ * is bounded and free of the request's own values, so only the classification
+ * survives: `detail` carries a free-text sentence and `errors[]` carries the
+ * rejected values themselves, destination URLs, taxpayer ids, whatever the
+ * caller submitted. Anything the object cannot classify becomes `fallback`,
+ * never a serialisation of the object.
+ *
+ * This is the one place that argument lives; the transport points here.
+ *
+ * @param value A string, a parsed problem body, or nothing
+ * @param fallback The sentence to use when `value` classifies nothing
+ */
 export function toProblemMessage(value: unknown, fallback: string): string {
   if (typeof value === 'string') {
     return value ? value.slice(0, MESSAGE_MAX_LENGTH) : fallback

@@ -214,6 +214,21 @@ export abstract class ExceptionFilter {
 - Answers an `ApiException` whose `message` was written after construction with the status-specific fallback sentence the constructor substitutes for a body that classifies nothing (`Upstream error body carried no problem details (status 404)`), never with the object, the missing field or the megabyte it was given. A message that IS a string is still the one the caller is told, bounded at 2000 characters. The same read happens on `HttpException.getResponse()`, which `ApiException` inherits rather than repeating, so an application rendering its own envelope gets the same guarantee from a plain `HttpException` and from every typed subclass
 - Reads the status the same way: a `getStatus()` that throws, or that returns a status no response can carry a BODY with, answers 500 rather than taking the route's whole response down. Two sets of those, and neither is exotic: anything outside 200 to 599, which the runtime refuses with a `RangeError`, and the null-body statuses 204, 205 and 304, which it accepts as statuses and refuses with a `TypeError` the moment a body is attached. All three of the second set are members of this package's `HttpStatus` enum and type-legal in `ApiException`'s constructor
 
+**If your application renders its own envelope, build the status with `readWireStatus`.**
+An application filter that spreads `exception.getResponse()` into its own body is reading a message this package has already guarded. The STATUS is the other half and it is not guarded from inside the object: `getStatus()` belongs to the subclass, and the frame that builds the response is yours, so that is where an unusable one costs you the response.
+
+```typescript
+import { readWireStatus } from '@lerianstudio/sindarian-server'
+
+const status = readWireStatus(exception) // never exception.getStatus() here
+
+return NextResponse.json({ ...envelope, ...exception.getResponse() }, { status })
+```
+
+`readWireMessage(source, fallback)` is exported beside it, for a filter that reads a message off something that is not one of this package's exceptions at all. Neither can throw, and both answer the fallback rather than the failure.
+
+**A change for log consumers, shipped in 2.0.0.** The second argument of every `console.error` this package writes, the exception filter's `Unhandled exception` and the transport's `Request failed` and `Request error`, is now a JSON STRING and no longer a record OBJECT. A consumer that read that argument as an object, a test asserting `toHaveBeenCalledWith('Request failed', { method: 'GET' })` or a console-to-structured-logger bridge forwarding it onward, reads a string now and parses it with `JSON.parse`. What a line-oriented collector receives is unchanged in content and is now one event instead of several.
+
 #### Filter Registration
 1. **Global Filters**: `app.useGlobalFilters(filter)`
 2. **Controller Filters**: `@UseFilters(filter)` decorator

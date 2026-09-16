@@ -1249,9 +1249,10 @@ describe('HttpService', () => {
 
   // One failed call has to be ONE log event. Handing `console.error` a record
   // OBJECT does not give that: Node renders a second argument with its own
-  // `util.inspect` defaults, `breakLength: 128` and `compact: 3`, and a real
-  // ledger URL beside a connection string is already past 128 characters, so
-  // the two records here broke across five and eight physical lines. A
+  // `util.inspect` defaults, measured as `breakLength: 80` and `compact: 3` on
+  // this runtime (`util.inspect.defaultOptions`, Node v24.21.0), and a real
+  // ledger URL beside a connection string is already past 80 characters on its
+  // own, so the two records here broke across five and eight physical lines. A
   // line-oriented collector, the Docker json-file driver or Fluent Bit, ships
   // each of those as a separate event, so the internal host and the taxpayer
   // id an upstream failure carries land in a different event from the label an

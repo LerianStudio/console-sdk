@@ -35,21 +35,16 @@ export class ApiException extends HttpException {
    * already passes metadata here (`{ details }`), so `message` is the next key
    * anyone reaches for. Metadata extends the body; these three are its
    * contract.
-   */
-  /**
-   * `message` comes from the base class rather than being read again here.
    *
+   * `message` comes from the base class rather than being read again here.
    * `HttpException.getResponse()` reads it through `readWireMessage`, because
    * the constructor is not the only writer: `Error.message` is a writable
    * property and a route that sets one after construction bypasses the
    * reduction above. An application that renders this body itself, Console
    * spreads it into its own envelope, was the caller still receiving an
    * upstream object, a missing field, or five megabytes under a field this
-   * file documents as a string.
-   *
-   * Spreading the base class last is also what keeps metadata UNDER the named
-   * fields: a caller passing a `message` key cannot put back the object the
-   * constructor just reduced to a sentence.
+   * file documents as a string. Spreading the base class LAST is what keeps
+   * the reduced sentence on top of any `message` key metadata carries.
    */
   getResponse() {
     return {

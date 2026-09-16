@@ -43,10 +43,11 @@ const boundStrings = (_key: string, value: unknown): unknown => {
  *
  * **Why the record is serialised here instead of handed over.** Node renders a
  * second argument to `console.error` with its OWN `util.inspect` defaults,
- * `breakLength: 128` and `compact: 3`, which no option at the call site can
- * reach: a real ledger URL beside a connection string is already past 128
- * characters, so these records printed across five, eight and fifteen physical
- * lines. A line-oriented collector, the Docker json-file driver or Fluent Bit,
+ * which no option at the call site can reach. Measured on the runtime this
+ * package is built against, `util.inspect.defaultOptions` reads `breakLength:
+ * 80` and `compact: 3` (Node v24.21.0), and a real ledger URL beside a
+ * connection string is already past 80 characters on its own, so these records
+ * printed across several physical lines each. A line-oriented collector, the Docker json-file driver or Fluent Bit,
  * ships each of those as a separate event, so the internal host and the
  * taxpayer id an upstream failure carries land in a different event from the
  * label an operator greps for. A string argument is written through verbatim,
