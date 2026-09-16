@@ -390,9 +390,11 @@ thousand times. The case now occupies BOTH sequences, `~4200.1` through `~4200.2
 legacy `~4200`, `~4200~`, `~4200~~` chain, so the bounded path is walked to its end AND the case
 still fails on the growth it was written against.
 
-Verified at `2026-09-16 00:53:59 UTC`, head `d6332e8`: the reworked case passes on the current
-implementation (12 of 12 in that file) and, with mutant N21 applied, fails with `Expected: 2000`,
-which is the proof that it is still a regression test rather than only a shape test.
+Verified at `2026-09-16 00:53:59 UTC`, on the working tree at `d6332e8` carrying the reworked
+case, which is the content `d5d5e54` then committed: it passes on the current implementation (12
+of 12 in that file) and, with mutant N21 applied, fails with `Expected: 2000`, which is the proof
+that it is still a regression test rather than only a shape test. The gates and the mutants below
+are re-taken after that commit, at a head that carries it.
 
 ## Found, not fixed
 
@@ -430,7 +432,9 @@ which is the proof that it is still a regression test rather than only a shape t
 
 Every command below was run verbatim in `/srv/worktrees/sdk-typed-fix1`.
 
-Package gates, `2026-09-16 00:54:18 UTC`, head `d5d5e54`, `git status --porcelain` empty:
+Package gates, `2026-09-16 01:02:11 UTC`, head `5f07567`, `git status --porcelain` empty. That
+head is two docs commits past the code-final `d5d5e54` and `git diff d5d5e54 HEAD -- packages`
+prints nothing, so these are the code-final numbers measured after it, not before:
 
 ```
 $ npm test
@@ -450,7 +454,7 @@ $ npm run build
 rc=0
 ```
 
-Monorepo root, `2026-09-16 00:46:45 UTC` onward, same head:
+Monorepo root, `2026-09-16 01:02:38 UTC` onward, same head:
 
 ```
 $ npm test
@@ -477,8 +481,8 @@ rc=0
 
 ### Mutants
 
-Eleven, all at the code-final head `d5d5e54`, `2026-09-16 00:54:49 UTC` onward, each applied with
-an exact single-occurrence replacement, `dist` rebuilt by the e2e run, reverted with `git checkout
+Eleven, all at the code-final head `d5d5e54` itself, `2026-09-16 00:54:49 UTC` onward, each
+applied with an exact single-occurrence replacement, `dist` rebuilt by the e2e run, reverted with `git checkout
 -- packages`, and `clean-after-<id>=0` printed after every revert. Unit counts are out of 934 and
 e2e out of 33 throughout. Numbering continues #191's, which ended at N10.
 
