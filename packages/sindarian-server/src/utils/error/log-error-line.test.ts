@@ -73,6 +73,20 @@ describe('logErrorLine', () => {
     expect(recordOf().errors).toEqual(['a', 'b'])
   })
 
+  // And the one shape where that is not free: an array can carry a named
+  // property beside its indices, so the "does anything here need cutting"
+  // question can answer yes for an ARRAY. `JSON.stringify` drops such a
+  // property from a list; rebuilding the list to bound it would keep the
+  // property and lose the list.
+  it('keeps an array a list even when it carries an oversized name', () => {
+    const errors: string[] & { [key: string]: unknown } = ['a', 'b']
+    errors['K'.repeat(5000)] = 'v'
+
+    logErrorLine('Request error', () => ({ errors }))
+
+    expect(recordOf().errors).toEqual(['a', 'b'])
+  })
+
   // The identity of an object that needs no cutting is preserved, which is what
   // lets the serialiser see a cycle as a cycle and refuse it once, instead of
   // recursing through copies.
