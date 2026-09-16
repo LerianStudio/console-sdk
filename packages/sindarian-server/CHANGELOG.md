@@ -1,3 +1,23 @@
+## [2.0.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.5...sindarian-server-v2.0.0-beta.6) (2026-09-16)
+
+
+### Bug Fixes
+
+* **sindarian-server:** bound record keys at any depth ([31c9fd5](https://github.com/LerianStudio/console-sdk/commit/31c9fd533f00f78497adace3f5afe45c66ec4240))
+* **sindarian-server:** build the log record inside the write guard ([0ea9582](https://github.com/LerianStudio/console-sdk/commit/0ea9582a69f001e695c92a989d6f782ddbf37465))
+* **sindarian-server:** count a cut key's mark in digits ([c5ee916](https://github.com/LerianStudio/console-sdk/commit/c5ee91630d0bb3b4a868f375f41f76c442447b16))
+* **sindarian-server:** export the fallback sentence beside its readers ([7ff938c](https://github.com/LerianStudio/console-sdk/commit/7ff938c62b24999c131758fbbf6c18d8f1520666))
+* **sindarian-server:** export the two exception readers ([ecfb7eb](https://github.com/LerianStudio/console-sdk/commit/ecfb7ebd5c00df2d2951789a77cda59463b7b40f))
+* **sindarian-server:** guard the message the base class answers ([f82cc22](https://github.com/LerianStudio/console-sdk/commit/f82cc2283014df3df88d2afd1b2d36f7a2385bf2))
+* **sindarian-server:** guard the metadata a typed exception answers ([c59ccb4](https://github.com/LerianStudio/console-sdk/commit/c59ccb4bdc2fefbfa24b0fe6c1da9278af516fcb))
+* **sindarian-server:** keep a message a sentence, a code a primitive ([49dee40](https://github.com/LerianStudio/console-sdk/commit/49dee404ceae2592be8c4894124af77bb09a7a1b))
+* **sindarian-server:** keep every field when a key is cut ([d0683c6](https://github.com/LerianStudio/console-sdk/commit/d0683c64a21892ed5ce8fc561a0b646caea06c5c))
+* **sindarian-server:** name what a record builder threw ([c4543ef](https://github.com/LerianStudio/console-sdk/commit/c4543ef95302e8727df8a9d24fbd845ac34b3a8c))
+* **sindarian-server:** read a record's keys without its values ([179d6df](https://github.com/LerianStudio/console-sdk/commit/179d6dfa02bbd7e2113d1339ca52a7973e65be18))
+* **sindarian-server:** read every field a route wrote exactly once ([b49c3d7](https://github.com/LerianStudio/console-sdk/commit/b49c3d770fbfd10fa8e8c64637b141e1e4b2ddb3))
+* **sindarian-server:** read the code and title a route wrote ([615eb5e](https://github.com/LerianStudio/console-sdk/commit/615eb5e69c52802029dc60f40dae492616b38684))
+* **sindarian-server:** refuse a status that carries no body ([798bc6c](https://github.com/LerianStudio/console-sdk/commit/798bc6c35caf88b2efe0648bbca58ea0d9607b08))
+
 ## [2.0.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.4...sindarian-server-v2.0.0-beta.5) (2026-09-15)
 
 
