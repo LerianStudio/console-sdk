@@ -266,12 +266,17 @@ describe('BaseExceptionFilter', () => {
     })
 
     // A status no Response can carry is the same failure as a `getStatus` that
-    // throws, one frame later: `NextResponse.json` rejects anything outside
-    // 200 to 599 with a `RangeError`, so a fallback that reuses the status it
-    // was handed throws from inside the very branch that was catching, and the
+    // throws, one frame later, and there are TWO ways to be that status.
+    // `NextResponse.json` rejects anything outside 200 to 599 with a
+    // `RangeError`, and it rejects 204, 205 and 304 with a `TypeError` the
+    // moment a body is attached, although each of those is a perfectly
+    // ordinary status inside the band and a member of this package's own
+    // `HttpStatus` enum. Either way a fallback that reuses the status it was
+    // handed throws from inside the very branch that was catching, and the
     // route is back to a zero-byte body. The status is therefore checked, not
-    // caught.
-    it.each([[0], [700], [NaN], [199]])(
+    // caught, and the frame this package OWNS states both halves of the rule
+    // rather than inheriting one of them from the reader's own table.
+    it.each([[0], [700], [NaN], [199], [204], [205], [304]])(
       'answers 500 for the unusable status %s',
       async (status) => {
         const exception = notFound()

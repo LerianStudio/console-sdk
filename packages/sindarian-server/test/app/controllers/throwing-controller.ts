@@ -143,21 +143,46 @@ export class ThrowingController {
   /**
    * A typed exception carrying a status that may not be paired with a body.
    *
-   * 204 is a member of this package's own `HttpStatus` enum and type-legal in
-   * `ApiException`'s constructor, so no override and no exotic value is needed
-   * to reach it: `new ApiException(code, title, message, HttpStatus.NO_CONTENT)`
-   * is what a route writes. The runtime refuses it with a `TypeError` the
-   * moment a body is attached, which is one frame LATER than the 200-to-599
-   * range check, and a filter that throws leaves the route with a zero-byte
-   * body and no content-type. 205 and 304 fail the same way.
+   * Each of the three is a member of this package's own `HttpStatus` enum and
+   * type-legal in `ApiException`'s constructor, so no override and no exotic
+   * value is needed to reach one: `new ApiException(code, title, message,
+   * HttpStatus.NO_CONTENT)` is what a route writes. The runtime refuses each
+   * with a `TypeError` the moment a body is attached, which is one frame LATER
+   * than the 200-to-599 range check, and a filter that throws leaves the route
+   * with a zero-byte body and no content-type.
+   *
+   * All three have a route, because the reader's own table is a set membership
+   * and a real `Response` is the only thing that says the set is the right one.
    */
-  @Get('typed-nullbody')
-  public typedNullBody(): never {
+  @Get('typed-nullbody-204')
+  public typedNullBody204(): never {
     throw new ApiException(
       '0003',
       'Not Found',
       'Ledger not found',
       HttpStatus.NO_CONTENT
+    )
+  }
+
+  /** The same, at 205. */
+  @Get('typed-nullbody-205')
+  public typedNullBody205(): never {
+    throw new ApiException(
+      '0003',
+      'Not Found',
+      'Ledger not found',
+      HttpStatus.RESET_CONTENT
+    )
+  }
+
+  /** The same, at 304. */
+  @Get('typed-nullbody-304')
+  public typedNullBody304(): never {
+    throw new ApiException(
+      '0003',
+      'Not Found',
+      'Ledger not found',
+      HttpStatus.NOT_MODIFIED
     )
   }
 

@@ -279,16 +279,24 @@ describe('A typed exception carries a bounded sentence, however it was written',
   // `TypeError` when one is attached. Measured through a real Response here,
   // because the filter's unit tests mock `NextResponse.json` and no mock
   // refuses a status.
-  it('answers a body for a status that carries none', async () => {
-    const { response, body } = await get('typed-nullbody')
+  //
+  // All THREE are driven, not one. What the reader holds is a set, and a set
+  // is only as right as its members: a real `Response` is the only thing in
+  // this repository that refuses one, so a member covered by the reader's own
+  // table alone is covered by an assertion about the table.
+  it.each([[204], [205], [304]])(
+    'answers a body for the status %s, which carries none',
+    async (status) => {
+      const { response, body } = await get(`typed-nullbody-${status}`)
 
-    expect(response.status).toBe(500)
-    expect(response.headers.get('content-type')).toContain('application/json')
-    // The status is the only thing that falls back: the sentence the route
-    // wrote is still the one the caller is told.
-    expect(body.message).toBe('Ledger not found')
-    expect(body.code).toBe('0003')
-  })
+      expect(response.status).toBe(500)
+      expect(response.headers.get('content-type')).toContain('application/json')
+      // The status is the only thing that falls back: the sentence the route
+      // wrote is still the one the caller is told.
+      expect(body.message).toBe('Ledger not found')
+      expect(body.code).toBe('0003')
+    }
+  )
 
   // The third value this frame reads, after the message and the status. The
   // body is `{ ...metadata, code, title, ...super.getResponse() }`, and the
