@@ -3,7 +3,7 @@
 - **Repository**: `LerianStudio/console-sdk`, package `@lerianstudio/sindarian-server`
 - **Branch**: `fix/typed-branch-status-and-base-class`, cut from `origin/develop` at `19839e9`
 - **Baseline at the cut**: unit 897 passed / 38 suites, e2e 32 passed / 2 suites
-- **Code-final head**: `aed0e2a`, unit 930 passed / 39 suites, e2e 33 passed / 2 suites
+- **Code-final head**: `d0683c6`, unit 932 passed / 39 suites, e2e 33 passed / 2 suites
 - **Predecessor**: PR #191 (merged as `f4e17ae`, released `2.0.0-beta.5`). This lane closes what
   the review of that PR found after it merged, so every item here lands on `develop` as a
   follow-up rather than as a push to a closed branch.
@@ -23,6 +23,7 @@
 | 5 | The bound covers keys, at any depth | `31c9fd5` |
 | 6 | Two orphaned doc blocks reattached, three numbers corrected | `ba3bbd1` |
 | 7 | The list shape of a bounded record pinned | `aed0e2a` |
+| 8 | A cut key never swallows another field (review round) | `d0683c6` |
 
 ## Epic 1: the readers are published (`ecfb7eb`)
 
@@ -291,6 +292,49 @@ is already skipped when nothing needs cutting, which covers every ordinary list,
 guard only earns its place for an array carrying a NAMED property over the ceiling beside its
 indices. Mutant N19 survived without this case; it dies with it.
 
+## Epic 8: a cut key never swallows another field (`d0683c6`)
+
+**Raised by CodeRabbit on PR #192, and real.** Bounding a key is a rename, and two keys that
+share their first 2000 characters rename to the SAME key: an object holds one of those, the later
+field wins, and the earlier one leaves the record with nothing saying it was there. An upstream
+field map keyed by long URNs is exactly the shape that shares a prefix. A cut key can also land on
+a key that was already exactly at the ceiling. So the bound this lane added was itself a way to
+lose a field from the last copy of what broke.
+
+**Task 8.1.** A cut key that would land on a name already in the object carries a mark built from
+its own entry index, so it is stable for a given record rather than a count of collisions seen so
+far. Keys that were never over the ceiling are seeded first and are never the ones that move.
+
+RED, `2026-09-16 00:26:37 UTC`, head `d9b2ef7`:
+
+```
+$ npx jest src/utils/error/log-error-line.test.ts
+rc=1
+  ● logErrorLine › keeps both fields when two keys share their first two thousand characters
+    Expected length: 2
+    Received length: 1
+  ● logErrorLine › keeps both fields when a cut key lands on an existing one
+Tests:       2 failed, 8 passed, 10 total
+```
+
+GREEN, `2026-09-16 00:27:03 UTC`, same head:
+
+```
+$ npx jest
+rc=0
+Tests:       932 passed, 932 total
+
+$ npm run test:e2e
+rc=0
+Tests:       33 passed, 33 total
+
+$ npm run lint
+rc=0
+
+$ npm run build
+rc=0
+```
+
 ## Found, not fixed
 
 1. **Product Console still builds its response status with `exception.getStatus()`**
@@ -327,13 +371,13 @@ indices. Mutant N19 survived without this case; it dies with it.
 
 Every command below was run verbatim in `/srv/worktrees/sdk-typed-fix1`.
 
-Package gates, `2026-09-16 00:12:43 UTC`, head `aed0e2a`, `git status --porcelain` empty:
+Package gates, `2026-09-16 00:30:34 UTC`, head `d0683c6`, `git status --porcelain` empty:
 
 ```
 $ npm test
 rc=0
 Test Suites: 39 passed, 39 total
-Tests:       930 passed, 930 total
+Tests:       932 passed, 932 total
 
 $ npm run test:e2e
 rc=0
@@ -347,7 +391,7 @@ $ npm run build
 rc=0
 ```
 
-Monorepo root, `2026-09-16 00:13:20 UTC`, same head:
+Monorepo root, `2026-09-16 00:30:34 UTC` onward, same head:
 
 ```
 $ npm test
@@ -374,9 +418,9 @@ rc=0
 
 ### Mutants
 
-Nine, all at the code-final head `aed0e2a`, `2026-09-16 00:14:19 UTC` onward, each applied with an
+Ten, all at the code-final head `d0683c6`, `2026-09-16 00:27:56 UTC` onward, each applied with an
 exact single-occurrence replacement, `dist` rebuilt by the e2e run, reverted with `git checkout --
-packages`, and `clean-after-<id>=0` printed after every revert. Unit counts are out of 930 and
+packages`, and `clean-after-<id>=0` printed after every revert. Unit counts are out of 932 and
 e2e out of 33 throughout. Numbering continues #191's, which ended at N10.
 
 | # | Mutation | Result |
@@ -384,9 +428,10 @@ e2e out of 33 throughout. Numbering continues #191's, which ended at N10.
 | N11 | the null-body statuses admitted again | unit rc=1, **4 failed**: the three `readWireStatus` rows and `names 500 when the status cannot be used either`; e2e rc=1, **1 failed**: `answers a body for a status that carries none` |
 | N12 | the base class returns its message unread | unit rc=1, **15 failed** across both exception suites; e2e rc=1, **3 failed**: the object, the five-megabyte body and the throwing getter |
 | N13 | the record built outside the write guard again | unit rc=1, **2 failed**: `keeps the real status when the record cannot be built` and `bounds the reason a record could not be built`; e2e rc=0 |
-| N14 | the key bound removed | unit rc=1, **2 failed**: both `bounds a key` cases; e2e rc=0 |
-| N15 | the bound narrowed to the top level | unit rc=1, **2 failed**: both three-levels-down cases; e2e rc=0 |
+| N14 | the key bound removed | unit rc=1, **3 failed**: both `bounds a key` cases and the prefix collision; e2e rc=0 |
+| N15 | the bound narrowed to the top level | unit rc=1, **4 failed**: both three-levels-down cases and both collision cases; e2e rc=0 |
 | N16 | the band widened by one, `status <= 600` | unit rc=1, **1 failed**: `answers 500 for the unusable status 600`; e2e rc=0. It survived every case of #191 |
 | N17 | `Number.isInteger` dropped | unit rc=1, **1 failed**: `answers 500 for the unusable status 404.5`; e2e rc=0. It survived every case of #191 |
 | N18 | the reason dropped from the announcement | unit rc=1, **4 failed**: the two build cases, the cyclic transport case and `announces a cyclic record with the reason`; e2e rc=0 |
 | N19 | an array rebuilt like any other object | unit rc=1, **1 failed**: `keeps an array a list even when it carries an oversized name`; e2e rc=0. It SURVIVED at `ba3bbd1` and is what Epic 7 exists for |
+| N20 | the collision mark dropped, so cut keys merge again | unit rc=1, **2 failed**: both `keeps both fields` cases; e2e rc=0. It is the state the review round found, and what Epic 8 exists for |
