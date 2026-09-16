@@ -555,5 +555,128 @@ describe('ApiException', () => {
         )
       })
     })
+
+    // The third value this frame reads, and the last one that was still taken
+    // rather than read. Spreading metadata invokes every own enumerable
+    // accessor the route attached, and the body is serialised one frame later,
+    // so the two ways a route's own object breaks this accessor are a getter
+    // that throws and a value JSON refuses.
+    describe('metadata a route attached', () => {
+      let consoleError: jest.SpyInstance
+
+      beforeEach(() => {
+        consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+      })
+
+      afterEach(() => {
+        consoleError.mockRestore()
+      })
+
+      const announced = () =>
+        JSON.parse(
+          consoleError.mock.calls.find(
+            (call) => call[0] === 'Exception metadata dropped'
+          )?.[1] as string
+        )
+
+      // Nothing an ordinary route writes moves. Console passes `{ details }`
+      // here today, and `ValidationApiException` passes every Zod issue of a
+      // rejected form, so this is the shape the guard must leave alone.
+      it('carries a plain object through unchanged', () => {
+        const details = { field: 'payer', issues: ['required'] }
+
+        expect(
+          new ApiException(
+            '0007',
+            'Validation Error',
+            'Invalid payload',
+            HttpStatus.BAD_REQUEST,
+            { details }
+          ).getResponse()
+        ).toEqual({
+          details,
+          code: '0007',
+          title: 'Validation Error',
+          message: 'Invalid payload'
+        })
+
+        expect(consoleError).not.toHaveBeenCalled()
+      })
+
+      it('answers the named fields when a metadata getter throws', () => {
+        const metadata: Record<string, unknown> = {}
+
+        Object.defineProperty(metadata, 'details', {
+          enumerable: true,
+          get() {
+            throw new Error('metadata getter exploded')
+          }
+        })
+
+        expect(
+          new ApiException(
+            '0003',
+            'Not Found',
+            'Ledger not found',
+            HttpStatus.NOT_FOUND,
+            metadata
+          ).getResponse()
+        ).toEqual({
+          code: '0003',
+          title: 'Not Found',
+          message: 'Ledger not found'
+        })
+
+        expect(announced()).toEqual({
+          code: '0003',
+          title: 'Not Found',
+          cause: 'metadata getter exploded'
+        })
+      })
+
+      // A `bigint` is what a pg driver hands back for an int64 amount, so a
+      // ledger route reaches this with no override at all. Nothing throws
+      // while this body is built; the throw lands where it is serialised.
+      it('answers the named fields for a value JSON refuses', () => {
+        expect(
+          new ApiException(
+            '0003',
+            'Not Found',
+            'Ledger not found',
+            HttpStatus.NOT_FOUND,
+            { amount: BigInt('9007199254740993') }
+          ).getResponse()
+        ).toEqual({
+          code: '0003',
+          title: 'Not Found',
+          message: 'Ledger not found'
+        })
+
+        expect(announced().cause).toBe('Do not know how to serialize a BigInt')
+      })
+
+      // The reason is an override's own text and has a size this package does
+      // not control, the same argument every other string here is bounded on.
+      it('bounds the reason the metadata was dropped', () => {
+        const metadata: Record<string, unknown> = {}
+
+        Object.defineProperty(metadata, 'details', {
+          enumerable: true,
+          get() {
+            throw new Error('x'.repeat(1_000_000))
+          }
+        })
+
+        new ApiException(
+          '0003',
+          'Not Found',
+          'Ledger not found',
+          HttpStatus.NOT_FOUND,
+          metadata
+        ).getResponse()
+
+        expect(announced().cause).toHaveLength(2000)
+      })
+    })
   })
 })

@@ -275,6 +275,39 @@ describe('A typed exception carries a bounded sentence, however it was written',
     expect(body.code).toBe('0003')
   })
 
+  // The third value this frame reads, after the message and the status. The
+  // body is `{ ...metadata, code, title, ...super.getResponse() }`, and the
+  // spread is a read of every own enumerable accessor the route attached: a
+  // getter that throws never returns a body at all, and a `bigint` returns one
+  // the serialiser refuses one frame later. Both escape `app.handler` with no
+  // Response, which is the zero-byte failure this whole branch exists to
+  // close, so both are driven through the real handler here.
+  it.each([
+    ['a getter that throws', 'typed-meta-trap', 'metadata getter exploded'],
+    [
+      'a value that cannot be serialised',
+      'typed-meta-bigint',
+      'Do not know how to serialize a BigInt'
+    ]
+  ])(
+    'answers a body at all for metadata carrying %s',
+    async (_shape, path, reason) => {
+      const { response, body } = await get(path)
+
+      expect(response.status).toBe(404)
+      expect(response.headers.get('content-type')).toContain('application/json')
+      // The metadata is the only thing that falls back: the sentence the route
+      // wrote and its classification are still what the caller is told.
+      expect(body.message).toBe('Ledger not found')
+      expect(body.code).toBe('0003')
+      expect(body.title).toBe('Not Found')
+      // And the drop is not silent. The fields are gone from the body, so the
+      // reason they are gone is the only thing left that explains it.
+      expect(logged()).toContain('Exception metadata dropped')
+      expect(logged()).toContain(reason)
+    }
+  )
+
   // A filter that throws escapes the request pipeline, and the route answers a
   // ZERO-BYTE body with no content-type: `response.json()` below is the
   // assertion, because it is what raises `SyntaxError: Unexpected end of JSON

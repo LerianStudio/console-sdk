@@ -161,6 +161,54 @@ export class ThrowingController {
     )
   }
 
+  /**
+   * A typed exception whose METADATA cannot be read.
+   *
+   * Metadata is the constructor's own fifth parameter, written by the route,
+   * and `getResponse()` spreads it: a spread invokes every own enumerable
+   * accessor, so a getter that throws takes the whole response down exactly as
+   * a `message` getter did, two lines up in the same function.
+   */
+  @Get('typed-meta-trap')
+  public typedMetaTrap(): never {
+    const metadata: Record<string, unknown> = {}
+
+    Object.defineProperty(metadata, 'details', {
+      enumerable: true,
+      get() {
+        throw new Error('metadata getter exploded')
+      }
+    })
+
+    throw new ApiException(
+      '0003',
+      'Not Found',
+      'Ledger not found',
+      HttpStatus.NOT_FOUND,
+      metadata
+    )
+  }
+
+  /**
+   * The same frame, one field the JSON serialiser refuses.
+   *
+   * Nothing throws while the body is built here; the throw lands one frame
+   * later, where the body is serialised, which is the same place a null-body
+   * status fails. A `bigint` is what a pg driver hands back for an int64
+   * amount, so a ledger route reaches this with no override and no exotic
+   * value at all.
+   */
+  @Get('typed-meta-bigint')
+  public typedMetaBigint(): never {
+    throw new ApiException(
+      '0003',
+      'Not Found',
+      'Ledger not found',
+      HttpStatus.NOT_FOUND,
+      { amount: BigInt('9007199254740993') }
+    )
+  }
+
   /** The read itself fails, which used to cost the route its whole response. */
   @Get('typed-trap')
   public typedTrap(): never {

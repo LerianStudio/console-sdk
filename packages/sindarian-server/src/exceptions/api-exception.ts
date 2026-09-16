@@ -1,5 +1,7 @@
 import { HttpStatus } from '@/constants/http-status'
+import { logErrorLine } from '@/utils/error/log-error-line'
 import {
+  MESSAGE_MAX_LENGTH,
   noProblemDetails,
   toProblemMessage
 } from '@/utils/error/to-problem-message'
@@ -27,6 +29,57 @@ export class ApiException extends HttpException {
   }
 
   /**
+   * The metadata this body carries, read once and only if it survives JSON.
+   *
+   * The third value on this frame that a route controls, after the message and
+   * the status, and the last one still taken rather than read. A spread is a
+   * READ: `{ ...this.metadata }` invokes every own enumerable accessor, so a
+   * getter that throws took the whole response down, the same defect
+   * `readWireMessage` closes two lines below. A value the serialiser refuses -
+   * a `bigint`, which is what a pg driver hands back for an int64 amount -
+   * failed one frame later instead, where the body is serialised, which is
+   * where a null-body status fails too. Both left the route with NO Response at
+   * all, through the recipe TECHNICAL.md prescribes for an application that
+   * renders its own envelope.
+   *
+   * A check on one read and a use of another is not a guard, so this does not
+   * check and then spread: it takes the ROUND TRIP as the value. Every
+   * accessor runs exactly once, inside the try, and what comes back is by
+   * construction a thing `JSON.stringify` cannot refuse. For any metadata that
+   * worked before, the bytes on the wire are unchanged: the response is
+   * serialised with `JSON.stringify` anyway, and it drops the same functions,
+   * `undefined`s and symbols this round trip does, in the same key order. What
+   * a caller reading `getResponse()` in memory loses is live references: a
+   * class instance arrives as its data. This method is documented as the body
+   * a caller receives, which is data.
+   *
+   * A drop is never silent. The fields are gone from the body, so the reason
+   * is the only thing left that explains them, and it goes to the operator log
+   * bounded like every other string this package did not size. Reading that
+   * reason is itself a read of a value this package does not own, so it happens
+   * inside `logErrorLine`'s builder, where a `message` getter that throws is
+   * announced rather than thrown a second time.
+   */
+  private readWireMetadata(): object {
+    try {
+      const serialised = JSON.stringify(this.metadata)
+
+      return serialised === undefined ? {} : JSON.parse(serialised)
+    } catch (failure) {
+      logErrorLine('Exception metadata dropped', () => ({
+        code: this.code,
+        title: this.title,
+        cause: (failure instanceof Error
+          ? failure.message
+          : String(failure)
+        ).slice(0, MESSAGE_MAX_LENGTH)
+      }))
+
+      return {}
+    }
+  }
+
+  /**
    * The body a caller receives.
    *
    * Metadata is spread UNDER the three named fields, not over them. Spreading
@@ -45,10 +98,16 @@ export class ApiException extends HttpException {
    * upstream object, a missing field, or five megabytes under a field this
    * file documents as a string. Spreading the base class LAST is what keeps
    * the reduced sentence on top of any `message` key metadata carries.
+   *
+   * All three values a route controls are now READ rather than taken: the
+   * message and the status through their own readers in the base class, the
+   * metadata through `readWireMetadata` above. Every one of them could cost
+   * this frame its whole response, and this frame is the one an application
+   * that renders its own envelope calls.
    */
   getResponse() {
     return {
-      ...this.metadata,
+      ...this.readWireMetadata(),
       code: this.code,
       title: this.title,
       ...super.getResponse()
