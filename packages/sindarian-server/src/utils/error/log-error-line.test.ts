@@ -125,6 +125,66 @@ describe('logErrorLine', () => {
     expect(Object.values(written).sort()).toEqual(['a', 'b'])
   })
 
+  // The mark is what makes a cut key unique, and it must not become the reason
+  // the key is over the ceiling: a record whose keys are an upstream's own can
+  // occupy the first candidates deliberately, and a mark that grows by one
+  // character per retry would eventually push the cut past the bound this
+  // whole function exists to hold.
+  it('keeps every cut key within the ceiling when it has to retry', () => {
+    const prefix = 'K'.repeat(5000)
+    const withMark = (mark: string) =>
+      prefix.slice(0, 2000 - mark.length) + mark
+
+    // The oversized key is the third entry, so its first candidate carries the
+    // mark `~2`, and the two before it are sitting on that name and the next.
+    logErrorLine('Request error', () => ({
+      [withMark('~2')]: 'a',
+      [withMark('~2.1')]: 'b',
+      [prefix]: 'c'
+    }))
+
+    const written = recordOf()
+
+    expect(Object.keys(written)).toHaveLength(3)
+    expect(Object.keys(written).every((key) => key.length <= 2000)).toBe(true)
+    expect(Object.values(written).sort()).toEqual(['a', 'b', 'c'])
+  })
+
+  // And the adversarial version of it, because the keys of this record can be
+  // an upstream's own: a body that occupies two thousand candidates in a row
+  // forces the mark to keep growing, and a mark that grows one character at a
+  // time eventually leaves no room for the key at all. Measured on the
+  // one-character growth this started as, the emitted key was 7000 characters
+  // long, inside the writer whose whole job is that one bad upstream cannot
+  // fill a log sink.
+  it('holds the ceiling against a record that occupies the candidates', () => {
+    const prefix = 'K'.repeat(5000)
+    const withMark = (mark: string) =>
+      prefix.slice(0, 2000 - mark.length) + mark
+    const record: Record<string, unknown> = {}
+
+    // The oversized key goes in last, so its index is the seed count and the
+    // names it will reach for are `~2100`, then that mark grown once per retry.
+    let mark = '~2100'
+    for (let taken = 0; taken < 2100; taken++) {
+      record[withMark(mark)] = taken
+      mark += '~'
+    }
+    record[prefix] = 'the oversized one'
+
+    logErrorLine('Request error', () => record)
+
+    const written = recordOf()
+    const longest = Object.keys(written).reduce(
+      (worst, key) => Math.max(worst, key.length),
+      0
+    )
+
+    expect(longest).toBe(2000)
+    expect(Object.keys(written)).toHaveLength(2101)
+    expect(Object.values(written)).toContain('the oversized one')
+  })
+
   // The identity of an object that needs no cutting is preserved, which is what
   // lets the serialiser see a cycle as a cycle and refuse it once, instead of
   // recursing through copies.

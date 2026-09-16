@@ -20,12 +20,26 @@ const boundKey = (key: string, index: number, taken: Set<string>): string => {
     return key
   }
 
-  let mark = `~${index}`
-  let candidate = key.slice(0, MESSAGE_MAX_LENGTH - mark.length) + mark
+  // The mark counts in DIGITS, not in characters. A record whose keys are an
+  // upstream's own can occupy the first candidates deliberately, and a mark
+  // grown one character per retry then eats the room the key is cut to fit in:
+  // measured, two thousand occupied candidates produced a 7000-character key,
+  // inside the writer whose whole point is that one bad upstream cannot fill a
+  // log sink. A decimal counter cannot reach that length before it runs out of
+  // records to collide with.
+  const candidateFor = (attempt: number) => {
+    const mark = attempt === 0 ? `~${index}` : `~${index}.${attempt}`
 
-  while (taken.has(candidate)) {
-    mark += '~'
-    candidate = key.slice(0, MESSAGE_MAX_LENGTH - mark.length) + mark
+    return key.slice(0, Math.max(0, MESSAGE_MAX_LENGTH - mark.length)) + mark
+  }
+
+  let attempt = 0
+  let candidate = candidateFor(attempt)
+
+  // `taken` holds at most one name per entry, so one of `taken.size + 1`
+  // distinct candidates is free and the loop cannot run past that.
+  while (taken.has(candidate) && attempt <= taken.size) {
+    candidate = candidateFor(++attempt)
   }
 
   return candidate
