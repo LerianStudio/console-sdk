@@ -103,7 +103,14 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="data-[state=open]:bg-secondary absolute top-7 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden disabled:pointer-events-none">
+        {/* ⛔ THE RING IS NOT DECORATION. This carried `focus:outline-hidden`
+            and nothing else, so it removed the user agent's focus indicator and
+            replaced it with nothing: a reader tabbing through an open sheet
+            could not see where they were (SC 2.4.7), and the kit ships no
+            global focus-visible rule to supply one. The sidebar drawer put this
+            control on the navigation path of every phone. Same idiom as
+            `.button-base`, `Checkbox` and `Textarea`; no new colour. */}
+        <SheetPrimitive.Close className="data-[state=open]:bg-secondary ring-offset-background focus-visible:ring-ring absolute top-7 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none">
           <X className="h-6 w-6" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
