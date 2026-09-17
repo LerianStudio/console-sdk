@@ -22,7 +22,18 @@ type SidebarExpandButtonProps = {
 }
 
 export const SidebarExpandButton = ({ tooltip }: SidebarExpandButtonProps) => {
-  const { isCollapsed, toggleSidebar } = useSidebar()
+  const { isCollapsed, isMobile, toggleSidebar } = useSidebar()
+
+  /**
+   * Nothing to collapse in a drawer. The expanded branch below hangs its button
+   * at `right-[-20px]`, twenty pixels outside the rail — off the canvas of an
+   * overlay that has no page beside it — and collapsing to a 72px strip inside
+   * a 244px sheet is not a state worth reaching. The drawer's own close control
+   * and the backdrop are how it is dismissed.
+   */
+  if (isMobile) {
+    return null
+  }
 
   return (
     <React.Fragment>

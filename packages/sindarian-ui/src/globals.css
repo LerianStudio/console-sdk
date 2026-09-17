@@ -214,6 +214,20 @@
   :root {
     color-scheme: light; /* native widgets (form controls, scrollbars) follow the theme */
 
+    /*
+      Sidebar geometry. These were literals inside SidebarRoot's cva
+      (`w-[244px]` / `w-[72px]`), which a consumer could only override by
+      winning a specificity argument with `cn`. As custom properties the
+      default still ships with this sheet and a consumer re-points either one
+      from any ancestor — including the rail itself, via
+      `className="[--sidebar-width:280px]"`.
+
+      They are theme-independent on purpose: a rail is not wider in the dark.
+      The mobile drawer reads --sidebar-width too, so one override moves both.
+    */
+    --sidebar-width: 244px;
+    --sidebar-width-collapsed: 72px;
+
     /* Application tokens (from Figma ring-tokens) */
     --body-surface: 240 5% 96%; /* base/100 = #F4F4F5 */
     /*
