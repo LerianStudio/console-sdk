@@ -19,6 +19,11 @@ export type SidebarContextProps = {
   /** Whether the mobile drawer is showing. Meaningless while `isMobile` is false. */
   openMobile: boolean
   setOpenMobile: (open: boolean) => void
+  /**
+   * Puts focus back on whatever opened the drawer. `SidebarRoot` calls it when
+   * the drawer closes; nothing else should need it.
+   */
+  restoreDrawerFocus: () => void
   /** The drawer's DOM id, so `SidebarTrigger` can point `aria-controls` at it. */
   sidebarId: string
   items: Record<string, boolean>
@@ -45,8 +50,36 @@ export const SidebarProvider = ({ children }: React.PropsWithChildren) => {
   const [collapsed, setCollapsed] = React.useState<boolean>(false)
   const [items, _setItems] = React.useState<Record<string, boolean>>({})
   const [isMobile, setIsMobile] = React.useState(false)
-  const [openMobile, setOpenMobile] = React.useState(false)
+  const [openMobile, _setOpenMobile] = React.useState(false)
   const sidebarId = React.useId()
+
+  /**
+   * ⛔ RADIX CANNOT RESTORE THIS FOCUS BY ITSELF. `DialogContent` preventDefaults
+   * the focus scope's own restore and focuses `triggerRef.current` instead —
+   * the ref a `SheetTrigger` would have filled. The drawer is opened from this
+   * state rather than from a trigger inside the dialog, so that ref is null and
+   * closing dropped focus onto `<body>`: a keyboard reader who opened the
+   * navigation and pressed Escape was returned to the top of the document.
+   *
+   * Captured here rather than in `SidebarTrigger` so that a consumer opening
+   * the drawer from its own control gets the same behaviour.
+   */
+  const opener = React.useRef<HTMLElement | null>(null)
+
+  const setOpenMobile = React.useCallback((open: boolean) => {
+    if (open && typeof document !== 'undefined') {
+      opener.current = document.activeElement as HTMLElement | null
+    }
+    _setOpenMobile(open)
+  }, [])
+
+  const restoreDrawerFocus = React.useCallback(() => {
+    // `isConnected`: the control that opened the drawer may itself have been
+    // unmounted by whatever the reader did inside it.
+    if (opener.current?.isConnected) {
+      opener.current.focus()
+    }
+  }, [])
 
   const toggleSidebar = () => setCollapsed((collapsed) => !collapsed)
 
@@ -93,7 +126,7 @@ export const SidebarProvider = ({ children }: React.PropsWithChildren) => {
    */
   React.useEffect(() => {
     if (!isMobile) {
-      setOpenMobile(false)
+      _setOpenMobile(false)
     }
   }, [isMobile])
 
@@ -130,6 +163,7 @@ export const SidebarProvider = ({ children }: React.PropsWithChildren) => {
         isMobile,
         openMobile,
         setOpenMobile,
+        restoreDrawerFocus,
         sidebarId,
         items,
         setItems: _setItems,

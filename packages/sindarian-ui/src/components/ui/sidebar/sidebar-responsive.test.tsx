@@ -226,6 +226,27 @@ describe('SidebarRoot below 768px', () => {
     expect(screen.queryByRole('link', { name: 'Home' })).toBeNull()
   })
 
+  /**
+   * ⛔ RADIX RESTORES FOCUS TO ITS OWN TRIGGER REF, AND THERE ISN'T ONE.
+   *
+   * `DialogContent` preventDefaults the focus scope's restore and calls
+   * `triggerRef.current?.focus()` instead. The drawer is opened from provider
+   * state rather than from a `SheetTrigger`, so that ref is null and closing
+   * dropped focus onto `<body>` — a keyboard reader who opened the navigation,
+   * changed their mind and pressed Escape was returned to the top of the
+   * document with their place lost (SC 2.4.3).
+   */
+  it('returns focus to whatever opened the drawer', async () => {
+    render(<Nav />)
+    setViewport(true)
+
+    const trigger = screen.getByRole('button', { name: /navigation/i })
+    await userEvent.click(trigger)
+    await userEvent.keyboard('{Escape}')
+
+    expect(document.activeElement).toBe(trigger)
+  })
+
   it('keeps the consumer className and data attributes on the drawer nav', async () => {
     const { baseElement } = render(<Nav />)
     setViewport(true)

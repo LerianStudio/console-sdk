@@ -58,8 +58,14 @@ export const SidebarRoot = ({
   mobileTitle = 'Navigation',
   ...props
 }: SidebarRootProps) => {
-  const { isCollapsed, isMobile, openMobile, setOpenMobile, sidebarId } =
-    useSidebar()
+  const {
+    isCollapsed,
+    isMobile,
+    openMobile,
+    setOpenMobile,
+    restoreDrawerFocus,
+    sidebarId
+  } = useSidebar()
 
   const rail = (
     <nav
@@ -85,6 +91,15 @@ export const SidebarRoot = ({
         // The drawer has a title and no description; without this Radix warns
         // about the missing `aria-describedby` target on every open.
         aria-describedby={undefined}
+        // ⛔ RADIX'S OWN RESTORE GOES NOWHERE HERE. `DialogContent`
+        // preventDefaults the focus scope's restore and focuses the ref a
+        // `SheetTrigger` would have filled; this drawer is opened from provider
+        // state, so that ref is null and closing dropped focus onto `<body>`.
+        // Running first means `composeEventHandlers` skips Radix's half.
+        onCloseAutoFocus={(event) => {
+          event.preventDefault()
+          restoreDrawerFocus()
+        }}
       >
         {/* Named for a screen reader, silent for everyone else: the rail's own
             header is a "back to products" link, not a heading. */}
