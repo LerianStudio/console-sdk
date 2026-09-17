@@ -24,6 +24,10 @@ export type PasswordFieldProps<
   required?: boolean
   disabled?: boolean
   'data-testid'?: string
+  /** Accessible name of the eye button while the password is hidden. */
+  showPasswordLabel?: string
+  /** Accessible name of the eye button while the password is showing. */
+  hidePasswordLabel?: string
 }
 
 export function PasswordField<
@@ -37,7 +41,9 @@ export function PasswordField<
   control,
   required = false,
   disabled = false,
-  'data-testid': dataTestId
+  'data-testid': dataTestId,
+  showPasswordLabel = 'Show password',
+  hidePasswordLabel = 'Hide password'
 }: PasswordFieldProps<TFieldValues, TName>) {
   const [show, setShow] = React.useState(false)
 
@@ -59,13 +65,21 @@ export function PasswordField<
               placeholder={placeholder}
               endAdornment={
                 <InputAdornment position="end">
+                  {/* ⛔ A GLYPH IS NOT A NAME. This button renders an Eye and
+                      nothing else, so it announced as "button" on every
+                      credential form in the fleet (SC 4.1.2). `aria-pressed`
+                      carries the state — is the password showing — and the
+                      name carries what pressing it will DO, so neither has to
+                      be inferred from the icon. */}
                   <IconButton
                     type="button"
                     variant="outline"
                     rounded
+                    aria-label={show ? hidePasswordLabel : showPasswordLabel}
+                    aria-pressed={show}
                     onClick={() => setShow(!show)}
                   >
-                    {show ? <EyeOff /> : <Eye />}
+                    {show ? <EyeOff aria-hidden /> : <Eye aria-hidden />}
                   </IconButton>
                 </InputAdornment>
               }

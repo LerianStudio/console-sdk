@@ -28,3 +28,26 @@ export const Primary: StoryObj<PasswordFieldProps> = {
     )
   }
 }
+
+/**
+ * The eye button's accessible name, made visible. Toggling it flips both the
+ * name and `aria-pressed`, so a screen reader hears the action and the state.
+ */
+export const TranslatedToggleLabels: StoryObj<PasswordFieldProps> = {
+  args: {
+    name: 'password',
+    label: 'Senha',
+    placeholder: 'Digite a senha...',
+    showPasswordLabel: 'Mostrar senha',
+    hidePasswordLabel: 'Ocultar senha'
+  },
+  render: (args) => {
+    const form = useForm()
+
+    return (
+      <Form {...form}>
+        <PasswordField {...args} />
+      </Form>
+    )
+  }
+}
