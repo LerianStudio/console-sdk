@@ -35,7 +35,10 @@ export const Primary: StoryObj<typeof Breadcrumb> = {
         <BreadcrumbItem>
           <BreadcrumbPage>Breadcrumb</BreadcrumbPage>
         </BreadcrumbItem>
-        <BreadcrumbSeparator />
+        {/* ⛔ NO SEPARATOR AFTER THE LAST CRUMB. This example carried one, and
+            the composed `Breadcrumb` — the component every console page
+            actually renders — emitted one per item for the same reason: the
+            trail ended in a chevron pointing at a level that does not exist. */}
       </BreadcrumbList>
     </Breadcrumb>
   )
