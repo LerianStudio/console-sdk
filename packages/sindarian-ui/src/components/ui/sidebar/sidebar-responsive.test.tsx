@@ -2,7 +2,13 @@ import '@testing-library/jest-dom'
 import React from 'react'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import { act, render, renderHook, screen } from '@testing-library/react'
+import {
+  act,
+  render,
+  renderHook,
+  screen,
+  waitFor
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Home } from 'lucide-react'
 import {
@@ -70,10 +76,19 @@ beforeEach(() => {
   }))
 })
 
-const Nav = () => (
+/**
+ * The console's own shape: a consumer className carrying a rail-width rule, a
+ * data attribute for the product tour, and no `mobile` prop unless a case sets
+ * one. `min-w-70` is what all eight `src/components/sidebar/*.tsx` pass today.
+ */
+const Nav = ({ mobile }: { mobile?: 'inline' | 'drawer' }) => (
   <SidebarProvider>
     <SidebarTrigger />
-    <SidebarRoot className="h-full" data-tour="midaz-sidebar">
+    <SidebarRoot
+      mobile={mobile}
+      className="h-full data-[collapsed=false]:min-w-70"
+      data-tour="midaz-sidebar"
+    >
       <SidebarContent>
         <SidebarGroup>
           <SidebarItem title="Home" icon={<Home />} href="/" />
@@ -82,6 +97,8 @@ const Nav = () => (
     </SidebarRoot>
   </SidebarProvider>
 )
+
+const Drawer = () => <Nav mobile="drawer" />
 
 const wrapper = ({ children }: React.PropsWithChildren) => (
   <SidebarProvider>{children}</SidebarProvider>
@@ -128,15 +145,30 @@ describe('SidebarProvider viewport state', () => {
     expect(result.current.openMobile).toBe(false)
   })
 
-  it('never reports a collapsed rail while the drawer is the layout', () => {
+  /**
+   * ⛔ THE COLLAPSE FLAG IS THE PROVIDER'S, AND A NARROW VIEWPORT DOES NOT TOUCH
+   * IT. It used to be forced false whenever `isMobile`, which quietly changed
+   * the rail for every consumer that had not asked for a drawer. The override
+   * now lives in the drawer's own subtree, so a consumer left on `mobile="inline"`
+   * keeps exactly the rail it has today, collapsed or not.
+   */
+  it('leaves the collapsed rail alone when the viewport narrows', () => {
     const { result } = renderHook(() => useSidebar(), { wrapper })
 
     act(() => result.current.toggleSidebar())
     expect(result.current.isCollapsed).toBe(true)
 
-    // A 244px drawer showing icon-only items would be the worst of both.
     setViewport(true)
-    expect(result.current.isCollapsed).toBe(false)
+    expect(result.current.isCollapsed).toBe(true)
+  })
+
+  it('exposes the drawer state in both modes, so a consumer can drive its own', () => {
+    const { result } = renderHook(() => useSidebar(), { wrapper })
+
+    setViewport(true)
+    expect(result.current.isMobile).toBe(true)
+    act(() => result.current.setOpenMobile(true))
+    expect(result.current.openMobile).toBe(true)
   })
 
   it('survives an environment with no matchMedia at all', () => {
@@ -150,7 +182,7 @@ describe('SidebarProvider viewport state', () => {
 
 describe('SidebarRoot widths', () => {
   it('takes its expanded width from a CSS variable a consumer can override', () => {
-    const { container } = render(<Nav />)
+    const { container } = render(<Drawer />)
 
     expect(container.querySelector('[data-slot="sidebar-root"]')).toHaveClass(
       'w-[var(--sidebar-width)]'
@@ -196,9 +228,62 @@ describe('SidebarRoot widths', () => {
   })
 })
 
-describe('SidebarRoot below 768px', () => {
-  it('renders no inline rail at all', () => {
+/**
+ * ⛔ THE DRAWER IS OPT-IN, AND THAT IS A CONSUMER-SAFETY RULE RATHER THAN A
+ * TASTE.
+ *
+ * The kit's `SidebarTrigger` is the only way back into a drawer, and it must
+ * render inside `SidebarProvider` — which the console mounts INSIDE each
+ * `*-sidebar.tsx`, below its `<Header />`. So a console that merely bumps this
+ * dependency cannot have a trigger yet, and a drawer-by-default would hand it a
+ * phone with no navigation at all: strictly worse than the rail that eats the
+ * screen. `mobile` defaults to `'inline'`, which is byte-for-byte today's
+ * behaviour, and a consumer opts in once it has somewhere to put the trigger.
+ */
+describe('SidebarRoot in the default inline mode', () => {
+  it('still renders the rail below 768px', () => {
     const { container } = render(<Nav />)
+
+    setViewport(true)
+    expect(container.querySelector('[data-slot="sidebar-root"]')).toBeTruthy()
+  })
+
+  it('mounts no drawer at all, so nothing can trap focus over the page', async () => {
+    const { baseElement } = render(<Nav />)
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+
+    expect(baseElement.querySelector('[data-slot="sheet-content"]')).toBeNull()
+    expect(baseElement.querySelector('[data-slot="sheet-overlay"]')).toBeNull()
+  })
+
+  it('keeps the rail collapsed below 768px if that is how the reader left it', async () => {
+    localStorage.setItem('sidebar-collapsed', 'true')
+    const { container } = render(<Nav />)
+    const rail = () => container.querySelector('[data-slot="sidebar-root"]')
+
+    // The stored preference arrives after hydration, not on the first paint.
+    await waitFor(() =>
+      expect(rail()).toHaveAttribute('data-collapsed', 'true')
+    )
+
+    setViewport(true)
+    expect(rail()).toHaveAttribute('data-collapsed', 'true')
+  })
+
+  it('keeps the rail collapse control, which the drawer removes', async () => {
+    const { container } = render(<Nav />)
+    setViewport(true)
+
+    expect(container.querySelector('[data-slot="sidebar-root"]')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /navigation/i })).toBeTruthy()
+  })
+})
+
+describe('SidebarRoot in drawer mode below 768px', () => {
+  it('renders no inline rail at all', () => {
+    const { container } = render(<Drawer />)
     expect(container.querySelector('[data-slot="sidebar-root"]')).toBeTruthy()
 
     setViewport(true)
@@ -206,7 +291,7 @@ describe('SidebarRoot below 768px', () => {
   })
 
   it('shows the navigation in a drawer once the trigger is pressed', async () => {
-    render(<Nav />)
+    render(<Drawer />)
     setViewport(true)
 
     expect(screen.queryByRole('link', { name: 'Home' })).toBeNull()
@@ -216,7 +301,7 @@ describe('SidebarRoot below 768px', () => {
   })
 
   it('closes the drawer on Escape', async () => {
-    render(<Nav />)
+    render(<Drawer />)
     setViewport(true)
 
     await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
@@ -237,7 +322,7 @@ describe('SidebarRoot below 768px', () => {
    * document with their place lost (SC 2.4.3).
    */
   it('returns focus to whatever opened the drawer', async () => {
-    render(<Nav />)
+    render(<Drawer />)
     setViewport(true)
 
     const trigger = screen.getByRole('button', { name: /navigation/i })
@@ -247,8 +332,19 @@ describe('SidebarRoot below 768px', () => {
     expect(document.activeElement).toBe(trigger)
   })
 
+  it('renders full-width items rather than an icon rail, even when collapsed on desktop', async () => {
+    localStorage.setItem('sidebar-collapsed', 'true')
+    render(<Drawer />)
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+
+    // The icon-only variant renders the title in a tooltip instead of inline.
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveTextContent('Home')
+  })
+
   it('keeps the consumer className and data attributes on the drawer nav', async () => {
-    const { baseElement } = render(<Nav />)
+    const { baseElement } = render(<Drawer />)
     setViewport(true)
 
     await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
@@ -261,7 +357,7 @@ describe('SidebarRoot below 768px', () => {
 
 describe('SidebarTrigger', () => {
   it('names itself in English with no props', () => {
-    render(<Nav />)
+    render(<Drawer />)
 
     expect(
       screen.getByRole('button', { name: 'Open navigation' })
@@ -281,7 +377,7 @@ describe('SidebarTrigger', () => {
   })
 
   it('reports the drawer state through aria-expanded', async () => {
-    render(<Nav />)
+    render(<Drawer />)
     setViewport(true)
 
     const trigger = screen.getByRole('button', { name: /navigation/i })
@@ -292,7 +388,7 @@ describe('SidebarTrigger', () => {
   })
 
   it('points aria-controls at the drawer only while the drawer exists', async () => {
-    const { baseElement } = render(<Nav />)
+    const { baseElement } = render(<Drawer />)
     setViewport(true)
 
     const trigger = screen.getByRole('button', { name: /navigation/i })

@@ -111,9 +111,14 @@ const Nav = () => (
 )
 
 /**
- * The same tree at two viewports. Resize the preview past 768px to swap
- * between them: above it the rail is a column of the layout, below it the rail
- * is not rendered at all and `SidebarTrigger` opens an overlay drawer instead.
+ * ⛔ OPT-IN: `mobile="drawer"`. The default is `'inline'`, which renders the
+ * rail at every viewport exactly as it always has — because `SidebarTrigger` is
+ * the only way back into a drawer, and a consumer that has not placed one yet
+ * would be left with no navigation at all on a phone.
+ *
+ * The same tree at two viewports. Resize the preview past 768px to swap between
+ * them: above it the rail is a column of the layout, below it the rail is not
+ * rendered and the trigger opens an overlay drawer instead.
  *
  * The rail used to be `w-[244px]` unconditionally, which at 390px is 63% of the
  * screen with no way to dismiss it.
@@ -126,7 +131,7 @@ export const Responsive: StoryObj = {
     <PageRoot>
       <PageView>
         <SidebarProvider>
-          <SidebarRoot className="h-full">
+          <SidebarRoot mobile="drawer" className="h-full">
             <Nav />
           </SidebarRoot>
           <PageContent>
@@ -160,6 +165,36 @@ export const CustomWidth: StoryObj = {
             <Nav />
           </SidebarRoot>
           <PageContent />
+        </SidebarProvider>
+      </PageView>
+    </PageRoot>
+  )
+}
+
+/**
+ * The DEFAULT, for comparison: no `mobile` prop. Below 768px this still renders
+ * the inline rail, exactly as every release before this one did, and the
+ * reader's collapsed preference still reaches it. Resize the preview under
+ * 768px next to `Responsive` to see the two side by side.
+ */
+export const ResponsiveOptOut: StoryObj = {
+  parameters: {
+    viewport: { defaultViewport: 'mobile1' }
+  },
+  render: () => (
+    <PageRoot>
+      <PageView>
+        <SidebarProvider>
+          <SidebarRoot className="h-full">
+            <Nav />
+          </SidebarRoot>
+          <PageContent>
+            <div className="p-4">
+              <p className="text-muted-foreground text-sm">
+                No `mobile` prop: the rail is still here below 768px.
+              </p>
+            </div>
+          </PageContent>
         </SidebarProvider>
       </PageView>
     </PageRoot>

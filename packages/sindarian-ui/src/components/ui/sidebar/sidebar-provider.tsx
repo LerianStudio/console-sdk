@@ -14,7 +14,17 @@ export const SIDEBAR_MOBILE_QUERY = '(max-width: 767px)'
 
 export type SidebarContextProps = {
   isCollapsed: boolean
-  /** True while the viewport is narrow enough that the rail is a drawer. */
+  /**
+   * True only inside a drawer that `SidebarRoot` is actually rendering, which
+   * needs `mobile="drawer"` as well as a narrow viewport. `SidebarRoot`
+   * re-provides the context for that subtree; nothing else sets it.
+   */
+  isDrawer: boolean
+  /**
+   * True while the viewport is narrow enough for a drawer. Reported in BOTH
+   * modes, so a consumer still on `mobile="inline"` can build its own
+   * responsive behaviour from it.
+   */
   isMobile: boolean
   /** Whether the mobile drawer is showing. Meaningless while `isMobile` is false. */
   openMobile: boolean
@@ -33,9 +43,15 @@ export type SidebarContextProps = {
   toggleSidebar: () => void
 }
 
-const SidebarContext = React.createContext<SidebarContextProps | undefined>(
-  undefined
-)
+/**
+ * Exported so `SidebarRoot` can re-provide it for the drawer's subtree. That
+ * subtree is the only place `isCollapsed` and `isDrawer` differ from the
+ * provider's own values, and scoping the override to it is what keeps a
+ * consumer on `mobile="inline"` seeing exactly today's rail.
+ */
+export const SidebarContext = React.createContext<
+  SidebarContextProps | undefined
+>(undefined)
 
 export const useSidebar = () => {
   const context = React.useContext(SidebarContext)
@@ -151,15 +167,15 @@ export const SidebarProvider = ({ children }: React.PropsWithChildren) => {
     <SidebarContext.Provider
       value={{
         /**
-         * ⛔ NEVER COLLAPSED IN A DRAWER, and this is the only place that can
-         * say so. `SidebarItem` and `SidebarGroupTitle` read this flag straight
-         * off the context rather than off the DOM, so a rail collapsed on
-         * desktop would follow the reader onto their phone and render an
-         * icon-only strip inside a 244px overlay — the cost of both layouts and
-         * the benefit of neither. The stored preference is untouched: it comes
-         * back when the viewport does.
+         * ⚠️ A NARROW VIEWPORT DOES NOT TOUCH THIS. It used to be forced false
+         * whenever `isMobile`, which silently changed the rail for every
+         * consumer — including the ones that never asked for a drawer.
+         * `SidebarRoot` overrides it for the drawer's own subtree instead, so
+         * the stored preference reaches an inline rail unchanged at every
+         * viewport.
          */
-        isCollapsed: isMobile ? false : collapsed,
+        isCollapsed: collapsed,
+        isDrawer: false,
         isMobile,
         openMobile,
         setOpenMobile,
