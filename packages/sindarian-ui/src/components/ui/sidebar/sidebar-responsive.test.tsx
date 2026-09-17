@@ -13,6 +13,7 @@ import userEvent from '@testing-library/user-event'
 import { Home } from 'lucide-react'
 import {
   SidebarContent,
+  SidebarExpandButton,
   SidebarGroup,
   SidebarItem,
   SidebarProvider,
@@ -80,6 +81,12 @@ beforeEach(() => {
  * The console's own shape: a consumer className carrying a rail-width rule, a
  * data attribute for the product tour, and no `mobile` prop unless a case sets
  * one. `min-w-70` is what all eight `src/components/sidebar/*.tsx` pass today.
+ *
+ * ⛔ `SidebarExpandButton` IS PART OF THE FIXTURE, NOT DECORATION. All eight
+ * console sidebars render one, and whether it survives a narrow viewport is
+ * half of what `mobile="inline"` promises. Without it in the tree a revert of
+ * `SidebarExpandButton` to keying off `isMobile` passed this whole file — a
+ * five-mutation sweep found exactly that, and it is the one mutant that lived.
  */
 const Nav = ({ mobile }: { mobile?: 'inline' | 'drawer' }) => (
   <SidebarProvider>
@@ -94,6 +101,7 @@ const Nav = ({ mobile }: { mobile?: 'inline' | 'drawer' }) => (
           <SidebarItem title="Home" icon={<Home />} href="/" />
         </SidebarGroup>
       </SidebarContent>
+      <SidebarExpandButton />
     </SidebarRoot>
   </SidebarProvider>
 )
@@ -272,12 +280,45 @@ describe('SidebarRoot in the default inline mode', () => {
     expect(rail()).toHaveAttribute('data-collapsed', 'true')
   })
 
-  it('keeps the rail collapse control, which the drawer removes', async () => {
-    const { container } = render(<Nav />)
-    setViewport(true)
+  /**
+   * ⛔ THE OTHER HALF OF WHAT `'inline'` PROMISES, AND IT WAS UNGUARDED.
+   *
+   * `SidebarExpandButton` keys off `isDrawer`, not `isMobile`. Keying off
+   * `isMobile` — which is what it did when the drawer was unconditional —
+   * removes the collapse control from an inline rail the moment the viewport
+   * narrows, so all eight console sidebars would silently lose it below 768px
+   * on the default path, which is the path every consumer is on.
+   *
+   * This case previously asserted the `/navigation/i` button, which is
+   * `SidebarTrigger`, not this control; it duplicated the case above and the
+   * revert survived the whole file.
+   */
+  it('keeps the rail collapse control below 768px', async () => {
+    render(<Nav />)
+    const control = () =>
+      screen.queryByRole('button', { name: /collapse sidebar/i })
 
-    expect(container.querySelector('[data-slot="sidebar-root"]')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /navigation/i })).toBeTruthy()
+    expect(control()).toBeTruthy()
+
+    setViewport(true)
+    expect(control()).toBeTruthy()
+  })
+
+  it('still offers the collapse control on a rail the reader collapsed', async () => {
+    localStorage.setItem('sidebar-collapsed', 'true')
+    render(<Nav />)
+
+    // Collapsed, the control invites the opposite action.
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: /expand sidebar/i })
+      ).toBeTruthy()
+    )
+
+    setViewport(true)
+    expect(
+      screen.queryByRole('button', { name: /expand sidebar/i })
+    ).toBeTruthy()
   })
 })
 
@@ -376,6 +417,25 @@ describe('SidebarRoot in drawer mode below 768px', () => {
 
     // The icon-only variant renders the title in a tooltip instead of inline.
     expect(screen.getByRole('link', { name: 'Home' })).toHaveTextContent('Home')
+  })
+
+  /**
+   * The mirror of the inline case above. The rail's collapse control hangs at
+   * `right-[-20px]`, twenty pixels outside the rail — off the canvas of an
+   * overlay with no page beside it — and collapsing to a 72px strip inside a
+   * 244px sheet is not a state worth reaching. The drawer's own close control
+   * and the backdrop are how it is dismissed.
+   */
+  it('drops the rail collapse control inside the drawer', async () => {
+    render(<Drawer />)
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+
+    expect(
+      screen.queryByRole('button', { name: /collapse sidebar/i })
+    ).toBeNull()
+    expect(screen.queryByRole('button', { name: /expand sidebar/i })).toBeNull()
   })
 
   it('keeps the consumer className and data attributes on the drawer nav', async () => {
