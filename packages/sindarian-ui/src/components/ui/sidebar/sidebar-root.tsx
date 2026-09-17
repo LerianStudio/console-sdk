@@ -137,7 +137,14 @@ export const SidebarRoot = ({
             id={sidebarId}
             data-slot="sidebar-root"
             data-mobile="true"
-            data-collapsed={false}
+            /* ⛔ NO `data-collapsed` HERE. The consumer className is forwarded
+               verbatim, and all eight console sidebars pass
+               `data-[collapsed=false]:min-w-70`; stamping the attribute armed
+               it, giving the navigation a 280px min-width inside a 244px sheet.
+               `min-width` resolves after `max-width`, so the sheet could not
+               claw it back and the contents were 36px wider than the drawer.
+               `data-mobile` already names this surface and a drawer is never
+               collapsed, so the attribute had nothing left to say. */
             className={cn(
               sidebarVariants({ collapsed: false }),
               'h-full w-full shadow-none',

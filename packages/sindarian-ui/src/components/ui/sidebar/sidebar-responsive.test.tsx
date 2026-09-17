@@ -332,6 +332,41 @@ describe('SidebarRoot in drawer mode below 768px', () => {
     expect(document.activeElement).toBe(trigger)
   })
 
+  it('closes the drawer on a backdrop click', async () => {
+    const { baseElement } = render(<Drawer />)
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+    expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument()
+
+    const overlay = baseElement.querySelector('[data-slot="sheet-overlay"]')!
+    await userEvent.click(overlay)
+
+    expect(screen.queryByRole('link', { name: 'Home' })).toBeNull()
+  })
+
+  /**
+   * ⛔ THE DRAWER MUST NOT ARM RAIL-SHAPED RULES.
+   *
+   * The consumer className is forwarded verbatim onto the drawer's `<nav>`, and
+   * all eight console sidebars pass `data-[collapsed=false]:min-w-70`. Stamping
+   * `data-collapsed="false"` there armed it: `min-width: 280px` inside a 244px
+   * sheet, which `max-w-full` cannot claw back because `min-width` resolves
+   * last, so the navigation was 36px wider than the drawer holding it.
+   * `data-mobile="true"` already names this surface, and a drawer is never
+   * collapsed, so the attribute had nothing left to say.
+   */
+  it('carries no data-collapsed, so a rail width rule cannot fire inside it', async () => {
+    const { baseElement } = render(<Drawer />)
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+
+    const nav = baseElement.querySelector('[data-slot="sidebar-root"]')
+    expect(nav).not.toHaveAttribute('data-collapsed')
+    expect(nav).toHaveAttribute('data-mobile', 'true')
+  })
+
   it('renders full-width items rather than an icon rail, even when collapsed on desktop', async () => {
     localStorage.setItem('sidebar-collapsed', 'true')
     render(<Drawer />)
