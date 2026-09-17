@@ -768,3 +768,28 @@ export function Autocomplete({
     </AutocompleteContext.Provider>
   )
 }
+
+/**
+ * ⛔ THE REST OF THE SET, FOR THE SAME REASON AS `AutocompleteItem` ABOVE.
+ *
+ * A function component's `name` is whatever the bundler left it — one letter in
+ * a production build — so any lookup written against `child.type` needs an
+ * explicit string to compare. `AutocompleteItem` is the only part the walk
+ * reads TODAY, and it is the part that shipped an empty option registry to
+ * every consumer while it was anonymous. Naming the whole set costs a line each
+ * and removes the next instance of that defect before it is written; it also
+ * makes these parts legible in a React tree, which `MultipleSelect` next door
+ * has always done.
+ *
+ * `__tests__`-style enumeration lives in `autocomplete.test.tsx`: it reads the
+ * module's exports rather than a list, so a new part added without a name fails
+ * without anyone remembering to extend anything.
+ */
+Autocomplete.displayName = 'Autocomplete'
+AutocompleteTrigger.displayName = 'AutocompleteTrigger'
+AutocompleteValue.displayName = 'AutocompleteValue'
+AutocompleteMultipleValue.displayName = 'AutocompleteMultipleValue'
+AutocompleteContent.displayName = 'AutocompleteContent'
+AutocompleteGroup.displayName = 'AutocompleteGroup'
+AutocompleteEmpty.displayName = 'AutocompleteEmpty'
+AutocompleteLoading.displayName = 'AutocompleteLoading'

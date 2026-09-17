@@ -22,6 +22,7 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
+import * as Autocomplete_ALL from '.'
 import {
   Autocomplete,
   AutocompleteContent,
@@ -395,5 +396,39 @@ describe('an item whose children are not text', () => {
 
     await waitFor(() => expect(combobox()).toHaveValue('next'))
     expect(combobox()).not.toHaveValue('[object Object]')
+  })
+})
+
+/**
+ * EVERY PART IN THIS FILE CARRIES ITS OWN displayName.
+ *
+ * `AutocompleteContent._searchChildren` identifies an option by
+ * `child.type.displayName === 'AutocompleteItem'` — a STRING comparison against
+ * a value a function component does not have unless it is assigned one.
+ * `AutocompleteItem` got its assignment when the empty-registry defect above
+ * was fixed; every other part in the file was left anonymous, which is the same
+ * defect waiting for the next lookup: a bundler renames `AutocompleteValue` to
+ * a single letter, `child.type.name` reads that letter, and a walk written
+ * against it matches nothing in production while passing every test in
+ * development.
+ *
+ * The whole export set rather than the one part the walk reads today, because
+ * the cost of a name is a line and the cost of the missing one was an option
+ * registry that stayed empty for every consumer of a shipped release.
+ *
+ * Read off the module rather than listed here: a new export added without a
+ * name fails this without anyone remembering to extend a list.
+ */
+describe('component identity', () => {
+  const parts = Object.entries(
+    Autocomplete_ALL as Record<string, { displayName?: string }>
+  ).filter(([name]) => name.startsWith('Autocomplete'))
+
+  it('exports the parts this test walks', () => {
+    expect(parts.length).toBeGreaterThanOrEqual(9)
+  })
+
+  it.each(parts)('%s declares a displayName', (name, part) => {
+    expect(part.displayName).toBe(name)
   })
 })
