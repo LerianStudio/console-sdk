@@ -286,7 +286,7 @@ export function PageHeaderCollapsibleInfo({
             */}
             <h2 className="text-foreground text-xl font-bold">{question}</h2>
 
-            <p className="text-shadcn-500 text-sm leading-relaxed font-medium">
+            <p className="text-muted-foreground text-sm leading-relaxed font-medium">
               {answer}
               {seeMore && href && (
                 <>
@@ -312,7 +312,7 @@ export function PageHeaderCollapsibleInfo({
 
           <CollapsibleTrigger asChild>
             <Button variant="link" className="cursor-pointer self-start">
-              <ChevronUp size={24} className="text-shadcn-500" />
+              <ChevronUp size={24} className="text-muted-foreground" />
             </Button>
           </CollapsibleTrigger>
         </div>

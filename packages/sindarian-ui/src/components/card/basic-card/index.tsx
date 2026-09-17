@@ -19,7 +19,7 @@ export function BasicCardTitle({
 }: React.ComponentProps<'h2'>) {
   return (
     <h2
-      className={cn('text-shadcn-600 mb-4 text-sm font-medium', className)}
+      className={cn('text-foreground mb-4 text-sm font-medium', className)}
       {...props}
     />
   )
@@ -31,7 +31,10 @@ export function BasicCardContent({
 }: React.ComponentProps<'div'>) {
   return (
     <div
-      className={cn('text-shadcn-500 mb-6 text-sm font-medium', className)}
+      className={cn(
+        'text-muted-foreground mb-6 text-sm font-medium',
+        className
+      )}
       {...props}
     />
   )

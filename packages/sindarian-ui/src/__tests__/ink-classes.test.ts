@@ -158,6 +158,53 @@ describe('the raw base/400 step', () => {
   })
 })
 
+/**
+ * THE REST OF THE RAW GREY RAMP, FOR THE REASON base/400 WAS BANNED AND ONE
+ * MORE: these steps are flat hex in `@theme`, so they ANSWER TO NO THEME. The
+ * ground moves under them when the console flips to dark and the ink does not.
+ *
+ * base/500 (#71717A) is the one that looks safe on paper — 4.83:1 on the light
+ * `--background`, which is how nine slots came to spend it. Measured on the
+ * grounds the kit actually paints it on:
+ *
+ *              light bg   light card   DARK bg   DARK card
+ *   base/500     4.83         4.83        3.07      2.16
+ *   base/600    14.89        14.89        1.00      1.43
+ *
+ * Every one of those dark numbers is under the 4.5:1 AA floor for body text,
+ * and base/600 on the dark background is 1.00:1 — the ink and the ground are
+ * the same colour, so the text is not merely hard to read, it is not there.
+ * `AccountBalanceCardTrigger` spent it at 40% opacity on top of that, on the
+ * label of an interactive control.
+ *
+ * `--muted-foreground` is the kit's secondary ink (7.69:1 light, 6.36:1 dark on
+ * `--card`) and `--foreground` its primary; both are gated against every
+ * generic surface in both themes in `__tests__/tokens-contract.test.ts`, so
+ * this ban cannot be satisfied by a token that is no better.
+ *
+ * ⚠️ base/300 IS NOT IN THIS BAN, and that is measured rather than conceded:
+ * its two sites (`ui/tooltip/index.tsx`, `page-header/index.tsx:232`) both
+ * paint on `bg-shadcn-600`, the kit's one fixed-dark fill, where it reads
+ * 10.08:1 and is theme-independent with its ground. That pairing is measured in
+ * `tokens-contract.test.ts` as the tooltip pair. On any LIGHT ground base/300
+ * is 1.48:1, so a third site would be a defect — one this rule does not see.
+ * The reason it stays out is that a step-name ban cannot express "except on the
+ * inverted fill", and a ban with an exception list is the shape that rotted the
+ * base/400 rule the first time it was written.
+ */
+describe('the raw base/500 and base/600 steps', () => {
+  it.each(['500', '600'])(
+    'base/%s is never used as text ink',
+    (step: string) => {
+      // `(?![\w-])` admits the alpha suffix, so `text-shadcn-600/40` is the
+      // same finding as the bare class — it was in fact the worst of them.
+      expect(
+        hits(new RegExp(`(?<![\\w-])text-shadcn-${step}(?![\\w-])`))
+      ).toEqual([])
+    }
+  )
+})
+
 const PROSE_SLOTS: Array<[string, string, string]> = [
   [
     'components/ui/form.tsx',
