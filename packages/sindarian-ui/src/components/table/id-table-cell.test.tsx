@@ -91,6 +91,50 @@ describe('IdTableCell truncation', () => {
     expect(writeText).toHaveBeenCalledWith(LONG)
   })
 
+  /**
+   * ⛔ A BAD LENGTH MUST NOT TAKE THE TABLE DOWN, AND MUST NOT LENGTHEN THE ID.
+   *
+   * `head` and `tail` reach this from a consumer's props, so they arrive as
+   * whatever the caller computed — and this runs in a render path, where
+   * throwing unmounts the whole table rather than one cell. `String.slice`
+   * reads a negative number as an offset from the END, so a negative `head`
+   * silently kept nearly the entire id and put an ellipsis in the middle of
+   * it; `NaN` read as 0 and dropped the head, which is the failure middle
+   * truncation exists to prevent. Both ends are clamped to a non-negative
+   * whole number, and anything that is not a finite number falls back to the
+   * default.
+   */
+  it.each([
+    ['negative', -5, -3],
+    ['fractional', 8.7, 4.2],
+    ['NaN', NaN, NaN],
+    ['Infinity', Infinity, -Infinity]
+  ])('renders a sane truncation for %s lengths', (_label, head, tail) => {
+    row(<IdTableCell id={LONG} head={head} tail={tail} />)
+
+    const rendered = screen.getByText(/…|^0{8}/).textContent ?? ''
+    expect(rendered.length).toBeLessThanOrEqual(LONG.length)
+    expect(LONG.startsWith(rendered.split('…')[0])).toBe(true)
+  })
+
+  it('clamps a negative length to zero rather than slicing from the end', () => {
+    row(<IdTableCell id={LONG} head={-5} tail={4} />)
+
+    expect(screen.getByText('…0123')).toBeInTheDocument()
+  })
+
+  it('truncates a fractional length to a whole character count', () => {
+    row(<IdTableCell id={LONG} head={8.9} tail={4.9} />)
+
+    expect(screen.getByText('00000000…0123')).toBeInTheDocument()
+  })
+
+  it('falls back to the defaults when a length is not a finite number', () => {
+    row(<IdTableCell id={LONG} head={NaN} tail={Infinity} />)
+
+    expect(screen.getByText('00000000…0123')).toBeInTheDocument()
+  })
+
   it('renders nothing rather than throwing when the id is absent', () => {
     const { container } = row(<IdTableCell />)
 
