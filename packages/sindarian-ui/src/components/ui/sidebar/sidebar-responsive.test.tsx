@@ -343,8 +343,12 @@ describe('SidebarRoot widths', () => {
  * `*-sidebar.tsx`, below its `<Header />`. So a console that merely bumps this
  * dependency cannot have a trigger yet, and a drawer-by-default would hand it a
  * phone with no navigation at all: strictly worse than the rail that eats the
- * screen. `mobile` defaults to `'inline'`, which is byte-for-byte today's
- * behaviour, and a consumer opts in once it has somewhere to put the trigger.
+ * screen. `mobile` defaults to `'inline'`, which is identical behaviour for a
+ * consumer that imports the kit's `globals.css` — the rail's one changed token
+ * is `w-[244px]` → `w-[var(--sidebar-width)]`, and that resolves to the same
+ * 244px only from the declaration this sheet ships. A consumer taking the
+ * components without the stylesheet gets `width: auto`. Opt in once there is
+ * somewhere to put the trigger.
  */
 describe('SidebarRoot in the default inline mode', () => {
   it('still renders the rail below 768px', () => {
