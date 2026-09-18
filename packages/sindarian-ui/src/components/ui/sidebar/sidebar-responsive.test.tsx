@@ -472,6 +472,57 @@ describe('SidebarRoot in drawer mode below 768px', () => {
   })
 
   /**
+   * ⛔ A DRAWER THE VIEWPORT DISMISSED IS NOT A DRAWER THE READER DISMISSED,
+   * AND FOCUS CANNOT GO BACK TO THE OPENER.
+   *
+   * A tablet rotated from portrait to landscape with the navigation open: the
+   * viewport crosses 768px, the drawer is unmounted in favour of the rail, and
+   * `SidebarTrigger` carries `md:hidden` — so the control that opened it is
+   * still CONNECTED and now `display: none`. `.focus()` on it is a no-op, and
+   * Radix's own restore has already been `preventDefault()`ed, so focus landed
+   * nowhere and fell to `<body>`: the same SC 2.4.3 failure the restore was
+   * written to close, in the one case `isConnected` cannot see. Measured in
+   * Chromium at 390px → 1280px:
+   * `{"sheets":0,"rails":1,"triggerDisplay":"none","focus":"BODY:"}`.
+   *
+   * Focus goes to the rail, not back to the hamburger, because the hamburger
+   * is what the same breakpoint just hid and the rail is what the drawer
+   * became. The reader is left inside the navigation they were already in.
+   */
+  it('lands focus in the rail when the viewport grows past the breakpoint', async () => {
+    render(<Drawer />)
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+
+    setViewport(false)
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    expect(document.activeElement).not.toBe(document.body)
+    expect(
+      document.activeElement?.closest('[data-slot="sidebar-root"]')
+    ).toBeTruthy()
+  })
+
+  /**
+   * The reader's OWN dismissal is untouched: they chose to leave, so they go
+   * back where they were. Only a breakpoint dismissal overrides that.
+   */
+  it('still returns focus to the opener when the reader closes it themselves', async () => {
+    render(<Drawer />)
+    setViewport(true)
+
+    const trigger = screen.getByRole('button', { name: /navigation/i })
+    await userEvent.click(trigger)
+    await userEvent.keyboard('{Escape}')
+
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  /**
    * ⛔ CHOOSING A DESTINATION IS THE WHOLE POINT OF THIS DRAWER, AND IT WAS THE
    * ONE INTERACTION THAT DID NOT CLOSE IT.
    *

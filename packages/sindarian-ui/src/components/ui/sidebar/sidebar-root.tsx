@@ -120,7 +120,12 @@ export const SidebarRoot = ({
 
   if (!isMobile || mobile === 'inline') {
     return (
+      /* The same id the drawer carries: the rail and the drawer are one
+         navigation in two shapes, and the provider looks it up by id to put
+         focus back into it when a growing viewport swaps one for the other.
+         The two branches are exclusive, so the id is never duplicated. */
       <nav
+        id={sidebarId}
         data-slot="sidebar-root"
         className={cn(sidebarVariants({ collapsed: isCollapsed }), className)}
         data-collapsed={isCollapsed}
