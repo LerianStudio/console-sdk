@@ -181,10 +181,15 @@ const harnessHtml = (css) =>
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'input-shrink-'))
 const htmlPath = path.join(tmp, 'harness.html')
 
-// Tailwind v4 generates only the utilities it finds in scanned sources. The
-// harness page is generated, so it must be scanned explicitly or classes that
-// appear ONLY here (max-w-12, w-32) silently resolve to nothing and the
-// fixture measures a rule that was never emitted.
+// Tailwind v4 generates only the utilities it finds in scanned sources, and
+// the harness page is generated at run time, so a class appearing ONLY in a
+// fixture would resolve to nothing and that fixture would measure a rule which
+// was never emitted. Two independent routes prevent it: this explicit
+// `@source`, and Tailwind's own scan of the package, which reaches the fixture
+// class names in THIS file. Verified separately — excluding this file from the
+// scan still generates everything, and only removing both routes trips the
+// check below. Do not read that redundancy as "the @source line is spare": it
+// is the one that survives this script moving out of the package.
 fs.writeFileSync(htmlPath, harnessHtml(''))
 const entry = `@import './src/globals.css';\n@source '${htmlPath}';\n`
 const { css } = await postcss([tailwind()]).process(entry, {
@@ -192,11 +197,19 @@ const { css } = await postcss([tailwind()]).process(entry, {
 })
 fs.writeFileSync(htmlPath, harnessHtml(css))
 
+// A fixture whose utility was never emitted compares a rule against its own
+// absence and passes for the wrong reason — the false pass this script exists
+// to have eliminated. So it FAILS the run, in both output modes, rather than
+// printing a warning that `--json` would swallow.
+const preflight = []
 for (const cls of ['max-w-12', 'w-32']) {
-  if (!css.includes(`.${cls.replace(/([:[\]/.])/g, '\\$1')}`) && !JSON_OUT) {
-    console.warn(
-      `warning: utility .${cls} was not generated; its row proves nothing`
-    )
+  if (!css.includes(`.${cls.replace(/([:[\]/.])/g, '\\$1')}`)) {
+    const message =
+      `utility .${cls} was not generated, so the width-utilities-360 fixture ` +
+      `measured nothing; check the @source line above still resolves and that ` +
+      `this script still sits inside the scanned package`
+    preflight.push(message)
+    if (!JSON_OUT) console.warn(`warning: ${message}`)
   }
 }
 
@@ -323,7 +336,7 @@ try {
 }
 
 const byId = Object.fromEntries(measured.map((m) => [m.id, m]))
-const failures = []
+const failures = [...preflight]
 const reported = []
 
 for (const f of FIXTURES) {

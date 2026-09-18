@@ -193,15 +193,37 @@ describe('.input-base', () => {
     throw new Error(`unbalanced rule: ${selector}`)
   }
 
+  /**
+   * The rule set's `@apply` list as discrete tokens.
+   *
+   * Matching the raw text with a regex is not good enough here, and the reason
+   * is the exact shape a future edit would take: `\bw-0\b` also matches the
+   * `w-0` inside `min-w-0`, because a hyphen is a word boundary. Swapping
+   * `w-0` for `min-w-0` — the revert this rule set is guarded against — would
+   * have left every case green. Tokens make each assertion exact.
+   */
+  function applyTokens(selector: string): string[] {
+    return [...ruleBody(selector).matchAll(/@apply\s+([^;]*);/g)].flatMap((m) =>
+      m[1].split(/\s+/).filter(Boolean)
+    )
+  }
+
+  /** `sm:min-w-16` floors just as hard as `min-w-16`. */
+  const bare = (token: string) => token.slice(token.lastIndexOf(':') + 1)
+
   it('lets the input shrink below its intrinsic width in a flex row', () => {
-    expect(ruleBody('.input-base')).toMatch(/\bw-0\b/)
+    expect(applyTokens('.input-base')).toContain('w-0')
   })
 
   it('still grows back to fill the row it sits in', () => {
-    expect(ruleBody('.input-base')).toMatch(/\bflex-1\b/)
+    expect(applyTokens('.input-base')).toContain('flex-1')
   })
 
   it('declares no min-width floor, which a call site would outrank anyway', () => {
-    expect(ruleBody('.input-base')).not.toMatch(/@apply[^;]*\bmin-w-(?!0\b)/)
+    const floors = applyTokens('.input-base')
+      .filter((t) => bare(t).startsWith('min-w-'))
+      .filter((t) => bare(t) !== 'min-w-0')
+
+    expect(floors).toEqual([])
   })
 })
