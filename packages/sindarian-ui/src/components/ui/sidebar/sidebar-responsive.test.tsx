@@ -373,6 +373,70 @@ describe('SidebarRoot in drawer mode below 768px', () => {
     expect(document.activeElement).toBe(trigger)
   })
 
+  /**
+   * ⛔ CHOOSING A DESTINATION IS THE WHOLE POINT OF THIS DRAWER, AND IT WAS THE
+   * ONE INTERACTION THAT DID NOT CLOSE IT.
+   *
+   * Escape, the backdrop and the X all closed it; activating a navigation link
+   * did not. The overlay is modal, so `document.body` carries
+   * `pointer-events: none` while it is up, and in the console a `SidebarItem`
+   * is a client-side `Link` under a provider that survives the route change —
+   * so the reader arrived on the new page, rendered INERT behind a navigation
+   * drawer they had to dismiss a second time, on a phone.
+   */
+  it('closes the drawer when the reader activates a navigation link', async () => {
+    const { baseElement } = render(<Drawer />)
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+    expect(
+      baseElement.querySelector('[data-slot="sheet-content"]')
+    ).toBeTruthy()
+
+    await userEvent.click(screen.getByRole('link', { name: 'Home' }))
+
+    expect(baseElement.querySelector('[data-slot="sheet-content"]')).toBeNull()
+    expect(baseElement.querySelector('[data-slot="sheet-overlay"]')).toBeNull()
+  })
+
+  it('gives the page back its pointer events after a link closes the drawer', async () => {
+    render(<Drawer />)
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+    await userEvent.click(screen.getByRole('link', { name: 'Home' }))
+
+    // The modal overlay sets this to 'none'; a page left inert is the defect.
+    expect(document.body.style.pointerEvents).not.toBe('none')
+  })
+
+  it('still runs a consumer onClick on the item it closes for', async () => {
+    const onClick = jest.fn()
+    render(
+      <SidebarProvider>
+        <SidebarTrigger />
+        <SidebarRoot mobile="drawer">
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarItem
+                title="Home"
+                icon={<Home />}
+                href="/"
+                onClick={onClick}
+              />
+            </SidebarGroup>
+          </SidebarContent>
+        </SidebarRoot>
+      </SidebarProvider>
+    )
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+    await userEvent.click(screen.getByRole('link', { name: 'Home' }))
+
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
   it('closes the drawer on a backdrop click', async () => {
     const { baseElement } = render(<Drawer />)
     setViewport(true)
