@@ -1,3 +1,10 @@
+## [2.0.0-beta.10](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.9...sindarian-ui-v2.0.0-beta.10) (2026-09-18)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** let an input shrink inside a narrow flex row ([e245fd9](https://github.com/LerianStudio/console-sdk/commit/e245fd96db21af15d2dbadbbee61041d974ef4b8))
+
 ## [2.0.0-beta.9](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.8...sindarian-ui-v2.0.0-beta.9) (2026-09-18)
 
 
