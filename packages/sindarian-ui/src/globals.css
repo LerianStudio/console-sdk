@@ -214,6 +214,28 @@
   :root {
     color-scheme: light; /* native widgets (form controls, scrollbars) follow the theme */
 
+    /*
+      Sidebar geometry. These were literals inside SidebarRoot's cva
+      (`w-[244px]` / `w-[72px]`), which a consumer could only override by
+      winning a specificity argument with `cn`. As custom properties the
+      default still ships with this sheet.
+
+      TWO places to re-point them, and only these two:
+        - on the rail, via `className="[--sidebar-width:280px]"`. SidebarRoot
+          copies exactly these two arbitrary-property classes onto the mobile
+          drawer's own element, so one class moves the rail AND the drawer.
+        - on `:root` or `html`, which every layout inherits from.
+
+      NOT on a React-tree wrapper above the rail: that reaches the rail, but
+      the mobile drawer is portalled into document.body, and custom properties
+      inherit down the DOM tree. A wrapper is not an ancestor of the portal;
+      `:root` is.
+
+      They are theme-independent on purpose: a rail is not wider in the dark.
+    */
+    --sidebar-width: 244px;
+    --sidebar-width-collapsed: 72px;
+
     /* Application tokens (from Figma ring-tokens) */
     --body-surface: 240 5% 96%; /* base/100 = #F4F4F5 */
     /*

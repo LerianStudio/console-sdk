@@ -20,7 +20,7 @@ export const Default: StoryObj<PaperCollapsibleProps> = {
       <PaperCollapsible {...args}>
         <PaperCollapsibleBanner>Banner</PaperCollapsibleBanner>
         <PaperCollapsibleContent>
-          <div className="text-shadcn-500 p-6">
+          <div className="text-muted-foreground p-6">
             This is the content of the collapsible. You can put any content
             here, such as text, images, or other components.
           </div>

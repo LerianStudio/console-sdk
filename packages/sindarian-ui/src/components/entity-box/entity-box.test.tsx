@@ -1,7 +1,13 @@
 import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
-import { EntityBoxHeaderTitle } from '.'
+import {
+  EntityBoxCollapsible,
+  EntityBoxCollapsibleContent,
+  EntityBoxCollapsibleTrigger,
+  EntityBoxHeaderTitle
+} from '.'
 
 /**
  * EntityBoxHeaderTitle rendered its title as an `h1`. An EntityBox is always a
@@ -72,5 +78,101 @@ describe('EntityBoxHeaderTitle subtitle contrast', () => {
     expect(screen.getByText('Manage the ledgers.')).not.toHaveClass(
       'text-shadcn-400'
     )
+  })
+})
+
+/**
+ * The collapsible trigger is icon-only: a `Settings2` glyph inside a Button,
+ * with no text node anywhere under it. It shipped with no accessible name at
+ * all, so a screen reader announced "button" and nothing else — SC 4.1.2 — and
+ * every console filter panel is opened by one of these. The console passes no
+ * label at any of its ten call sites, so the name has to come from the kit.
+ *
+ * The name says what activating it DOES, and Radix's `aria-expanded` says what
+ * state it is in, so the pair reads "Collapse, expanded" rather than leaving
+ * either half to be inferred.
+ */
+describe('EntityBoxCollapsibleTrigger accessible name', () => {
+  it('names itself in English with no props', () => {
+    render(
+      <EntityBoxCollapsible>
+        <EntityBoxCollapsibleTrigger />
+      </EntityBoxCollapsible>
+    )
+
+    expect(screen.getByRole('button', { name: 'Expand' })).toBeInTheDocument()
+  })
+
+  it('names the action for the state it is in', () => {
+    render(
+      <EntityBoxCollapsible defaultOpen>
+        <EntityBoxCollapsibleTrigger />
+      </EntityBoxCollapsible>
+    )
+
+    expect(screen.getByRole('button', { name: 'Collapse' })).toBeInTheDocument()
+  })
+
+  it('takes translated labels for both states', async () => {
+    render(
+      <EntityBoxCollapsible>
+        <EntityBoxCollapsibleTrigger
+          expandLabel="Abrir filtros"
+          collapseLabel="Fechar filtros"
+        />
+      </EntityBoxCollapsible>
+    )
+
+    const trigger = screen.getByRole('button', { name: 'Abrir filtros' })
+    await userEvent.click(trigger)
+
+    expect(
+      screen.getByRole('button', { name: 'Fechar filtros' })
+    ).toBeInTheDocument()
+  })
+
+  it('lets an explicit aria-label win over both', () => {
+    render(
+      <EntityBoxCollapsible>
+        <EntityBoxCollapsibleTrigger aria-label="Filters" />
+      </EntityBoxCollapsible>
+    )
+
+    expect(screen.getByRole('button', { name: 'Filters' })).toBeInTheDocument()
+  })
+
+  it('keeps reporting its state through aria-expanded', async () => {
+    render(
+      <EntityBoxCollapsible>
+        <EntityBoxCollapsibleTrigger />
+        <EntityBoxCollapsibleContent>filters</EntityBoxCollapsibleContent>
+      </EntityBoxCollapsible>
+    )
+
+    const trigger = screen.getByRole('button')
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+
+    await userEvent.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('keeps passing arbitrary props through to the trigger', () => {
+    render(
+      <EntityBoxCollapsible>
+        <EntityBoxCollapsibleTrigger data-testid="filters-trigger" />
+      </EntityBoxCollapsible>
+    )
+
+    expect(screen.getByTestId('filters-trigger')).toBeInTheDocument()
+  })
+
+  it('tracks a controlled open state', () => {
+    render(
+      <EntityBoxCollapsible open onOpenChange={() => {}}>
+        <EntityBoxCollapsibleTrigger />
+      </EntityBoxCollapsible>
+    )
+
+    expect(screen.getByRole('button', { name: 'Collapse' })).toBeInTheDocument()
   })
 })

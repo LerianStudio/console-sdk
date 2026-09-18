@@ -200,7 +200,7 @@ export function EntityCardList({
     <ul
       data-slot="entity-card-list"
       className={cn(
-        'text-shadcn-500 mx-2 list-inside list-disc space-y-1 text-xs font-medium',
+        'text-muted-foreground mx-2 list-inside list-disc space-y-1 text-xs font-medium',
         className
       )}
       {...props}

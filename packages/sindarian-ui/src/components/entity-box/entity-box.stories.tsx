@@ -87,6 +87,8 @@ export const Collapsible: StoryObj = {
             </div>
             <EntityBoxActions>
               <Button>New Ledger</Button>
+              {/* No label passed: the trigger names itself "Expand" /
+                  "Collapse" in English. A translated console overrides both. */}
               <EntityBoxCollapsibleTrigger />
             </EntityBoxActions>
           </EntityBoxBanner>
@@ -99,4 +101,48 @@ export const Collapsible: StoryObj = {
       </Form>
     )
   }
+}
+
+/**
+ * The trigger's accessible name, made visible. The name flips with the state
+ * while `aria-expanded` reports the state itself, so a screen reader hears
+ * "Collapse, expanded" rather than having to infer either half.
+ */
+export const CollapsibleTriggerLabels: StoryObj = {
+  render: () => (
+    <div className="flex flex-col gap-4">
+      <EntityBoxCollapsible>
+        <EntityBoxBanner>
+          <EntityBoxHeaderTitle
+            title="Default labels"
+            subtitle='Named "Expand" while closed, "Collapse" while open.'
+          />
+          <EntityBoxActions>
+            <EntityBoxCollapsibleTrigger />
+          </EntityBoxActions>
+        </EntityBoxBanner>
+        <EntityBoxCollapsibleContent>
+          <p className="text-muted-foreground text-sm">Filters go here.</p>
+        </EntityBoxCollapsibleContent>
+      </EntityBoxCollapsible>
+
+      <EntityBoxCollapsible>
+        <EntityBoxBanner>
+          <EntityBoxHeaderTitle
+            title="Translated labels"
+            subtitle="expandLabel / collapseLabel carry the consumer's copy."
+          />
+          <EntityBoxActions>
+            <EntityBoxCollapsibleTrigger
+              expandLabel="Abrir filtros"
+              collapseLabel="Fechar filtros"
+            />
+          </EntityBoxActions>
+        </EntityBoxBanner>
+        <EntityBoxCollapsibleContent>
+          <p className="text-muted-foreground text-sm">Filtros aqui.</p>
+        </EntityBoxCollapsibleContent>
+      </EntityBoxCollapsible>
+    </div>
+  )
 }

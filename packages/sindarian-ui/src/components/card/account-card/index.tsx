@@ -70,7 +70,7 @@ export function AccountBalanceCardTitle({
   return (
     <p
       data-slot="account-balance-card-title"
-      className={cn('text-shadcn-600 text-lg font-bold', className)}
+      className={cn('text-foreground text-lg font-bold', className)}
       {...props}
     />
   )
@@ -131,7 +131,7 @@ export function AccountBalanceCardEmpty({
     <p
       data-slot="account-balance-card-empty"
       className={cn(
-        'text-shadcn-500 mt-3 text-center text-sm font-normal',
+        'text-muted-foreground mt-3 text-center text-sm font-normal',
         className
       )}
       {...props}
@@ -157,7 +157,7 @@ export function AccountBalanceCardInfo({
       ref={ref}
       data-slot="account-balance-card-info"
       className={cn(
-        'text-shadcn-500 mt-3 flex flex-row items-center justify-between text-sm font-normal',
+        'text-muted-foreground mt-3 flex flex-row items-center justify-between text-sm font-normal',
         className
       )}
       {...props}
@@ -199,7 +199,7 @@ export function AccountBalanceCardUpdateButton({
 
   return (
     <div className="mb-3 flex flex-row items-center justify-end gap-2">
-      <p className="text-shadcn-500 text-xs font-medium">
+      <p className="text-muted-foreground text-xs font-medium">
         {loading && loadingLabel}
         {!loading && !updated && updatedInLabel}
         {!loading && updated && updatedLabel}
@@ -246,7 +246,7 @@ export function AccountBalanceCardTrigger({
       <Button
         variant="link"
         data-slot="account-balance-card-trigger"
-        className={cn('text-shadcn-600/40 h-4 p-0 text-xs', className)}
+        className={cn('text-muted-foreground h-4 p-0 text-xs', className)}
         {...props}
       >
         {!open ? openLabel : closeLabel}

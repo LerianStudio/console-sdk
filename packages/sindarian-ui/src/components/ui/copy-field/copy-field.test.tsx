@@ -116,24 +116,32 @@ describe('CopyField', () => {
       expect(writeText).toHaveBeenCalledWith('TOTPSECRET')
     })
 
-    it('reveals and then hides the value with the reveal toggle (aria-pressed)', () => {
+    /**
+     * ⛔ THE NAME FLIPS, SO THERE IS NO `aria-pressed`. Same rule, same
+     * defect, as `PasswordField`: WAI-ARIA APG's Button Pattern says a toggle
+     * either flips its label or exposes a pressed state, never both, because
+     * the two are announced together. Shipping both meant that with the
+     * secret VISIBLE the button announced "Hide value, pressed" — "hiding is
+     * on" — which is the opposite of what was on screen.
+     */
+    it('reveals and then hides the value, naming the action and nothing else', () => {
       render(<CopyField value="s3cr3t" label="Secret" masked />)
       const input = screen.getByLabelText('Secret')
       expect(input).toHaveAttribute('type', 'password')
 
       const toggle = screen.getByRole('button', { name: /show value/i })
-      expect(toggle).toHaveAttribute('aria-pressed', 'false')
+      expect(toggle).not.toHaveAttribute('aria-pressed')
 
       fireEvent.click(toggle)
       expect(input).toHaveAttribute('type', 'text')
       const hideToggle = screen.getByRole('button', { name: /hide value/i })
-      expect(hideToggle).toHaveAttribute('aria-pressed', 'true')
+      expect(hideToggle).not.toHaveAttribute('aria-pressed')
 
       fireEvent.click(hideToggle)
       expect(input).toHaveAttribute('type', 'password')
       expect(
         screen.getByRole('button', { name: /show value/i })
-      ).toHaveAttribute('aria-pressed', 'false')
+      ).not.toHaveAttribute('aria-pressed')
     })
 
     it('supports localized reveal/hide labels', () => {
