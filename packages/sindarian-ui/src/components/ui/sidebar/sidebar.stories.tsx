@@ -124,8 +124,12 @@ const Nav = () => (
  * screen with no way to dismiss it.
  */
 export const Responsive: StoryObj = {
-  parameters: {
-    viewport: { defaultViewport: 'mobile1' }
+  // Storybook 10 moved the story's own viewport selection out of `parameters`
+  // and into `globals`; `parameters.viewport` now only carries `disable` and
+  // `options`, so `defaultViewport` was read by nothing and these three
+  // stories opened at the desktop width they exist to contradict.
+  globals: {
+    viewport: { value: 'mobile1' }
   },
   render: () => (
     <PageRoot>
@@ -171,8 +175,12 @@ export const Responsive: StoryObj = {
  * that reaches both is `:root`. Resize past 768px to see the same 320px twice.
  */
 export const CustomWidth: StoryObj = {
-  parameters: {
-    viewport: { defaultViewport: 'mobile1' }
+  // Storybook 10 moved the story's own viewport selection out of `parameters`
+  // and into `globals`; `parameters.viewport` now only carries `disable` and
+  // `options`, so `defaultViewport` was read by nothing and these three
+  // stories opened at the desktop width they exist to contradict.
+  globals: {
+    viewport: { value: 'mobile1' }
   },
   render: () => (
     <PageRoot>
@@ -208,8 +216,12 @@ export const CustomWidth: StoryObj = {
  * consumer sees today, and the reason `Responsive` exists.
  */
 export const ResponsiveOptOut: StoryObj = {
-  parameters: {
-    viewport: { defaultViewport: 'mobile1' }
+  // Storybook 10 moved the story's own viewport selection out of `parameters`
+  // and into `globals`; `parameters.viewport` now only carries `disable` and
+  // `options`, so `defaultViewport` was read by nothing and these three
+  // stories opened at the desktop width they exist to contradict.
+  globals: {
+    viewport: { value: 'mobile1' }
   },
   render: () => (
     <PageRoot>
