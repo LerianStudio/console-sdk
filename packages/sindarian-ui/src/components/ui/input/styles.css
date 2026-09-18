@@ -38,11 +38,29 @@
      width gives the flex algorithm a specified size to use instead, and 0 is
      the only value that never floors anything.
 
-     `min-w-0` is NOT the fix here and was measured failing: it lowers this
-     input's own floor, but the automatic minimum of an ANCESTOR flex item is
-     computed from this control's min-content contribution, which `min-width`
-     does not lower. A consumer's own `flex-1` column around the field would
-     still refuse to shrink.
+     `min-w-0` INSTEAD of `w-0` is not the fix, and that was measured: with no
+     declared width the control still contributes its full intrinsic size to
+     every ancestor's automatic minimum, so a consumer's `flex-1` column around
+     the field refuses to shrink and the 200px row still overflows by 138px.
+
+     What `min-w-0` here DOES do, and this rule set does not carry it, is make
+     the consumer's own one-token escape hatch work. Measured on the fixture a
+     caller writes `min-w-0` on its own column: with this rule set as it
+     stands, that row still overflows by 48px and the control paints 152px
+     across its neighbour, because the control floors at its own intrinsic size
+     inside the column that just agreed to compress. Add `min-w-0` here and the
+     same fixture fits at 78px. `scripts/measure-input-shrink.mjs` carries both
+     numbers as `two-up-200` and `two-up-200-caller-min-w-0`.
+
+     The cost of `w-0` is on the other side of the same quantity, and it is
+     larger than this comment knew: a declared width replaces the control's
+     max-content contribution as well as its min-content one, so a wrapper
+     SIZED BY ITS CONTENT — a search box in a `flex gap-4` filter bar, with
+     nothing declaring a width — is handed 0px to be as wide as. Six
+     product-console screens render an empty 32px chip at every viewport
+     because of this line. The measure script's `toolbar-803` and `toolbar-390`
+     fixtures fail on the stylesheet as committed; that is the open defect, not
+     a broken harness.
 
      There is deliberately NO min-width floor either, and that was measured
      too. A floor here cannot reach the sites that want one: a consumer

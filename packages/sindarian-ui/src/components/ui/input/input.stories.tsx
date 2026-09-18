@@ -183,3 +183,54 @@ export const InFlexRow: StoryObj = {
     </div>
   )
 }
+
+/**
+ * The other half of the same trade, and the one that is currently broken.
+ *
+ * Here nothing declares a width: the field is a flex ITEM sized by its own
+ * content, which is how a filter toolbar is written (`flex gap-4`, a search
+ * box and a couple of selects). The box can only be as wide as the control
+ * says it wants to be — and `w-0` in `.input-base` says zero, so the field
+ * renders as a 32px rectangle of padding with nowhere to type, at every
+ * viewport, while the selects beside it are unaffected because they size from
+ * their label instead of from a `size` attribute.
+ *
+ * Six product-console screens look like the first row below. The second row is
+ * the same toolbar with a width declared at the call site, which is the only
+ * thing that works today. `scripts/measure-input-shrink.mjs` measures both.
+ */
+export const InContentSizedToolbar: StoryObj = {
+  render: () => (
+    <div className="flex flex-col gap-8">
+      {[
+        { label: 'nothing declares a width', className: undefined },
+        { label: 'a width declared at the call site', className: 'w-72' }
+      ].map(({ label, className }) => (
+        <div key={label} className="flex flex-col gap-1">
+          <span className="text-muted-foreground text-xs">{label}</span>
+          <div className="flex gap-4 outline-1 outline-pink-500 outline-dashed">
+            <div className={className}>
+              <Input
+                placeholder="Search..."
+                startAdornment={
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                }
+              />
+            </div>
+            <Select defaultValue="all">
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All types</SelectItem>
+                <SelectItem value="http">HTTP</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
