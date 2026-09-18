@@ -125,12 +125,17 @@ export const SidebarRoot = ({
 
   if (!isMobile || mobile === 'inline') {
     return (
-      /* The same id the drawer carries: the rail and the drawer are one
-         navigation in two shapes, and the provider looks it up by id to put
-         focus back into it when a growing viewport swaps one for the other.
-         The two branches are exclusive, so the id is never duplicated. */
+      /* ⛔ ONLY IN DRAWER MODE. The same id the drawer carries: the rail and
+         the drawer are one navigation in two shapes, and the provider looks it
+         up by id to put focus back into it when a growing viewport swaps one
+         for the other. The two branches are exclusive, so it is never
+         duplicated — and on the default path there is no drawer, no swap and
+         therefore no attribute, because a consumer who opted into nothing gets
+         no DOM change. A drawer-mode consumer that sets its own `id` wins
+         (`{...props}` spreads last) and silently forfeits that focus restore,
+         which lands on `<body>` as it did before. */
       <nav
-        id={sidebarId}
+        id={mobile === 'drawer' ? sidebarId : undefined}
         data-slot="sidebar-root"
         className={cn(sidebarVariants({ collapsed: isCollapsed }), className)}
         data-collapsed={isCollapsed}

@@ -384,6 +384,24 @@ describe('SidebarRoot in the default inline mode', () => {
     expect(container.querySelector('[data-slot="sidebar-root"]')).toBeTruthy()
   })
 
+  /**
+   * ⛔ THE DEFAULT PATH'S DOM IS NOT A PLACE TO PUT THINGS.
+   *
+   * The rail carries the drawer's id so the provider can put focus back into
+   * it when a growing viewport swaps one for the other — which only ever
+   * happens under `mobile="drawer"`. On the default path there is no drawer
+   * and no swap, so the attribute would be a DOM change shipped to consumers
+   * who opted into nothing, and would collide with any id they set themselves.
+   */
+  it('adds no id of its own to the rail', () => {
+    const { container } = render(<Nav />)
+    setViewport(true)
+
+    expect(
+      container.querySelector('[data-slot="sidebar-root"]')
+    ).not.toHaveAttribute('id')
+  })
+
   it('mounts no drawer at all, so nothing can trap focus over the page', async () => {
     const { baseElement } = render(<Nav />)
     setViewport(true)
