@@ -310,6 +310,32 @@ describe('SidebarRoot widths', () => {
     expect(nav).toHaveClass('rail-only')
   })
 
+  /**
+   * ⛔ A VARIANT PREFIX IS PART OF THE CLASS, NOT NOISE AROUND IT.
+   *
+   * `md:[--sidebar-width:320px]` is by definition an override for ≥768px,
+   * which is the range where the drawer does not exist. Lifting it with the
+   * prefix stripped gave the phone drawer a width the consumer explicitly
+   * scoped away from it — the same silent rail/drawer mismatch this round
+   * exists to kill, running in the other direction.
+   */
+  it('leaves a variant-scoped override where the consumer scoped it', async () => {
+    const { baseElement } = render(
+      <SidebarProvider>
+        <SidebarTrigger />
+        <SidebarRoot mobile="drawer" className={`md:${WIDTH_OVERRIDE}`} />
+      </SidebarProvider>
+    )
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+
+    const sheet = baseElement.querySelector('[data-slot="sheet-content"]')
+    expect(sheet).not.toHaveClass(WIDTH_OVERRIDE)
+    expect(sheet).not.toHaveClass(`md:${WIDTH_OVERRIDE}`)
+    expect(sheet).toHaveClass('w-[var(--sidebar-width)]')
+  })
+
   it('leaves the drawer on the stylesheet default when nothing is overridden', async () => {
     const { baseElement } = render(<Drawer />)
     setViewport(true)

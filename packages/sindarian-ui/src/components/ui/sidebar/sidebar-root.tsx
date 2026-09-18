@@ -40,8 +40,13 @@ const sidebarVariants = cva(
 /**
  * Tailwind arbitrary-property classes that re-point the sidebar geometry, e.g.
  * `[--sidebar-width:320px]` or `[--sidebar-width-collapsed:88px]`.
+ *
+ * ⚠️ ANCHORED TO A CLASS BOUNDARY, WHICH IS THE WHOLE POINT OF THE LOOKBEHIND.
+ * Unanchored it also matched the tail of `md:[--sidebar-width:320px]` and
+ * lifted it with the prefix stripped — an override a consumer scoped to
+ * ≥768px, applied unconditionally to the drawer that only exists below it.
  */
-const WIDTH_OVERRIDE = /\[--sidebar-width(?:-collapsed)?:[^\]]+\]/g
+const WIDTH_OVERRIDE = /(?<=^|\s)\[--sidebar-width(?:-collapsed)?:[^\]]+\]/g
 
 /**
  * ⛔ THE ONE PART OF THE CONSUMER'S className THAT HAS TO CROSS THE PORTAL.
