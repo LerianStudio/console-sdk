@@ -131,7 +131,14 @@ export const Responsive: StoryObj = {
     <PageRoot>
       <PageView>
         <SidebarProvider>
-          <SidebarRoot mobile="drawer" className="h-full">
+          {/* The same consumer class `ResponsiveOptOut` carries. It is the
+              other half of the P2 fix: the drawer stamps no `data-collapsed`,
+              so this rule cannot fire inside it and the navigation stays
+              inside its 244px sheet instead of claiming 280px. */}
+          <SidebarRoot
+            mobile="drawer"
+            className="h-full data-[collapsed=false]:min-w-70"
+          >
             <Nav />
           </SidebarRoot>
           <PageContent>
@@ -174,8 +181,14 @@ export const CustomWidth: StoryObj = {
 /**
  * The DEFAULT, for comparison: no `mobile` prop. Below 768px this still renders
  * the inline rail, exactly as every release before this one did, and the
- * reader's collapsed preference still reaches it. Resize the preview under
- * 768px next to `Responsive` to see the two side by side.
+ * reader's collapsed preference still reaches it.
+ *
+ * ⚠️ `data-[collapsed=false]:min-w-70` IS THE CONSUMER'S OWN CLASS, copied from
+ * all eight of product-console's sidebars, and it is here so the story documents
+ * the real incumbent rather than a politer one. Without it the flex row shrinks
+ * the rail to ~186px at 390px and the problem looks survivable; with it the rail
+ * holds a 280px minimum and the page beside it gets 110px. That is what a
+ * consumer sees today, and the reason `Responsive` exists.
  */
 export const ResponsiveOptOut: StoryObj = {
   parameters: {
@@ -185,13 +198,14 @@ export const ResponsiveOptOut: StoryObj = {
     <PageRoot>
       <PageView>
         <SidebarProvider>
-          <SidebarRoot className="h-full">
+          <SidebarRoot className="h-full data-[collapsed=false]:min-w-70">
             <Nav />
           </SidebarRoot>
           <PageContent>
             <div className="p-4">
               <p className="text-muted-foreground text-sm">
-                No `mobile` prop: the rail is still here below 768px.
+                No `mobile` prop: the rail is still here below 768px, holding
+                its 280px minimum.
               </p>
             </div>
           </PageContent>
