@@ -1,3 +1,31 @@
+## [2.0.0-beta.9](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.8...sindarian-ui-v2.0.0-beta.9) (2026-09-18)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** announce an href-less breadcrumb ancestor as plain text ([576856c](https://github.com/LerianStudio/console-sdk/commit/576856cf8c2c4eb73f014374ebef6e68502e319f))
+* **sindarian-ui:** clamp the id cell truncation lengths ([638c574](https://github.com/LerianStudio/console-sdk/commit/638c5749ab11336499a7216b52306c789c886e26))
+* **sindarian-ui:** close the sidebar drawer when a link is activated ([f7608b3](https://github.com/LerianStudio/console-sdk/commit/f7608b3915a7b77bc51be2bcd49c7a49b0942799))
+* **sindarian-ui:** do not lift a variant-scoped width override ([fe8e7d6](https://github.com/LerianStudio/console-sdk/commit/fe8e7d6f0df9978c8b279a20aff730f640a2aa84))
+* **sindarian-ui:** drop aria-pressed from the two toggles that flip their name ([cefa73e](https://github.com/LerianStudio/console-sdk/commit/cefa73e8cdb1e643ec0823f219bf0c5f90e1bec2))
+* **sindarian-ui:** drop the trailing separator from the breadcrumb story ([573eb07](https://github.com/LerianStudio/console-sdk/commit/573eb074975da42562166f3d4d8027ab35030188))
+* **sindarian-ui:** end the breadcrumb trail at the current page ([bef9d0e](https://github.com/LerianStudio/console-sdk/commit/bef9d0e9e56241ea3157140b2c503abb6abd7c5f))
+* **sindarian-ui:** give the sheet close button a focus ring ([a062c93](https://github.com/LerianStudio/console-sdk/commit/a062c935dfb68ad2b62987e6d2fef148623df490))
+* **sindarian-ui:** give the sidebar a drawer below 768px ([d1ecce7](https://github.com/LerianStudio/console-sdk/commit/d1ecce72b1b29213b236b7e124bcc3d1f32ea1b9))
+* **sindarian-ui:** keep focus in the navigation when the viewport grows ([0f18d8f](https://github.com/LerianStudio/console-sdk/commit/0f18d8f797a449e8b0f016081b8099170cf011a8))
+* **sindarian-ui:** keep the drawer's own id ahead of a caller's ([b9f8c27](https://github.com/LerianStudio/console-sdk/commit/b9f8c278a5442716cabfaf77847697e3688f42ce))
+* **sindarian-ui:** make the sidebar mobile drawer opt-in ([eb116bf](https://github.com/LerianStudio/console-sdk/commit/eb116bff679f16b6c190d8c6ed36f705a441770c))
+* **sindarian-ui:** move a width override onto the portalled drawer ([c552a5b](https://github.com/LerianStudio/console-sdk/commit/c552a5ba11150fca5897c7da82407d57bf0eb025))
+* **sindarian-ui:** move the theme-blind grey inks to semantic tokens ([ab6ea5a](https://github.com/LerianStudio/console-sdk/commit/ab6ea5a92d4b942a40fa380ddef55467d1ae4015))
+* **sindarian-ui:** name every autocomplete part ([ec8e818](https://github.com/LerianStudio/console-sdk/commit/ec8e81819e92142c9ea77dc9c2d2c722b07416e8))
+* **sindarian-ui:** name the entity box collapsible trigger ([c2159d2](https://github.com/LerianStudio/console-sdk/commit/c2159d25f5a3cf53fbe1d9f2157b9243a992aa1c))
+* **sindarian-ui:** name the password visibility toggle ([fc5d7b4](https://github.com/LerianStudio/console-sdk/commit/fc5d7b410ae9af3749e5d2a9682cb6991194e47d))
+* **sindarian-ui:** open the responsive stories at the mobile viewport ([796a581](https://github.com/LerianStudio/console-sdk/commit/796a581ddf2e54f16dc385971480394f0c085a59))
+* **sindarian-ui:** return focus after the sidebar drawer closes ([3cee92c](https://github.com/LerianStudio/console-sdk/commit/3cee92c15b2ac2b5f2ea5982755552e0861ba0d6))
+* **sindarian-ui:** scope the rail's focus-restore id to drawer mode ([1d4ad98](https://github.com/LerianStudio/console-sdk/commit/1d4ad98fe5d166245a4efe5f026bea6387c463a4))
+* **sindarian-ui:** stop the drawer arming rail width rules ([fb618b4](https://github.com/LerianStudio/console-sdk/commit/fb618b494ce55f6dbe93c46c8c8355fce3d5a73f))
+* **sindarian-ui:** truncate table ids in the middle ([7d39389](https://github.com/LerianStudio/console-sdk/commit/7d393896bae3bfea14ff1010f6c5da49613a8f92))
+
 ## [2.0.0-beta.8](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.7...sindarian-ui-v2.0.0-beta.8) (2026-09-16)
 
 
