@@ -13,7 +13,7 @@
 
 @layer components {
   .input-wrapper {
-    @apply h-input-wrapper-h border-input-border p-input-wrapper-p relative flex w-full cursor-text items-center rounded-md border transition-[color,box-shadow];
+    @apply h-input-wrapper-h border-input-border p-input-wrapper-p relative flex w-full min-w-0 cursor-text items-center rounded-md border transition-[color,box-shadow];
   }
 
   .input-wrapper-focus {
@@ -29,53 +29,61 @@
      the text jumped the moment you typed; font-medium gave the hint the same
      presence as the label naming the field.
 
-     `w-0` is what lets the input shrink, and it pairs with `flex-1` rather
-     than fighting it: `flex-1` is `flex: 1 1 0%`, so the flex base size comes
-     from the basis and the input still grows back to fill its wrapper. What
-     `w-0` changes is the floor. A flex item never shrinks below its automatic
-     minimum size, and with no declared width that minimum falls back to the
-     control's own intrinsic size — 239px for a default `<input>`. Declaring a
-     width gives the flex algorithm a specified size to use instead, and 0 is
-     the only value that never floors anything.
+     THE CONTRACT, and all three halves of it are measured. A field keeps its
+     natural width: nothing here declares one, so the control contributes its
+     own intrinsic size and a box sized BY ITS CONTENT — a search box in a
+     `flex gap-4` filter bar — comes out as a field. A field never paints
+     outside its own box: `min-w-0` on both boxes drops the automatic minimum
+     that used to hold the control at 239px inside a narrower wrapper. A row
+     that must compress says so on its own flex item, with `min-w-0`, and that
+     one token now works.
 
-     `min-w-0` INSTEAD of `w-0` is not the fix, and that was measured: with no
-     declared width the control still contributes its full intrinsic size to
-     every ancestor's automatic minimum, so a consumer's `flex-1` column around
-     the field refuses to shrink and the 200px row still overflows by 138px.
+     Why no declared width, measured rather than assumed. A declared width
+     replaces the control's max-content contribution as well as its min-content
+     one, because an `<input>` does not wrap and has only the one intrinsic
+     size. `w-0` shipped in 2.0.0-beta.10 and bought a narrow row's compression
+     by giving that up: six product-console screens rendered an empty 32px chip
+     at every viewport, their wrappers having been handed 0px to be as wide as.
+     `w-full` buys the same compression without the chip — a percentage
+     contributes max-content but zero min-content — and it was the runner-up
+     here. It loses on the same filter bar at 390px, where the control is not
+     merely sized by its content but squeezed, and it disappears rather than
+     letting the bar scroll. Seventeen rule sets were measured against fourteen
+     fixtures; none closes all of them.
 
-     What `min-w-0` here DOES do, and this rule set does not carry it, is make
-     the consumer's own one-token escape hatch work. Measured on the fixture a
-     caller writes `min-w-0` on its own column: with this rule set as it
-     stands, that row still overflows by 48px and the control paints 152px
-     across its neighbour, because the control floors at its own intrinsic size
-     inside the column that just agreed to compress. Add `min-w-0` here and the
-     same fixture fits at 78px. `scripts/measure-input-shrink.mjs` carries both
-     numbers as `two-up-200` and `two-up-200-caller-min-w-0`.
+     What this one leaves open is `two-up-200`: two fields in a caller's
+     `flex-1` columns inside a 200px row, which now overflows by 138px instead
+     of compressing. The caller's one token closes it — `min-w-0` on its own
+     column, measured at 78px and fitting — and the fixture beside it,
+     `two-up-200-caller-min-w-0`, is the guard that keeps that hatch working.
+     On 2.0.0-beta.9 the hatch did NOT work: the same row overflowed by 48px
+     and the control painted 152px across its neighbour, because the control
+     floored at its intrinsic size inside the column that had just agreed to
+     compress. That is the difference this rule set makes.
 
-     The cost of `w-0` is on the other side of the same quantity, and it is
-     larger than this comment knew: a declared width replaces the control's
-     max-content contribution as well as its min-content one, so a wrapper
-     SIZED BY ITS CONTENT — a search box in a `flex gap-4` filter bar, with
-     nothing declaring a width — is handed 0px to be as wide as. Six
-     product-console screens render an empty 32px chip at every viewport
-     because of this line. The measure script's `toolbar-803` and `toolbar-390`
-     fixtures fail on the stylesheet as committed; that is the open defect, not
-     a broken harness.
+     One correction to what this comment used to claim. It said `min-width`
+     cannot lower an ancestor flex item's automatic minimum. It can, and does:
+     that is the mechanism above. What the earlier measurement actually showed
+     is narrower and still true — swapping `w-0` for `min-w-0` on THIS rule
+     alone, leaving the wrapper's automatic minimum in place, still overflows
+     the 200px row by 138px.
 
-     There is deliberately NO min-width floor either, and that was measured
+     There is deliberately NO positive min-width floor, and that was measured
      too. A floor here cannot reach the sites that want one: a consumer
      writing `.input-base` by hand tends to add its own `min-w-0`, which is a
      `utilities`-layer class and outranks anything this `components`-layer rule
      set declares. With `min-w-16` added here, the same fixture read 64px wide
      without that hand-written `min-w-0` and 32px with it. The floor also cost
      ground elsewhere: two inputs sharing a 120px row went from fitting to
-     overflowing by 52px. A caller whose field must hold its width says so on
-     its own wrapper, with `shrink-0`.
+     overflowing by 52px, and a floor small enough to survive that row still
+     left a squeezed filter bar at 32px of content. A caller whose field must
+     hold its width says so on its own wrapper, with `shrink-0`.
 
      `scripts/measure-input-shrink.mjs` carries the fixtures and the numbers;
-     run it when touching this rule set. */
+     run it when touching this rule set, and `--candidate=ID` re-measures any
+     of the seventeen before re-opening the trade. */
   .input-base {
-    @apply px-input-px text-input-foreground placeholder:text-input-placeholder h-full min-h-0 w-0 flex-1 border-none bg-transparent outline-none focus:ring-0 focus:ring-offset-0;
+    @apply px-input-px text-input-foreground placeholder:text-input-placeholder h-full min-h-0 min-w-0 flex-1 border-none bg-transparent outline-none focus:ring-0 focus:ring-offset-0;
   }
 
   .input-disabled {

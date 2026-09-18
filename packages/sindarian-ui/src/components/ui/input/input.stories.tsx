@@ -140,44 +140,59 @@ export const Disabled: StoryObj<typeof Input> = {
 }
 
 /**
- * The shrink case: an `Input` sharing a narrow row with another control.
+ * A narrow row, and the one token that decides what happens in it.
  *
- * A flex item never shrinks below its automatic minimum size, and with no
- * declared width that minimum falls back to the control's own intrinsic size —
- * 239px for a default `<input>`. `.input-base` is `flex-1` and used to declare
- * no width, so at 200px the input painted 239px, burst out of its own
- * `.input-wrapper` and left the select beside it a 42px sliver. `w-0` in
- * `.input-base` supplies the specified size the algorithm floors at instead;
- * `flex-1` still grows the input back to fill whatever space it gets.
+ * An `Input` keeps its natural width — 239px for a default `<input>`, which is
+ * the control's own intrinsic size and not something this kit picks. In a row
+ * too narrow for that, a caller's column refuses to shrink below it unless the
+ * caller says it may: `min-w-0` on its OWN flex item, the standard flexbox
+ * idiom. The top row of each pair has not said it; the bottom row has.
+ *
+ * What is NOT a choice either way: the control stays inside its own box. Both
+ * rows show the field and the select inside their own borders, however little
+ * room they get. It used to paint 239px of itself across whatever sat beside
+ * it, which is the defect `min-w-0` on `.input-base` and `.input-wrapper`
+ * closes.
  *
  * The widths are fixed rather than viewport-driven so the story reads the same
- * at any Storybook viewport. Both rows must stay inside their dashed outline.
+ * at any Storybook viewport.
  */
 export const InFlexRow: StoryObj = {
   render: () => (
     <div className="flex flex-col gap-8">
       {[200, 320, 640].map((width) => (
-        <div key={width} className="flex flex-col gap-1">
+        <div key={width} className="flex flex-col gap-3">
           <span className="text-muted-foreground text-xs">{width}px row</span>
-          <div
-            className="flex gap-2 outline-1 outline-pink-500 outline-dashed"
-            style={{ width }}
-          >
-            <div className="flex-1">
-              <Input placeholder="0.00" defaultValue="1234567.89" />
+          {[
+            { label: 'caller says nothing — the row grows', column: 'flex-1' },
+            {
+              label: 'caller writes min-w-0 — the row compresses',
+              column: 'min-w-0 flex-1'
+            }
+          ].map(({ label, column }) => (
+            <div key={label} className="flex flex-col gap-1">
+              <span className="text-muted-foreground text-[10px]">{label}</span>
+              <div
+                className="flex gap-2 outline-1 outline-pink-500 outline-dashed"
+                style={{ width }}
+              >
+                <div className={column}>
+                  <Input placeholder="0.00" defaultValue="1234567.89" />
+                </div>
+                <div className={column}>
+                  <Select defaultValue="BRL">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Asset" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BRL">BRL</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-            <div className="flex-1">
-              <Select defaultValue="BRL">
-                <SelectTrigger>
-                  <SelectValue placeholder="Asset" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="BRL">BRL</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          ))}
         </div>
       ))}
     </div>
@@ -185,19 +200,19 @@ export const InFlexRow: StoryObj = {
 }
 
 /**
- * The other half of the same trade, and the one that is currently broken.
+ * The other half of the contract: a box sized BY ITS CONTENT.
  *
- * Here nothing declares a width: the field is a flex ITEM sized by its own
- * content, which is how a filter toolbar is written (`flex gap-4`, a search
- * box and a couple of selects). The box can only be as wide as the control
- * says it wants to be — and `w-0` in `.input-base` says zero, so the field
- * renders as a 32px rectangle of padding with nowhere to type, at every
- * viewport, while the selects beside it are unaffected because they size from
- * their label instead of from a `size` attribute.
+ * Nothing here declares a width. The field is a flex ITEM sized by whatever
+ * the control says it wants to be, which is how a filter toolbar is written
+ * (`flex gap-4`, a search box and a couple of selects) and how roughly a dozen
+ * product-console screens are laid out. The first row is that default; the
+ * second declares a width at the call site and overrides it.
  *
- * Six product-console screens look like the first row below. The second row is
- * the same toolbar with a width declared at the call site, which is the only
- * thing that works today. `scripts/measure-input-shrink.mjs` measures both.
+ * This is the case a declared width in `.input-base` cannot serve. `w-0`
+ * shipped in 2.0.0-beta.10 and turned the first row into a 32px rectangle of
+ * padding at every viewport, because a box can only be as wide as its content
+ * asks for and the control was asking for zero. The selects beside it were
+ * unaffected: they size from their label rather than from a `size` attribute.
  */
 export const InContentSizedToolbar: StoryObj = {
   render: () => (

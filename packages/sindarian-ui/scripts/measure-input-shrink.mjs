@@ -172,6 +172,13 @@ const FIXTURES = [
   {
     id: 'two-up-200',
     width: 200,
+    // The row overflows, and that is the rule set's deliberate open edge. This
+    // package declares no width, so the control contributes its intrinsic size
+    // and a caller's `flex-1` column that has NOT said it may shrink refuses
+    // to. The caller's one token closes it, and the next fixture is that
+    // measurement. Reported so the number stays visible; the alternative rule
+    // sets that close it do so by making the field disappear somewhere else.
+    report: ['row'],
     note: "console transaction screen: amount + asset, each in the caller's own flex-1 column",
     row: 'flex gap-2',
     html:
@@ -255,15 +262,15 @@ const FIXTURES = [
   {
     id: 'builder-header-390',
     width: 390,
-    // Split severities, and the split is the point. The row overflowing 390px
-    // is the console's own: the tab strip beside the field is
-    // `whitespace-nowrap` and refuses to shrink, before and after any kit
-    // change, and the repair there is `shrink-0` on that `w-48` wrapper. What
-    // the kit owns is the field itself: a wrapper that DECLARES a width must
-    // still hand the control a readable box when a sibling leans on it. That
-    // is the floor below, and it is enforced — a rule set that lets this
-    // collapse has made a declared width mean nothing under pressure.
-    report: ['row', 'escape'],
+    // Everything reported. Two separate consumer-side facts meet here: the row
+    // overflows 390px on its own, because the tab strip beside the field is
+    // `whitespace-nowrap`, before and after any kit change; and the `w-48`
+    // wrapper gives up its declared width because nothing told it not to. Both
+    // are repaired by the same token on that wrapper, `shrink-0`, which the
+    // console has written — the next fixture measures it and DOES enforce the
+    // floor. Kept unrepaired here so the blast radius of a change to this rule
+    // set stays visible on the shape as the console last shipped it.
+    report: ['row', 'escape', 'content'],
     minContent: 120,
     note: 'product-console template builder header, written by hand: a w-48 wrapper in a gap-3 row (builder-header.tsx). The row also overflows 390px on its own, before and after any kit change, because the tab strip beside it is whitespace-nowrap; that half needs `shrink-0` on the wrapper console-side.',
     row: 'flex shrink-0 items-center gap-3 p-3',
