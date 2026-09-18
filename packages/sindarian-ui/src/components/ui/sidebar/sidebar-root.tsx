@@ -109,6 +109,7 @@ export type SidebarRootProps = React.ComponentProps<'nav'> & {
  */
 export const SidebarRoot = ({
   className,
+  id,
   mobile = 'inline',
   mobileTitle = 'Navigation',
   ...props
@@ -125,21 +126,24 @@ export const SidebarRoot = ({
 
   if (!isMobile || mobile === 'inline') {
     return (
-      /* ⛔ ONLY IN DRAWER MODE. The same id the drawer carries: the rail and
-         the drawer are one navigation in two shapes, and the provider looks it
-         up by id to put focus back into it when a growing viewport swaps one
-         for the other. The two branches are exclusive, so it is never
-         duplicated — and on the default path there is no drawer, no swap and
-         therefore no attribute, because a consumer who opted into nothing gets
-         no DOM change. A drawer-mode consumer that sets its own `id` wins
-         (`{...props}` spreads last) and silently forfeits that focus restore,
-         which lands on `<body>` as it did before. */
+      /* ⛔ ONLY IN DRAWER MODE, AND THERE IT IS NOT THE CALLER'S TO SET. The
+         same id the drawer carries: the rail and the drawer are one navigation
+         in two shapes, and the provider looks it up by id to put focus back
+         into it when a growing viewport swaps one for the other. The two
+         branches are exclusive, so it is never duplicated.
+
+         On the default path there is no drawer and no swap, so nothing here
+         needs an id and the caller's own is passed straight through — a
+         consumer who opted into nothing gets the DOM it always had.
+
+         AFTER the spread, not before it. Spread first, a caller that set `id`
+         replaced this one and silently broke both things that read it. */
       <nav
-        id={mobile === 'drawer' ? sidebarId : undefined}
         data-slot="sidebar-root"
         className={cn(sidebarVariants({ collapsed: isCollapsed }), className)}
         data-collapsed={isCollapsed}
         {...props}
+        id={mobile === 'drawer' ? sidebarId : id}
       />
     )
   }
@@ -186,7 +190,6 @@ export const SidebarRoot = ({
               header is a "back to products" link, not a heading. */}
           <SheetTitle className="sr-only">{mobileTitle}</SheetTitle>
           <nav
-            id={sidebarId}
             data-slot="sidebar-root"
             data-mobile="true"
             /* ⛔ NO `data-collapsed` HERE. The consumer className is forwarded
@@ -203,6 +206,14 @@ export const SidebarRoot = ({
               className
             )}
             {...props}
+            /* ⛔ AFTER THE SPREAD, AND NOT THE CALLER'S. This is the target of
+               `SidebarTrigger`'s `aria-controls` and the handle the provider
+               uses to put focus back into the navigation when the viewport
+               grows. Spread first, a caller that set `id` replaced it and left
+               a dangling `aria-controls` — which axe reports as a CRITICAL
+               `aria-valid-attr-value` — and a focus restore that lands on
+               `<body>`. Both silent. */
+            id={sidebarId}
           />
         </SheetContent>
       </Sheet>

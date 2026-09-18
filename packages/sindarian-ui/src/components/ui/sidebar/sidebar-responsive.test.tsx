@@ -402,6 +402,19 @@ describe('SidebarRoot in the default inline mode', () => {
     ).not.toHaveAttribute('id')
   })
 
+  it("honours a caller's own id, because nothing here needs one", () => {
+    const { container } = render(
+      <SidebarProvider>
+        <SidebarRoot id="my-nav" />
+      </SidebarProvider>
+    )
+    setViewport(true)
+
+    expect(
+      container.querySelector('[data-slot="sidebar-root"]')
+    ).toHaveAttribute('id', 'my-nav')
+  })
+
   it('mounts no drawer at all, so nothing can trap focus over the page', async () => {
     const { baseElement } = render(<Nav />)
     setViewport(true)
@@ -741,6 +754,35 @@ describe('SidebarTrigger', () => {
 
     await userEvent.click(trigger)
     expect(trigger).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  /**
+   * ⛔ IN DRAWER MODE THE ID IS LOAD-BEARING, SO IT IS NOT A CALLER'S TO SET.
+   *
+   * It is the target of `SidebarTrigger`'s `aria-controls` and the handle the
+   * provider uses to put focus back into the rail when a growing viewport
+   * swaps the drawer for it. It was spread BEFORE the caller's props, so a
+   * caller that set `id` replaced it and broke both — a dangling
+   * `aria-controls` (which axe reports as a CRITICAL `aria-valid-attr-value`)
+   * and a focus restore that lands on `<body>`. Both failures are silent.
+   *
+   * Inline mode has neither of those, so there a caller's `id` is honoured.
+   */
+  it('keeps its own id in drawer mode, whatever the caller passes', async () => {
+    const { baseElement } = render(
+      <SidebarProvider>
+        <SidebarTrigger />
+        <SidebarRoot mobile="drawer" id="my-nav" />
+      </SidebarProvider>
+    )
+    setViewport(true)
+
+    const trigger = screen.getByRole('button', { name: /navigation/i })
+    await userEvent.click(trigger)
+
+    const nav = baseElement.querySelector('[data-slot="sidebar-root"]')
+    expect(nav).not.toHaveAttribute('id', 'my-nav')
+    expect(nav?.id).toBe(trigger.getAttribute('aria-controls'))
   })
 
   it('points aria-controls at the drawer only while the drawer exists', async () => {
