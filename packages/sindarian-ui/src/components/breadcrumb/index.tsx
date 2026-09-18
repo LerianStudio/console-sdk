@@ -34,11 +34,15 @@ export const Breadcrumb = ({ paths }: BreadcrumbProps) => {
            * which of three links was the page being read — and the crumb was a
            * live link back to the page the reader is already on.
            *
-           * `aria-current` is passed explicitly rather than left to
-           * `BreadcrumbPage`'s own default, because an href-less ANCESTOR
-           * reaches the same branch and is not the current page;
-           * `BreadcrumbPage` spreads props after its own attributes, so
-           * `undefined` there drops the attribute.
+           * ⚠️ AND AN HREF-LESS ANCESTOR IS NOT A SWITCHED-OFF LINK. It used
+           * to reach `BreadcrumbPage` too, which hard-codes `role="link"
+           * aria-disabled="true"` — the right shape for the page you are ON,
+           * a destination that exists and simply is not navigable from here.
+           * An ancestor with no href is a grouping label: there is no page
+           * behind it, so "Settings, link, dimmed" told the reader a
+           * destination was unavailable to them rather than that it was never
+           * a destination, and inflated the link count of the trail. It is
+           * plain text now, and only the last crumb is the page.
            */
           const isLast = index === last
 
@@ -47,10 +51,10 @@ export const Breadcrumb = ({ paths }: BreadcrumbProps) => {
               <BreadcrumbItem>
                 {path.href && !isLast ? (
                   <BreadcrumbLink href={path.href}>{path.name}</BreadcrumbLink>
+                ) : isLast ? (
+                  <BreadcrumbPage>{path.name}</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbPage aria-current={isLast ? 'page' : undefined}>
-                    {path.name}
-                  </BreadcrumbPage>
+                  <span className="breadcrumb-page">{path.name}</span>
                 )}
               </BreadcrumbItem>
 

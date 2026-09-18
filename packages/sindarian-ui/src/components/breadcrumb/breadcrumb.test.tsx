@@ -63,13 +63,40 @@ describe('Breadcrumb', () => {
     )
   })
 
-  it('renders an ancestor without an href as plain text', () => {
+  /**
+   * ⛔ PLAIN TEXT MEANS NO ROLE AT ALL, NOT A SWITCHED-OFF LINK.
+   *
+   * `BreadcrumbPage` hard-codes `role="link" aria-disabled="true"`, which is
+   * the right shape for the LAST crumb — the page you are on, a destination
+   * that exists and is simply not navigable from here. An href-less ANCESTOR
+   * is a grouping label ("Settings", "Reporter"): there is no page behind it,
+   * so announcing "Settings, link, dimmed" tells the reader a destination is
+   * unavailable to them rather than that it was never a destination. It also
+   * inflates the link count of every trail that carries one.
+   */
+  it('renders an ancestor without an href as plain text, with no role at all', () => {
     const { container } = render(
       <Breadcrumb paths={[{ name: 'Group' }, ...PATHS]} />
     )
 
     expect(container.querySelector('a[href=""]')).toBeNull()
-    expect(screen.getByText('Group')).not.toHaveAttribute('aria-current')
+
+    const ancestor = screen.getByText('Group')
+    expect(ancestor).not.toHaveAttribute('aria-current')
+    expect(ancestor).not.toHaveAttribute('role')
+    expect(ancestor).not.toHaveAttribute('aria-disabled')
+    expect(
+      screen.queryByRole('link', { name: 'Group' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('still announces the current page as a disabled link, which it is', () => {
+    render(<Breadcrumb paths={PATHS} />)
+
+    const current = screen.getByText(PATHS[PATHS.length - 1].name)
+    expect(current).toHaveAttribute('role', 'link')
+    expect(current).toHaveAttribute('aria-disabled', 'true')
+    expect(current).toHaveAttribute('aria-current', 'page')
   })
 
   it('marks exactly one crumb as current', () => {
