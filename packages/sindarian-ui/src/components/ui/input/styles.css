@@ -27,9 +27,37 @@
   /* Don't give the placeholder its own size or weight. At a smaller size it
      still shares the input's baseline, so it rode ~0.75px below the value and
      the text jumped the moment you typed; font-medium gave the hint the same
-     presence as the label naming the field. */
+     presence as the label naming the field.
+
+     `w-0` is what lets the input shrink, and it pairs with `flex-1` rather
+     than fighting it: `flex-1` is `flex: 1 1 0%`, so the flex base size comes
+     from the basis and the input still grows back to fill its wrapper. What
+     `w-0` changes is the floor. A flex item never shrinks below its automatic
+     minimum size, and with no declared width that minimum falls back to the
+     control's own intrinsic size — 239px for a default `<input>`. Declaring a
+     width gives the flex algorithm a specified size to use instead, and 0 is
+     the only value that never floors anything.
+
+     `min-w-0` is NOT the fix here and was measured failing: it lowers this
+     input's own floor, but the automatic minimum of an ANCESTOR flex item is
+     computed from this control's min-content contribution, which `min-width`
+     does not lower. A consumer's own `flex-1` column around the field would
+     still refuse to shrink.
+
+     There is deliberately NO min-width floor either, and that was measured
+     too. A floor here cannot reach the sites that want one: a consumer
+     writing `.input-base` by hand tends to add its own `min-w-0`, which is a
+     `utilities`-layer class and outranks anything this `components`-layer rule
+     set declares. With `min-w-16` added here, the same fixture read 64px wide
+     without that hand-written `min-w-0` and 32px with it. The floor also cost
+     ground elsewhere: two inputs sharing a 120px row went from fitting to
+     overflowing by 52px. A caller whose field must hold its width says so on
+     its own wrapper, with `shrink-0`.
+
+     `scripts/measure-input-shrink.mjs` carries the fixtures and the numbers;
+     run it when touching this rule set. */
   .input-base {
-    @apply px-input-px text-input-foreground placeholder:text-input-placeholder h-full min-h-0 flex-1 border-none bg-transparent outline-none focus:ring-0 focus:ring-offset-0;
+    @apply px-input-px text-input-foreground placeholder:text-input-placeholder h-full min-h-0 w-0 flex-1 border-none bg-transparent outline-none focus:ring-0 focus:ring-offset-0;
   }
 
   .input-disabled {
