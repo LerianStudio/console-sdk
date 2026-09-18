@@ -3,6 +3,13 @@ import { InputAdornment, Input } from '.'
 import { FormProvider, useForm } from 'react-hook-form'
 import { DollarSign, Eye, Search } from 'lucide-react'
 import { IconButton } from '../icon-button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../select'
 
 const meta: Meta<typeof Input> = {
   title: 'Primitives/Input',
@@ -130,4 +137,49 @@ export const Disabled: StoryObj<typeof Input> = {
       </FormProvider>
     )
   }
+}
+
+/**
+ * The shrink case: an `Input` sharing a narrow row with another control.
+ *
+ * A flex item never shrinks below its automatic minimum size, and with no
+ * declared width that minimum falls back to the control's own intrinsic size —
+ * 239px for a default `<input>`. `.input-base` is `flex-1` and used to declare
+ * no width, so at 200px the input painted 239px, burst out of its own
+ * `.input-wrapper` and left the select beside it a 42px sliver. `w-0` in
+ * `.input-base` supplies the specified size the algorithm floors at instead;
+ * `flex-1` still grows the input back to fill whatever space it gets.
+ *
+ * The widths are fixed rather than viewport-driven so the story reads the same
+ * at any Storybook viewport. Both rows must stay inside their dashed outline.
+ */
+export const InFlexRow: StoryObj = {
+  render: () => (
+    <div className="flex flex-col gap-8">
+      {[200, 320, 640].map((width) => (
+        <div key={width} className="flex flex-col gap-1">
+          <span className="text-muted-foreground text-xs">{width}px row</span>
+          <div
+            className="flex gap-2 outline-1 outline-pink-500 outline-dashed"
+            style={{ width }}
+          >
+            <div className="flex-1">
+              <Input placeholder="0.00" defaultValue="1234567.89" />
+            </div>
+            <div className="flex-1">
+              <Select defaultValue="BRL">
+                <SelectTrigger>
+                  <SelectValue placeholder="Asset" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BRL">BRL</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }
