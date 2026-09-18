@@ -158,20 +158,37 @@ export const Responsive: StoryObj = {
 }
 
 /**
- * The widths are `--sidebar-width` and `--sidebar-width-collapsed`, so a
- * consumer re-points them from anywhere above the rail — here on the rail
- * itself. The mobile drawer reads the same variable, so one override moves
- * both layouts.
+ * ⛔ THE OVERRIDE GOES ON THE RAIL, NOT ON A WRAPPER ABOVE IT.
+ *
+ * `--sidebar-width` and `--sidebar-width-collapsed` are custom properties, so a
+ * declaration inherits down the **DOM** tree. The mobile drawer is portalled
+ * into `document.body`, so a layout wrapper above `SidebarRoot` is not an
+ * ancestor of it: that override moved the rail to 320px and left the drawer at
+ * the 244px default, silently.
+ *
+ * On the rail itself it moves both — `SidebarRoot` copies exactly these two
+ * arbitrary-property classes onto the drawer's own element. The other place
+ * that reaches both is `:root`. Resize past 768px to see the same 320px twice.
  */
 export const CustomWidth: StoryObj = {
+  parameters: {
+    viewport: { defaultViewport: 'mobile1' }
+  },
   render: () => (
     <PageRoot>
       <PageView>
         <SidebarProvider>
-          <SidebarRoot className="h-full [--sidebar-width:320px]">
+          <SidebarRoot
+            mobile="drawer"
+            className="h-full [--sidebar-width:320px]"
+          >
             <Nav />
           </SidebarRoot>
-          <PageContent />
+          <PageContent>
+            <div className="p-4">
+              <SidebarTrigger />
+            </div>
+          </PageContent>
         </SidebarProvider>
       </PageView>
     </PageRoot>

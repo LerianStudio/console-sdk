@@ -223,6 +223,104 @@ describe('SidebarRoot widths', () => {
     })
   })
 
+  /**
+   * ⛔ THE DRAWER IS PORTALLED TO `document.body`, SO A CLASS ON THE RAIL DOES
+   * NOT REACH IT BY CASCADE.
+   *
+   * Custom properties inherit down the DOM tree, not the React tree. The
+   * consumer `className` travels into the drawer, but it lands on the inner
+   * `<nav>` — BELOW the only element that reads the variable — so the
+   * documented recipe (`className="[--sidebar-width:320px]"` on the rail) set
+   * the variable somewhere nothing consumed it and the drawer stayed at
+   * whatever `:root` said. Measured in Chromium: rail 320px, sheet 244px.
+   * Following the instruction given to the console produced a 280px rail on
+   * desktop and a 244px drawer on a phone, silently.
+   *
+   * The width override is now lifted onto `SheetContent` itself, so one class
+   * moves both. Structural rather than computed, because jsdom has no layout —
+   * the pixel half is measured in a browser and recorded in the report.
+   */
+  const WIDTH_OVERRIDE = '[--sidebar-width:320px]'
+
+  it('lifts a width override off the rail onto the portalled drawer', async () => {
+    const { baseElement } = render(
+      <SidebarProvider>
+        <SidebarTrigger />
+        <SidebarRoot mobile="drawer" className={`h-full ${WIDTH_OVERRIDE}`} />
+      </SidebarProvider>
+    )
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+
+    const sheet = baseElement.querySelector('[data-slot="sheet-content"]')
+    expect(sheet).toHaveClass(WIDTH_OVERRIDE)
+    expect(sheet).toHaveClass('w-[var(--sidebar-width)]')
+  })
+
+  it('lifts a collapsed-width override too, so one class moves both tokens', async () => {
+    const { baseElement } = render(
+      <SidebarProvider>
+        <SidebarTrigger />
+        <SidebarRoot
+          mobile="drawer"
+          className="[--sidebar-width-collapsed:88px] [--sidebar-width:320px]"
+        />
+      </SidebarProvider>
+    )
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+
+    const sheet = baseElement.querySelector('[data-slot="sheet-content"]')
+    expect(sheet).toHaveClass('[--sidebar-width:320px]')
+    expect(sheet).toHaveClass('[--sidebar-width-collapsed:88px]')
+  })
+
+  /**
+   * ⚠️ ONLY the geometry tokens are lifted. The rest of the consumer className
+   * is rail-shaped — `h-full`, and the `data-[collapsed=false]:min-w-70` all
+   * eight console sidebars pass — and putting it on the sheet would reinstate
+   * the 280px-inside-244px overflow the drawer was repaired for from the other
+   * side.
+   */
+  it('lifts nothing else off the rail onto the sheet', async () => {
+    const { baseElement } = render(
+      <SidebarProvider>
+        <SidebarTrigger />
+        <SidebarRoot
+          mobile="drawer"
+          className={`rail-only data-[collapsed=false]:min-w-70 ${WIDTH_OVERRIDE}`}
+        />
+      </SidebarProvider>
+    )
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+
+    const sheet = baseElement.querySelector('[data-slot="sheet-content"]')
+    // `h-full` is deliberately NOT asserted here: the left-side Sheet paints it
+    // itself, so it says nothing about what was lifted.
+    expect(sheet).not.toHaveClass('data-[collapsed=false]:min-w-70')
+    expect(sheet).not.toHaveClass('rail-only')
+
+    // ...and the rail's own className still arrives in full on the drawer nav,
+    // which is where it has always gone.
+    const nav = baseElement.querySelector('[data-slot="sidebar-root"]')
+    expect(nav).toHaveClass('rail-only')
+  })
+
+  it('leaves the drawer on the stylesheet default when nothing is overridden', async () => {
+    const { baseElement } = render(<Drawer />)
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+
+    const sheet = baseElement.querySelector('[data-slot="sheet-content"]')
+    expect(sheet).toHaveClass('w-[var(--sidebar-width)]')
+    expect(sheet?.className).not.toMatch(/\[--sidebar-width/)
+  })
+
   it('declares both widths in the stylesheet so the default survives', () => {
     // The classes above name a variable; without a declaration behind it the
     // rail computes to `width: auto` and the whole geometry is gone.

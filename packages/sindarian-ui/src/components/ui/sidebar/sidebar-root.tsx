@@ -12,9 +12,15 @@ import { Sheet, SheetContent, SheetTitle } from '../sheet'
  * They were `w-[72px]` and `w-[244px]`, which a consumer could only override by
  * winning a specificity argument with `cn`. `--sidebar-width` and
  * `--sidebar-width-collapsed` are declared in `globals.css`, so the default
- * still ships with the stylesheet, and a consumer re-points either one from
- * anywhere above the rail — `className="[--sidebar-width:280px]"` on the rail
- * itself, or a rule on a layout wrapper.
+ * still ships with the stylesheet, and a consumer re-points either one with
+ * `className="[--sidebar-width:280px]"` ON THE RAIL, which moves the rail and
+ * the mobile drawer together (see `liftWidthOverrides` below), or with a rule
+ * on `:root`/`html`.
+ *
+ * ⚠️ A DECLARATION ON A REACT-TREE ANCESTOR REACHES THE RAIL AND NOT THE
+ * DRAWER. Custom properties inherit down the DOM tree, and the drawer is
+ * portalled to `document.body`, so a layout wrapper is not an ancestor of it.
+ * `:root` is, which is why it is named above and a wrapper is not.
  */
 const sidebarVariants = cva(
   'group/sidebar shadow-sidebar relative flex flex-col transition-[width] duration-300 ease-in-out',
@@ -30,6 +36,33 @@ const sidebarVariants = cva(
     }
   }
 )
+
+/**
+ * Tailwind arbitrary-property classes that re-point the sidebar geometry, e.g.
+ * `[--sidebar-width:320px]` or `[--sidebar-width-collapsed:88px]`.
+ */
+const WIDTH_OVERRIDE = /\[--sidebar-width(?:-collapsed)?:[^\]]+\]/g
+
+/**
+ * ⛔ THE ONE PART OF THE CONSUMER'S className THAT HAS TO CROSS THE PORTAL.
+ *
+ * `SheetContent` mounts through `SheetPortal` into `document.body`, and custom
+ * properties inherit down the DOM tree rather than the React tree. So the
+ * documented override — a class on the rail — set `--sidebar-width` on an
+ * element the drawer is not a descendant of, and the whole className that DOES
+ * travel lands on the inner `<nav>`, which is BELOW the element that reads the
+ * variable. Measured in Chromium: rail 320px, drawer 244px. Following the
+ * instruction handed to product-console produced a 280px rail on desktop and a
+ * 244px drawer on a phone, silently.
+ *
+ * ⚠️ ONLY THE GEOMETRY TOKENS. The rest of a rail className is rail-shaped —
+ * `h-full`, and the `data-[collapsed=false]:min-w-70` all eight console
+ * sidebars pass — and putting that on the sheet would reinstate the
+ * 280px-inside-a-244px-sheet overflow from the other side.
+ */
+function liftWidthOverrides(className?: string): string | undefined {
+  return className?.match(WIDTH_OVERRIDE)?.join(' ')
+}
 
 export type SidebarRootProps = React.ComponentProps<'nav'> & {
   /**
@@ -115,8 +148,12 @@ export const SidebarRoot = ({
           side="left"
           // The Sheet's own paddings are built for a form panel; a rail brings
           // its own. `max-w-full` so a consumer widening `--sidebar-width` past
-          // the viewport still cannot push the drawer off screen.
-          className="w-[var(--sidebar-width)] max-w-full gap-0 p-0"
+          // the viewport still cannot push the drawer off screen. The lifted
+          // override goes LAST so it re-points the variable this element reads.
+          className={cn(
+            'w-[var(--sidebar-width)] max-w-full gap-0 p-0',
+            liftWidthOverrides(className)
+          )}
           // The drawer has a title and no description; without this Radix warns
           // about the missing `aria-describedby` target on every open.
           aria-describedby={undefined}
