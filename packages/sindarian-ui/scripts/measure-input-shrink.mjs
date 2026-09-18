@@ -365,6 +365,28 @@ const FIXTURES = [
       inputHtml('orgname') +
       `</div></div>` +
       `<div data-probe="right-col" class="w-20 shrink-0 whitespace-nowrap">Avatar</div>`
+  },
+  {
+    id: 'dialog-grid-390',
+    width: 154,
+    // Informational, and deliberately so. The console's create dialogs lay
+    // their fields in a two-column grid that does not stack on a phone, so
+    // inside a 154px card each column is 43px — a definite width, decided
+    // two boxes above the kit. 50 fields on 18 routes look like this at
+    // 390px, and none at 1440px.
+    //
+    // There is no correct number for the kit to hit here. Filling a definite
+    // 43px box IS the right behaviour for a control: 2.0.0-beta.9 painted its
+    // intrinsic 234px of text across the dialog instead, which was legible
+    // only by being in the wrong place. So every check is reported, the row
+    // exists to show what each candidate does to the shape, and the repair is
+    // the console stacking that grid.
+    report: ['row', 'escape', 'content'],
+    note: 'product-console create dialogs at 390px: a `grid grid-cols-2` inside a 154px card, so each field box is 43px. Out of scope — filling a definite 43px box is correct; the repair is the console stacking the grid.',
+    row: 'grid grid-cols-2 gap-5 p-6',
+    html:
+      formItemHtml('left', inputHtml('ledgername')) +
+      formItemHtml('right', inputHtml('ledgercode'))
   }
 ]
 
