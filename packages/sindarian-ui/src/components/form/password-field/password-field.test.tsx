@@ -14,9 +14,10 @@ import { PasswordField, PasswordFieldProps } from '.'
  * the Correios BCB credentials, the webhook secret, the delivery-profile
  * password.
  *
- * `aria-pressed` carries the state (is the password showing) and the name
- * carries the action (what pressing it will do), so a reader gets both without
- * having to infer either from the glyph.
+ * The name carries the action — what pressing it will do — which is also the
+ * only state a reader needs, and it is the ONLY thing the button exposes: a
+ * flipping name plus `aria-pressed` announces "Hide password, pressed" while
+ * the password is visible, which reads as the opposite of the truth.
  */
 type Credentials = { password: string }
 
@@ -75,13 +76,24 @@ describe('PasswordField visibility toggle', () => {
     ).toBeInTheDocument()
   })
 
-  it('reports whether the password is showing through aria-pressed', async () => {
+  /**
+   * ⛔ A NAME THAT FLIPS AND A PRESSED STATE ARE TWO DIFFERENT CONTROLS, AND
+   * SHIPPING BOTH SAID THE OPPOSITE OF WHAT IT MEANT.
+   *
+   * WAI-ARIA APG, Button Pattern: a toggle whose label changes must not also
+   * expose `aria-pressed`, because assistive technology announces name THEN
+   * state. With the password visible the button announced "Hide password,
+   * pressed" — which reads as "hiding is on", i.e. the password is hidden,
+   * the exact opposite of the truth. The name already carries the state, by
+   * carrying the action that is available from it.
+   */
+  it('exposes no aria-pressed, because the flipping name already carries the state', async () => {
     render(<Subject />)
 
-    expect(toggle()).toHaveAttribute('aria-pressed', 'false')
+    expect(toggle()).not.toHaveAttribute('aria-pressed')
 
     await userEvent.click(toggle())
-    expect(toggle()).toHaveAttribute('aria-pressed', 'true')
+    expect(toggle()).not.toHaveAttribute('aria-pressed')
   })
 
   it('is a plain button, so it never submits the form around it', () => {

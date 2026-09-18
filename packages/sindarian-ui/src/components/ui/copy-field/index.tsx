@@ -238,7 +238,12 @@ export function CopyField({
             variant="outline"
             size="small"
             rounded
-            aria-pressed={revealed}
+            // ⛔ NO `aria-pressed` NEXT TO A FLIPPING NAME. WAI-ARIA APG,
+            // Button Pattern: a toggle does one or the other, never both,
+            // because name and state are announced together. With the secret
+            // visible this said "Hide value, pressed" — "hiding is on" — the
+            // opposite of the screen. The name carries the state by carrying
+            // the action that is available from it.
             aria-label={revealed ? hideLabel : revealLabel}
             onClick={() => setRevealed((prev) => !prev)}
           >
