@@ -29,8 +29,10 @@
 // Needs a Chromium/Chrome binary; it is a manual tool, not a CI gate, because
 // CI runners here carry no browser. It needs no build: the fixtures are plain
 // markup carrying the same classes the components emit, which is also what the
-// product console writes BY HAND at four sites, so those shapes are covered
-// too.
+// product console writes BY HAND. The fixtures cover three of the four sites;
+// the fourth is the same shape on a textarea and is not modelled — its
+// intrinsic width comes from `cols` rather than `size`, and it has two call
+// sites (text block and comment block).
 //
 // The absolute pixel numbers depend on the font — an input's intrinsic width
 // is text-metric-derived, so the same fixture reads ~40px wider under a
