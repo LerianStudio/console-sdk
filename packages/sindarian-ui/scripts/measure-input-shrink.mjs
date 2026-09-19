@@ -495,6 +495,51 @@ const FIXTURES = [
       formItemHtml('right', inputHtml('ledgercode'))
   },
   {
+    id: 'number-input-squeezed',
+    width: 160,
+    // The other composer in this package that puts a box of its own between a
+    // row and the wrapper: `NumberInput` holds the field in a `w-28` div
+    // between two 40px steppers. The root is the consumer's flex item, reached
+    // through `className`, so nothing here says this control may compress and
+    // the row overflows — the same deliberate open edge as `two-up-200`, and
+    // reported for the same reason. What IS this package's to get right is
+    // where the space comes from once a consumer does say it, which is the
+    // fixture below.
+    report: ['row'],
+    note: 'this package NumberInput in a 160px row: a w-28 box between two size-10 steppers, all in an inline-flex with gap-1. Nothing declares that it may compress, so it overflows by 40px.',
+    row: 'flex',
+    html:
+      `<div class="inline-flex items-stretch gap-1">` +
+      `<button class="icon-button-base icon-button-disabled shrink-0"><span></span></button>` +
+      `<div data-probe="numbox" class="w-28 min-w-0">` +
+      inputHtml('amount', 'text-right tabular-nums') +
+      `</div>` +
+      `<button data-probe="plus" class="icon-button-base icon-button-disabled shrink-0"><span></span></button>` +
+      `</div>`
+  },
+  {
+    id: 'number-input-squeezed-caller-min-w-0',
+    width: 160,
+    // The same composer with the token its consumer owns: `className` lands on
+    // the root, so `min-w-0` there is the consumer saying the control may
+    // compress. The two tokens inside decide where the space then comes from,
+    // and this fixture is why they are there. Without them the `w-28` box is a
+    // definite width and refuses to give, so the entire shrink came out of the
+    // steppers: measured at 20px each, half a tap target, while the field kept
+    // its full 112px. With them the field gives — 54px of box, 22px of text —
+    // and the steppers stay 40px. Enforced, not reported: this one is ours.
+    note: 'the same NumberInput with min-w-0 on its root, the token a consumer writes through className. The field gives, the steppers keep their 40px.',
+    row: 'flex',
+    html:
+      `<div class="inline-flex min-w-0 items-stretch gap-1">` +
+      `<button class="icon-button-base icon-button-disabled shrink-0"><span></span></button>` +
+      `<div data-probe="numbox" class="w-28 min-w-0">` +
+      inputHtml('amount', 'text-right tabular-nums') +
+      `</div>` +
+      `<button data-probe="plus" class="icon-button-base icon-button-disabled shrink-0"><span></span></button>` +
+      `</div>`
+  },
+  {
     id: 'sheet-right-390',
     width: 390,
     // This package's OWN panel, and the only fixture here that is not a
