@@ -181,7 +181,7 @@ export const SidebarRoot = ({
           // tokens are what state the exemption. Measured: without them the
           // drawer is 390px wide with 16px of inset on a 390px phone.
           className={cn(
-            'w-[var(--sidebar-width)] max-sm:w-[var(--sidebar-width)] max-w-full gap-0 p-0 max-sm:p-0',
+            'w-[var(--sidebar-width)] max-w-full gap-0 p-0 max-sm:w-[var(--sidebar-width)] max-sm:p-0',
             liftWidthOverrides(className)
           )}
           // The drawer has a title and no description; without this Radix warns
