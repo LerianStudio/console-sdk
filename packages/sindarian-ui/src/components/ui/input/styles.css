@@ -61,12 +61,17 @@
      floored at its intrinsic size inside the column that had just agreed to
      compress. That is the difference this rule set makes.
 
-     One correction to what this comment used to claim. It said `min-width`
-     cannot lower an ancestor flex item's automatic minimum. It can, and does:
-     that is the mechanism above. What the earlier measurement actually showed
-     is narrower and still true — swapping `w-0` for `min-w-0` on THIS rule
-     alone, leaving the wrapper's automatic minimum in place, still overflows
-     the 200px row by 138px.
+     `min-width` reaches exactly one box: the one it is declared on. It does
+     not lower an ancestor's automatic minimum and it does not lower a
+     descendant's — the sentence this comment carried before the fix said so
+     and was right. Nothing above contradicts it: the rule works because BOTH
+     boxes declare their own, the control's on `.input-base` and the wrapper's
+     on `.input-wrapper`, and neither half works alone. Measured: the wrapper's
+     alone fails eleven fixtures (`--candidate=wrapper-only-auto`), the
+     control's alone fails four (`--candidate=auto-min-w-0`). It is also why
+     `two-up-200` stays open above. The caller's `flex-1` column is a third
+     box, no declaration in this package reaches it, and only the caller's own
+     `min-w-0` lowers it — which is why that row still overflows by 138px.
 
      There is deliberately NO positive min-width floor, and that was measured
      too. A floor here cannot reach the sites that want one: a consumer
