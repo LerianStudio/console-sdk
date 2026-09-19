@@ -18,7 +18,7 @@ export type SidebarTriggerProps = React.ComponentProps<typeof IconButton>
  * ⛔ THE BREAKPOINT IS IN PIXELS, AND `md:hidden` IS NOT A SPELLING OF IT.
  *
  * Whether the rail became a drawer is decided by `SIDEBAR_MOBILE_QUERY`, which
- * is `(max-width: 767px)` — pixels. `md:` is 48rem, and rem inside a MEDIA
+ * is `not (min-width: 768px)` — pixels. `md:` is 48rem, and rem inside a MEDIA
  * QUERY resolves against the browser's default font size rather than anything
  * the page declares, so the two flip at different widths the moment a reader
  * changes that setting. At Chrome's "Small" (12px) `md:` turns over at 576px

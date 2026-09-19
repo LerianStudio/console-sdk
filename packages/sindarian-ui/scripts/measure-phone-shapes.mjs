@@ -4,7 +4,7 @@
 //
 //   1. THE NAVIGATION BAND. `SidebarTrigger` hides itself with a class, and
 //      `SidebarProvider` decides whether the rail became a drawer with
-//      `matchMedia('(max-width: 767px)')`. If those two flip at different
+//      `matchMedia('not (min-width: 768px)')`. If those two flip at different
 //      pixels there is a band of viewports with NEITHER a rail NOR a
 //      hamburger: no navigation at all. `md:` is 48rem, and rem in a media
 //      query resolves against the BROWSER'S DEFAULT FONT SIZE rather than
