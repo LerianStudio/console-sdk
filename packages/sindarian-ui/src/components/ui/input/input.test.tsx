@@ -216,8 +216,17 @@ describe('.input-base', () => {
   /** `sm:min-w-16` floors just as hard as `min-w-16`. */
   const bare = (token: string) => token.slice(token.lastIndexOf(':') + 1)
 
+  /**
+   * `size-*` sets width as well as height, so it replaces the control's
+   * intrinsic contribution exactly as `w-*` does and has to be caught by the
+   * same case. Anything else that could reintroduce a declared width says so
+   * in its own name and is caught here too: `w-`, `min-w-` (the case below),
+   * `max-w-`, `basis-`, `size-`.
+   */
   it('declares no width, so the field keeps its natural size', () => {
-    const widths = applyTokens('.input-base').filter((t) => /^w-/.test(bare(t)))
+    const widths = applyTokens('.input-base').filter((t) =>
+      /^(w|max-w|basis|size)-/.test(bare(t))
+    )
 
     expect(widths).toEqual([])
   })
