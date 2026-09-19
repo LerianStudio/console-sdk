@@ -767,6 +767,7 @@ const measured = await evaluate(`(() => {
         const cs = getComputedStyle(el)
         const padding = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)
         const border = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth)
+        const box = el.parentElement.getBoundingClientRect()
         return {
           name: el.dataset.probe,
           tag: el.tagName.toLowerCase(),
@@ -774,7 +775,15 @@ const measured = await evaluate(`(() => {
           // What is left for text after padding and border. Zero means the box
           // shows nothing at all, however wide it looks.
           content: round(Math.max(0, b.width - padding - border)),
-          escapes: round(Math.max(0, b.right - el.parentElement.getBoundingClientRect().right))
+          // Both edges. A right-edge-only probe reads zero on every shape that
+          // pushes the control the other way: a row that justifies its items
+          // to the end, and every one of these fixtures mirrored into RTL,
+          // which is this page with the axis reversed. The rule set is
+          // direction-agnostic; a probe that only looks right is not.
+          // (No backticks in this comment — it lives inside a template
+          // literal, and one would end the string.)
+          escapes: round(Math.max(0, b.right - box.right)),
+          escapesLeft: round(Math.max(0, box.left - b.left))
         }
       })
     }
@@ -815,7 +824,11 @@ for (const f of FIXTURES) {
   for (const p of m.probes) {
     if (p.escapes > 0)
       sink('escape').push(
-        `${f.id}: ${p.name} paints ${p.escapes}px outside its own box`
+        `${f.id}: ${p.name} paints ${p.escapes}px outside its own box, past the right edge`
+      )
+    if (p.escapesLeft > 0)
+      sink('escape').push(
+        `${f.id}: ${p.name} paints ${p.escapesLeft}px outside its own box, past the left edge`
       )
     if (floor > 0 && p.tag === 'input' && p.content < floor)
       sink('content').push(
@@ -874,7 +887,8 @@ if (JSON_OUT) {
       console.log(
         `    ${p.name.padEnd(12)} <${p.tag.padEnd(6)}> width ${String(p.width).padEnd(8)}` +
           ` content ${String(p.content).padEnd(8)}` +
-          (p.escapes ? ` ESCAPES ${p.escapes}px` : '')
+          (p.escapes ? ` ESCAPES-RIGHT ${p.escapes}px` : '') +
+          (p.escapesLeft ? ` ESCAPES-LEFT ${p.escapesLeft}px` : '')
       )
   }
   console.log('')
