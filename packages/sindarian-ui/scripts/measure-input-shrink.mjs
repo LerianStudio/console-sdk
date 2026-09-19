@@ -113,44 +113,101 @@ const formItemHtml = (probe, inner) =>
  *   for c in width-0 width-auto input-min-w-0 auto-wrapper-min-w-0; do
  *     node scripts/measure-input-shrink.mjs --json --candidate=$c > /tmp/$c.json
  *   done
+ *
+ * EVERY CANDIDATE RESTATES THE WHOLE RULE SET, both properties on both boxes,
+ * and the check below refuses one that does not. A candidate that only
+ * declared what it wanted to CHANGE measured the committed stylesheet with a
+ * redundant line on top the moment the committed stylesheet grew a
+ * declaration of its own: after `min-width: 0` landed on both boxes, every
+ * `width`-only override silently became a no-op and ten rows of the table
+ * printed the shipped rule's numbers under another rule's name.
  */
 const CANDIDATES = {
   /** What the stylesheet declares today. No override. */
   shipped: '',
-  /** 2.0.0-beta.10: the input declares `width: 0`. */
-  'width-0': `.input-base { width: 0px; }`,
-  /** 2.0.0-beta.9 and earlier: no declared width at all. */
-  'width-auto': `.input-base { width: auto; }`,
+  /** 2.0.0-beta.10: the input declares `width: 0`, neither box a min-width. */
+  'width-0': `.input-wrapper { min-width: auto; } .input-base { width: 0px; min-width: auto; }`,
+  /** 2.0.0-beta.9 and earlier: no declared width and no min-width anywhere. */
+  'width-auto': `.input-wrapper { min-width: auto; } .input-base { width: auto; min-width: auto; }`,
   /** Lower only the input's own floor, keep its intrinsic contribution. */
-  'input-min-w-0': `.input-base { width: 100%; min-width: 0; }`,
+  'input-min-w-0': `.input-wrapper { min-width: auto; } .input-base { width: 100%; min-width: 0; }`,
   /** The same, plus the wrapper's own automatic minimum removed. */
   'wrapper-min-w-0': `.input-wrapper { min-width: 0; } .input-base { width: 100%; min-width: 0; }`,
   /** …and the FormItem box between a toolbar row and the wrapper. */
   'form-item-min-w-0': `.input-wrapper { min-width: 0; } .space-y-2 { min-width: 0; } .input-base { width: 100%; min-width: 0; }`,
   /** Carry the default width as a shrinkable flex basis instead of a width. */
-  'flex-basis-len': `.input-base { width: 0px; min-width: 0; flex: 1 1 17.5rem; }`,
+  'flex-basis-len': `.input-wrapper { min-width: auto; } .input-base { width: 0px; min-width: 0; flex: 1 1 17.5rem; }`,
   /** Same idea, letting the control's own content supply the basis. */
-  'flex-basis-content': `.input-base { width: 0px; min-width: 0; flex: 1 1 content; }`,
+  'flex-basis-content': `.input-wrapper { min-width: auto; } .input-base { width: 0px; min-width: 0; flex: 1 1 content; }`,
   /** Clip instead of floor: an overflow other than visible also zeroes a flex item's automatic minimum. */
-  'wrapper-overflow-hidden': `.input-wrapper { overflow: hidden; } .input-base { width: 100%; min-width: 0; }`,
+  'wrapper-overflow-hidden': `.input-wrapper { min-width: auto; overflow: hidden; } .input-base { width: 100%; min-width: 0; }`,
   /** Size the control from its own value/placeholder rather than `size=20`. */
-  'field-sizing-content': `.input-base { width: 100%; min-width: 0; field-sizing: content; }`,
+  'field-sizing-content': `.input-wrapper { min-width: auto; } .input-base { width: 100%; min-width: 0; field-sizing: content; }`,
   /** Containment, for completeness: it removes the contents from the wrapper's own sizing. */
-  'wrapper-contain': `.input-wrapper { contain: inline-size; } .input-base { width: 100%; min-width: 0; }`,
+  'wrapper-contain': `.input-wrapper { min-width: auto; contain: inline-size; } .input-base { width: 100%; min-width: 0; }`,
   /** Is the declared `width: 100%` load-bearing next to `min-width: 0`? */
-  'auto-min-w-0': `.input-base { width: auto; min-width: 0; }`,
+  'auto-min-w-0': `.input-wrapper { min-width: auto; } .input-base { width: auto; min-width: 0; }`,
   /** A floor that yields to its container rather than flooring it. */
-  'min-clamp': `.input-base { width: 100%; min-width: min(12rem, 100%); }`,
+  'min-clamp': `.input-wrapper { min-width: auto; } .input-base { width: 100%; min-width: min(12rem, 100%); }`,
   /** A floor small enough that a crushed field still shows a caret. */
-  'floor-4rem': `.input-base { width: 100%; min-width: 4rem; }`,
+  'floor-4rem': `.input-wrapper { min-width: auto; } .input-base { width: 100%; min-width: 4rem; }`,
   /** The same idea one box out, so a consumer's `min-w-0` cannot outrank it. */
   'wrapper-floor-2_5rem': `.input-wrapper { min-width: 2.5rem; } .input-base { width: 100%; min-width: 0; }`,
-  /** Hold the width, and let the wrapper itself compress when IT is the flex item. */
+  /** What this package ships, restated as an override so the table has its row. */
   'auto-wrapper-min-w-0': `.input-wrapper { min-width: 0; } .input-base { width: auto; min-width: 0; }`,
   /** Is `min-width: 0` load-bearing next to a percentage width, or does the percentage do it alone? */
-  'width-100-only': `.input-base { width: 100%; }`,
-  /** …and the same question for the input half of the hold-the-width arm. */
-  'wrapper-only-auto': `.input-wrapper { min-width: 0; } .input-base { width: auto; }`
+  'width-100-only': `.input-wrapper { min-width: auto; } .input-base { width: 100%; min-width: auto; }`,
+  /** …and the same question for the input half of the shipped arm. */
+  'wrapper-only-auto': `.input-wrapper { min-width: 0; } .input-base { width: auto; min-width: auto; }`
+}
+
+/**
+ * An override that cannot undo what the stylesheet declares measures the
+ * stylesheet. Two guards, because each catches what the other cannot.
+ *
+ * Structural, run on every invocation and cheap: a candidate must set both
+ * `width` and `min-width` on `.input-base`, and `min-width` on
+ * `.input-wrapper`. Add a declaration to either rule set and this list is what
+ * forces the candidates to grow with it.
+ */
+function assertCandidateIsComplete(id) {
+  const css = CANDIDATES[id]
+  if (!css) return
+
+  const block = (selector) =>
+    css.match(new RegExp(`\\${selector}\\s*\\{([^}]*)\\}`))?.[1] ?? ''
+  // `min-width` ends in `width`, so anchor on what precedes the property.
+  const declares = (body, property) =>
+    new RegExp(`(^|[;{\\s])${property}\\s*:`).test(body)
+
+  const missing = []
+  if (!declares(block('.input-base'), 'width'))
+    missing.push('width on .input-base')
+  if (!declares(block('.input-base'), 'min-width'))
+    missing.push('min-width on .input-base')
+  if (!declares(block('.input-wrapper'), 'min-width'))
+    missing.push('min-width on .input-wrapper')
+
+  if (missing.length) {
+    console.error(
+      `candidate "${id}" is incomplete and would measure the committed ` +
+        `stylesheet instead of itself: no ${missing.join(', no ')}. ` +
+        `Every candidate restates the whole rule set.`
+    )
+    process.exit(2)
+  }
+}
+
+/**
+ * Behavioural, run after the browser: the two candidates the table is read
+ * against have to reproduce the defects they are named for. `width-0` is
+ * 2.0.0-beta.10, which emptied both filter bars; `width-auto` is beta.9, which
+ * could not compress a caller's column. A run where those findings are absent
+ * is a run whose overrides did not reach the page.
+ */
+const CANDIDATE_MUST_FIND = {
+  'width-0': ['toolbar-803', 'toolbar-390'],
+  'width-auto': ['two-up-200']
 }
 
 /**
@@ -459,6 +516,7 @@ if (!(CANDIDATE in CANDIDATES)) {
   )
   process.exit(2)
 }
+assertCandidateIsComplete(CANDIDATE)
 // Unlayered, so it outranks `@layer components` whatever the source order.
 fs.writeFileSync(htmlPath, harnessHtml(css + '\n' + CANDIDATES[CANDIDATE]))
 
@@ -637,6 +695,16 @@ for (const f of FIXTURES) {
   }
 }
 
+// The structural guard above reads the candidate's text; this one reads the
+// browser. A complete override can still measure the committed stylesheet —
+// wrong cascade layer, an `@source` that stopped resolving, a selector the
+// stylesheet renamed — and the only proof that it reached the page is that the
+// defect it is named for came back. A missing finding here is never a passing
+// candidate, it is a run that measured something else.
+const missingProof = (CANDIDATE_MUST_FIND[CANDIDATE] || []).filter(
+  (id) => ![...failures, ...reported].some((f) => f.startsWith(`${id}:`))
+)
+
 if (JSON_OUT) {
   console.log(
     JSON.stringify(
@@ -693,6 +761,16 @@ if (JSON_OUT) {
       'PASS: every governed row fits, nothing paints outside its box, no field is pure padding'
     )
   }
+}
+
+if (missingProof.length) {
+  console.error(
+    `candidate "${CANDIDATE}" did not reproduce the defect it is named for: ` +
+      `no finding on ${missingProof.join(', ')}. The override is inert — it ` +
+      `is outranked, or it never reached the page — so every number this run ` +
+      `printed belongs to the committed stylesheet, not to this candidate.`
+  )
+  process.exit(2)
 }
 
 process.exit(failures.length ? 1 : 0)
