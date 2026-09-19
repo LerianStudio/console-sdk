@@ -407,10 +407,33 @@ const FIXTURES = [
   {
     id: 'palette-header-390',
     width: 390,
-    note: 'product-console command palette, written by hand: the same w-48 wrapper shape (search-command-palette.tsx)',
+    // The palette is NOT another `w-48` wrapper around a plain input, which is
+    // what this fixture used to model — it is the console wrapping the kit's
+    // `CommandInput`, so two things sit between the wrapper and the control
+    // that no other fixture here has: an intermediate box, and a 16px search
+    // glyph with an 8px margin that is `shrink-0` and takes its 24px before
+    // the control is offered anything.
+    //
+    // It also answers a different question, because `CommandInput` declares
+    // `w-full` on the control itself. That is a utility, so it outranks this
+    // package's rule set whatever the rule set declares: the palette is on the
+    // percentage arm in every candidate, and the row is here to show that a
+    // change to `.input-base` does not move it.
+    note: 'product-console command palette (search-command-palette.tsx): the kit CommandInput inside a hand-written w-48 input-wrapper, with the glyph and the intermediate box the component renders. The control declares w-full itself.',
     row: 'flex shrink-0 items-center gap-3 p-3',
     html:
-      inputHtml('search', 'h-full py-0', 'w-48') +
+      `<div data-probe="search-box" class="input-wrapper input-wrapper-focus w-48">` +
+      // The console zeroes this box's border and padding from the wrapper,
+      // through two `**:data-[slot=command-input-wrapper]:` variants. Modelled
+      // as the box those leave behind rather than as the pair of competing
+      // class lists, so the fixture does not measure Tailwind's ordering.
+      `<div data-probe="cmd-box" class="flex items-center">` +
+      `<svg class="mr-2 h-4 w-4 shrink-0 opacity-50" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/></svg>` +
+      // The control's class list as `cn` resolves it: the console's `h-full`
+      // and `py-0` replace the component's `h-11` and `py-3`, and `w-full`
+      // survives from the component.
+      `<input data-probe="search" class="input-base flex h-full w-full rounded-md bg-transparent py-0 text-sm outline-hidden" placeholder="Search" value="1234567.89">` +
+      `</div></div>` +
       selectHtml('org', 'w-40') +
       selectHtml('ledger', 'w-40')
   },
@@ -566,8 +589,23 @@ if (!(CANDIDATE in CANDIDATES)) {
   process.exit(2)
 }
 assertCandidateIsComplete(CANDIDATE)
-// Unlayered, so it outranks `@layer components` whatever the source order.
-fs.writeFileSync(htmlPath, harnessHtml(css + '\n' + CANDIDATES[CANDIDATE]))
+// Appended INTO `@layer components`, where this package's own rule set lives:
+// later in the same layer, so it replaces the committed rule, and still under
+// `@layer utilities`, so a caller's `w-32` or `w-full` outranks the candidate
+// exactly as it outranks the shipped rule. Unlayered — which is what this line
+// used to do — outranks every layer, so a candidate silently beat the width
+// utility the fixture was there to measure: `width-utilities-360` and the
+// command palette both read the candidate's width where the real cascade gives
+// the caller's.
+fs.writeFileSync(
+  htmlPath,
+  harnessHtml(
+    css +
+      (CANDIDATES[CANDIDATE]
+        ? `\n@layer components { ${CANDIDATES[CANDIDATE]} }`
+        : '')
+  )
+)
 
 // A fixture whose utility was never emitted compares a rule against its own
 // absence and passes for the wrong reason — the false pass this script exists
