@@ -41,7 +41,7 @@ import {
  * uses next door, so `isMobile` is driven from the query the provider asks for
  * rather than from a real viewport.
  */
-const MOBILE_QUERY = '(max-width: 767px)'
+const MOBILE_QUERY = SIDEBAR_MOBILE_QUERY
 
 let matches = false
 const listeners = new Set<() => void>()
@@ -773,8 +773,12 @@ describe('SidebarRoot in drawer mode below 768px', () => {
  * font sizes and enforces that exactly one of the two is reachable at each.
  */
 describe('SidebarTrigger and the drawer agree on one breakpoint', () => {
-  /** 767 from `(max-width: 767px)`, so this cannot drift from the provider. */
-  const upperBound = Number(SIDEBAR_MOBILE_QUERY.match(/(\d+)px/)![1])
+  /**
+   * 768 from `not (min-width: 768px)`. Derived rather than restated, so the
+   * two halves cannot drift; the derivation changed with the spelling, which
+   * is the point of deriving it.
+   */
+  const bound = Number(SIDEBAR_MOBILE_QUERY.match(/(\d+)px/)![1])
 
   it('hides itself from the pixel the drawer stops at', () => {
     render(
@@ -784,8 +788,22 @@ describe('SidebarTrigger and the drawer agree on one breakpoint', () => {
     )
 
     expect(screen.getByRole('button', { name: /navigation/i })).toHaveClass(
-      `min-[${upperBound + 1}px]:hidden`
+      `min-[${bound}px]:hidden`
     )
+  })
+
+  /**
+   * ⛔ A NEGATION, NOT AN UPPER BOUND. `(max-width: 767px)` alongside
+   * `min-[768px]` leaves the open interval (767, 768) matched by neither, and
+   * a viewport there draws the rail AND a hamburger that opens nothing —
+   * `SidebarRoot` renders the inline nav when `isMobile` is false and mounts
+   * no `Sheet`, so the control is dead. Chromium rounds its layout viewport to
+   * a whole pixel and never lands there; that is a rounding behaviour, not a
+   * boundary.
+   */
+  it('states the drawer query as the exact complement of that pixel', () => {
+    expect(SIDEBAR_MOBILE_QUERY).toBe(`not (min-width: ${bound}px)`)
+    expect(SIDEBAR_MOBILE_QUERY).not.toMatch(/max-width/)
   })
 
   /**
