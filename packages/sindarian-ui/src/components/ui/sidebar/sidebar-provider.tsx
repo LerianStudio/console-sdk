@@ -6,11 +6,32 @@ import { getStorage, getStorageObject } from '@/lib/storage'
 /**
  * The viewport below which the rail stops being a layout and becomes a drawer.
  *
- * 767px rather than 768px: this is the upper bound of `max-width`, so it is the
- * complement of Tailwind's `md` breakpoint (`min-width: 768px`) and `md:hidden`
- * on `SidebarTrigger` flips at exactly the same pixel the query does.
+ * ⛔ THE NEGATION OF THE TRIGGER'S QUERY, SPELLED AS A NEGATION.
+ *
+ * `SidebarTrigger` hides itself at `min-[768px]`, which is `width >= 768`. This
+ * is its exact complement AT ANY PRECISION, which `(max-width: 767px)` was not:
+ * that pair leaves the open interval (767, 768) matched by neither rule, and a
+ * viewport there draws the rail AND a hamburger that opens nothing — with the
+ * rail inline, `SidebarRoot` mounts no `Sheet`, so the control is dead. Chromium
+ * snaps its layout viewport to a whole pixel and never lands there, measured at
+ * four zoom levels; that is a rounding behaviour to rely on, not a boundary.
+ *
+ * ⚠️ THE PAIR HAS TO BE IN THE SAME UNIT. It used to be `md:hidden` over there,
+ * and `md` is 48rem: rem in a media query follows the BROWSER'S default font
+ * size, so at Chrome's "Small" setting that class hid the hamburger from 576px
+ * while this query still asked for a drawer up to 767px — a band of viewports
+ * with no navigation at all. Anything else that hides or shows a control at
+ * this boundary states it in pixels for the same reason.
+ *
+ * Media Queries Level 4 boolean logic, which is not a new requirement here:
+ * Tailwind v4 emits MQ4 RANGE syntax for everything this package ships —
+ * `min-[768px]` on the trigger compiles to `@media (width >= 768px)` and
+ * `max-sm:` on `SheetContent` to `@media (width < 40rem)` — and range syntax
+ * and boolean `not` landed in the same browsers (Chrome 88, Firefox 64,
+ * Safari 16.4). `(width < 768px)` is the equivalent range spelling of this
+ * line, should a reader prefer the pair to match character for character.
  */
-export const SIDEBAR_MOBILE_QUERY = '(max-width: 767px)'
+export const SIDEBAR_MOBILE_QUERY = 'not (min-width: 768px)'
 
 /**
  * Where focus goes when the rail has to receive it. The rail's own content is
@@ -115,7 +136,7 @@ export const SidebarProvider = ({ children }: React.PropsWithChildren) => {
     // ⛔ AND NOT AT ALL WHEN THE VIEWPORT IS THE ONE THAT DISMISSED IT. A
     // tablet rotated from portrait to landscape with the navigation open
     // crosses 768px, so the drawer is replaced by the rail and the opener is
-    // `SidebarTrigger` — which the same breakpoint just hid with `md:hidden`.
+    // `SidebarTrigger` — which the same breakpoint just hid.
     // `.focus()` on a `display: none` element is a silent no-op, and Radix's
     // own restore is already `preventDefault()`ed, so focus fell to `<body>`
     // and the reader lost their place (SC 2.4.3). Measured in Chromium at

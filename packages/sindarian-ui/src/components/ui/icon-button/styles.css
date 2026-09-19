@@ -1,5 +1,9 @@
 @theme inline {
   --spacing-icon-button-p: calc(var(--spacing) * 2);
+  /* The tap target every icon control in this package answers to, which is
+     also `.icon-button-base`'s own box. Named once so the small variant's
+     target and the default variant's size cannot drift apart. */
+  --spacing-icon-button-target: calc(var(--spacing) * 10);
 }
 
 @layer components {
@@ -17,6 +21,44 @@
 
   .icon-button-small {
     @apply size-8 [&>*]:size-4;
+  }
+
+  /* ⛔ THE GLYPH IS 2rem, THE TARGET IS 2.5rem, AND THEY ARE NOT THE SAME BOX.
+     A table's row-actions kebab is the one control in its row, and at
+     `size-8` it was a 32x32 tap target where every icon control in the shell
+     is 40x40 — measured at 32x32 on the ledgers, transactions and
+     bank-transfer listings at a 390px viewport.
+
+     Growing the button instead would have grown the row: `TableCell` is
+     `py-4`, so a `size-10` trigger takes the row from 64.5px to 72.5px and a
+     phone shows fewer rows for the trouble. An absolutely positioned
+     pseudo-element takes part in hit testing and in nothing else, so the row,
+     the cell, the alignment and every other layout this class appears in are
+     byte-identical; `.button-base` is already `relative`, which is what this
+     anchors to.
+
+     ⚠️ CENTRED AND SIZED, NOT INSET BY A CONSTANT. A negative `inset` is
+     measured from the PADDING box, so `-inset-1` on this button came out
+     38x38 rather than 40x40 — `.button-outline` carries a 1px transparent
+     border, and three of the eight perimeter points fell outside it. Half of
+     50% resolves against whatever the box actually is, so this states the
+     target as a size and lets the border be whatever it is.
+
+     The target is `--spacing-icon-button-target`, which is `.icon-button-base`
+     itself, so it is 2.5rem at any browser font rather than 40px at one of
+     them. That leaves a quarter of a rem on each side, which is also the
+     `gap-1` between the two buttons in `CopyField` — the only place in this
+     package where two of these sit side by side — so each target stops at its
+     neighbour's visible edge and neither can be tapped by aiming at the other.
+     They do share the empty gap, which the later one paints over and takes.
+
+     `scripts/measure-phone-shapes.mjs` walks eight points around the 2.5rem
+     perimeter and asks the document what is there; run it when touching this
+     rule. */
+  .icon-button-small::after {
+    position: absolute;
+    inset: calc(50% - var(--spacing-icon-button-target) / 2);
+    content: '';
   }
 
   .icon-button-rounded {

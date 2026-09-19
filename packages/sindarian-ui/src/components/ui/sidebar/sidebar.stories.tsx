@@ -147,8 +147,13 @@ export const Responsive: StoryObj = {
           </SidebarRoot>
           <PageContent>
             <div className="p-4">
-              {/* Only rendered below 768px: `md:hidden` is the trigger's own
-                  default, and above the breakpoint the rail is already there. */}
+              {/* Only shown below 768px: `min-[768px]:hidden` is the trigger's
+                  own default, and above the breakpoint the rail is already
+                  there. Stated in pixels rather than as `md:`, because that is
+                  the unit the drawer decision is in — `md:` is 48rem, and rem
+                  in a media query follows the BROWSER's default font size, so
+                  the two used to flip at different widths and leave a band of
+                  viewports with no navigation at all. */}
               <SidebarTrigger />
               <p className="text-muted-foreground mt-4 text-sm">
                 Below 768px the navigation is a drawer. Press the hamburger.

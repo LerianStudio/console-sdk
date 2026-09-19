@@ -161,6 +161,57 @@ twice. The rules are identical and the duplication is harmless, costing roughly
 8 KB pre-gzip. Keep the app's `@import 'tailwindcss'` first; do not drop it to
 avoid the duplicate.
 
+## 📱 What a call site controls on a phone
+
+### `SheetContent` fills the screen below `sm`
+
+The panel was `w-2/5` with `p-12` at every viewport, which at 390px is a 156px
+panel with 9px of readable field inside it. Below 40rem it is now full width
+with 16px of side padding; the desktop panel is unchanged.
+
+A call site that declares its own width keeps it — the phone values carry the
+`max-sm:` modifier and tailwind-merge only drops a conflicting class with
+matching modifiers, so `className="w-[594px]"` still means 594px on a desktop
+AND full width on a phone, with no edit. A call site that wants its own phone
+geometry states it the same way:
+
+```tsx
+<SheetContent className="w-[594px] max-sm:w-[320px] max-sm:p-0" />
+```
+
+That modifier rule cuts both ways, and the padding is where a call site feels
+it: a bare `p-0` drops `p-12` and **cannot** reach `max-sm:px-4` either, so a
+panel that asked for no padding gets 16px a side below 40rem. If it genuinely
+wants none, `max-sm:p-0` is the one token that says so.
+
+The navigation drawer is exempt and says so itself; nothing at a call site is
+needed for it.
+
+### `SidebarTrigger` hides in pixels, not rems
+
+Its default is `min-[768px]:hidden`, the exact complement of the media query
+the drawer decision subscribes to. Do not restate that boundary as `md:hidden`
+anywhere: `md` is 48rem, and a rem inside a media query follows the browser's
+default font size, so the two flip at different widths as soon as a reader
+changes that setting — which left viewports with no rail and no hamburger.
+
+### `IconButton size="small"` answers a 2.5rem target
+
+The glyph stays 2rem; the tap target is an absolutely positioned pseudo-element
+at `.icon-button-base`'s own size, so no layout moves and a table row keeps its
+height. A call site needs nothing. Two of these side by side want at least
+`gap-1` between them, which is what makes each target stop at its neighbour's
+visible edge.
+
+### A `w-*` on an input is a preferred size; `shrink-0` on the wrapper is the floor
+
+`.input-base` declares no width, so the control contributes its intrinsic size
+and compresses when an ancestor says it may. A width utility on the input is
+therefore what it asks for, not what it keeps: in a row under pressure the
+field still gives. A field that must not give says so on its own wrapper with
+`shrink-0`, and a column that must compress says `min-w-0` on its own flex
+item. See `scripts/measure-input-shrink.mjs` for the fixtures and the numbers.
+
 ## 📚 Component Categories
 
 ### UI Primitives

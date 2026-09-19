@@ -169,8 +169,19 @@ export const SidebarRoot = ({
           // its own. `max-w-full` so a consumer widening `--sidebar-width` past
           // the viewport still cannot push the drawer off screen. The lifted
           // override goes LAST so it re-points the variable this element reads.
+          //
+          // ⛔ THE `max-sm:` PAIR IS NOT A DUPLICATE. `SheetContent` grew a
+          // phone step — `max-sm:w-full max-sm:px-4` — because a form panel at
+          // two fifths of a 390px screen is unreadable. A NAVIGATION drawer is
+          // the one panel that must not take it: 244px over a dimmed page is
+          // the design, and full-bleed removes the tap-outside-to-close target
+          // that every other way out of this drawer is an alternative to.
+          // tailwind-merge drops a conflicting class only when the modifiers
+          // match, so a bare `w-[…]` cannot reach `max-sm:w-full` and these two
+          // tokens are what state the exemption. Measured: without them the
+          // drawer is 390px wide with 16px of inset on a 390px phone.
           className={cn(
-            'w-[var(--sidebar-width)] max-w-full gap-0 p-0',
+            'w-[var(--sidebar-width)] max-w-full gap-0 p-0 max-sm:w-[var(--sidebar-width)] max-sm:p-0',
             liftWidthOverrides(className)
           )}
           // The drawer has a title and no description; without this Radix warns

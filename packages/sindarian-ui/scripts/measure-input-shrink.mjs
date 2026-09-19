@@ -572,17 +572,25 @@ const FIXTURES = [
     id: 'sheet-right-390',
     width: 390,
     // This package's OWN panel, and the only fixture here that is not a
-    // consumer's arithmetic. `sheetVariants` sizes it `w-2/5 p-12` and carries
-    // no phone breakpoint, so at a 390px viewport the panel is 156px wide with
-    // 59px of content and a form field inside it comes out 41px wide with 9px
-    // of text. Measured across the arms: 2.0.0-beta.9 painted 189px of the
-    // control across the panel edge here, beta.10 and this rule set both give
-    // the same 41/9. So the rule set is not what makes this panel unusable on
-    // a phone — the missing breakpoint is, and that is a Sheet defect, not an
-    // input one. Everything is reported for that reason, and the numbers are
-    // here so the breakpoint can be measured when someone adds it.
+    // consumer's arithmetic. `sheetVariants` sizes it `w-2/5 p-12`, so a 156px
+    // box leaves 59px of content and the field inside it comes out 41px wide
+    // with 9px of text. Measured across the arms: 2.0.0-beta.9 painted 189px
+    // of the control across the panel edge here, beta.10 and this rule set
+    // both give the same 41/9. So the rule set is not what made this panel
+    // unusable on a phone; its missing breakpoint was, and that was a Sheet
+    // defect rather than an input one. Everything is reported for that reason.
+    //
+    // ⚠️ THE BREAKPOINT LANDED IN 2.0.0-beta.12 AND THIS FIXTURE STILL READS
+    // 41/9, WHICH IS NOT A CONTRADICTION. `max-sm:w-full max-sm:px-4` is a
+    // media query against the VIEWPORT, and every fixture here is a fixed-width
+    // box inside one 1200px window — a 390px column on a desktop, which is
+    // exactly the shape this one models and exactly the shape the phone step
+    // must not touch. The panel at a real 390px viewport is
+    // `scripts/measure-phone-shapes.mjs`, which frames each case in its own
+    // iframe so the media query has something to resolve against; it reads
+    // 390px of panel and 307px of field.
     report: ['row', 'escape', 'content'],
-    note: 'the right-side SheetContent panel this package ships, at a 390px viewport: `w-2/5 p-12` with no phone breakpoint, so the panel leaves 59px of content and the field inside it 9px of text. The repair is a breakpoint on the Sheet.',
+    note: 'the right-side SheetContent panel in a 390px BOX on a desktop window, i.e. the desktop geometry: `w-2/5 p-12` leaves 59px of content and the field 9px of text. The phone step shipped in beta.12 and is a viewport media query, so it does not reach this shape — see scripts/measure-phone-shapes.mjs for the panel at a real 390px viewport.',
     row: 'flex',
     html:
       // The class list `SheetContent` actually emits, which is not the one its
