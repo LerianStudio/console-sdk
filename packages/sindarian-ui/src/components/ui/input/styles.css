@@ -60,8 +60,8 @@
      contributes max-content but zero min-content — and it was the runner-up
      here. It loses on the same filter bar at 390px, where the control is not
      merely sized by its content but squeezed, and it disappears rather than
-     letting the bar scroll. Seventeen rule sets were measured against fourteen
-     fixtures; none closes all of them.
+     letting the bar scroll. Seventeen rule sets were measured against
+     seventeen fixtures; none closes all of them.
 
      What this one leaves open is `two-up-200`: two fields in a caller's
      `flex-1` columns inside a 200px row, which now overflows by 138px instead
@@ -98,7 +98,8 @@
 
      `scripts/measure-input-shrink.mjs` carries the fixtures and the numbers;
      run it when touching this rule set, and `--candidate=ID` re-measures any
-     of the seventeen before re-opening the trade. */
+     of the seventeen, or `shipped` for this one, before re-opening the
+     trade. */
   .input-base {
     @apply px-input-px text-input-foreground placeholder:text-input-placeholder h-full min-h-0 min-w-0 flex-1 border-none bg-transparent outline-none focus:ring-0 focus:ring-offset-0;
   }
