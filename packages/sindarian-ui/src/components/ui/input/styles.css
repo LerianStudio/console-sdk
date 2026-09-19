@@ -32,11 +32,21 @@
      THE CONTRACT, and all three halves of it are measured. A field keeps its
      natural width: nothing here declares one, so the control contributes its
      own intrinsic size and a box sized BY ITS CONTENT — a search box in a
-     `flex gap-4` filter bar — comes out as a field. A field never paints
-     outside its own box: `min-w-0` on both boxes drops the automatic minimum
-     that used to hold the control at 239px inside a narrower wrapper. A row
-     that must compress says so on its own flex item, with `min-w-0`, and that
-     one token now works.
+     `flex gap-4` filter bar — comes out as a field. A field fills its box
+     instead of overrunning it: `min-w-0` on both boxes drops the automatic
+     minimum that used to hold the control at 239px inside a narrower wrapper,
+     down to the one width it cannot go under. That floor is arithmetic rather
+     than policy — `px-input-px` is 16px a side and the box sizing is
+     border-box, so the control is 32px wide carrying nothing at all — and a
+     box narrower than that gets the difference painted outside it. Measured at
+     23px on the console's template-builder header, whose `w-48` wrapper is
+     squeezed to 18px and which the console repairs with `shrink-0` on that
+     wrapper. This package's own `SheetContent side="right"` runs the same
+     arithmetic one step earlier: at a 390px viewport `w-2/5 p-12` leaves a
+     59px panel, and the field comes out 41px wide with 9px of text — unusable,
+     but inside its box, where 2.0.0-beta.9 painted 189px of it across the
+     panel edge. A row that must compress says so on its own flex item, with
+     `min-w-0`, and that one token now works.
 
      Why no declared width, measured rather than assumed. A declared width
      replaces the control's max-content contribution as well as its min-content

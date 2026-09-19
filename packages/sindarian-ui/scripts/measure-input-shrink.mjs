@@ -451,6 +451,36 @@ const FIXTURES = [
     html:
       formItemHtml('left', inputHtml('ledgername')) +
       formItemHtml('right', inputHtml('ledgercode'))
+  },
+  {
+    id: 'sheet-right-390',
+    width: 390,
+    // This package's OWN panel, and the only fixture here that is not a
+    // consumer's arithmetic. `sheetVariants` sizes it `w-2/5 p-12` and carries
+    // no phone breakpoint, so at a 390px viewport the panel is 156px wide with
+    // 59px of content and a form field inside it comes out 41px wide with 9px
+    // of text. Measured across the arms: 2.0.0-beta.9 painted 189px of the
+    // control across the panel edge here, beta.10 and this rule set both give
+    // the same 41/9. So the rule set is not what makes this panel unusable on
+    // a phone — the missing breakpoint is, and that is a Sheet defect, not an
+    // input one. Everything is reported for that reason, and the numbers are
+    // here so the breakpoint can be measured when someone adds it.
+    report: ['row', 'escape', 'content'],
+    note: 'the right-side SheetContent panel this package ships, at a 390px viewport: `w-2/5 p-12` with no phone breakpoint, so the panel leaves 59px of content and the field inside it 9px of text. The repair is a breakpoint on the Sheet.',
+    row: 'flex',
+    html:
+      // The class list `SheetContent` actually emits, which is not the one its
+      // source reads: the content class asks for `px-8 pb-0` and `cn` drops
+      // both, tailwind-merge resolving `p-12` from `sheetVariants` as the
+      // conflicting shorthand. Verified with `twMerge` on the three lists the
+      // component passes. The cascade never sees the padding question.
+      //
+      // `fixed inset-y-0 right-0` is deliberately not carried over: it would
+      // take the panel out of the row and measure it against the window. What
+      // is modelled here is the panel's box, which is what the field is inside.
+      `<div data-probe="panel" class="flex max-h-screen w-2/5 flex-col gap-4 overflow-x-auto border-l p-12">` +
+      formItemHtml('sheetfield', inputHtml('sheetname')) +
+      `</div>`
   }
 ]
 
