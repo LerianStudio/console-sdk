@@ -7,8 +7,15 @@ import { getStorage, getStorageObject } from '@/lib/storage'
  * The viewport below which the rail stops being a layout and becomes a drawer.
  *
  * 767px rather than 768px: this is the upper bound of `max-width`, so it is the
- * complement of Tailwind's `md` breakpoint (`min-width: 768px`) and `md:hidden`
- * on `SidebarTrigger` flips at exactly the same pixel the query does.
+ * exact complement of `min-[768px]:hidden` on `SidebarTrigger`, and the two
+ * flip at the same pixel.
+ *
+ * ⚠️ THE PAIR HAS TO BE IN THE SAME UNIT. It used to be `md:hidden` over there,
+ * and `md` is 48rem: rem in a media query follows the BROWSER'S default font
+ * size, so at Chrome's "Small" setting that class hid the hamburger from 576px
+ * while this query still asked for a drawer up to 767px — a band of viewports
+ * with no navigation at all. Anything else that hides or shows a control at
+ * this boundary states it in pixels for the same reason.
  */
 export const SIDEBAR_MOBILE_QUERY = '(max-width: 767px)'
 
@@ -115,7 +122,7 @@ export const SidebarProvider = ({ children }: React.PropsWithChildren) => {
     // ⛔ AND NOT AT ALL WHEN THE VIEWPORT IS THE ONE THAT DISMISSED IT. A
     // tablet rotated from portrait to landscape with the navigation open
     // crosses 768px, so the drawer is replaced by the rail and the opener is
-    // `SidebarTrigger` — which the same breakpoint just hid with `md:hidden`.
+    // `SidebarTrigger` — which the same breakpoint just hid.
     // `.focus()` on a `display: none` element is a silent no-op, and Radix's
     // own restore is already `preventDefault()`ed, so focus fell to `<body>`
     // and the reader lost their place (SC 2.4.3). Measured in Chromium at
