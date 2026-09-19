@@ -60,11 +60,20 @@ function SheetOverlay({
  * ASYMMETRY IS THE WHOLE MECHANISM. `cn` resolves these through tailwind-merge
  * before the cascade sees them, and tailwind-merge only drops a conflicting
  * class carrying the SAME modifiers. So a caller's `w-[594px]` replaces
- * `w-2/5` and leaves `max-sm:w-full` standing: fifteen console sheets declare
- * their own desktop width and every one of them still fills a phone, with no
- * edit at the call site. Written the other way round — `w-full sm:w-2/5` — the
- * caller's bare `w-[594px]` would have been overruled by `sm:w-2/5` at every
- * desktop width instead, which is the same bug pointing the other way.
+ * `w-2/5` and leaves `max-sm:w-full` standing: the fifteen product-console
+ * sheets that declare a pixel width of their own — and the two that declare
+ * `w-full` — all still fill a phone, with no edit at the call site. Written
+ * the other way round — `w-full sm:w-2/5` — the caller's bare `w-[594px]`
+ * would have been overruled by `sm:w-2/5` at every desktop width instead,
+ * which is the same bug pointing the other way.
+ *
+ * ⚠️ IT CUTS BOTH WAYS, AND THE PADDING IS WHERE THAT IS FELT. A caller's bare
+ * `p-0` drops `p-12` and cannot reach `max-sm:px-4` either, so a panel that
+ * asked for no padding gets 16px a side below 40rem. That is deliberate — it
+ * is what makes the phone step reach the call sites that need it most — and it
+ * is what product-console's own unlayered rule already did to those five
+ * sheets, so nothing there moves. For any other consumer it is a behaviour
+ * change from 2.0.0-beta.11, and the way out is one token.
  *
  * A call site that genuinely wants its own phone width or padding says so with
  * the modifier (`max-sm:w-[320px]`, `max-sm:p-0`), which is one token and

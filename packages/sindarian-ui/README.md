@@ -179,6 +179,11 @@ geometry states it the same way:
 <SheetContent className="w-[594px] max-sm:w-[320px] max-sm:p-0" />
 ```
 
+That modifier rule cuts both ways, and the padding is where a call site feels
+it: a bare `p-0` drops `p-12` and **cannot** reach `max-sm:px-4` either, so a
+panel that asked for no padding gets 16px a side below 40rem. If it genuinely
+wants none, `max-sm:p-0` is the one token that says so.
+
 The navigation drawer is exempt and says so itself; nothing at a call site is
 needed for it.
 
