@@ -19,6 +19,7 @@ import {
   SidebarProvider,
   SidebarRoot,
   SidebarTrigger,
+  SIDEBAR_MOBILE_QUERY,
   useSidebar
 } from '.'
 
@@ -345,6 +346,33 @@ describe('SidebarRoot widths', () => {
     const sheet = baseElement.querySelector('[data-slot="sheet-content"]')
     expect(sheet).toHaveClass('w-[var(--sidebar-width)]')
     expect(sheet?.className).not.toMatch(/\[--sidebar-width/)
+  })
+
+  /**
+   * ⛔ THE DRAWER IS THE ONE SHEET THAT MUST NOT TAKE THE PHONE WIDTH.
+   *
+   * `SheetContent` grew a phone step — `max-sm:w-full max-sm:px-4` — because a
+   * FORM panel at two fifths of a 390px screen is unreadable. A navigation
+   * drawer is not a form panel: 244px over a dimmed page is the design, and a
+   * full-bleed one removes the tap-outside-to-close target that Escape and the
+   * close button are alternatives to, not replacements for.
+   *
+   * tailwind-merge drops a conflicting class only when the modifiers match, so
+   * the bare `w-[var(--sidebar-width)]` this drawer has always passed cannot
+   * reach `max-sm:w-full` — the exemption has to restate both tokens under the
+   * same modifier. Measured without them: a 390px drawer with 16px of inset on
+   * a 390px phone.
+   */
+  it('exempts the drawer from the sheet phone width and padding', async () => {
+    const { baseElement } = render(<Drawer />)
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+
+    const sheet = baseElement.querySelector('[data-slot="sheet-content"]')
+    expect(sheet).toHaveClass('max-sm:w-[var(--sidebar-width)]', 'max-sm:p-0')
+    expect(sheet).not.toHaveClass('max-sm:w-full')
+    expect(sheet).not.toHaveClass('max-sm:px-4')
   })
 
   it('declares both widths in the stylesheet so the default survives', () => {
@@ -721,6 +749,72 @@ describe('SidebarRoot in drawer mode below 768px', () => {
     const nav = baseElement.querySelector('[data-slot="sidebar-root"]')
     expect(nav).toHaveClass('h-full')
     expect(nav).toHaveAttribute('data-tour', 'midaz-sidebar')
+  })
+})
+
+/**
+ * ⛔ A BAND OF VIEWPORTS WITH NO NAVIGATION AT ALL.
+ *
+ * Two mechanisms decide whether the reader can reach the navigation, and they
+ * used to be stated in different units. `SIDEBAR_MOBILE_QUERY` is pixels and
+ * says the rail became a drawer; the trigger carried `md:hidden`, which is
+ * 48rem. Rem inside a MEDIA QUERY resolves against the browser's default font
+ * size — not the root element's, which is why no page-level styling can repair
+ * it — so at Chrome's "Small" (12px) `md:` turns over at 576px while the
+ * drawer still turns over at 768px. Every window between them had no rail and
+ * no hamburger. Measured in Chromium at 12px: 576, 640, 700 and 767 all drew
+ * neither. At "Very large" (20px) the same mismatch ran the other way and
+ * 768-959px drew both.
+ *
+ * These are token assertions rather than geometry, because jsdom evaluates no
+ * media query: what they guard is that the two halves keep naming the SAME
+ * number, derived from the query rather than restated. The geometry itself is
+ * `scripts/measure-phone-shapes.mjs`, which sweeps 320-1440 at three browser
+ * font sizes and enforces that exactly one of the two is reachable at each.
+ */
+describe('SidebarTrigger and the drawer agree on one breakpoint', () => {
+  /** 767 from `(max-width: 767px)`, so this cannot drift from the provider. */
+  const upperBound = Number(SIDEBAR_MOBILE_QUERY.match(/(\d+)px/)![1])
+
+  it('hides itself from the pixel the drawer stops at', () => {
+    render(
+      <SidebarProvider>
+        <SidebarTrigger />
+      </SidebarProvider>
+    )
+
+    expect(screen.getByRole('button', { name: /navigation/i })).toHaveClass(
+      `min-[${upperBound + 1}px]:hidden`
+    )
+  })
+
+  /**
+   * The specific class that opened the band. Named rather than merely absent
+   * from the assertion above, because `cn` would happily carry both and
+   * `display: none` from either is still `display: none`.
+   */
+  it('does not hide itself at a rem breakpoint', () => {
+    render(
+      <SidebarProvider>
+        <SidebarTrigger />
+      </SidebarProvider>
+    )
+
+    const trigger = screen.getByRole('button', { name: /navigation/i })
+    expect(trigger).not.toHaveClass('md:hidden')
+    expect(trigger.className).not.toMatch(/(^|\s|:)(sm|md|lg|xl):hidden/)
+  })
+
+  it('still lets a consumer state its own display rule', () => {
+    render(
+      <SidebarProvider>
+        <SidebarTrigger className="block" />
+      </SidebarProvider>
+    )
+
+    expect(screen.getByRole('button', { name: /navigation/i })).toHaveClass(
+      'block'
+    )
   })
 })
 
