@@ -1,3 +1,12 @@
+## [2.0.0-beta.11](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.10...sindarian-ui-v2.0.0-beta.11) (2026-09-19)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** keep the input's width; callers use min-w-0 ([a01108f](https://github.com/LerianStudio/console-sdk/commit/a01108f6263c1ba9660c71b7765b50a927879977))
+* **sindarian-ui:** qualify where the control still overruns its box ([8294d54](https://github.com/LerianStudio/console-sdk/commit/8294d541fd77689667c6c3ef21bcb9cd38489489))
+* **sindarian-ui:** squeeze NumberInput from the field, not the steppers ([fae14c0](https://github.com/LerianStudio/console-sdk/commit/fae14c08bfce4021737e89b7a9f4bc9576f6b5f9))
+
 ## [2.0.0-beta.10](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.9...sindarian-ui-v2.0.0-beta.10) (2026-09-18)
 
 
