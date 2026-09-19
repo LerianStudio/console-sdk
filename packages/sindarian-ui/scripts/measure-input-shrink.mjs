@@ -245,12 +245,17 @@ const FIXTURES = [
     // that the shape does not occur: M8 measured the real
     // `/midaz/transactions/create` at 390px and read 180/148 on beta.9 and on
     // beta.10 alike, because that screen stacks before it gets this narrow.
-    report: ['row'],
-    note: 'console transaction screen: amount + asset, each in a caller flex-1 column that has not said it may shrink. At head the row overflows 200px by 138px and that first column paints 57px outside it, while the field keeps 239px of box and 207px of text inside the column.',
+    // The columns are probed, so the overflow is stated in the units a reader
+    // can act on — how far each column ends up outside the row — rather than
+    // as a scrollWidth the note has to translate. Their escape is reported for
+    // the same reason the row is: it is the same fact seen from the other end,
+    // and the repair is the caller's.
+    report: ['row', 'escape'],
+    note: 'console transaction screen: amount + asset, each in a caller flex-1 column that has not said it may shrink. At head the row overflows 200px by 138px, the first column ends 57px outside it and the second 138.13px, while the field keeps 239px of box and 207px of text inside its column.',
     row: 'flex gap-2',
     html:
-      `<div class="flex-1">${inputHtml('amount')}</div>` +
-      `<div class="flex-1">${selectHtml('asset')}</div>`
+      `<div data-probe="amount-col" class="flex-1">${inputHtml('amount')}</div>` +
+      `<div data-probe="asset-col" class="flex-1">${selectHtml('asset')}</div>`
   },
   {
     id: 'direct-200',
@@ -267,11 +272,14 @@ const FIXTURES = [
     // standard flexbox idiom for "this column may shrink below its contents".
     // It works only if the control inside has no automatic minimum of its own,
     // so this fixture is what proves the kit left the hatch usable.
-    note: "the same two controls, with `min-w-0` on the caller's own column — the one-token way a consumer asks for compression",
+    // Columns probed here too, and NOT reported: the pair only says anything
+    // if the same measurement runs on both sides of the repair, and on this
+    // side both columns must sit inside the row.
+    note: "the same two controls, with `min-w-0` on the caller's own column — the one-token way a consumer asks for compression. Both columns stay inside the row.",
     row: 'flex gap-2',
     html:
-      `<div class="min-w-0 flex-1">${inputHtml('amount')}</div>` +
-      `<div class="min-w-0 flex-1">${selectHtml('asset')}</div>`
+      `<div data-probe="amount-col" class="min-w-0 flex-1">${inputHtml('amount')}</div>` +
+      `<div data-probe="asset-col" class="min-w-0 flex-1">${selectHtml('asset')}</div>`
   },
   {
     id: 'two-inputs-120',
