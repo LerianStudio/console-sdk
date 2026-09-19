@@ -146,29 +146,34 @@ describe('Input imperative handle', () => {
 
 /**
  * A flex item never shrinks below its automatic minimum size, and with no
- * declared width that minimum falls back to the control's own intrinsic size.
- * `.input-base` is `flex-1` and declared none, so the `<input>` was floored at
- * its default `size=20` width. Dropped into a 200px flex row beside a select,
- * it overflowed the row, painted outside its own `.input-wrapper`, and left
- * the select a sliver — product-console's transaction screen at a 390px
- * viewport, amount input over asset selector.
+ * declared width and no `min-width` that minimum is the control's own
+ * intrinsic size — 239px for a default `<input>`, from its `size=20`. That is
+ * what this rule set used to leave in place: dropped into a 200px flex row
+ * beside a select, the control painted outside its own `.input-wrapper` and
+ * left the select a sliver, which is product-console's transaction screen at a
+ * 390px viewport.
  *
- * `w-0` is the fix, and it does not fight `flex-1` (`flex: 1 1 0%`): the flex
- * base size comes from the basis, so the input still grows back to fill its
- * wrapper, while the declared width gives the algorithm a specified size to
- * floor at instead of the intrinsic one.
+ * `w-0` was the first answer and it overshot: an `<input>` does not wrap, so a
+ * declared width replaces its max-content contribution along with its
+ * min-content one, and any box sized BY ITS CONTENT — a search box in a filter
+ * bar — was handed 0px to be as wide as. Six product-console screens rendered
+ * an empty 32px chip at every viewport.
  *
- * `min-w-0` was measured and is NOT sufficient — it lowers the input's own
- * floor but not its min-content contribution, so a consumer's `flex-1` column
- * around the field still refused to shrink. A positive min-width floor was
- * measured and rejected too: a hand-written call site carrying its own
- * `min-w-0` outranks this rule set, so the floor never reaches the sites that
- * want it, while narrow rows regress.
+ * The rule set now declares no width at all and drops the automatic minimum on
+ * both boxes instead. The field keeps its natural width, it can no longer
+ * paint outside its own box, and a row that must compress says so on its own
+ * flex item with `min-w-0` — one token, the standard idiom, which only works
+ * because the control here no longer floors at 239px.
  *
- * Every sibling primitive escapes the original bug by declaring `w-full`,
- * which supplies that specified size already: `.select-trigger`, `Textarea`,
- * `AutosizeTextarea` and `CommandInput` all shrink in the same row, so the fix
- * belongs in this rule set and nowhere else.
+ * A positive min-width floor was measured and rejected: a hand-written call
+ * site carrying its own `min-w-0` outranks this rule set, so the floor never
+ * reaches the sites that want it, while narrow rows regress.
+ *
+ * Every sibling primitive already escaped the original bug, which is why the
+ * fix belongs in this rule set and nowhere else: `.select-trigger`, `Textarea`,
+ * `AutosizeTextarea` and `CommandInput` declare `w-full`, and their intrinsic
+ * width comes from their own text rather than from a `size` attribute, so
+ * neither half of the problem reaches them.
  *
  * Asserted against the stylesheet rather than the rendered element because the
  * rule is declared in `.input-base`, not applied as a utility class on the
@@ -211,8 +216,24 @@ describe('.input-base', () => {
   /** `sm:min-w-16` floors just as hard as `min-w-16`. */
   const bare = (token: string) => token.slice(token.lastIndexOf(':') + 1)
 
-  it('lets the input shrink below its intrinsic width in a flex row', () => {
-    expect(applyTokens('.input-base')).toContain('w-0')
+  /**
+   * `size-*` sets width as well as height, so it replaces the control's
+   * intrinsic contribution exactly as `w-*` does and has to be caught by the
+   * same case. Anything else that could reintroduce a declared width says so
+   * in its own name and is caught here too: `w-`, `min-w-` (the case below),
+   * `max-w-`, `basis-`, `size-`.
+   */
+  it('declares no width, so the field keeps its natural size', () => {
+    const widths = applyTokens('.input-base').filter((t) =>
+      /^(w|max-w|basis|size)-/.test(bare(t))
+    )
+
+    expect(widths).toEqual([])
+  })
+
+  it('lets its own box compress it, on the input and on the wrapper', () => {
+    expect(applyTokens('.input-base')).toContain('min-w-0')
+    expect(applyTokens('.input-wrapper')).toContain('min-w-0')
   })
 
   it('still grows back to fill the row it sits in', () => {

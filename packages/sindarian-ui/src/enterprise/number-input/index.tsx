@@ -266,7 +266,17 @@ export function NumberInput({
 
   return (
     <div className={cn('inline-flex items-stretch gap-1', className)}>
+      {/* `shrink-0` on both steppers and `min-w-0` on the field's box decide
+          WHERE a squeezed row takes its space from. Without them a consumer
+          writing `min-w-0` on this root (the only token that lets the control
+          compress at all) gets the opposite of what it wants: the `w-28` box
+          is a definite width and refuses, so the whole shrink comes out of the
+          buttons — measured at 160px, the steppers fell to 20px while the
+          field kept its full 112px. With them the field gives instead, 72px
+          wide with 22px of text, and the tap targets stay 40px. Both are inert
+          wherever the row has room. */}
       <IconButton
+        className="shrink-0"
         type="button"
         variant="outline"
         disabled={disabled || atMin}
@@ -276,7 +286,7 @@ export function NumberInput({
       >
         <Minus className="size-4" aria-hidden />
       </IconButton>
-      <div className="w-28">
+      <div className="w-28 min-w-0">
         <Input
           id={id}
           inputMode="decimal"
@@ -297,6 +307,7 @@ export function NumberInput({
         />
       </div>
       <IconButton
+        className="shrink-0"
         type="button"
         variant="outline"
         disabled={disabled || atMax}
