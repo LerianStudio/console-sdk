@@ -1,3 +1,13 @@
+## [2.0.0-beta.12](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.11...sindarian-ui-v2.0.0-beta.12) (2026-09-19)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** give the sheet a phone width and padding ([e9b1211](https://github.com/LerianStudio/console-sdk/commit/e9b121196d26b60dfecfda60d04c19c92aeb243a))
+* **sindarian-ui:** give the small icon button a 2.5rem tap target ([f81954b](https://github.com/LerianStudio/console-sdk/commit/f81954bfa41e9eb614452b3a37b3439a4a12a8c9))
+* **sindarian-ui:** hide the sidebar trigger at the drawer's own pixel ([9666b81](https://github.com/LerianStudio/console-sdk/commit/9666b8163c0edf4ea16dc75d896d950bc3635e72))
+* **sindarian-ui:** state the drawer query as an exact complement ([40da586](https://github.com/LerianStudio/console-sdk/commit/40da5867dcda39eec1817d79555029d9685715c4))
+
 ## [2.0.0-beta.11](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.10...sindarian-ui-v2.0.0-beta.11) (2026-09-19)
 
 
