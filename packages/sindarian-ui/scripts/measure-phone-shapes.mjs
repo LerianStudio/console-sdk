@@ -91,7 +91,7 @@ if (ARM !== 'head' && ARM !== 'baseline') {
  */
 const SOURCE_CONTRACT = [
   ['components/ui/sidebar/sidebar-trigger.tsx', "'min-[768px]:hidden'"],
-  ['components/ui/sidebar/sidebar-provider.tsx', "'(max-width: 767px)'"],
+  ['components/ui/sidebar/sidebar-provider.tsx', "'not (min-width: 768px)'"],
   ['components/ui/sheet/index.tsx', 'max-sm:w-full'],
   ['components/ui/sheet/index.tsx', 'max-sm:px-4'],
   ['components/ui/sidebar/sidebar-root.tsx', 'max-sm:w-[var(--sidebar-width)]'],
@@ -118,8 +118,16 @@ function assertSourceStillSays() {
   }
 }
 
-/** The breakpoint the drawer decision subscribes at. `sidebar-provider.tsx`. */
-const DRAWER_QUERY = '(max-width: 767px)'
+/**
+ * The breakpoint the drawer decision subscribes at. `sidebar-provider.tsx`.
+ *
+ * Spelled as a negation so it is the exact complement of `min-[768px]` at any
+ * precision rather than only at whole pixels. Running it through the browser
+ * here is also the only check that Chromium PARSES it: a query it cannot read
+ * never matches, which would report the rail on screen at every width and trip
+ * the band cases below 768px.
+ */
+const DRAWER_QUERY = 'not (min-width: 768px)'
 
 /**
  * `SidebarTrigger`'s display class, both arms. `md:hidden` is 48rem, which is
@@ -379,6 +387,38 @@ CASES.push({
 })
 
 CASES.push({
+  id: 'copy-field-gap0-360',
+  group: 'target',
+  width: 360,
+  height: 200,
+  fonts: [16],
+  // ⛔ A DELIBERATE OFFENDER, AND THE ONLY INSTRUMENT BEHIND THE README'S
+  // "at least gap-1". The same pair with NO gap: each target still reaches a
+  // quarter of a rem past its own box, and with nothing between them that
+  // reach lands on the neighbour's visible glyph. Measured reach of the later
+  // target into the earlier button, by gap: 0 -> 5px, 1px -> 4, 2px -> 3,
+  // 4px (`gap-1`) -> 1, >= 6px -> 0.
+  //
+  // It is listed in INSTRUMENT_MUST_FIND, so a run where it produces NOTHING
+  // exits 2: that is the only thing separating "the floor holds" from "the
+  // overlap probe stopped looking". Its own findings are reported rather than
+  // failed, because the shape is the harness's, not the package's — no kit
+  // component puts two of these flush.
+  report: ['overlap', 'target'],
+  target: { probe: 'first', minRem: 2.5 },
+  pairs: [
+    ['second', 'first'],
+    ['first', 'second']
+  ],
+  html:
+    `<div class="border-input-border flex h-10 w-full items-center rounded-md border pr-1 pl-4">` +
+    `<input class="h-full min-w-0 flex-1 border-none bg-transparent text-sm outline-none" value="ABCD-EFGH-IJKL" readonly>` +
+    `<button data-probe="first" class="${twMerge(iconButtonCls('small'), 'icon-button-rounded')}"><span></span></button>` +
+    `<button data-probe="second" class="${twMerge(iconButtonCls('small'), 'icon-button-rounded')}"><span></span></button>` +
+    `</div>`
+})
+
+CASES.push({
   id: 'search-input-360',
   group: 'target',
   width: 360,
@@ -409,6 +449,29 @@ CASES.push({
  */
 const ARM_MUST_FIND = {
   baseline: ['band-576', 'band-700', 'sheet-1f-390', 'kebab-row-390']
+}
+
+/**
+ * Checks that must produce a finding on the HEAD arm, because they are the
+ * instrument rather than the subject. A probe that stopped looking prints the
+ * same clean run as a defect that stopped happening, and this is the row where
+ * the two are told apart: it names a shape that is known to be wrong, so
+ * silence is a broken harness and exits 2.
+ *
+ * ⛔ THE CHECK IS NAMED, NOT JUST THE CASE. The first version listed the
+ * fixture id alone, and the fixture also reports its target count — so
+ * disabling the overlap probe entirely still left a finding starting with that
+ * id, the proof passed, and the guard proved nothing. Verified by doing it.
+ *
+ * ⚠️ HEAD ONLY, AND NOT AS A CONVENIENCE. The baseline arm deletes the
+ * pseudo-element, so on that arm there is no target to reach past anything and
+ * the silence is the correct answer rather than a blind probe. Enforcing it
+ * there made the baseline exit 2 instead of reproducing its sixteen findings —
+ * i.e. the guard would have hidden the arm it exists alongside.
+ */
+const INSTRUMENT_MUST_FIND = {
+  head: [['copy-field-gap0-360', 'answer to second']],
+  baseline: []
 }
 
 const FONTS = [...new Set(CASES.flatMap((c) => c.fonts))].sort((a, b) => a - b)
@@ -827,9 +890,15 @@ for (const font of FONTS) {
   }
 }
 
+const found = [...failures, ...reported]
 const missingProof = (ARM_MUST_FIND[ARM] || []).filter(
-  (id) => ![...failures, ...reported].some((f) => f.startsWith(`${id}`))
+  (id) => !found.some((f) => f.startsWith(id))
 )
+const muteInstrument = (INSTRUMENT_MUST_FIND[ARM] || [])
+  .filter(
+    ([id, needle]) => !found.some((f) => f.startsWith(id) && f.includes(needle))
+  )
+  .map(([id, needle]) => `${id} (${needle})`)
 
 if (JSON_OUT) {
   console.log(JSON.stringify({ arm: ARM, runs, failures, reported }, null, 2))
@@ -891,6 +960,16 @@ if (JSON_OUT) {
         'the row.'
     )
   }
+}
+
+if (muteInstrument.length) {
+  console.error(
+    `the instrument went quiet: ${muteInstrument.join(', ')} models a shape ` +
+      `that is known to be wrong and this run found nothing on it. A probe ` +
+      `that stopped looking reads exactly like a defect that stopped ` +
+      `happening, so this is a broken harness rather than a clean run.`
+  )
+  process.exit(2)
 }
 
 if (missingProof.length) {
