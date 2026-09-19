@@ -107,11 +107,14 @@ const formItemHtml = (probe, inner) =>
   `<div data-probe="${probe}-item" class="space-y-2">${inner}</div>`
 
 /**
- * Candidate rule sets, appended UNLAYERED after the compiled stylesheet, so
- * they outrank `@layer components` whatever their source order. This is how
- * the trade between "shrink in a definite row" and "keep an intrinsic width in
- * a content-sized wrapper" was measured; re-run the table before re-opening
- * it rather than arguing from the spec.
+ * Candidate rule sets, appended INTO `@layer components` after the compiled
+ * stylesheet — later than this package's own rule set, so they replace it, and
+ * still under `@layer utilities`, so a caller's width utility outranks a
+ * candidate exactly as it outranks the shipped rule. See the injection site
+ * for what the unlayered version used to get wrong. This is how the trade
+ * between "shrink in a definite row" and "keep an intrinsic width in a
+ * content-sized wrapper" was measured; re-run the table before re-opening it
+ * rather than arguing from the spec.
  *
  * One run measures one candidate, so a whole table is a shell loop:
  *
