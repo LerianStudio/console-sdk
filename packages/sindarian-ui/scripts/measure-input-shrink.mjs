@@ -233,11 +233,20 @@ const FIXTURES = [
     // The row overflows, and that is the rule set's deliberate open edge. This
     // package declares no width, so the control contributes its intrinsic size
     // and a caller's `flex-1` column that has NOT said it may shrink refuses
-    // to. The caller's one token closes it, and the next fixture is that
-    // measurement. Reported so the number stays visible; the alternative rule
-    // sets that close it do so by making the field disappear somewhere else.
+    // to. The caller's one token closes it, measured in
+    // `two-up-200-caller-min-w-0`. The alternative rule sets that close it here
+    // instead do so by making the field disappear somewhere else.
+    //
+    // The row check is REPORTED rather than failed, and it was demoted in the
+    // commit that shipped this rule set — one of two demotions there, the other
+    // being the content floor on `builder-header-390`. Both are checks this
+    // rule set fails, so read exit 0 as "every check that is still enforced",
+    // and read the two notes for why the repair is a consumer's. Here it is
+    // that the shape does not occur: M8 measured the real
+    // `/midaz/transactions/create` at 390px and read 180/148 on beta.9 and on
+    // beta.10 alike, because that screen stacks before it gets this narrow.
     report: ['row'],
-    note: "console transaction screen: amount + asset, each in the caller's own flex-1 column",
+    note: 'console transaction screen: amount + asset, each in a caller flex-1 column that has not said it may shrink. At head the row overflows 200px by 138px and that first column paints 57px outside it, while the field keeps 239px of box and 207px of text inside the column.',
     row: 'flex gap-2',
     html:
       `<div class="flex-1">${inputHtml('amount')}</div>` +
@@ -325,9 +334,18 @@ const FIXTURES = [
     // `whitespace-nowrap`, before and after any kit change; and the `w-48`
     // wrapper gives up its declared width because nothing told it not to. Both
     // are repaired by the same token on that wrapper, `shrink-0`, which the
-    // console has written — the next fixture measures it and DOES enforce the
-    // floor. Kept unrepaired here so the blast radius of a change to this rule
-    // set stays visible on the shape as the console last shipped it.
+    // console has written — `builder-header-390-shrink-0` measures it and DOES
+    // enforce the floor. Kept unrepaired here so the blast radius of a change
+    // to this rule set stays visible on the shape as the console last shipped
+    // it.
+    //
+    // The content floor is REPORTED here, and it was demoted in the commit that
+    // shipped this rule set (the other demotion is the row check on
+    // `two-up-200`). What that hides is a real trade against beta.10 on this
+    // shape and it belongs in the open: beta.10 held this wrapper at 50px with
+    // 32px of chip, and this rule set lets it fall to 18px, so the control
+    // paints 23px outside it. The repaired fixture is where the floor is
+    // enforced, because `shrink-0` is what the console ships.
     report: ['row', 'escape', 'content'],
     minContent: 120,
     note: 'product-console template builder header, written by hand: a w-48 wrapper in a gap-3 row (builder-header.tsx). The row also overflows 390px on its own, before and after any kit change, because the tab strip beside it is whitespace-nowrap; that half needs `shrink-0` on the wrapper console-side.',
@@ -789,7 +807,9 @@ if (JSON_OUT) {
     for (const f of failures) console.log(`  - ${f}`)
   } else {
     console.log(
-      'PASS: every governed row fits, nothing paints outside its box, no field is pure padding'
+      'PASS: every enforced check holds — every governed row fits, no governed ' +
+        'control paints outside its box, no governed field is pure padding. ' +
+        'The reported rows above are not covered by that sentence.'
     )
   }
 }
