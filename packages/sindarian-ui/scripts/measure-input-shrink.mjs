@@ -206,13 +206,27 @@ function assertCandidateIsComplete(id) {
 /**
  * Behavioural, run after the browser: the two candidates the table is read
  * against have to reproduce the defects they are named for. `width-0` is
- * 2.0.0-beta.10, which emptied both filter bars; `width-auto` is beta.9, which
- * could not compress a caller's column. A run where those findings are absent
- * is a run whose overrides did not reach the page.
+ * 2.0.0-beta.10, which emptied both filter bars; `width-auto` is beta.9, whose
+ * control could not be compressed by a caller's column even after that column
+ * asked. A run where those findings are absent is a run whose overrides did
+ * not reach the page.
+ *
+ * A FIXTURE NAMED HERE MUST BE SILENT UNDER THE COMMITTED RULE SET, because
+ * the check is satisfied by any finding on it, from `failures` or `reported`
+ * alike. `width-auto` used to name `two-up-200`, which stopped discriminating
+ * the moment that fixture began reporting its own row and column overflow: an
+ * inert override would have found those findings waiting, passed the proof and
+ * printed the committed stylesheet's numbers under beta.9's name — the exact
+ * false pass this check exists to refuse. Verify a new entry by running the
+ * committed rule set and confirming the fixture produces nothing.
+ *
+ * `two-up-200-caller-min-w-0` is the discriminating sibling: the committed rule
+ * set fits that row with 46px of text and prints nothing, while `width-auto`
+ * overflows it by 48px and paints 152px across the neighbouring column.
  */
 const CANDIDATE_MUST_FIND = {
   'width-0': ['toolbar-803', 'toolbar-390'],
-  'width-auto': ['two-up-200']
+  'width-auto': ['two-up-200-caller-min-w-0']
 }
 
 /**
