@@ -44,17 +44,50 @@ function SheetOverlay({
   )
 }
 
+/**
+ * ⛔ A PANEL BUILT FOR A DESKTOP HAS TO STOP BEING TWO FIFTHS ON A PHONE.
+ *
+ * `w-2/5` and `p-12` were unconditional. At a 390px viewport that is a 156px
+ * panel with 59px of usable width, and a form field inside it measures 9px of
+ * text — a sheet that cannot be read, let alone filled in. At 320px the panel
+ * is 128px and the field has NOTHING: its own padding is wider than its box.
+ * Thirteen product-console routes opened a sheet that looked like that, which
+ * is why that console has carried a rule against `[data-slot='sheet-content']`
+ * since its M10 lane; this is that rule brought home, and the console can drop
+ * its copy.
+ *
+ * ⚠️ THE PHONE VALUES CARRY THE MODIFIER, THE DESKTOP ONES DO NOT, AND THAT
+ * ASYMMETRY IS THE WHOLE MECHANISM. `cn` resolves these through tailwind-merge
+ * before the cascade sees them, and tailwind-merge only drops a conflicting
+ * class carrying the SAME modifiers. So a caller's `w-[594px]` replaces
+ * `w-2/5` and leaves `max-sm:w-full` standing: fifteen console sheets declare
+ * their own desktop width and every one of them still fills a phone, with no
+ * edit at the call site. Written the other way round — `w-full sm:w-2/5` — the
+ * caller's bare `w-[594px]` would have been overruled by `sm:w-2/5` at every
+ * desktop width instead, which is the same bug pointing the other way.
+ *
+ * A call site that genuinely wants its own phone width or padding says so with
+ * the modifier (`max-sm:w-[320px]`, `max-sm:p-0`), which is one token and
+ * strictly more than the console's unlayered rule allowed anyone.
+ *
+ * 40rem rather than 768px, unlike `SidebarTrigger` next door: nothing here is
+ * paired with a pixel media query in JavaScript. This is a reading-width
+ * decision and it is the complement of `sm:`, so it moves with the reader's
+ * font exactly as the rest of the package's responsive steps do. The one panel
+ * that IS coupled to the pixel breakpoint is the navigation drawer, and
+ * `SidebarRoot` opts it out by restating both tokens under `max-sm:`.
+ */
 const sheetVariants = cva(
-  'fixed z-50 gap-4 bg-background p-12 shadow-lg transition ease-in-out motion-safe:data-[state=open]:animate-in motion-safe:data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
+  'fixed z-50 gap-4 bg-background p-12 max-sm:px-4 shadow-lg transition ease-in-out motion-safe:data-[state=open]:animate-in motion-safe:data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
   {
     variants: {
       side: {
         top: 'inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top',
         bottom:
           'inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
-        left: 'inset-y-0 left-0 h-full w-2/5 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left',
+        left: 'inset-y-0 left-0 h-full w-2/5 max-sm:w-full border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left',
         right:
-          'inset-y-0 right-0 h-full w-2/5  border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right'
+          'inset-y-0 right-0 h-full w-2/5 max-sm:w-full border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right'
       }
     },
     defaultVariants: {
