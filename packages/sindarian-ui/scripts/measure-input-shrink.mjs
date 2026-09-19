@@ -54,9 +54,13 @@
 // intrinsic width comes from `cols` rather than `size`, and it has two call
 // sites (text block and comment block).
 //
-// IT EXITS NON-ZERO ON THE COMMITTED STYLESHEET, on purpose: three fixtures
-// measure a defect this package has not fixed yet. Read the failures as the
-// open list, not as a broken harness.
+// IT EXITS 0 ON THE COMMITTED STYLESHEET AND STILL PRINTS FINDINGS — twelve of
+// them as this is written. Every one is a check a fixture lists under `report`,
+// meaning its repair lives in a consumer rather than in this package, and that
+// list is the open work rather than a broken harness. A non-zero exit means an
+// ENFORCED check failed, and the run says which. This paragraph used to claim
+// the opposite: it was written when three of those checks were still enforced,
+// and it outlived them.
 //
 // The absolute pixel numbers depend on the font — an input's intrinsic width
 // is text-metric-derived, so the same fixture reads ~40px wider under a
