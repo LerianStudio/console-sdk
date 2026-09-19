@@ -36,6 +36,57 @@ export const Primary: StoryObj = {
   )
 }
 
+/**
+ * ⛔ THE PANEL USED TO STAY TWO FIFTHS WIDE ON A PHONE.
+ *
+ * `w-2/5` with `p-12`, at every viewport. At the 390px this story opens at,
+ * that is a 156px panel with 59px of usable width, and the field below comes
+ * out 41px wide with 9px of text; at 320px the panel is 128px and the field
+ * has nothing at all, because its own padding is wider than its box.
+ *
+ * Below `sm` the panel now fills the screen and drops its side padding from
+ * 48px to 16px. Widen the preview past 640px and the desktop panel comes back
+ * unchanged — that half is byte-identical to what this component has always
+ * shipped.
+ *
+ * A caller that declares its own width keeps it AND gets this, because the
+ * phone values carry the `max-sm:` modifier and tailwind-merge only drops a
+ * conflicting class with matching modifiers. A caller that wants its own phone
+ * width says `max-sm:w-[…]`, which does reach it.
+ */
+export const PhoneWidth: StoryObj = {
+  globals: {
+    viewport: { value: 'iphone12' }
+  },
+  render: () => (
+    <Sheet open>
+      <SheetContent side="right" aria-describedby={undefined}>
+        <SheetHeader>
+          <SheetTitle>New ledger</SheetTitle>
+          <SheetDescription>
+            One field, to show how much of it is reachable.
+          </SheetDescription>
+        </SheetHeader>
+        <div className="space-y-2">
+          <label
+            className="text-muted-foreground text-sm font-semibold"
+            htmlFor="phone-width-name"
+          >
+            Name
+          </label>
+          <div className="input-wrapper input-wrapper-focus">
+            <input
+              id="phone-width-name"
+              className="input-base"
+              defaultValue="Consolidated ledger"
+            />
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
 const SHEET_SIDES = ['top', 'right', 'bottom', 'left'] as const
 
 type SheetSide = (typeof SHEET_SIDES)[number]
