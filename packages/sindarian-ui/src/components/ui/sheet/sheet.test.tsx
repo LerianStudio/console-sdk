@@ -42,8 +42,9 @@ const Subject = () => (
  * harness's to prove. Which classes survive IS the mechanism, though — the
  * phone values carry `max-sm:` and the desktop ones do not, precisely so that
  * tailwind-merge leaves the phone step standing when a caller replaces the
- * desktop width. Fifteen product-console sheets declare their own width and
- * none of them had to change.
+ * desktop width. The fifteen product-console sheets that declare a pixel width
+ * of their own, and the two that declare `w-full`, all keep it and all fill a
+ * phone; none had to change.
  */
 const panelOf = (ui: React.ReactElement) => {
   const { baseElement } = render(ui)
@@ -97,6 +98,32 @@ describe('SheetContent on a phone', () => {
 
     expect(panel).toHaveClass('w-[594px]', 'max-sm:w-full')
     expect(panel).not.toHaveClass('w-2/5')
+  })
+
+  /**
+   * ⛔ THE SAME MECHANISM, FELT AS A COST. A bare `p-0` drops `p-12` and
+   * cannot reach `max-sm:px-4`, so a panel that asked for no padding gets 16px
+   * a side below 40rem. Deliberate — it is what carries the phone step to the
+   * call sites that need it — and identical to what product-console's own
+   * unlayered rule already did to its five `p-0` sheets. Pinned because it is
+   * a real behaviour change from 2.0.0-beta.11 for any other consumer, and the
+   * case below is the way out.
+   */
+  it('still gives a phone its side padding when a caller passes a bare p-0', () => {
+    const panel = panelOf(
+      <Sheet open>
+        <SheetContent
+          side="right"
+          className="flex flex-col p-0"
+          aria-describedby={undefined}
+        >
+          <SheetTitle>Templates</SheetTitle>
+        </SheetContent>
+      </Sheet>
+    )
+
+    expect(panel).toHaveClass('p-0', 'max-sm:px-4')
+    expect(panel).not.toHaveClass('p-12')
   })
 
   /**
