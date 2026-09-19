@@ -52,8 +52,10 @@
      replaces the control's max-content contribution as well as its min-content
      one, because an `<input>` does not wrap and has only the one intrinsic
      size. `w-0` shipped in 2.0.0-beta.10 and bought a narrow row's compression
-     by giving that up: six product-console screens rendered an empty 32px chip
-     at every viewport, their wrappers having been handed 0px to be as wide as.
+     by giving that up: five product-console screens rendered an empty 32px
+     chip at every viewport, and a sixth — the template builder's name field —
+     did at 390px while keeping 142px of text at 1440px, all of them wrappers
+     that had been handed 0px to be as wide as.
      `w-full` buys the same compression without the chip — a percentage
      contributes max-content but zero min-content — and it was the runner-up
      here. It loses on the same filter bar at 390px, where the control is not

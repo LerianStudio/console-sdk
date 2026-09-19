@@ -12,8 +12,9 @@
 // `<input>` does not wrap, so its min-content and max-content sizes are the
 // same number (~239px here, from the default `size=20`), and a declared
 // `width` replaces both at once. `width: 0` therefore buys (1) by giving up
-// (2) — measured on six product-console screens, which showed an empty chip at
-// every viewport — and `width: auto` buys (2) by giving up (1).
+// (2) — measured on six product-console screens: five showed an empty chip at
+// every viewport and the sixth, the template builder's name field, only at
+// 390px — and `width: auto` buys (2) by giving up (1).
 //
 // A percentage width is the one value that separates them: it contributes its
 // content's max-content size but ZERO min-content, so `width: 100%` keeps the
