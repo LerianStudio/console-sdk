@@ -102,7 +102,9 @@ function assertSourceStillSays() {
   if (ARM !== 'head') return
   const missing = SOURCE_CONTRACT.filter(([file, needle]) => {
     const full = path.join(SRC, file)
-    return !fs.existsSync(full) || !fs.readFileSync(full, 'utf8').includes(needle)
+    return (
+      !fs.existsSync(full) || !fs.readFileSync(full, 'utf8').includes(needle)
+    )
   })
   if (missing.length) {
     console.error(
@@ -289,11 +291,10 @@ CASES.push({
   // NOT the phone width: this is the navigation drawer, and 244px over a
   // dimmed page is what it is for. Enforced as an exact width.
   drawerWidth: 244,
-  html:
-    `<div data-probe="panel" data-slot="sheet-content" class="${sheetCls(
-      'left',
-      DRAWER_CALLER[ARM]
-    )}"><nav class="h-full w-full">nav</nav></div>`
+  html: `<div data-probe="panel" data-slot="sheet-content" class="${sheetCls(
+    'left',
+    DRAWER_CALLER[ARM]
+  )}"><nav class="h-full w-full">nav</nav></div>`
 })
 
 CASES.push({
@@ -309,11 +310,10 @@ CASES.push({
   extraCss: CONSOLE_RULE,
   report: ['drawer'],
   drawerWidth: 244,
-  html:
-    `<div data-probe="panel" data-slot="sheet-content" class="${sheetCls(
-      'left',
-      DRAWER_CALLER[ARM]
-    )}"><nav class="h-full w-full">nav</nav></div>`
+  html: `<div data-probe="panel" data-slot="sheet-content" class="${sheetCls(
+    'left',
+    DRAWER_CALLER[ARM]
+  )}"><nav class="h-full w-full">nav</nav></div>`
 })
 
 CASES.push({
@@ -457,7 +457,10 @@ const { css } = await postcss([tailwind()]).process(entry, {
 // against its own absence and passes for the wrong reason.
 const preflight = []
 const required = [
-  ['.' + TRIGGER_HIDE[ARM].replace(/([:[\]])/g, '\\$1'), "the trigger's hide class"],
+  [
+    '.' + TRIGGER_HIDE[ARM].replace(/([:[\]])/g, '\\$1'),
+    "the trigger's hide class"
+  ],
   ['.max-sm\\:w-full', "the sheet's phone width"],
   ['.icon-button-small', 'the small icon button']
 ]
@@ -819,7 +822,9 @@ if (JSON_OUT) {
   console.log(`arm: ${ARM}`)
   for (const font of FONTS) {
     const byId = Object.fromEntries(runs[font].cases.map((m) => [m.id, m]))
-    const band = CASES.filter((c) => c.group === 'band' && c.fonts.includes(font))
+    const band = CASES.filter(
+      (c) => c.group === 'band' && c.fonts.includes(font)
+    )
     if (band.length) {
       console.log(
         `\nnavigation band — browser font ${font}px (root computes ${runs[font].rootPx}px)`
