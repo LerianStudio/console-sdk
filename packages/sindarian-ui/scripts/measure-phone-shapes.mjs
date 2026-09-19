@@ -95,6 +95,7 @@ const SOURCE_CONTRACT = [
   ['components/ui/sheet/index.tsx', 'max-sm:w-full'],
   ['components/ui/sheet/index.tsx', 'max-sm:px-4'],
   ['components/ui/sidebar/sidebar-root.tsx', 'max-sm:w-[var(--sidebar-width)]'],
+  ['components/ui/sidebar/sidebar-root.tsx', 'max-sm:p-0'],
   ['components/ui/icon-button/styles.css', '.icon-button-small::after']
 ]
 
@@ -177,7 +178,7 @@ const sheetCls = (side, caller = '') =>
  * that carries the SAME modifiers — a bare `w-[…]` cannot reach `max-sm:w-full`.
  */
 const DRAWER_CALLER = {
-  head: 'w-[var(--sidebar-width)] max-sm:w-[var(--sidebar-width)] max-w-full gap-0 p-0',
+  head: 'w-[var(--sidebar-width)] max-w-full gap-0 p-0 max-sm:w-[var(--sidebar-width)] max-sm:p-0',
   baseline: 'w-[var(--sidebar-width)] max-w-full gap-0 p-0'
 }
 
@@ -288,9 +289,14 @@ CASES.push({
   width: 390,
   height: 700,
   fonts: [16],
-  // NOT the phone width: this is the navigation drawer, and 244px over a
-  // dimmed page is what it is for. Enforced as an exact width.
+  // NOT the phone width, and NOT the phone padding: this is the navigation
+  // drawer, 244px over a dimmed page with the rail supplying its own insets.
+  // Both halves are enforced exactly, because the first version of this
+  // fixture carried only the width exemption and measured 32px of padding on
+  // a drawer whose call site asks for none — the harness lagging the component
+  // by one token, which is the failure `SOURCE_CONTRACT` exists to refuse.
   drawerWidth: 244,
+  drawerPaddingInline: 0,
   html: `<div data-probe="panel" data-slot="sheet-content" class="${sheetCls(
     'left',
     DRAWER_CALLER[ARM]
@@ -777,6 +783,15 @@ for (const font of FONTS) {
       sink('drawer').push(
         `${c.id}: the navigation drawer is ${m.probes.panel.width}px, not ` +
           `${c.drawerWidth}px — a full-bleed drawer has no tap-outside target`
+      )
+
+    if (
+      c.drawerPaddingInline !== undefined &&
+      m.probes.panel.paddingInline !== c.drawerPaddingInline
+    )
+      sink('drawer').push(
+        `${c.id}: the navigation drawer carries ${m.probes.panel.paddingInline}px ` +
+          `of inline padding, not ${c.drawerPaddingInline} — the rail brings its own`
       )
 
     if (c.target) {
