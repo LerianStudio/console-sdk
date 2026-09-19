@@ -39,10 +39,10 @@ export const Primary: StoryObj = {
 /**
  * ⛔ THE PANEL USED TO STAY TWO FIFTHS WIDE ON A PHONE.
  *
- * `w-2/5` with `p-12`, at every viewport. At the 390px this story opens at,
- * that is a 156px panel with 59px of usable width, and the field below comes
- * out 41px wide with 9px of text; at 320px the panel is 128px and the field
- * has nothing at all, because its own padding is wider than its box.
+ * `w-2/5` with `p-12`, at every viewport. At the 390px this story opens at
+ * (iPhone 12), that was a 156px panel with 59px of usable width and a field
+ * 41px wide carrying 9px of text; at 320px the panel was 128px and the field
+ * had nothing at all, because its own padding is wider than its box.
  *
  * Below `sm` the panel now fills the screen and drops its side padding from
  * 48px to 16px. Widen the preview past 640px and the desktop panel comes back
