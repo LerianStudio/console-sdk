@@ -1,3 +1,37 @@
+## [2.0.0-beta.14](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.13...sindarian-ui-v2.0.0-beta.14) (2026-09-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ui:** NameTableCellProps is a three-arm union. An interactive cell
+(onClick present) whose name is not a string must pass buttonLabel, which
+becomes the aria-label of the button. A string name or a handler-less cell
+is unchanged. Console call sites that will need buttonLabel when the sdk-adopt
+lane deletes the console fork are listed in the PR.
+
+### Features
+
+* **sindarian-ui:** let a column align, dress and own its table cell ([2556dfa](https://github.com/LerianStudio/console-sdk/commit/2556dfad3453ef4ed3460b65d0eee756f9abe9eb))
+* **sindarian-ui:** let a page container afford a phone ([b16d3e7](https://github.com/LerianStudio/console-sdk/commit/b16d3e7f67d42f1f079ae9e8231b1005b05e136c))
+* **sindarian-ui:** let a page hide a table column from outside ([100ce2a](https://github.com/LerianStudio/console-sdk/commit/100ce2a9d9e2d5d919b2047915f138ad864bcf5e))
+* **sindarian-ui:** let SelectField carry a leading icon in its trigger ([cc28ec7](https://github.com/LerianStudio/console-sdk/commit/cc28ec74efd53101e2f75fff2011bc3449808ef9))
+* **sindarian-ui:** publish useTime and useClickAway from the barrel ([c123ce7](https://github.com/LerianStudio/console-sdk/commit/c123ce7d40fa58e7d859e49e116c902ca3121993))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** copy an id from a named button a keyboard can reach ([bb9da4e](https://github.com/LerianStudio/console-sdk/commit/bb9da4e7a8e46e11c5f806a986b46b5283f4fa49))
+* **sindarian-ui:** explain a locked row to a keyboard, and export the cell ([78d2f7a](https://github.com/LerianStudio/console-sdk/commit/78d2f7aa70ef3f56908ca33b147abaeacce79a2a))
+* **sindarian-ui:** forward the visibility updater only when a page passes one ([a6856a2](https://github.com/LerianStudio/console-sdk/commit/a6856a28276422cf910bd07bacee736159a75482))
+* **sindarian-ui:** keep a leading icon beside the selected value ([38791c4](https://github.com/LerianStudio/console-sdk/commit/38791c423b8a1f64dfc04278409f3985615adb54))
+* **sindarian-ui:** keep a table's own column visibility when nobody controls it ([a9bbc22](https://github.com/LerianStudio/console-sdk/commit/a9bbc2262b0cb8538cba99fb35950c3af678804e))
+* **sindarian-ui:** make the id copy button reachable by touch ([f36363d](https://github.com/LerianStudio/console-sdk/commit/f36363dfe14f18630fe1d7770ff7ae7affbf12c1))
+* **sindarian-ui:** open a record from a named button in the name cell ([19519d2](https://github.com/LerianStudio/console-sdk/commit/19519d26f0befc0873783c6106a012a729c4dde5))
+* **sindarian-ui:** say which half of an own-cell column the table still styles ([e222a0a](https://github.com/LerianStudio/console-sdk/commit/e222a0a184e85e8db0cad04890b427badc4baa4c))
+* **ui:** drop the handler rather than render a name cell button announcing "" ([12a7cc6](https://github.com/LerianStudio/console-sdk/commit/12a7cc6c0e9af89646fe62d16bd59eddda7f8282))
+* **ui:** require an accessible name on an interactive name cell ([607ca15](https://github.com/LerianStudio/console-sdk/commit/607ca159ed7a1dd289a9931ed8d9df4b10e1621a))
+* **ui:** stop a locked row action from opening the record it refuses to change ([565462c](https://github.com/LerianStudio/console-sdk/commit/565462cbe68ed78d738192e2021cce85b451be2e))
+
 ## [2.0.0-beta.13](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.12...sindarian-ui-v2.0.0-beta.13) (2026-09-21)
 
 
