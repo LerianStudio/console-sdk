@@ -137,10 +137,24 @@ export const IdTableCell = ({
             type="button"
             aria-label={copyLabel}
             onClick={handleCopyToClipboard}
-            // `focus-visible:opacity-100` is not decoration: the glyph is
-            // transparent until the pointer arrives, and a keyboard stop the
-            // operator cannot see is the same dead end in a different shape.
-            className="focus-visible:ring-ring ml-4 w-fit shrink-0 cursor-pointer rounded-sm opacity-0 transition-opacity group-hover/table-cell:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
+            // ⛔ THREE RULES HERE, AND EVERY ONE IS A WAY THE CONTROL
+            // DISAPPEARS RATHER THAN A DECORATION.
+            //
+            // `focus-visible:opacity-100`: a keyboard stop the operator cannot
+            // see is the same dead end the `<td>` handler was.
+            //
+            // `[@media(hover:none)]:opacity-100`: a phone or a tablet has no
+            // pointer to hover with, so `group-hover` never fires and the only
+            // control that copies an id stayed fully transparent — invisible
+            // AND unexplained on the one device where the id is hardest to
+            // read off the screen. Written as an arbitrary variant because the
+            // kit's Tailwind theme defines no named one.
+            //
+            // `size-6` with `-my-0.5`: WCAG 2.5.8 wants 24×24 CSS px, and the
+            // glyph alone is 14. The negative margin pulls the button's outer
+            // box back to the 20px line box of the cell's `text-sm` text, so
+            // the target grows without the row growing under it.
+            className="focus-visible:ring-ring -my-0.5 ml-4 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm opacity-0 transition-opacity group-hover/table-cell:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none [@media(hover:none)]:opacity-100"
           >
             <Copy className="size-3.5" />
           </button>

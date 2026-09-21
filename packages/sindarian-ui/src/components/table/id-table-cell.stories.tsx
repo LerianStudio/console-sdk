@@ -76,13 +76,17 @@ export const ShortId: StoryObj<typeof IdTableCell> = {
 }
 
 /**
- * The copy control, kept visible so its focus ring is legible in the docs
- * frame. Tab through the table: each row offers the id itself (the tooltip
- * trigger, which reveals the whole value) and then the copy button.
+ * The copy control, held visible by the story's own `[&_button]:opacity-100`
+ * so the glyph and its focus ring are legible in the docs frame — in a real
+ * table it fades in on hover, on focus, and permanently on a device with no
+ * pointer to hover with. Tab through the table: each row offers the id itself
+ * (the tooltip trigger, which reveals the whole value) and then the copy
+ * button.
  */
 export const CopyButton: StoryObj<typeof IdTableCell> = {
   render: () => (
     <Rows
+      className="[&_button]:opacity-100"
       copyLabel="Copy account id"
       onCopy={(id) => console.info('copied', id)}
     />

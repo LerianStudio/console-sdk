@@ -286,3 +286,42 @@ describe('IdTableCell copy control', () => {
     expect(onCopy).not.toHaveBeenCalled()
   })
 })
+
+/**
+ * THE ONLY CONTROL THAT COPIES AN ID WAS INVISIBLE ON A PHONE.
+ *
+ * The glyph is transparent until a pointer hovers the cell. A phone has no
+ * pointer, so `group-hover` never fired: on the 390px viewport the console
+ * measures against, a 14×14 fully transparent target was the whole of the
+ * copy affordance, and the click-anywhere-in-the-cell handler that used to
+ * back it up is gone. WCAG 2.5.8 also wants 24×24 CSS px of target, which 14
+ * is not.
+ *
+ * jsdom evaluates no media query and computes no layout, so these are CLASS
+ * assertions: they pin that the rules are on the control at all. What they
+ * cannot see — that `-my-0.5` pulls the 24px button back inside the cell's
+ * 20px `text-sm` line box, so the target grows without the row growing — is
+ * checked in Storybook.
+ */
+describe('IdTableCell copy control on a device with no hover', () => {
+  const copyButton = () => {
+    Object.assign(navigator, { clipboard: { writeText: jest.fn() } })
+    row(<IdTableCell id={LONG} />)
+    return screen.getByRole('button', { name: 'Copy id' })
+  }
+
+  it('shows itself where there is no pointer to hover with', () => {
+    expect(copyButton()).toHaveClass('[@media(hover:none)]:opacity-100')
+  })
+
+  it('offers a 24px target around a 14px glyph', () => {
+    expect(copyButton()).toHaveClass(
+      'size-6',
+      'inline-flex',
+      'items-center',
+      'justify-center',
+      // Absorbs the growth so the row keeps its height.
+      '-my-0.5'
+    )
+  })
+})
