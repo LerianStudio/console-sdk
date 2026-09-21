@@ -153,3 +153,84 @@ describe('NameTableCell naming the button', () => {
     expect([missingName, nonTextualName]).toHaveLength(2)
   })
 })
+
+/**
+ * ⛔ THE TYPE CANNOT RULE OUT THE EMPTY STRING. `name=""` satisfies the text
+ * arm and `buttonLabel="   "` satisfies the labelled one, so both compile and
+ * both would render a button announcing "" — the very defect the union exists
+ * to stop, arriving through the hole every string type has.
+ *
+ * The cell drops the handler rather than ship an unnamed control: an anonymous
+ * button is invisible to the developer and fatal to a screen-reader user, while
+ * a missing click shows itself on the first render. The dev-only `console.error`
+ * is the signal, matching what the form fields in this package already do for a
+ * blank `label`.
+ */
+describe('NameTableCell with a name that is only whitespace', () => {
+  const nameless = <span aria-hidden="true">•</span>
+
+  it('drops the handler and names the empty prop when name is blank', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    row(<NameTableCell name="" onClick={jest.fn()} />)
+
+    const complained = spy.mock.calls.some((call) =>
+      String(call[0]).includes('NameTableCell')
+    )
+    const namedTheProp = spy.mock.calls.some((call) =>
+      String(call[0]).includes('`name`')
+    )
+    spy.mockRestore()
+
+    expect(screen.queryByRole('button')).toBeNull()
+    expect(complained).toBe(true)
+    expect(namedTheProp).toBe(true)
+  })
+
+  it('drops the handler and names the empty prop when buttonLabel is blank', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    row(<NameTableCell name={nameless} buttonLabel="   " onClick={jest.fn()} />)
+
+    const complained = spy.mock.calls.some((call) =>
+      String(call[0]).includes('NameTableCell')
+    )
+    const namedTheProp = spy.mock.calls.some((call) =>
+      String(call[0]).includes('`buttonLabel`')
+    )
+    spy.mockRestore()
+
+    expect(screen.queryByRole('button')).toBeNull()
+    expect(complained).toBe(true)
+    expect(namedTheProp).toBe(true)
+  })
+
+  /**
+   * A blank `buttonLabel` beside a real text name is not nameless: the text
+   * inside the button still names it. The blank attribute is dropped rather
+   * than shipped, which is what would name the control "".
+   */
+  it('keeps the button when a text name survives a blank buttonLabel', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    row(<NameTableCell name={NAME} buttonLabel="  " onClick={jest.fn()} />)
+
+    spy.mockRestore()
+
+    const button = screen.getByRole('button', { name: NAME })
+    expect(button).not.toHaveAttribute('aria-label')
+  })
+
+  it('says nothing when there is no handler to drop', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    row(<NameTableCell name="" />)
+
+    const complained = spy.mock.calls.some((call) =>
+      String(call[0]).includes('NameTableCell')
+    )
+    spy.mockRestore()
+
+    expect(complained).toBe(false)
+  })
+})

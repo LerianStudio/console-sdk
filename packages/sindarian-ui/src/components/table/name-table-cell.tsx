@@ -48,6 +48,10 @@ export type NameTableCellProps = Omit<
  *
  * `buttonLabel` and not an inherited `aria-label`, which the spread puts on the
  * `<td>` — naming the CELL, never the control inside it.
+ *
+ * ⛔ AND THE UNION STILL LETS THE EMPTY STRING THROUGH, because every string
+ * type does. `name=""` satisfies the text arm and `buttonLabel="   "` satisfies
+ * the labelled one, so the last word is the component's, below.
  */
 export const NameTableCell = ({
   name,
@@ -55,14 +59,40 @@ export const NameTableCell = ({
   buttonLabel,
   ...props
 }: NameTableCellProps) => {
+  // Whitespace names nothing. An `aria-label` of "   " is worse than none: it
+  // OVERRIDES the text inside the button, so a perfectly good name is replaced
+  // by silence. Drop it and the text content names the control again.
+  const label = buttonLabel?.trim() ? buttonLabel : undefined
+  // Only a text `name` can name the button by itself. Any other node is opaque
+  // here — which is why the type demands a label for it in the first place.
+  const textName = typeof name === 'string' ? name.trim() : ''
+  const named = Boolean(label) || textName !== ''
+
+  // ⛔ AN UNNAMED BUTTON LOSES ITS HANDLER, IT DOES NOT SHIP. The two failures
+  // are not symmetric: a button announcing "" is invisible to the developer who
+  // wrote it and fatal to the operator who cannot use a mouse, while a name
+  // that does not open its record shows itself on the very first render. So the
+  // cell degrades to the plain text it can still display correctly, and says so
+  // where a developer will see it. Never throws: one nameless row must not take
+  // the whole table down.
+  if (process.env.NODE_ENV !== 'production' && onClick && !named) {
+    console.error(
+      `NameTableCell has no accessible name: \`${
+        typeof name === 'string' ? 'name' : 'buttonLabel'
+      }\` is empty, so its click handler was dropped rather than render a button announcing "".`
+    )
+  }
+
+  const opensRecord = onClick && named
+
   return (
     <TableCell {...props}>
       <TableCellWrapper>
-        {onClick ? (
+        {opensRecord ? (
           <button
             type="button"
             onClick={onClick}
-            aria-label={buttonLabel}
+            aria-label={label}
             className="focus-visible:ring-ring cursor-pointer rounded-sm text-left focus-visible:ring-2 focus-visible:outline-none"
           >
             {name}
