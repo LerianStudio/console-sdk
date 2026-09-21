@@ -572,6 +572,23 @@ describe('Route Decorator', () => {
       })
     })
 
+    // The class itself is the third shape, and the one a consumer reaches for
+    // first: Product Console's `describeController` harness (plan
+    // 2026-09-21-console-simplification C11) is handed a controller CLASS, never
+    // an instance it would have to construct out of the container.
+    it('resolves route metadata from the class itself', () => {
+      const metadata = RouteHandler.getMetadata(
+        MetadataController,
+        'metadataMethod'
+      )
+
+      expect(metadata).toMatchObject({
+        methodName: 'metadataMethod',
+        method: HttpMethods.GET,
+        path: 'metadata'
+      })
+    })
+
     // A method with no `@Route` has no metadata, and both reads miss: the
     // fallback resolves to the same prototype. Consumers reflecting over a
     // controller — Product Console's `describeController` harness among them —
