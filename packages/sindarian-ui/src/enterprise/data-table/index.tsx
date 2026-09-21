@@ -52,7 +52,7 @@
  * activation. Keydown events originating from interactive children (links,
  * buttons, checkboxes, form fields) are never hijacked.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import {
   flexRender,
   getCoreRowModel,
@@ -83,16 +83,48 @@ import { EmptyState, type EmptyStateProps } from '../empty-state'
 import { readPreferredColumnSize, UNSIZED_DEFAULT_COLUMN } from './column-size'
 
 /**
- * Per-column opt-in for ledger numeric alignment. Set `meta: { numeric: true }`
- * on a money/number `ColumnDef` and DataTable right-aligns both the header and
- * its body cells (mono tabular figures).
+ * Per-column channel into the cells DataTable renders on the consumer's behalf:
+ * how a column aligns, what classes it carries on head and body, and whether it
+ * renders its own `<td>` at all. The member names are frozen by plan
+ * 2026-09-21-console-simplification C9.
  */
 declare module '@tanstack/react-table' {
   // Type parameters mirror TanStack's own ColumnMeta declaration exactly, which
-  // declaration merging requires; neither is referenced by this member.
+  // declaration merging requires; neither is referenced by these members.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
+    /**
+     * Ledger numeric treatment: right-aligns the header and its body cells and
+     * gives the body mono tabular figures. `align` overrides the alignment half
+     * on its own — the figures stay mono.
+     */
     numeric?: boolean
+    /**
+     * Column alignment, header and body. Beats `numeric`'s implicit right, so a
+     * money column can read left or centre without losing its figure treatment.
+     */
+    align?: 'left' | 'right' | 'center'
+    /**
+     * Extra classes on this column's `<th>`, merged AFTER the table-level
+     * `headClassName` so one column can override what the table set for all.
+     */
+    headerClassName?: string
+    /**
+     * Extra classes on this column's body `<td>`, merged after the numeric and
+     * density treatments. IGNORED when `renderOwnCell` is set: there is no cell
+     * of the table's left to carry them.
+     */
+    className?: string
+    /**
+     * The column's `cell` renderer emits its own `<td>`; DataTable renders it
+     * bare rather than wrapping it. The HEADER is still the table's `<th>` —
+     * nothing about owning a body cell makes a column own its header, and a
+     * table whose head and body disagree on cell count is broken markup. The
+     * column's `align`, `className` and declared width have no element of the
+     * table's to land on and are therefore ignored on the body; the head keeps
+     * the width so an auto-layout table still sizes the column.
+     */
+    renderOwnCell?: boolean
   }
 }
 
@@ -209,7 +241,8 @@ type DataTableBaseProps<TData> = {
   /**
    * Extra classes merged onto every header cell, after the kit label voice —
    * so a caller can override the voice's size/tracking/color for one table
-   * without restating the cluster. Per-column alignment stays `meta.numeric`.
+   * without restating the cluster. Per column, `meta.headerClassName` merges
+   * after this one and `meta.align` / `meta.numeric` own the alignment.
    */
   headClassName?: string
   /**
@@ -228,8 +261,22 @@ const SELECTION_COLUMN_ID = '__select__'
 
 const CHECKBOX_CLASS = 'accent-primary block size-4'
 
-/** Right-aligned mono treatment for `meta: { numeric: true }` columns. */
-const NUMERIC_CELL_CLASS = 'text-right font-mono tabular-nums'
+/** Figure treatment for `meta: { numeric: true }` columns; the alignment half
+ * lives in ALIGN_CELL_CLASS so `meta.align` can override one without the other. */
+const NUMERIC_FIGURE_CLASS = 'font-mono tabular-nums'
+
+/**
+ * Body-cell alignment, one class per direction rather than a single string with
+ * `text-right` baked in: an explicit `meta.align` has to beat `numeric` by
+ * choosing the class, not by out-ordering it — tailwind-merge resolving two
+ * conflicting alignment utilities by source order is not a contract worth
+ * relying on.
+ */
+const ALIGN_CELL_CLASS = {
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right'
+} as const
 
 /**
  * Keydown events whose target sits inside one of these are never hijacked
@@ -522,11 +569,11 @@ export function DataTable<TData>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="hover:bg-transparent">
               {headerGroup.headers.map((header) => {
-                const numeric = header.column.columnDef.meta?.numeric
+                const meta = header.column.columnDef.meta
                 return (
                   <TableHead
                     key={header.id}
-                    align={numeric ? 'right' : undefined}
+                    align={meta?.align ?? (meta?.numeric ? 'right' : undefined)}
                     // A placeholder `th` is the empty cell react-table renders
                     // under a grouped header; it labels nothing, so it must not
                     // announce its leaf column's sort state as well.
@@ -542,7 +589,8 @@ export function DataTable<TData>({
                       LABEL_VOICE_CLASS,
                       headDensityClass,
                       header.column.id === SELECTION_COLUMN_ID && 'w-10',
-                      headClassName
+                      headClassName,
+                      meta?.headerClassName
                     )}
                   >
                     {header.isPlaceholder
@@ -625,24 +673,41 @@ export function DataTable<TData>({
                     : undefined
                 }
               >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    style={readPreferredColumnSize(cell.column)}
-                    className={cn(
-                      cell.column.columnDef.meta?.numeric && NUMERIC_CELL_CLASS,
-                      cellDensityClass,
-                      cell.column.id === SELECTION_COLUMN_ID && 'w-10'
-                    )}
-                    onClick={
-                      cell.column.id === SELECTION_COLUMN_ID
-                        ? stopPropagation
-                        : undefined
-                    }
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+                {row.getVisibleCells().map((cell) => {
+                  const meta = cell.column.columnDef.meta
+                  const content = flexRender(
+                    cell.column.columnDef.cell,
+                    cell.getContext()
+                  )
+                  // The column owns its `<td>`: render the consumer's cell bare.
+                  // The kit's selection column is built here and carries no
+                  // meta, so it can never take this path.
+                  if (meta?.renderOwnCell) {
+                    return <Fragment key={cell.id}>{content}</Fragment>
+                  }
+                  const align =
+                    meta?.align ?? (meta?.numeric ? 'right' : undefined)
+                  return (
+                    <TableCell
+                      key={cell.id}
+                      style={readPreferredColumnSize(cell.column)}
+                      className={cn(
+                        meta?.numeric && NUMERIC_FIGURE_CLASS,
+                        align && ALIGN_CELL_CLASS[align],
+                        cellDensityClass,
+                        cell.column.id === SELECTION_COLUMN_ID && 'w-10',
+                        meta?.className
+                      )}
+                      onClick={
+                        cell.column.id === SELECTION_COLUMN_ID
+                          ? stopPropagation
+                          : undefined
+                      }
+                    >
+                      {content}
+                    </TableCell>
+                  )
+                })}
               </TableRow>
             ))
           )}

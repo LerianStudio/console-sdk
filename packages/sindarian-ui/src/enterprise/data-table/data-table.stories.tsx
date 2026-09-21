@@ -132,6 +132,43 @@ export const SizedColumns: StoryObj<DataTableProps<Settlement>> = {
   }
 }
 
+/**
+ * What one column can say for itself. `Status` centres itself and tints its
+ * header; `Amount` is a numeric column that asks to read LEFT, so it keeps its
+ * mono tabular figures and drops the right alignment; `Counterparty` renders
+ * its own `<td>`, which is how a cell fills the whole cell box (here a full-row
+ * link target) — the table wraps nothing, so its `align` and `className` would
+ * have nowhere to land and are ignored, while the header stays the table's.
+ */
+export const PerColumnMeta: StoryObj<DataTableProps<Settlement>> = {
+  args: {
+    data,
+    getRowId: (row) => row.id,
+    columns: [
+      columns[0],
+      {
+        ...columns[1],
+        meta: { renderOwnCell: true },
+        cell: ({ row }) => (
+          <td className="p-0 align-middle">
+            <a
+              className="block px-6 py-4 underline-offset-4 hover:underline"
+              href={`#/settlements/${row.original.id}`}
+            >
+              {row.original.counterparty}
+            </a>
+          </td>
+        )
+      },
+      {
+        ...columns[2],
+        meta: { align: 'center', headerClassName: 'text-foreground' }
+      },
+      { ...columns[3], meta: { numeric: true, align: 'left' } }
+    ]
+  }
+}
+
 export const RowSelection: StoryObj<DataTableProps<Settlement>> = {
   render: () => {
     const [rowSelection, setRowSelection] = React.useState<RowSelectionState>(

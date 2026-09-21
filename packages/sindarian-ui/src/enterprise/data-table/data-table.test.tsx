@@ -677,3 +677,174 @@ describe('DataTable aria-sort', () => {
     ).toHaveAttribute('aria-sort', 'ascending')
   })
 })
+
+/**
+ * Per-column meta is the only channel a consumer has into cells the table
+ * renders for it. Until now that channel carried one thing, `numeric`, so a
+ * status column could not centre itself, no column could carry its own classes
+ * on head or body, and a cell that must be its own `<td>` (a colspan, a link
+ * that fills the cell box) had no way to say so — the table always wrapped it.
+ * That is why the console kept a second table instead of using this one. The
+ * four member names are frozen by plan 2026-09-21-console-simplification C9.
+ */
+describe('DataTable column meta', () => {
+  it('aligns head and body from an explicit alignment', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          { accessorKey: 'amount', header: 'Amount', meta: { align: 'right' } }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    expect(screen.getByRole('columnheader', { name: 'Amount' })).toHaveClass(
+      'text-right'
+    )
+    expect(screen.getByText('1250')).toHaveClass('text-right')
+  })
+
+  it('lets an explicit alignment beat numeric while the figures stay mono', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            accessorKey: 'amount',
+            header: 'Amount',
+            meta: { numeric: true, align: 'left' }
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Amount' })
+    expect(head).not.toHaveClass('text-right')
+
+    const cell = screen.getByText('1250')
+    expect(cell).toHaveClass('text-left', 'font-mono', 'tabular-nums')
+    expect(cell).not.toHaveClass('text-right')
+  })
+
+  it('merges headerClassName after the table-level headClassName', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            accessorKey: 'amount',
+            header: 'Amount',
+            meta: { headerClassName: 'text-destructive' }
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+        headClassName="text-foreground"
+      />
+    )
+
+    const amount = screen.getByRole('columnheader', { name: 'Amount' })
+    expect(amount).toHaveClass('text-destructive')
+    expect(amount).not.toHaveClass('text-foreground')
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveClass(
+      'text-foreground'
+    )
+  })
+
+  it('merges a column className onto that column body cells only', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            accessorKey: 'amount',
+            header: 'Amount',
+            meta: { className: 'whitespace-nowrap' }
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    expect(screen.getByText('1250')).toHaveClass('whitespace-nowrap')
+    expect(screen.getByText('Alpha')).not.toHaveClass('whitespace-nowrap')
+  })
+
+  it('lets a column emit its own cell, with head and body still agreeing on cell count', () => {
+    const { container } = render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            id: 'own',
+            header: 'Own',
+            size: 120,
+            // align and className have no element of the table's to land on
+            // once the column owns its `<td>`; both are ignored on purpose.
+            meta: {
+              renderOwnCell: true,
+              align: 'right',
+              className: 'whitespace-nowrap'
+            },
+            cell: ({ row }) => <td data-testid="own">{row.original.id}</td>
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    const headCount = container.querySelectorAll('thead th').length
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+    container.querySelectorAll('tbody tr').forEach((row) => {
+      expect(row.querySelectorAll('td')).toHaveLength(headCount)
+    })
+
+    const own = screen.getAllByTestId('own')
+    expect(own).toHaveLength(2)
+    expect(own[0]).toHaveTextContent('alpha')
+    expect(own[0]).not.toHaveClass('text-right')
+    expect(own[0]).not.toHaveClass('whitespace-nowrap')
+    // The head keeps the declared width so an auto-layout table still sizes
+    // the column; the body cell is the consumer's and carries none of it.
+    expect(screen.getByRole('columnheader', { name: 'Own' })).toHaveStyle({
+      width: '120px'
+    })
+    expect(own[0].style.width).toBe('')
+  })
+
+  it('keeps the kit selection cell wrapped beside a column that owns its cell', () => {
+    const { container } = render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            id: 'own',
+            header: 'Own',
+            meta: { renderOwnCell: true },
+            cell: ({ row }) => <td data-testid="own">{row.original.id}</td>
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+        enableRowSelection
+        rowSelection={{}}
+        onRowSelectionChange={jest.fn()}
+      />
+    )
+
+    const headCount = container.querySelectorAll('thead th').length
+    expect(headCount).toBe(3)
+    container.querySelectorAll('tbody tr').forEach((row) => {
+      expect(row.querySelectorAll('td')).toHaveLength(headCount)
+    })
+    expect(
+      screen.getByRole('checkbox', { name: 'Select row alpha' }).closest('td')
+    ).not.toBeNull()
+  })
+})
