@@ -449,13 +449,22 @@ export function DataTable<TData>({
     manualSorting: true,
     enableSorting,
     onSortingChange: enableSorting ? onSortingChange : undefined,
-    onColumnVisibilityChange,
+    // ⛔ BOTH VISIBILITY ENTRIES ARE OMITTED, NEVER PASSED AS `undefined`.
+    //
+    // TanStack merges options as `{...defaultOptions, ...options}` and state as
+    // `{...internalState, ...options.state}`, both plain spreads — so a key
+    // present and holding `undefined` OVERWRITES what it was meant to leave
+    // alone. `onColumnVisibilityChange: undefined` replaced the feature's own
+    // `makeStateUpdater`, making `setColumnVisibility` (and every
+    // `column.toggleVisibility` behind it) a silent no-op, and
+    // `columnVisibility: undefined` replaced the table's initial `{}`, so a
+    // consumer reading the slice got `undefined` instead of an empty object.
+    // A table that passes neither prop is uncontrolled, exactly as before.
+    ...(columnVisibility !== undefined && { onColumnVisibilityChange }),
     state: {
       rowSelection: enableRowSelection ? (rowSelection ?? {}) : undefined,
       sorting: enableSorting ? (sorting ?? []) : undefined,
-      // `undefined` is what leaves a TanStack state slice uncontrolled, so a
-      // table that passes neither prop behaves exactly as it did before.
-      columnVisibility
+      ...(columnVisibility !== undefined && { columnVisibility })
     }
   })
 

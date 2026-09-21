@@ -973,3 +973,69 @@ describe('DataTable column visibility', () => {
     expect(updaterAlone.onColumnVisibilityChange).toBeDefined()
   })
 })
+
+/**
+ * A TABLE NOBODY CONTROLS LOST ITS OWN VISIBILITY STATE.
+ *
+ * Forwarding `columnVisibility` and `onColumnVisibilityChange` on every render
+ * put both keys in the options object holding `undefined`, and TanStack merges
+ * options and state as plain spreads — so the `undefined` updater overwrote the
+ * feature default and `setColumnVisibility` became a no-op, while the
+ * `undefined` state slice overwrote the table's own `{}`. A column header
+ * carrying its own hide control stopped working, silently, in every table that
+ * asked for neither prop.
+ */
+describe('DataTable uncontrolled column visibility', () => {
+  const selfHidingColumns: ColumnDef<LedgerRow, unknown>[] = [
+    { accessorKey: 'name', header: 'Name' },
+    {
+      id: 'status',
+      accessorKey: 'id',
+      header: ({ column }) => (
+        <button type="button" onClick={() => column.toggleVisibility(false)}>
+          Status
+        </button>
+      )
+    }
+  ]
+
+  it('hides a column from an in-table toggle when neither prop is given', () => {
+    render(
+      <DataTable
+        columns={selfHidingColumns}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    expect(screen.getAllByRole('columnheader')).toHaveLength(2)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Status' }))
+
+    expect(screen.queryByRole('button', { name: 'Status' })).toBeNull()
+    expect(screen.getAllByRole('columnheader')).toHaveLength(1)
+  })
+
+  it('reads an empty visibility state, never undefined, when neither prop is given', () => {
+    let seen: unknown = 'unread'
+    render(
+      <DataTable
+        columns={[
+          {
+            accessorKey: 'name',
+            header: ({ table }) => {
+              seen = table.getState().columnVisibility
+              return 'Name'
+            }
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    // A consumer reading the slice in a header renderer gets `{}` as TanStack
+    // initialises it; `undefined` crashes `Object.keys` in their code.
+    expect(seen).toEqual({})
+  })
+})
