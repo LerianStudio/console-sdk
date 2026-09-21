@@ -338,7 +338,7 @@ describe('ServerFactory', () => {
         () => ({ getRequest: () => mockRequest }) as any
       )
       mockContainerInstance.getAsync.mockResolvedValue(mockController)
-      mockUrlMatch.mockReturnValue({ params: { id: '123' } })
+      mockUrlMatch.mockReturnValue({ matched: true, params: { id: '123' } })
       mockInterceptorHandler.mockResolvedValue([])
       mockInterceptorExecute.mockImplementation(
         async (ctx, interceptors, action) => action()
@@ -374,7 +374,7 @@ describe('ServerFactory', () => {
     })
 
     it('should handle route not found with exception filter', async () => {
-      mockUrlMatch.mockReturnValue(null)
+      mockUrlMatch.mockReturnValue({ matched: false, params: {} })
       mockRoutes.length = 0
 
       // Mock the exception filter response
@@ -529,16 +529,37 @@ describe('ServerFactory', () => {
     })
 
     it('should find matching route', () => {
-      mockUrlMatch.mockReturnValue({ params: {} })
+      mockUrlMatch.mockReturnValue({ matched: true, params: {} })
 
       const result = serverFactory['_fetchRoute']('/test', 'GET')
 
       expect(mockUrlMatch).toHaveBeenCalledWith('/test', '/test')
-      expect(result).toEqual(mockRoutes[0])
+      expect(result.route).toEqual(mockRoutes[0])
+    })
+
+    it('should return the captures the matched route produced', () => {
+      mockUrlMatch.mockReturnValue({
+        matched: true,
+        params: { id: 'org_1', ledgerId: 'led_2' }
+      })
+
+      const result = serverFactory['_fetchRoute']('/test', 'GET')
+
+      expect(result.params).toEqual({ id: 'org_1', ledgerId: 'led_2' })
+    })
+
+    it('should not build a matcher for a route registered under another method', () => {
+      mockUrlMatch.mockReturnValue({ matched: true, params: {} })
+
+      expect(() => serverFactory['_fetchRoute']('/test', 'DELETE')).toThrow(
+        'Route /test not found'
+      )
+
+      expect(mockUrlMatch).not.toHaveBeenCalled()
     })
 
     it('should throw NotFoundApiException when route not found', () => {
-      mockUrlMatch.mockReturnValue(null)
+      mockUrlMatch.mockReturnValue({ matched: false, params: {} })
 
       expect(() => serverFactory['_fetchRoute']('/nonexistent', 'GET')).toThrow(
         'Route /nonexistent not found'
@@ -557,11 +578,11 @@ describe('ServerFactory', () => {
         path: '/test'
       })
 
-      mockUrlMatch.mockReturnValue({ params: {} })
+      mockUrlMatch.mockReturnValue({ matched: true, params: {} })
 
       const result = serverFactory['_fetchRoute']('/test', 'POST')
 
-      expect(result.method).toBe(HttpMethods.POST)
+      expect(result.route.method).toBe(HttpMethods.POST)
     })
   })
 

@@ -154,13 +154,13 @@ export class ServerFactory {
 
       const { pathname, method } = this._parseRequest(request)
 
-      const match = this._fetchRoute(pathname, method)
+      const { route } = this._fetchRoute(pathname, method)
 
       controller = await this.container.getAsync(
-        match?.controller as Class<BaseController>
+        route.controller as Class<BaseController>
       )
 
-      const handler = this._fetchHandler(controller!, match?.methodName)
+      const handler = this._fetchHandler(controller!, route.methodName)
 
       const executionContext = new ExecutionContext(
         controller!.constructor as Class,
@@ -169,7 +169,7 @@ export class ServerFactory {
       )
 
       // Check if there's any guards to execute
-      const guards = await this._fetchGuards(controller!, match?.methodName)
+      const guards = await this._fetchGuards(controller!, route.methodName)
 
       // Execute guards - throws ForbiddenApiException if any guard returns false
       await GuardHandler.execute(executionContext, guards)
@@ -178,7 +178,7 @@ export class ServerFactory {
       const interceptors = await this._fetchInterceptors(controller!)
 
       // Check if there's any pipes to execute
-      const pipes = await this._fetchPipes(controller!, match?.methodName)
+      const pipes = await this._fetchPipes(controller!, route.methodName)
 
       return await InterceptorHandler.execute(
         executionContext,
@@ -187,14 +187,14 @@ export class ServerFactory {
           // Parse args
           const args = await RouteHandler.getArgs(
             controller!,
-            match?.methodName,
+            route.methodName,
             [request, { params }]
           )
 
           // Run registered pipes
           const pipedArgs = await PipeHandler.execute(
             controller!,
-            match?.methodName,
+            route.methodName,
             pipes,
             args
           )
@@ -278,20 +278,22 @@ export class ServerFactory {
    * @returns The route
    */
   private _fetchRoute(pathname: string, method: string) {
-    const route = this.routes.find((route) => {
-      const match = urlMatch(pathname, route.path)
-
-      if (match && route.method === method) {
-        return route
+    for (const route of this.routes) {
+      // The method is the cheap field: checking it first skips building a
+      // matcher for every route registered under another verb.
+      if (route.method !== method) {
+        continue
       }
-    })
 
-    if (!route) {
-      Logger.error(`Route not found for ${method} ${pathname}`)
-      throw new NotFoundApiException(`Route ${pathname} not found`)
+      const { matched, params } = urlMatch(pathname, route.path)
+
+      if (matched) {
+        return { route, params }
+      }
     }
 
-    return route
+    Logger.error(`Route not found for ${method} ${pathname}`)
+    throw new NotFoundApiException(`Route ${pathname} not found`)
   }
 
   /**

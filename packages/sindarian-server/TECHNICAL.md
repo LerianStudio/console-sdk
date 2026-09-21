@@ -530,14 +530,24 @@ export function bindRequest(container: Container, request: NextRequest) {
 
 ### 8. Route Resolution (`src/utils/url/`)
 
-#### URL Matching (`url-match.ts:9`)
-Uses `path-to-regexp` for pattern matching:
+#### URL Matching (`url-match.ts:50`)
+Uses `path-to-regexp` for pattern matching, and answers what it captured:
 ```typescript
-export function urlMatch(pathname: string, route: string) {
-  const { regexp } = pathToRegexp(route)
-  return regexp.test(pathname)
+export function urlMatch(pathname: string, route: string): UrlMatch {
+  const result = match(route, { decode: decodeCapture })(pathname)
+
+  if (!result) {
+    return { matched: false, params: {} }
+  }
+
+  return { matched: true, params: /* plain Record<string, string> */ }
 }
 ```
+
+`decodeCapture` degrades to the raw text instead of throwing, so a malformed
+percent escape (`%ZZ`) still resolves its route rather than costing the request
+a 500. `ServerFactory._fetchRoute` returns `{ route, params }`, so the captures
+reach the handler arguments without being recomputed.
 
 Supports patterns like:
 - `/users` - exact match
