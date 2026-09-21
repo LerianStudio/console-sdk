@@ -81,16 +81,6 @@ describe('IdTableCell truncation', () => {
     expect(container.querySelector('td')).toHaveAttribute('title', LONG)
   })
 
-  it('copies the whole id, not the truncation', async () => {
-    const writeText = jest.fn().mockResolvedValue(undefined)
-    Object.assign(navigator, { clipboard: { writeText } })
-
-    row(<IdTableCell id={LONG} />)
-    await userEvent.click(screen.getByText('00000000…0123'))
-
-    expect(writeText).toHaveBeenCalledWith(LONG)
-  })
-
   /**
    * ⛔ A BAD LENGTH MUST NOT TAKE THE TABLE DOWN, AND MUST NOT LENGTHEN THE ID.
    *
@@ -140,5 +130,121 @@ describe('IdTableCell truncation', () => {
 
     expect(container.querySelector('td')).toBeInTheDocument()
     expect(container.querySelector('td')).not.toHaveAttribute('title')
+  })
+})
+
+/**
+ * AN ID NO KEYBOARD COULD COPY, AND A SCREEN READER HEARD NOTHING ABOUT.
+ *
+ * The copy action hung off the `<td>` itself, and its only affordance was a
+ * glyph inside a `<div>` — no role, no tab stop, no accessible name. An
+ * operator who does not use a pointer could not copy an id from any table in
+ * any console built on this kit, and a screen reader announced the cell as
+ * plain text. A cell rendered without an id copied the string `"undefined"`,
+ * and a browser with no clipboard API threw an unhandled rejection out of the
+ * click handler.
+ */
+describe('IdTableCell copy control', () => {
+  const stubClipboard = () => {
+    const writeText = jest.fn().mockResolvedValue(undefined)
+    Object.assign(navigator, { clipboard: { writeText } })
+    return writeText
+  }
+
+  it('copies from a named button, not from a click on the cell', async () => {
+    const writeText = stubClipboard()
+    row(<IdTableCell id={LONG} />)
+
+    expect(screen.getByRole('button', { name: 'Copy id' })).toHaveAttribute(
+      'type',
+      'button'
+    )
+
+    // The `<td>` handler is gone: the id text is the tooltip trigger, and a
+    // click on it must no longer copy behind the operator's back.
+    await userEvent.click(screen.getByText('00000000…0123'))
+    expect(writeText).not.toHaveBeenCalled()
+  })
+
+  it('is reachable from the keyboard', async () => {
+    stubClipboard()
+    render(
+      <>
+        <button type="button">before</button>
+        <Table>
+          <TableBody>
+            <TableRow>
+              <IdTableCell id={LONG} />
+            </TableRow>
+          </TableBody>
+        </Table>
+      </>
+    )
+
+    await userEvent.tab()
+    expect(screen.getByRole('button', { name: 'before' })).toHaveFocus()
+
+    // The truncated id is itself a tooltip trigger, and that tab stop is what
+    // reveals the whole id; the copy control is the one after it.
+    await userEvent.tab()
+    await userEvent.tab()
+
+    expect(screen.getByRole('button', { name: 'Copy id' })).toHaveFocus()
+  })
+
+  it('copies the whole id, never the truncation', async () => {
+    const writeText = stubClipboard()
+    const onCopy = jest.fn()
+    row(<IdTableCell id={LONG} onCopy={onCopy} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Copy id' }))
+
+    expect(writeText).toHaveBeenCalledWith(LONG)
+    expect(onCopy).toHaveBeenCalledWith(LONG)
+  })
+
+  it('takes its accessible name from copyLabel', () => {
+    stubClipboard()
+    row(<IdTableCell id={LONG} copyLabel="Copiar identificador" />)
+
+    expect(
+      screen.getByRole('button', { name: 'Copiar identificador' })
+    ).toBeInTheDocument()
+  })
+
+  it('renders no copy control, and copies nothing, when there is no id', async () => {
+    const writeText = stubClipboard()
+    row(<IdTableCell />)
+
+    expect(screen.queryByRole('button', { name: 'Copy id' })).toBeNull()
+    expect(writeText).not.toHaveBeenCalled()
+  })
+
+  it('does not open the record while the operator copies its id', async () => {
+    stubClipboard()
+    const onRowClick = jest.fn()
+    render(
+      <Table>
+        <TableBody>
+          <TableRow onClick={onRowClick}>
+            <IdTableCell id={LONG} />
+          </TableRow>
+        </TableBody>
+      </Table>
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Copy id' }))
+
+    expect(onRowClick).not.toHaveBeenCalled()
+  })
+
+  it('stays silent where the browser offers no clipboard', async () => {
+    Object.assign(navigator, { clipboard: undefined })
+    const onCopy = jest.fn()
+    row(<IdTableCell id={LONG} onCopy={onCopy} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Copy id' }))
+
+    expect(onCopy).not.toHaveBeenCalled()
   })
 })

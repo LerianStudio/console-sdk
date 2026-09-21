@@ -1,8 +1,4 @@
-import {
-  TableCell,
-  TableCellAction,
-  TableCellWrapper
-} from '@/components/ui/table'
+import { TableCell, TableCellWrapper } from '@/components/ui/table'
 import {
   Tooltip,
   TooltipContent,
@@ -21,6 +17,14 @@ export type IdTableCellProps = Omit<
   head?: number
   /** Characters kept from the end of the id. */
   tail?: number
+  /**
+   * Accessible name for the copy button. Override for localization; the kit
+   * ships no i18n. The id is deliberately NOT interpolated into it — a column
+   * of thirty rows would announce thirty different names for the same action,
+   * and the id is already the cell's text and its `title`.
+   * @defaultValue 'Copy id'
+   */
+  copyLabel?: string
 }
 
 /**
@@ -71,19 +75,48 @@ export const IdTableCell = ({
   onCopy,
   head = DEFAULT_HEAD,
   tail = DEFAULT_TAIL,
+  copyLabel = 'Copy id',
   ...others
 }: IdTableCellProps) => {
-  const handleCopyToClipboard = () => {
-    // The WHOLE id, never what is rendered. The cell is the only place most
-    // consoles expose it, and a truncated id pasted into a query matches
-    // nothing.
-    navigator.clipboard.writeText(id!)
-    onCopy?.(id!)
+  /**
+   * ⛔ THE COPY ACTION IS A NAMED BUTTON, NEVER A HANDLER ON THE `<td>`.
+   *
+   * On the cell it had no role, no tab stop and no accessible name: an
+   * operator who does not use a pointer could not copy an id from any table
+   * built on this kit, and a screen reader announced the cell as plain text.
+   * It also made the id column the one cell in a row-activating table that
+   * silently swallowed the click that opens the record.
+   */
+  const handleCopyToClipboard = async (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    // A row that opens a record on click must not also open it on a copy.
+    event.stopPropagation()
+
+    // The same guard `CopyField` uses: an insecure context, and a browser
+    // without the API, both leave `navigator.clipboard` undefined, and the
+    // only thing this cell would otherwise do about it is throw an unhandled
+    // rejection out of a click handler. There is no input here to select as a
+    // fallback, so a silent no-op is the whole of what it can honestly offer.
+    if (!id || typeof navigator.clipboard?.writeText !== 'function') {
+      return
+    }
+
+    try {
+      // The WHOLE id, never what is rendered. The cell is the only place most
+      // consoles expose it, and a truncated id pasted into a query matches
+      // nothing.
+      await navigator.clipboard.writeText(id)
+      onCopy?.(id)
+    } catch {
+      // The browser refused the write: nothing reached the clipboard, so
+      // `onCopy` — which consumers hang their "copied" toast off — must not
+      // claim otherwise.
+    }
   }
 
   return (
     <TableCell
-      onClick={handleCopyToClipboard}
       // The tooltip is the styled affordance; `title` is the fallback that
       // survives without it — a printed page, a portal that has not mounted,
       // and the cell padding outside the trigger.
@@ -99,9 +132,19 @@ export const IdTableCell = ({
             <TooltipContent>{id}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <TableCellAction>
-          <Copy className="size-3.5" />
-        </TableCellAction>
+        {id ? (
+          <button
+            type="button"
+            aria-label={copyLabel}
+            onClick={handleCopyToClipboard}
+            // `focus-visible:opacity-100` is not decoration: the glyph is
+            // transparent until the pointer arrives, and a keyboard stop the
+            // operator cannot see is the same dead end in a different shape.
+            className="focus-visible:ring-ring ml-4 w-fit shrink-0 cursor-pointer rounded-sm opacity-0 transition-opacity group-hover/table-cell:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
+          >
+            <Copy className="size-3.5" />
+          </button>
+        ) : null}
       </TableCellWrapper>
     </TableCell>
   )
