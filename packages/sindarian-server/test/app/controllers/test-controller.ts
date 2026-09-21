@@ -12,7 +12,7 @@ import {
 import { inject } from 'inversify'
 import { TestService } from './test-service'
 import { TestInterceptor } from './test-interceptor'
-import { CreateTestDto, UpdateTestDto } from './test-dto'
+import { CreateTestDto, SearchTestDto, UpdateTestDto } from './test-dto'
 
 @Controller('/test')
 @UseInterceptors(TestInterceptor)
@@ -26,6 +26,14 @@ export class TestController {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public fetchAll(@Query() query: any) {
     return this.testService.fetchAll()
+  }
+
+  // `SearchTestDto` is imported as a VALUE, never `import type`: an erased
+  // annotation emits no `design:paramtypes` entry, so the pipe receives no
+  // metatype and hands the query straight through.
+  @Get('search')
+  public search(@Query() query: SearchTestDto) {
+    return query
   }
 
   @Get(':id')
