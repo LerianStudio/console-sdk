@@ -848,3 +848,128 @@ describe('DataTable column meta', () => {
     ).not.toBeNull()
   })
 })
+
+/**
+ * Column visibility: a listing whose own dropdown hides a column had nowhere to
+ * send the result. TanStack's visibility model is always running inside the
+ * table, but the state was unreachable from the page, so a console screen could
+ * only fake a hidden column by rebuilding its column array. Frozen by plan
+ * 2026-09-21-console-simplification C9.
+ */
+describe('DataTable column visibility', () => {
+  const visibilityColumns: ColumnDef<LedgerRow, unknown>[] = [
+    { accessorKey: 'name', header: 'Name' },
+    { id: 'status', accessorKey: 'id', header: 'Status' },
+    { accessorKey: 'amount', header: 'Amount' }
+  ]
+
+  it('hides a column from head and body', () => {
+    const { container } = render(
+      <DataTable
+        columns={visibilityColumns}
+        data={rows}
+        getRowId={getRowId}
+        columnVisibility={{ status: false }}
+      />
+    )
+
+    expect(screen.queryByRole('columnheader', { name: 'Status' })).toBeNull()
+    expect(screen.queryByText('alpha')).toBeNull()
+
+    const headCount = container.querySelectorAll('thead th').length
+    expect(headCount).toBe(2)
+    container.querySelectorAll('tbody tr').forEach((row) => {
+      expect(row.querySelectorAll('td')).toHaveLength(headCount)
+    })
+  })
+
+  it('counts only the visible columns in the skeleton and the empty span', () => {
+    const { container, rerender } = render(
+      <DataTable
+        columns={visibilityColumns}
+        data={[]}
+        loading
+        skeletonRows={2}
+        columnVisibility={{ status: false }}
+      />
+    )
+
+    container.querySelectorAll('tbody tr').forEach((row) => {
+      expect(row.querySelectorAll('td')).toHaveLength(2)
+    })
+
+    rerender(
+      <DataTable
+        columns={visibilityColumns}
+        data={[]}
+        columnVisibility={{ status: false }}
+      />
+    )
+
+    expect(container.querySelector('tbody td')).toHaveAttribute('colspan', '2')
+  })
+
+  it('renders every column when the prop is omitted', () => {
+    render(
+      <DataTable columns={visibilityColumns} data={rows} getRowId={getRowId} />
+    )
+
+    expect(
+      screen.getAllByRole('columnheader').map((h) => h.textContent)
+    ).toEqual(['Name', 'Status', 'Amount'])
+  })
+
+  it('sends a table-driven toggle to the consumer updater', () => {
+    const onColumnVisibilityChange = jest.fn()
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            id: 'status',
+            accessorKey: 'id',
+            header: ({ column }) => (
+              <button
+                type="button"
+                onClick={() => column.toggleVisibility(false)}
+              >
+                Status
+              </button>
+            )
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+        columnVisibility={{}}
+        onColumnVisibilityChange={onColumnVisibilityChange}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Status' }))
+
+    expect(onColumnVisibilityChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('takes the state alone, and refuses the updater alone', () => {
+    // A separate dropdown owning the state and passing no updater is the
+    // shipped console usage, so it has to keep compiling.
+    const stateAlone: DataTableProps<LedgerRow> = {
+      columns: visibilityColumns,
+      data: rows,
+      columnVisibility: { status: false }
+    }
+
+    // TanStack reads an `on*Change` callback as a declaration of controlled
+    // state, so an updater with no `columnVisibility` freezes visibility at its
+    // initial value while the callback keeps firing.
+    // @ts-expect-error the updater alone is unrepresentable — plan 2026-09-21-console-simplification C9
+    const updaterAlone: DataTableProps<LedgerRow> = {
+      columns: visibilityColumns,
+      data: rows,
+      onColumnVisibilityChange: jest.fn()
+    }
+
+    expect(stateAlone.columnVisibility).toEqual({ status: false })
+    expect(updaterAlone.onColumnVisibilityChange).toBeDefined()
+  })
+})

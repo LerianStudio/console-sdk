@@ -3,7 +3,8 @@ import { Meta, StoryObj } from '@storybook/nextjs'
 import type {
   ColumnDef,
   RowSelectionState,
-  SortingState
+  SortingState,
+  VisibilityState
 } from '@tanstack/react-table'
 import { DataTable, DataTableProps } from '.'
 import { StatusBadge } from '../status-badge'
@@ -240,6 +241,43 @@ export const Sortable: StoryObj<DataTableProps<Settlement>> = {
         sorting={sorting}
         onSortingChange={setSorting}
       />
+    )
+  }
+}
+
+/**
+ * The shape a console listing actually renders: a column the page has hidden
+ * through its own control, beside a money column that right-aligns itself and
+ * formats its own figures. The table owns neither — visibility is controlled
+ * from outside (the checkbox here stands in for the console's column dropdown),
+ * and alignment is the column's own `meta`.
+ */
+export const ColumnsHiddenAndAligned: StoryObj<DataTableProps<Settlement>> = {
+  render: () => {
+    const [columnVisibility, setColumnVisibility] =
+      React.useState<VisibilityState>({ status: false })
+
+    return (
+      <div className="flex flex-col gap-4">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="accent-primary size-4"
+            checked={columnVisibility.status !== false}
+            onChange={(event) =>
+              setColumnVisibility({ status: event.target.checked })
+            }
+          />
+          Show status
+        </label>
+        <DataTable
+          columns={columns}
+          data={data}
+          getRowId={(row) => row.id}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
+        />
+      </div>
     )
   }
 }

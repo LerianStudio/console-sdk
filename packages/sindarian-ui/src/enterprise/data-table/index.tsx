@@ -64,7 +64,8 @@ import {
   type RowData,
   type RowSelectionState,
   type SortingState,
-  type Table as TanstackTable
+  type Table as TanstackTable,
+  type VisibilityState
 } from '@tanstack/react-table'
 
 import {
@@ -195,6 +196,35 @@ type SortingProps =
       onSortingChange: OnChangeFn<SortingState>
     }
 
+/**
+ * Column visibility is controlled but, deliberately, NOT a required pair — a
+ * departure from the two unions above, and not drift. Those two are unions
+ * because each has an `enable*` flag whose "on" state is meaningless without
+ * the controlled pair. TanStack has no enable flag for visibility: the model is
+ * always running, and the only shipped consumer passes STATE WITH NO UPDATER,
+ * because a separate dropdown owns the state on the page. Requiring the pair
+ * would refuse that usage.
+ *
+ * What the union does forbid is the updater ALONE: TanStack reads an
+ * `on[State]Change` callback as a declaration of controlled state, so a
+ * callback with no `columnVisibility` freezes visibility at its initial value
+ * while the callback keeps firing. Prop names frozen by plan
+ * 2026-09-21-console-simplification C9.
+ *
+ * Omit both and the table keeps its own visibility state, exactly as before.
+ */
+type ColumnVisibilityProps =
+  | {
+      /** Controlled column-visibility state (TanStack `VisibilityState`). */
+      columnVisibility: VisibilityState
+      /**
+       * Controlled updater (TanStack `OnChangeFn`). Optional: a consumer may
+       * drive the state from outside the table entirely.
+       */
+      onColumnVisibilityChange?: OnChangeFn<VisibilityState>
+    }
+  | { columnVisibility?: undefined; onColumnVisibilityChange?: undefined }
+
 type DataTableBaseProps<TData> = {
   columns: ColumnDef<TData, unknown>[]
   data: TData[]
@@ -255,7 +285,8 @@ type DataTableBaseProps<TData> = {
 
 export type DataTableProps<TData> = DataTableBaseProps<TData> &
   RowSelectionProps<TData> &
-  SortingProps
+  SortingProps &
+  ColumnVisibilityProps
 
 const SELECTION_COLUMN_ID = '__select__'
 
@@ -380,6 +411,8 @@ export function DataTable<TData>({
   enableSorting = false,
   sorting,
   onSortingChange,
+  columnVisibility,
+  onColumnVisibilityChange,
   onRowActivate,
   rowHref,
   className,
@@ -416,13 +449,20 @@ export function DataTable<TData>({
     manualSorting: true,
     enableSorting,
     onSortingChange: enableSorting ? onSortingChange : undefined,
+    onColumnVisibilityChange,
     state: {
       rowSelection: enableRowSelection ? (rowSelection ?? {}) : undefined,
-      sorting: enableSorting ? (sorting ?? []) : undefined
+      sorting: enableSorting ? (sorting ?? []) : undefined,
+      // `undefined` is what leaves a TanStack state slice uncontrolled, so a
+      // table that passes neither prop behaves exactly as it did before.
+      columnVisibility
     }
   })
 
-  const colCount = tableColumns.length
+  // Visible, not declared: the skeleton grid and the empty row's colSpan have
+  // to match the header the table actually rendered, and a hidden column is in
+  // `tableColumns` but in no `<th>`.
+  const colCount = table.getVisibleLeafColumns().length
   const dataRows = table.getRowModel().rows
   const rowCount = dataRows.length
 
