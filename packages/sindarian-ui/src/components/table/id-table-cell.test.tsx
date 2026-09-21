@@ -220,6 +220,28 @@ describe('IdTableCell copy control', () => {
     expect(writeText).not.toHaveBeenCalled()
   })
 
+  /**
+   * ⛔ A REFUSED WRITE MUST NOT REPORT A COPY.
+   *
+   * On a desktop browser `navigator.clipboard.writeText` exists and rejects
+   * routinely — the document is not focused, or the permission was denied.
+   * `onCopy` is what a console hangs its "Copied!" toast off, so firing it on
+   * a write that never landed tells the operator the id is on the clipboard
+   * when the previous contents still are, and the next paste into a ledger
+   * query is the wrong id.
+   */
+  it('reports nothing when the browser refuses the write', async () => {
+    const writeText = jest.fn().mockRejectedValue(new Error('NotAllowedError'))
+    Object.assign(navigator, { clipboard: { writeText } })
+    const onCopy = jest.fn()
+    row(<IdTableCell id={LONG} onCopy={onCopy} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Copy id' }))
+
+    expect(writeText).toHaveBeenCalledWith(LONG)
+    expect(onCopy).not.toHaveBeenCalled()
+  })
+
   it('does not open the record while the operator copies its id', async () => {
     stubClipboard()
     const onRowClick = jest.fn()
