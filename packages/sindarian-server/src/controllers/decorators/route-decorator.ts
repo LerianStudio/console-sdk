@@ -25,7 +25,25 @@ export class RouteHandler {
     target: object,
     propertyKey: string | symbol
   ): RouteMetadata {
-    return Reflect.getOwnMetadata(ROUTE_KEY, target, propertyKey)
+    // `@Route` is a method decorator, so it writes its metadata on the
+    // prototype. Callers hand over either that prototype or a controller
+    // instance, so read the target first and fall back to its prototype —
+    // the same two-step read every sibling handler in this package uses.
+    let metadata: RouteMetadata = Reflect.getOwnMetadata(
+      ROUTE_KEY,
+      target,
+      propertyKey
+    )
+
+    if (!metadata && target.constructor) {
+      metadata = Reflect.getOwnMetadata(
+        ROUTE_KEY,
+        target.constructor.prototype,
+        propertyKey
+      )
+    }
+
+    return metadata
   }
 
   static async getArgs(

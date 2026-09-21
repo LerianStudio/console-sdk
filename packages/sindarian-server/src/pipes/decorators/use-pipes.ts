@@ -101,7 +101,7 @@ export class PipeHandler {
     pipes: PipeTransform[],
     args: RouteContext[]
   ): Promise<any[]> {
-    const metadata = RouteHandler.getMetadata(target.constructor, propertyKey)
+    const metadata = RouteHandler.getMetadata(target, propertyKey)
 
     if (pipes.length === 0) {
       return args.map((arg) => arg.parameter)
