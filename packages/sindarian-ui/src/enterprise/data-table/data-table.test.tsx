@@ -1044,11 +1044,7 @@ describe('DataTable uncontrolled column visibility', () => {
 
   it('hides a column from an in-table toggle when neither prop is given', () => {
     render(
-      <DataTable
-        columns={selfHidingColumns}
-        data={rows}
-        getRowId={getRowId}
-      />
+      <DataTable columns={selfHidingColumns} data={rows} getRowId={getRowId} />
     )
 
     expect(screen.getAllByRole('columnheader')).toHaveLength(2)
