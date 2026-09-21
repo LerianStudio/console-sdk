@@ -212,11 +212,27 @@ describe('IdTableCell copy control', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders no copy control, and copies nothing, when there is no id', async () => {
+  /**
+   * ⛔ NO ID, NOTHING ON THE CLIPBOARD — AND THE CELL ITSELF MUST BE CLICKED
+   * TO PROVE IT.
+   *
+   * `id` is optional while the old handler wrote `writeText(id!)`, so a cell
+   * rendered without one put the literal string `"undefined"` on the
+   * operator's clipboard from a click anywhere in the cell. Asserting only
+   * that no copy BUTTON renders does not pin that: the button did not exist
+   * before either, so the case passes against the defect. The click on the
+   * `<td>` is the whole test.
+   */
+  it('copies nothing from a click on the cell when there is no id', async () => {
     const writeText = stubClipboard()
-    row(<IdTableCell />)
+    const { container } = row(<IdTableCell />)
 
     expect(screen.queryByRole('button', { name: 'Copy id' })).toBeNull()
+
+    const cell = container.querySelector('td')
+    expect(cell).not.toBeNull()
+    await userEvent.click(cell!)
+
     expect(writeText).not.toHaveBeenCalled()
   })
 
