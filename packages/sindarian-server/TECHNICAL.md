@@ -534,7 +534,15 @@ export function bindRequest(container: Container, request: NextRequest) {
 Uses `path-to-regexp` for pattern matching, and answers what it captured:
 ```typescript
 export function urlMatch(pathname: string, route: string): UrlMatch {
-  const result = match(route, { decode: decodeCapture })(pathname)
+  const matcher = match(route)
+
+  let result: ReturnType<typeof matcher>
+
+  try {
+    result = matcher(pathname)
+  } catch {
+    return { matched: false, params: {} }
+  }
 
   if (!result) {
     return { matched: false, params: {} }
@@ -544,9 +552,17 @@ export function urlMatch(pathname: string, route: string): UrlMatch {
 }
 ```
 
-`decodeCapture` degrades to the raw text instead of throwing, so a malformed
-percent escape (`%ZZ`) still resolves its route rather than costing the request
-a 500. `ServerFactory._fetchRoute` returns `{ route, params }`, so the captures
+**A capture that cannot be decoded is not a match.** `match()` decodes each
+capture with `decodeURIComponent`, which raises `URIError` on a malformed
+escape (`%ZZ`, a trailing `%`), and `new URL()` neither decodes nor rejects
+those — so such a pathname does reach route resolution. It answers
+`{ matched: false }`, and the request gets a **404**, never a 500 and never a
+controller holding raw `%ZZ` text as though it were a real id. Compiling the
+route stays outside that guard: an invalid route PATTERN is a framework
+misconfiguration and still throws rather than degrading into a silent
+not-found.
+
+`ServerFactory._fetchRoute` returns `{ route, params }`, so the captures
 reach the handler arguments without being recomputed.
 
 Supports patterns like:

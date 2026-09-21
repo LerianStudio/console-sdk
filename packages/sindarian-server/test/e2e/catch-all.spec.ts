@@ -113,6 +113,23 @@ describe('Catch-all route dispatch', () => {
   })
 
   describe('an encoded segment', () => {
+    // A capture nobody can decode is not a match, so the request falls
+    // through to a not-found instead of reaching the controller with raw
+    // `%ZZ` text standing in for an id — and never a 500, which is what an
+    // unguarded `decodeURIComponent` would have cost it.
+    // Plan 2026-09-21-console-simplification C9.
+    it('answers a not-found when the escape cannot be decoded', async () => {
+      const { status, body } = await get(
+        'http://localhost:3000/api/v1/test/%ZZ',
+        { path: ['test', '%ZZ'] }
+      )
+
+      expect({ status, message: body.message }).toEqual({
+        status: 404,
+        message: 'Route /test/%ZZ not found'
+      })
+    })
+
     it('reaches the controller decoded', async () => {
       const { status, body } = await get(
         'http://localhost:3000/api/v1/organizations/org%201/ledgers/led_2/accounts',

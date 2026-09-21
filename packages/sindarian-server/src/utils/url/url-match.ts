@@ -13,25 +13,6 @@ function normalizePath(path: string): string {
 }
 
 /**
- * Decode one capture without being able to throw.
- *
- * `decodeURIComponent` raises `URIError` on a malformed escape (`%ZZ`, a lone
- * `%`), and `new URL()` neither decodes nor rejects those, so such a pathname
- * does reach route resolution. The regexp still decides whether the route
- * matches; a capture that cannot be decoded carries its raw text rather than
- * costing the request its route.
- * @param value - The raw capture
- * @returns The decoded capture, or the raw value when it cannot be decoded
- */
-function decodeCapture(value: string): string {
-  try {
-    return decodeURIComponent(value)
-  } catch {
-    return value
-  }
-}
-
-/**
  * The outcome of matching a pathname against a route.
  */
 export type UrlMatch = {
@@ -52,9 +33,24 @@ export function urlMatch(pathname: string, route: string): UrlMatch {
   const normalizedPathname = normalizePath(pathname)
   const normalizedRoute = normalizePath(route)
 
-  const result = match(normalizedRoute, { decode: decodeCapture })(
-    normalizedPathname
-  )
+  // Compiling the route happens OUTSIDE the try: an invalid route pattern is a
+  // framework misconfiguration and must stay loud, never degrade into a silent
+  // not-found.
+  const matcher = match(normalizedRoute)
+
+  let result: ReturnType<typeof matcher>
+
+  try {
+    result = matcher(normalizedPathname)
+  } catch {
+    // `match()` decodes each capture with `decodeURIComponent`, which raises
+    // `URIError` on a malformed escape (`%ZZ`, a trailing `%`); `new URL()`
+    // neither decodes nor rejects those, so such a pathname does reach route
+    // resolution. A capture nobody can decode is not a match: the request
+    // answers 404 rather than handing a controller raw text as though it were
+    // a real id. Plan 2026-09-21-console-simplification C9.
+    return { matched: false, params: {} }
+  }
 
   if (!result) {
     return { matched: false, params: {} }

@@ -352,11 +352,34 @@ describe('urlMatch', () => {
       })
     })
 
-    it('should keep a malformed percent escape raw instead of throwing', () => {
+    // A capture that cannot be decoded is not a match, so the request 404s
+    // rather than reaching a controller holding raw `%ZZ` text as though it
+    // were a real id. Plan 2026-09-21-console-simplification C9.
+    it('should not match when a capture carries a malformed percent escape', () => {
       expect(urlMatch('/users/%ZZ', '/users/:id')).toEqual({
-        matched: true,
-        params: { id: '%ZZ' }
+        matched: false,
+        params: {}
       })
+      expect(urlMatch('/users/100%', '/users/:id')).toEqual({
+        matched: false,
+        params: {}
+      })
+    })
+
+    // Only the capture is decoded, so an undecodable STATIC segment is not a
+    // decode failure — it simply does not equal the literal it is matched
+    // against, and nothing throws on the way to saying so.
+    it('should not throw on a malformed escape outside a capture', () => {
+      expect(urlMatch('/users%ZZ/123', '/users/:id')).toEqual({
+        matched: false,
+        params: {}
+      })
+    })
+
+    // An invalid ROUTE pattern is a framework misconfiguration, not a bad
+    // request: it must stay loud rather than degrade into a silent 404.
+    it('should still throw on an invalid route pattern', () => {
+      expect(() => urlMatch('/users/123', '/users/:')).toThrow()
     })
 
     it('should join a wildcard capture into a single string', () => {
