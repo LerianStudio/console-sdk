@@ -1,4 +1,8 @@
-import { readWireStatus, toProblemMessage } from './to-problem-message'
+import {
+  readWireField,
+  readWireStatus,
+  toProblemMessage
+} from './to-problem-message'
 
 // The only thing standing between an upstream's free text and the sentence
 // `getResponse()` serialises to the browser. Every row here is a body shape
@@ -172,5 +176,82 @@ describe('readWireStatus', () => {
 
   it('answers 500 when there is no getStatus at all', () => {
     expect(readWireStatus({})).toBe(500)
+  })
+})
+
+// The guarded single read every other field reader in this package is built on
+// (`readWireMessage`, and `ApiException.readWireClassification` for `code` and
+// `title`), pinned here on its own for the first time. Its DEFAULT rule is the
+// classification rule, which no test reached: the `text` rule is the one
+// `readWireMessage` passes, so every branch below was asserted only by
+// accident of a caller, or not at all.
+describe('readWireField', () => {
+  const limit = 200
+
+  it('returns a string as written', () => {
+    expect(readWireField(() => 'TOKEN_EXPIRED', limit)).toBe('TOKEN_EXPIRED')
+  })
+
+  // A pg `INT` error-code column and a driver's `bigint` are what the `any` a
+  // database row carries actually is, and `{"code":5}` served a caller
+  // perfectly well before this package read the field at all. Substituting for
+  // them would destroy a value that was fine and name it nowhere.
+  it.each([
+    { label: 'a number', value: 5, text: '5' },
+    { label: 'a bigint', value: 9007199254740993n, text: '9007199254740993' },
+    { label: 'a boolean', value: false, text: 'false' },
+    { label: 'NaN', value: NaN, text: 'NaN' },
+    { label: 'Infinity', value: Infinity, text: 'Infinity' }
+  ])('answers $label as it is spelled', ({ value, text }) => {
+    expect(readWireField(() => value, limit)).toBe(text)
+  })
+
+  // A value whose text would be a SERIALISATION of something else: `String({})`
+  // is `[object Object]`, `String(['a'])` is `a`, a function stringifies to its
+  // own source. Those are the shapes an upstream body arrives as, and the
+  // defect this reader exists for.
+  it.each([
+    { label: 'an object', value: { en: 'Conflict' } },
+    { label: 'an array', value: ['0042'] },
+    { label: 'a function', value: () => '0042' },
+    { label: 'a symbol', value: Symbol('0042') },
+    { label: 'null', value: null },
+    { label: 'undefined', value: undefined }
+  ])('answers nothing for $label', ({ value }) => {
+    expect(readWireField(() => value, limit)).toBeUndefined()
+  })
+
+  it('cuts a string at the limit the caller names', () => {
+    expect(readWireField(() => 'c'.repeat(4000), limit)).toHaveLength(limit)
+  })
+
+  // Every caller is the last frame before a body, and a throw here escapes the
+  // request pipeline: the route answers a zero-byte body with no content-type.
+  it('answers nothing when the read throws, and does not propagate', () => {
+    const source = {
+      get code(): string {
+        throw new Error('trap')
+      }
+    }
+
+    expect(readWireField(() => source.code, limit)).toBeUndefined()
+  })
+
+  // The whole point of the function: a check on one read and a use of another
+  // is not a guard. A `message` getter answering a sentence first and an object
+  // second passed a `typeof` and handed the object over.
+  it('reads the value exactly once', () => {
+    const read = jest.fn(() => 'TOKEN_EXPIRED')
+
+    readWireField(read, limit)
+
+    expect(read).toHaveBeenCalledTimes(1)
+  })
+
+  it('lets the caller replace the rule', () => {
+    const text = (value: unknown) => typeof value === 'string'
+
+    expect(readWireField(() => 5, limit, text)).toBeUndefined()
+    expect(readWireField(() => 'a sentence', limit, text)).toBe('a sentence')
   })
 })

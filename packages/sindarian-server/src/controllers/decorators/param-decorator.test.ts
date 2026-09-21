@@ -1,13 +1,19 @@
 import 'reflect-metadata'
 import { PARAM_KEY } from '../../constants/keys'
 import { ParamHandler, Param, ParamMetadata } from './param-decorator'
-import { getNextParamArgument } from '../../utils/nextjs/get-next-arguments'
+import {
+  getNextParamArgument,
+  getRouteParamArgument
+} from '../../utils/nextjs/get-next-arguments'
 import { ValidationApiException } from '../../exceptions'
 
 // Mock the utility function
 jest.mock('../../utils/nextjs/get-next-arguments')
 const mockGetNextParamArgument = getNextParamArgument as jest.MockedFunction<
   typeof getNextParamArgument
+>
+const mockGetRouteParamArgument = getRouteParamArgument as jest.MockedFunction<
+  typeof getRouteParamArgument
 >
 
 describe('ParamHandler.handle', () => {
@@ -20,6 +26,7 @@ describe('ParamHandler.handle', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockGetNextParamArgument.mockResolvedValue(mockParams)
+    mockGetRouteParamArgument.mockReturnValue(undefined)
   })
 
   afterEach(() => {
@@ -336,7 +343,7 @@ describe('ParamHandler.handle', () => {
     ])
   })
 
-  it('should handle getNextParamArgument returning undefined', async () => {
+  it('should throw the per-key validation error when neither source resolves', async () => {
     mockGetNextParamArgument.mockResolvedValue(undefined)
 
     const metadata: ParamMetadata[] = [
@@ -354,6 +361,96 @@ describe('ParamHandler.handle', () => {
 
     await expect(
       ParamHandler.handle(TestClass.prototype, 'testMethod', [])
+    ).rejects.toThrow('Invalid param: id is required')
+  })
+
+  it('should resolve params from the route captures alone', async () => {
+    mockGetNextParamArgument.mockResolvedValue(undefined)
+    mockGetRouteParamArgument.mockReturnValue({ id: '123', ledgerId: '456' })
+
+    const metadata: ParamMetadata[] = [
+      { name: 'id', parameterIndex: 0 },
+      { name: 'ledgerId', parameterIndex: 1 }
+    ]
+    Reflect.defineMetadata(
+      PARAM_KEY,
+      metadata,
+      TestClass.prototype,
+      'testMethod'
+    )
+
+    const result = await ParamHandler.handle(
+      TestClass.prototype,
+      'testMethod',
+      [null, { routeParams: { id: '123', ledgerId: '456' } }]
+    )
+
+    expect(result).toEqual([
+      { type: 'param', parameter: '123', parameterIndex: 0 },
+      { type: 'param', parameter: '456', parameterIndex: 1 }
+    ])
+  })
+
+  it('should let the route capture win when both sources carry the name', async () => {
+    mockGetNextParamArgument.mockResolvedValue({ id: 'from-next' })
+    mockGetRouteParamArgument.mockReturnValue({ id: 'from-route' })
+
+    const metadata: ParamMetadata[] = [{ name: 'id', parameterIndex: 0 }]
+    Reflect.defineMetadata(
+      PARAM_KEY,
+      metadata,
+      TestClass.prototype,
+      'testMethod'
+    )
+
+    const result = await ParamHandler.handle(
+      TestClass.prototype,
+      'testMethod',
+      [null, { params: { id: 'from-next' }, routeParams: { id: 'from-route' } }]
+    )
+
+    expect(result).toEqual([
+      { type: 'param', parameter: 'from-route', parameterIndex: 0 }
+    ])
+  })
+
+  it('should throw when neither source carries the requested name', async () => {
+    mockGetNextParamArgument.mockResolvedValue({ slug: 'test-slug' })
+    mockGetRouteParamArgument.mockReturnValue({ ledgerId: '456' })
+
+    const metadata: ParamMetadata[] = [{ name: 'id', parameterIndex: 0 }]
+    Reflect.defineMetadata(
+      PARAM_KEY,
+      metadata,
+      TestClass.prototype,
+      'testMethod'
+    )
+
+    await expect(
+      ParamHandler.handle(TestClass.prototype, 'testMethod', [
+        null,
+        { params: { slug: 'test-slug' }, routeParams: { ledgerId: '456' } }
+      ])
+    ).rejects.toThrow('Invalid param: id is required')
+  })
+
+  it('should throw when the route capture is an empty string', async () => {
+    mockGetNextParamArgument.mockResolvedValue(undefined)
+    mockGetRouteParamArgument.mockReturnValue({ id: '' })
+
+    const metadata: ParamMetadata[] = [{ name: 'id', parameterIndex: 0 }]
+    Reflect.defineMetadata(
+      PARAM_KEY,
+      metadata,
+      TestClass.prototype,
+      'testMethod'
+    )
+
+    await expect(
+      ParamHandler.handle(TestClass.prototype, 'testMethod', [
+        null,
+        { routeParams: { id: '' } }
+      ])
     ).rejects.toThrow('Invalid param: id is required')
   })
 

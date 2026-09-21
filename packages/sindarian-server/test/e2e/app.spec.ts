@@ -15,7 +15,7 @@ describe('TestController E2E Tests', () => {
       const response = await app.handler(request, params)
       const body = await response.json()
       expect(response.status).toBe(200)
-      expect(body).toEqual([{ id: 1, name: 'test' }])
+      expect(body).toEqual({ items: [{ id: 1, name: 'test' }], query: {} })
     })
 
     it('should fetch all items with query parameters', async () => {
@@ -28,7 +28,10 @@ describe('TestController E2E Tests', () => {
       const body = await response.json()
 
       expect(response.status).toBe(200)
-      expect(body).toEqual([{ id: 1, name: 'test' }])
+      expect(body).toEqual({
+        items: [{ id: 1, name: 'test' }],
+        query: { page: '1', limit: '10' }
+      })
     })
   })
 
@@ -310,6 +313,73 @@ describe('TestController E2E Tests', () => {
           expect(body).toHaveProperty('message')
         }
       })
+    })
+  })
+
+  // Until the route metadata was read off the prototype it was written to, a
+  // `@Query()` DTO never reached the pipe with a metatype and every query was
+  // handed through unvalidated. These cases read a real `Response` through
+  // `app.handler`, so they cover the whole chain: route match -> QueryHandler ->
+  // PipeHandler -> ZodValidationPipe -> the exception filter.
+  describe('GET /api/v1/test/search - SearchTestDto query validation', () => {
+    const search = (query: string) =>
+      generateRequest(
+        'GET',
+        `http://localhost:3000/api/v1/test/search${query}`
+      ) as [NextRequest, { params: Promise<any> }]
+
+    it('should accept a query the schema accepts and answer the parsed value', async () => {
+      const response = await app.handler(...search('?term=ledger'))
+      const body = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(body).toEqual({ term: 'ledger' })
+    })
+
+    it('should refuse a query the schema refuses', async () => {
+      const response = await app.handler(...search('?term=a'))
+      const body = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(body.message).toBe('Validation failed')
+    })
+
+    it('should refuse a query missing the required field', async () => {
+      const response = await app.handler(...search(''))
+      const body = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(body.message).toBe('Validation failed')
+    })
+
+    it('should strip an unknown key rather than answer it back', async () => {
+      const response = await app.handler(...search('?term=ledger&bogus=1'))
+      const body = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(body).toEqual({ term: 'ledger' })
+      expect(body).not.toHaveProperty('bogus')
+    })
+
+    it('should leave an un-annotated query untouched', async () => {
+      // `TestController.fetchAll` takes `@Query() query: any`, which erases to
+      // `Object`: arming the pipe must not start validating it. The handler
+      // echoes the query it received, so this reads what actually reached it
+      // rather than a list that would look identical either way: `term` is one
+      // character (the DTO's schema would refuse it), `bogus` is unknown to
+      // that schema (it would strip it), and `1` stays the string the wire
+      // carried (it would coerce it).
+      const [request, params] = generateRequest(
+        'GET',
+        'http://localhost:3000/api/v1/test?term=a&bogus=1'
+      ) as [NextRequest, { params: Promise<any> }]
+
+      const response = await app.handler(request, params)
+      const body = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(body.query).toEqual({ term: 'a', bogus: '1' })
+      expect(body.items).toEqual([{ id: 1, name: 'test' }])
     })
   })
 

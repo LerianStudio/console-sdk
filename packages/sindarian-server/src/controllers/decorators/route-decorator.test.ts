@@ -1,5 +1,13 @@
 import 'reflect-metadata'
-import { Route, Get, Post, Put, Patch, Delete } from './route-decorator'
+import {
+  Route,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  RouteHandler
+} from './route-decorator'
 import { GET_KEY, ROUTE_KEY } from '../../constants/keys'
 import { HttpMethods } from '../../constants/http-methods'
 import { BodyHandler } from './body-decorator'
@@ -523,6 +531,76 @@ describe('Route Decorator', () => {
       // Any method returning null/undefined should get 204 No Content
       expect(MockedNextResponse).toHaveBeenCalledWith(null, { status: 204 })
       expect(MockedNextResponse.json).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('RouteHandler.getMetadata', () => {
+    class MetadataController {
+      @Get('metadata')
+      metadataMethod(_arg?: string) {}
+
+      plainMethod() {}
+    }
+
+    // `@Route` is a method decorator, so its `target` is the prototype. The two
+    // callers hand over different objects: `Controller` passes the prototype and
+    // `PipeHandler.execute` passes the controller instance it was given. Both
+    // must resolve, or a pipe receives no metatype for anything but `@Body()`.
+    it('resolves route metadata from the prototype it was written to', () => {
+      const metadata = RouteHandler.getMetadata(
+        MetadataController.prototype,
+        'metadataMethod'
+      )
+
+      expect(metadata).toMatchObject({
+        methodName: 'metadataMethod',
+        method: HttpMethods.GET,
+        path: 'metadata'
+      })
+    })
+
+    it('resolves route metadata from an instance whose prototype carries it', () => {
+      const metadata = RouteHandler.getMetadata(
+        new MetadataController(),
+        'metadataMethod'
+      )
+
+      expect(metadata).toMatchObject({
+        methodName: 'metadataMethod',
+        method: HttpMethods.GET,
+        path: 'metadata'
+      })
+    })
+
+    // The class itself is the third shape, and the one a consumer reaches for
+    // first: Product Console's `describeController` harness (plan
+    // 2026-09-21-console-simplification C11) is handed a controller CLASS, never
+    // an instance it would have to construct out of the container.
+    it('resolves route metadata from the class itself', () => {
+      const metadata = RouteHandler.getMetadata(
+        MetadataController,
+        'metadataMethod'
+      )
+
+      expect(metadata).toMatchObject({
+        methodName: 'metadataMethod',
+        method: HttpMethods.GET,
+        path: 'metadata'
+      })
+    })
+
+    // A method with no `@Route` has no metadata, and both reads miss: the
+    // fallback resolves to the same prototype. Consumers reflecting over a
+    // controller — Product Console's `describeController` harness among them —
+    // hit that on any helper method, so the declared return type must admit the
+    // absence instead of handing them a `TypeError` at the first property read.
+    it('answers undefined for a method carrying no route decorator', () => {
+      const metadata = RouteHandler.getMetadata(
+        new MetadataController(),
+        'plainMethod'
+      )
+
+      expect(metadata).toBeUndefined()
     })
   })
 })

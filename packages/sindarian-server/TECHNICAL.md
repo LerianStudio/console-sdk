@@ -132,22 +132,44 @@ The `moduleHandler` function recursively processes modules:
 
 #### Controller Decorators (`src/controllers/decorators/`)
 
-**@Controller(path)** (`controller-decorator.ts:53`)
+**@Controller(path)** (`controller-decorator.ts:57`)
 - Marks class as injectable controller
 - Defines base path for all routes
 - Triggers route metadata compilation
 
-**Route Decorators** (`route-decorator.ts:21`)
+**Route Decorators** (`route-decorator.ts:91`)
 - `@Get(path)`, `@Post(path)`, `@Put(path)`, `@Patch(path)`, `@Delete(path)`
 - Defines HTTP method and route pattern
 - Wraps original method with parameter injection logic
 
 #### Parameter Decorators
 
-**@Param(name)** (`param-decorator.ts:67`)
-- Extracts URL parameters using Next.js params object
+**@Param(name)** (`param-decorator.ts:85`)
+- Resolves a URL parameter **from the matched route first, then from Next's own
+  `params` object**
 - Validates parameter presence
 - Throws ValidationApiException if missing
+
+**The matched route is the first source, and that is what lets one route file
+serve every endpoint.** `urlMatch` hands `ServerFactory` the named segments it
+captured; they travel as `routeParams` on the second element of the
+handler-argument tuple (`{ params, routeParams }`), beside the `params` promise
+Next supplied. `ParamHandler` merges the two with the captures LAST, so a
+capture wins a name collision — it is read from the URL the framework actually
+matched.
+
+Both sources stay optional, and a route carrying neither behaves exactly as it
+did before:
+
+- a per-file route (`app/api/organizations/[id]/.../route.ts`) resolves from
+  either source, since Next's `params` is `{ id: '...' }` and the captures say
+  the same thing;
+- a catch-all route (`app/api/[[...path]]/route.ts`) resolves from the captures
+  alone — Next's `params` there is `{ path: ['organizations', '123', ...] }`
+  and carries no named segment at all, so the directory names no longer have to
+  mirror the controller's parameter names;
+- a name neither source carries still raises `ValidationApiException` with
+  `Invalid param: <name> is required`.
 
 **@Query()** (`query-decorator.ts`)
 - Extracts query string parameters from request URL
@@ -298,8 +320,8 @@ export interface CallHandler {
 }
 ```
 
-#### Execution Chain (`use-interceptor-decorator.ts:7`)
-The `interceptorExecute` function creates a middleware chain:
+#### Execution Chain (`use-interceptor-decorator.ts:63`)
+`InterceptorHandler.execute` creates a middleware chain:
 
 1. **Chain Setup**: Creates recursive CallHandler chain
 2. **Sequential Execution**: Each interceptor can call `next.handle()`
@@ -530,14 +552,40 @@ export function bindRequest(container: Container, request: NextRequest) {
 
 ### 8. Route Resolution (`src/utils/url/`)
 
-#### URL Matching (`url-match.ts:9`)
-Uses `path-to-regexp` for pattern matching:
+#### URL Matching (`url-match.ts:31`)
+Uses `path-to-regexp` for pattern matching, and answers what it captured:
 ```typescript
-export function urlMatch(pathname: string, route: string) {
-  const { regexp } = pathToRegexp(route)
-  return regexp.test(pathname)
+export function urlMatch(pathname: string, route: string): UrlMatch {
+  const matcher = match(route)
+
+  let result: ReturnType<typeof matcher>
+
+  try {
+    result = matcher(pathname)
+  } catch {
+    return { matched: false, params: {} }
+  }
+
+  if (!result) {
+    return { matched: false, params: {} }
+  }
+
+  return { matched: true, params: /* plain Record<string, string> */ }
 }
 ```
+
+**A capture that cannot be decoded is not a match.** `match()` decodes each
+capture with `decodeURIComponent`, which raises `URIError` on a malformed
+escape (`%ZZ`, a trailing `%`), and `new URL()` neither decodes nor rejects
+those — so such a pathname does reach route resolution. It answers
+`{ matched: false }`, and the request gets a **404**, never a 500 and never a
+controller holding raw `%ZZ` text as though it were a real id. Compiling the
+route stays outside that guard: an invalid route PATTERN is a framework
+misconfiguration and still throws rather than degrading into a silent
+not-found.
+
+`ServerFactory._fetchRoute` returns `{ route, params }`, so the captures
+reach the handler arguments without being recomputed.
 
 Supports patterns like:
 - `/users` - exact match
