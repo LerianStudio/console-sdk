@@ -1,3 +1,78 @@
+## [2.0.0-beta.7](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.6...sindarian-server-v2.0.0-beta.7) (2026-09-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sindarian-server:** a method-level `@UseGuards` on a controller whose class
+also carries `@UseGuards` used to be discarded, and the class guard ran
+twice. The method guard now runs after the class guard, so a route that
+passed on the class guard alone has to pass its own guard as well, and a
+guard written to tolerate being called twice per request is now called
+once. A method-level guard must also be bound in the module, as a class
+guard already had to be.
+
+Plan 2026-09-21-console-simplification C9.
+* **sindarian-server:** a method-level `@UsePipes` on a controller whose class
+also carries `@UsePipes` used to be discarded and never ran. It now runs,
+after the class-level pipe, so a transforming pipe declared on the method
+replaces what the handler receives.
+* **sindarian-server:** a pipe now receives the declared type of every argument, not
+only of `@Body()`. An application that arms `@UsePipes` with a validating pipe
+starts parsing its `@Query()`, `@Param()` and `@Request()` arguments for the
+first time. Two consequences are visible on the wire: a value the schema
+refuses is now refused, where before it passed through untouched; and a value
+the schema accepts is replaced by the parse output, so keys the schema does not
+declare are dropped from what the handler receives.
+
+### Features
+
+* **sindarian-server:** export the argument and pipe handlers ([48cdb5f](https://github.com/LerianStudio/console-sdk/commit/48cdb5f8cf767df821a617e17f0b95dfefc6fe50))
+* **sindarian-server:** resolve a route param from the matched route ([2577615](https://github.com/LerianStudio/console-sdk/commit/2577615662410088519ca6e2e15b9792cffcaaf7))
+* **sindarian-server:** return the captures urlMatch already computes ([41a67f1](https://github.com/LerianStudio/console-sdk/commit/41a67f190c646220ad89f28864b849b47662747a))
+
+
+### Bug Fixes
+
+* **sindarian-server:** declare route metadata absent where it can be absent ([c454a81](https://github.com/LerianStudio/console-sdk/commit/c454a8135e977ebb8699ff1341e86aabeda4ac38))
+* **sindarian-server:** export readWireField beside its siblings ([7e51893](https://github.com/LerianStudio/console-sdk/commit/7e51893ec82582d5c98ed360f3d5891119d9ee6d)), closes [#196](https://github.com/LerianStudio/console-sdk/issues/196) [#196](https://github.com/LerianStudio/console-sdk/issues/196)
+* **sindarian-server:** read route metadata from the prototype it was written to ([a176226](https://github.com/LerianStudio/console-sdk/commit/a1762264f22ec4c84a0823246c6c1b37a8b1d7cf))
+* **sindarian-server:** refuse a route capture that cannot be decoded ([04ff21d](https://github.com/LerianStudio/console-sdk/commit/04ff21dada96a7fd3278b97cc0642b294dd08d7c))
+* **sindarian-server:** resolve a class-level pipe once per method ([3149eb1](https://github.com/LerianStudio/console-sdk/commit/3149eb196f93502a209eb20c2eb251d151008a34))
+* **sindarian-server:** resolve route metadata from a controller class ([4f629c1](https://github.com/LerianStudio/console-sdk/commit/4f629c1ee5d50bcec0d5b4d4b28980528e8b775d))
+* **sindarian-server:** run a method-level guard under a class-level one ([ea7f0c5](https://github.com/LerianStudio/console-sdk/commit/ea7f0c5017d2aaad225d698d3dc12496aa1adb51))
+* **sindarian-ui:** announce an href-less breadcrumb ancestor as plain text ([576856c](https://github.com/LerianStudio/console-sdk/commit/576856cf8c2c4eb73f014374ebef6e68502e319f))
+* **sindarian-ui:** clamp the id cell truncation lengths ([638c574](https://github.com/LerianStudio/console-sdk/commit/638c5749ab11336499a7216b52306c789c886e26))
+* **sindarian-ui:** close the sidebar drawer when a link is activated ([f7608b3](https://github.com/LerianStudio/console-sdk/commit/f7608b3915a7b77bc51be2bcd49c7a49b0942799))
+* **sindarian-ui:** do not lift a variant-scoped width override ([fe8e7d6](https://github.com/LerianStudio/console-sdk/commit/fe8e7d6f0df9978c8b279a20aff730f640a2aa84))
+* **sindarian-ui:** drop aria-pressed from the two toggles that flip their name ([cefa73e](https://github.com/LerianStudio/console-sdk/commit/cefa73e8cdb1e643ec0823f219bf0c5f90e1bec2))
+* **sindarian-ui:** drop the trailing separator from the breadcrumb story ([573eb07](https://github.com/LerianStudio/console-sdk/commit/573eb074975da42562166f3d4d8027ab35030188))
+* **sindarian-ui:** end the breadcrumb trail at the current page ([bef9d0e](https://github.com/LerianStudio/console-sdk/commit/bef9d0e9e56241ea3157140b2c503abb6abd7c5f))
+* **sindarian-ui:** give the sheet a phone width and padding ([e9b1211](https://github.com/LerianStudio/console-sdk/commit/e9b121196d26b60dfecfda60d04c19c92aeb243a))
+* **sindarian-ui:** give the sheet close button a focus ring ([a062c93](https://github.com/LerianStudio/console-sdk/commit/a062c935dfb68ad2b62987e6d2fef148623df490))
+* **sindarian-ui:** give the sidebar a drawer below 768px ([d1ecce7](https://github.com/LerianStudio/console-sdk/commit/d1ecce72b1b29213b236b7e124bcc3d1f32ea1b9))
+* **sindarian-ui:** give the small icon button a 2.5rem tap target ([f81954b](https://github.com/LerianStudio/console-sdk/commit/f81954bfa41e9eb614452b3a37b3439a4a12a8c9))
+* **sindarian-ui:** hide the sidebar trigger at the drawer's own pixel ([9666b81](https://github.com/LerianStudio/console-sdk/commit/9666b8163c0edf4ea16dc75d896d950bc3635e72))
+* **sindarian-ui:** keep focus in the navigation when the viewport grows ([0f18d8f](https://github.com/LerianStudio/console-sdk/commit/0f18d8f797a449e8b0f016081b8099170cf011a8))
+* **sindarian-ui:** keep the drawer's own id ahead of a caller's ([b9f8c27](https://github.com/LerianStudio/console-sdk/commit/b9f8c278a5442716cabfaf77847697e3688f42ce))
+* **sindarian-ui:** keep the input's width; callers use min-w-0 ([a01108f](https://github.com/LerianStudio/console-sdk/commit/a01108f6263c1ba9660c71b7765b50a927879977))
+* **sindarian-ui:** let an input shrink inside a narrow flex row ([e245fd9](https://github.com/LerianStudio/console-sdk/commit/e245fd96db21af15d2dbadbbee61041d974ef4b8))
+* **sindarian-ui:** make the sidebar mobile drawer opt-in ([eb116bf](https://github.com/LerianStudio/console-sdk/commit/eb116bff679f16b6c190d8c6ed36f705a441770c))
+* **sindarian-ui:** move a width override onto the portalled drawer ([c552a5b](https://github.com/LerianStudio/console-sdk/commit/c552a5ba11150fca5897c7da82407d57bf0eb025))
+* **sindarian-ui:** move the theme-blind grey inks to semantic tokens ([ab6ea5a](https://github.com/LerianStudio/console-sdk/commit/ab6ea5a92d4b942a40fa380ddef55467d1ae4015))
+* **sindarian-ui:** name every autocomplete part ([ec8e818](https://github.com/LerianStudio/console-sdk/commit/ec8e81819e92142c9ea77dc9c2d2c722b07416e8))
+* **sindarian-ui:** name the entity box collapsible trigger ([c2159d2](https://github.com/LerianStudio/console-sdk/commit/c2159d25f5a3cf53fbe1d9f2157b9243a992aa1c))
+* **sindarian-ui:** name the password visibility toggle ([fc5d7b4](https://github.com/LerianStudio/console-sdk/commit/fc5d7b410ae9af3749e5d2a9682cb6991194e47d))
+* **sindarian-ui:** open the responsive stories at the mobile viewport ([796a581](https://github.com/LerianStudio/console-sdk/commit/796a581ddf2e54f16dc385971480394f0c085a59))
+* **sindarian-ui:** qualify where the control still overruns its box ([8294d54](https://github.com/LerianStudio/console-sdk/commit/8294d541fd77689667c6c3ef21bcb9cd38489489))
+* **sindarian-ui:** restore the toast title weight ([ea36d3a](https://github.com/LerianStudio/console-sdk/commit/ea36d3a3e0737f58bb43106ebb0258a3739c07d2))
+* **sindarian-ui:** return focus after the sidebar drawer closes ([3cee92c](https://github.com/LerianStudio/console-sdk/commit/3cee92c15b2ac2b5f2ea5982755552e0861ba0d6))
+* **sindarian-ui:** scope the rail's focus-restore id to drawer mode ([1d4ad98](https://github.com/LerianStudio/console-sdk/commit/1d4ad98fe5d166245a4efe5f026bea6387c463a4))
+* **sindarian-ui:** squeeze NumberInput from the field, not the steppers ([fae14c0](https://github.com/LerianStudio/console-sdk/commit/fae14c08bfce4021737e89b7a9f4bc9576f6b5f9))
+* **sindarian-ui:** state the drawer query as an exact complement ([40da586](https://github.com/LerianStudio/console-sdk/commit/40da5867dcda39eec1817d79555029d9685715c4))
+* **sindarian-ui:** stop the drawer arming rail width rules ([fb618b4](https://github.com/LerianStudio/console-sdk/commit/fb618b494ce55f6dbe93c46c8c8355fce3d5a73f))
+* **sindarian-ui:** tint toast surfaces per family ([07da0dc](https://github.com/LerianStudio/console-sdk/commit/07da0dc55e6f23beb40e249c3e01ad7deece9998))
+* **sindarian-ui:** truncate table ids in the middle ([7d39389](https://github.com/LerianStudio/console-sdk/commit/7d393896bae3bfea14ff1010f6c5da49613a8f92))
+
 ## [2.0.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.5...sindarian-server-v2.0.0-beta.6) (2026-09-16)
 
 
