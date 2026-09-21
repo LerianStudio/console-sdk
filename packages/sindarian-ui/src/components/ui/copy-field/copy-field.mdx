@@ -49,12 +49,36 @@ Pass `onCopyLabel` with an i18n string to replace the default success message.
 ### Clipboard fallback
 
 When `navigator.clipboard` is unavailable or the write is rejected, the field reveals and selects its text and
-raises a toast prompting the user to copy manually with `Ctrl`/`Cmd`+`C`.
+raises a toast prompting the user to copy manually with `Ctrl`/`Cmd`+`C`. Pass `fallbackLabel` to localize that
+toast.
+
+### Monospace values
+
+Set `mono` to render the value in the monospace face. Reach for it on identifiers, tokens and recovery codes,
+where telling `0` from `O` decides whether the value the user reads back is the value. Everything else stays in
+the app sans face, matching every other input.
+
+### Description
+
+Pass `description` for a one-line hint under the field — where the value belongs, how long it is valid. The
+input points at it with `aria-describedby`, so a screen reader announces the hint with the field.
+
+<Canvas of={Story.Localized} />
 
 ### Localization
 
-`revealLabel`, `hideLabel`, and `valueLabel` default to English. Override all three with i18n strings in
-localized apps.
+Every user-visible string is overridable and defaults to English, so an existing consumer renders unchanged.
+
+| Prop | Default |
+| --- | --- |
+| `copyLabel` | `Copy <label>`, or `Copy value` without a label (accessible name of the copy button) |
+| `fallbackLabel` | `Copy not available — text selected, press Ctrl/Cmd+C` (fallback toast title) |
+| `onCopyLabel` | `Copied to clipboard!` (success toast title) |
+| `revealLabel` / `hideLabel` | `Show value` / `Hide value` (accessible name of the reveal toggle) |
+| `valueLabel` | `Value to copy` (accessible name of the input when there is no visible `label`) |
+
+The two remaining props carry no text: `mono` (`false`) selects the face, `description` renders nothing when
+omitted.
 
 <Primary />
 <Controls />

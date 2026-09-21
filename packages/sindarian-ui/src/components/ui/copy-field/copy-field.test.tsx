@@ -442,4 +442,121 @@ describe('CopyField', () => {
       }).not.toThrow()
     })
   })
+  describe('copyLabel', () => {
+    it('uses copyLabel as the copy button accessible name when provided', () => {
+      render(
+        <CopyField value="abc" label="Segredo" copyLabel="Copiar segredo" />
+      )
+      expect(
+        screen.getByRole('button', { name: 'Copiar segredo' })
+      ).toBeInTheDocument()
+    })
+
+    it('keeps the English computed name when copyLabel is omitted', () => {
+      render(<CopyField value="abc" label="Secret" />)
+      expect(
+        screen.getByRole('button', { name: 'Copy Secret' })
+      ).toBeInTheDocument()
+    })
+
+    it('keeps the English name for a labelless field when copyLabel is omitted', () => {
+      render(<CopyField value="abc" />)
+      expect(
+        screen.getByRole('button', { name: 'Copy value' })
+      ).toBeInTheDocument()
+    })
+  })
+
+  describe('fallbackLabel', () => {
+    it('toasts fallbackLabel when the clipboard API is absent', async () => {
+      setClipboard(undefined)
+
+      render(
+        <CopyField
+          value="abc"
+          label="Token"
+          fallbackLabel="Cópia indisponível — pressione Ctrl/Cmd+C"
+        />
+      )
+      fireEvent.click(screen.getByRole('button', { name: /copy token/i }))
+
+      await waitFor(() =>
+        expect(mockToast).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Cópia indisponível — pressione Ctrl/Cmd+C'
+          })
+        )
+      )
+      expect(mockToast).not.toHaveBeenCalledWith(
+        expect.objectContaining({ title: FALLBACK_COPY_LABEL })
+      )
+    })
+
+    it('toasts fallbackLabel when writeText rejects', async () => {
+      writeText.mockRejectedValueOnce(new Error('permission denied'))
+
+      render(
+        <CopyField
+          value="abc"
+          label="Token"
+          fallbackLabel="Copie manualmente"
+        />
+      )
+      fireEvent.click(screen.getByRole('button', { name: /copy token/i }))
+
+      await waitFor(() =>
+        expect(mockToast).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'Copie manualmente' })
+        )
+      )
+    })
+  })
+
+  describe('mono', () => {
+    it('renders the value in the monospace face when mono is set', () => {
+      render(<CopyField value="0f8e-1a2b" label="Token" mono />)
+      expect(screen.getByTestId('copy-field-input')).toHaveClass('font-mono')
+    })
+
+    it('inherits the app sans face when mono is omitted', () => {
+      render(<CopyField value="0f8e-1a2b" label="Token" />)
+      const input = screen.getByTestId('copy-field-input')
+      expect(input).not.toHaveClass('font-mono')
+      // The default render must stay byte-identical for every existing
+      // consumer: `mono` adds a class, it does not rewrite the class list.
+      expect(input.getAttribute('class')).toBe(
+        'text-input-foreground h-full min-w-0 flex-1 cursor-text border-none bg-transparent text-sm outline-none select-text focus:ring-0 focus:ring-offset-0'
+      )
+    })
+  })
+
+  describe('description', () => {
+    it('renders the description and points the input at it', () => {
+      render(
+        <CopyField
+          value="abc"
+          label="Token"
+          description="Guarde em um gerenciador de senhas."
+        />
+      )
+      const description = screen.getByText(
+        'Guarde em um gerenciador de senhas.'
+      )
+      expect(description).toHaveAttribute('data-slot', 'copy-field-description')
+      expect(screen.getByTestId('copy-field-input')).toHaveAttribute(
+        'aria-describedby',
+        description.getAttribute('id')
+      )
+    })
+
+    it('renders no description element and no aria-describedby when omitted', () => {
+      render(<CopyField value="abc" label="Token" />)
+      expect(
+        document.querySelector('[data-slot="copy-field-description"]')
+      ).toBeNull()
+      expect(screen.getByTestId('copy-field-input')).not.toHaveAttribute(
+        'aria-describedby'
+      )
+    })
+  })
 })

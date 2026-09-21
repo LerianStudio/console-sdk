@@ -55,3 +55,16 @@ export const WithCustomToastLabel: StoryObj<CopyFieldProps> = {
     onCopyLabel: 'Secret copied to clipboard'
   }
 }
+
+export const Localized: StoryObj<CopyFieldProps> = {
+  args: {
+    label: 'Chave de API',
+    value: 'mtch_sk_7f3a9c21e84b0d56',
+    mono: true,
+    description: 'Guarde esta chave em um gerenciador de senhas.',
+    copyLabel: 'Copiar chave de API',
+    onCopyLabel: 'Chave copiada para a área de transferência',
+    fallbackLabel:
+      'Cópia indisponível — texto selecionado, pressione Ctrl/Cmd+C'
+  }
+}
