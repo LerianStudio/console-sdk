@@ -457,18 +457,23 @@ export function DataTable<TData>({
     manualSorting: true,
     enableSorting,
     onSortingChange: enableSorting ? onSortingChange : undefined,
-    // ⛔ BOTH VISIBILITY ENTRIES ARE OMITTED, NEVER PASSED AS `undefined`.
+    // ⛔ EACH VISIBILITY ENTRY IS GUARDED ON ITS OWN PROP, NEVER ON THE OTHER.
     //
     // TanStack merges options as `{...defaultOptions, ...options}` and state as
     // `{...internalState, ...options.state}`, both plain spreads — so a key
     // present and holding `undefined` OVERWRITES what it was meant to leave
-    // alone. `onColumnVisibilityChange: undefined` replaced the feature's own
-    // `makeStateUpdater`, making `setColumnVisibility` (and every
-    // `column.toggleVisibility` behind it) a silent no-op, and
-    // `columnVisibility: undefined` replaced the table's initial `{}`, so a
-    // consumer reading the slice got `undefined` instead of an empty object.
-    // A table that passes neither prop is uncontrolled, exactly as before.
-    ...(columnVisibility !== undefined && { onColumnVisibilityChange }),
+    // alone. `onColumnVisibilityChange: undefined` replaces the feature's own
+    // `makeStateUpdater`, and `setColumnVisibility` reads
+    // `options.onColumnVisibilityChange == null ? void 0 : ...`, so it (and
+    // every `column.toggleVisibility` behind it) becomes a silent no-op.
+    // `columnVisibility: undefined` replaces the table's initial `{}`, so a
+    // consumer reading the slice gets `undefined` instead of an empty object.
+    //
+    // Guarding the UPDATER on the STATE put that `undefined` back for the
+    // union's first arm — state with no updater, which is the shipped console
+    // usage, where a separate dropdown owns the state. A table that passes
+    // neither prop is uncontrolled, exactly as before.
+    ...(onColumnVisibilityChange !== undefined && { onColumnVisibilityChange }),
     state: {
       rowSelection: enableRowSelection ? (rowSelection ?? {}) : undefined,
       sorting: enableSorting ? (sorting ?? []) : undefined,

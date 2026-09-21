@@ -993,6 +993,36 @@ describe('DataTable column visibility', () => {
     expect(onColumnVisibilityChange).toHaveBeenCalledTimes(1)
   })
 
+  it('keeps the feature updater when a page passes state and no updater', () => {
+    let seen: unknown = 'unread'
+    render(
+      <DataTable
+        columns={[
+          {
+            accessorKey: 'name',
+            header: ({ table }) => {
+              seen = table.options.onColumnVisibilityChange
+              return 'Name'
+            }
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+        columnVisibility={{}}
+      />
+    )
+
+    // `'onColumnVisibilityChange' in table.options` cannot tell the two cases
+    // apart: TanStack's ColumnVisibility feature puts that key in its own
+    // `defaultOptions`, so it is present either way. The VALUE is the pin.
+    // Guarding the updater on the STATE spread `{ onColumnVisibilityChange:
+    // undefined }` into the options for exactly this arm — the shipped console
+    // usage, where a dropdown outside the table owns the state — and
+    // `setColumnVisibility` reads a null updater and returns, so
+    // `column.toggleVisibility()` went quietly dead.
+    expect(typeof seen).toBe('function')
+  })
+
   it('takes the state alone, and refuses the updater alone', () => {
     // A separate dropdown owning the state and passing no updater is the
     // shipped console usage, so it has to keep compiling.
