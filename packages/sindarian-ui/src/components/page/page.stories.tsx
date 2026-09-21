@@ -28,8 +28,14 @@ export const Primary: StoryObj<React.ComponentProps<typeof PageRoot>> = {
 }
 
 /**
- * A 390px phone, which is where the container's padding stops being a detail:
- * the default spends 128px of those 390 before the page draws anything.
+ * The frame both padding stories draw in. It carries no width of its own: the
+ * width is the PREVIEW's, set per story below.
+ *
+ * ⛔ A 390px `<div>` IS NOT A 390px PHONE. `compact` is `max-sm:p-4`, a media
+ * query, and a media query reads the browser viewport and nothing else. Framed
+ * at `style={{ width: 390 }}` inside a desktop preview, both stories rendered
+ * the same 64px padding and the pair demonstrated nothing — the one story
+ * written to contradict the default agreed with it.
  */
 const Phone = ({
   padding,
@@ -38,10 +44,7 @@ const Phone = ({
   padding?: React.ComponentProps<typeof PageContent>['padding']
   children: React.ReactNode
 }) => (
-  <div
-    style={{ width: 390 }}
-    className="h-64 border border-dashed border-zinc-400"
-  >
+  <div className="h-64 border border-dashed border-zinc-400">
     <PageContent padding={padding}>
       <div className="flex h-full items-center justify-center bg-blue-200">
         {children}
@@ -50,19 +53,27 @@ const Phone = ({
   </div>
 )
 
+// iPhone 12, 390x844. Storybook 10 reads a story's own viewport from `globals`,
+// not from `parameters` — `parameters.viewport` now carries only `disable` and
+// `options`, so a `defaultViewport` there is read by nothing and the story
+// opens at the desktop width it exists to contradict.
+const phoneViewport = { viewport: { value: 'iphone12' } }
+
 /**
- * The default: 64px a side at every width. Unchanged for every consumer that
- * does not ask for anything.
+ * The default at 390px: 64px a side, which is 128px — a third of the screen —
+ * spent before the page draws anything.
  */
 export const Default: StoryObj<React.ComponentProps<typeof PageRoot>> = {
+  globals: phoneViewport,
   render: () => <Phone>R$ 1.234,56</Phone>
 }
 
 /**
- * `padding="compact"`: 16px a side below 640px, and byte-identical to Default
- * from 640px up. A fixed-width frame rather than a viewport parameter, because
- * this Storybook registers no viewport addon.
+ * `padding="compact"` at the same 390px: 16px a side. Widen the preview past
+ * 640px and this becomes byte-identical to Default, which is the other half of
+ * the promise — `max-sm:` only ADDS a rule below `sm`.
  */
 export const Compact: StoryObj<React.ComponentProps<typeof PageRoot>> = {
+  globals: phoneViewport,
   render: () => <Phone padding="compact">R$ 1.234,56</Phone>
 }
