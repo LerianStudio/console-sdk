@@ -96,3 +96,60 @@ describe('NameTableCell without a handler', () => {
     expect(glyph(container)).toBeInTheDocument()
   })
 })
+
+/**
+ * ⛔ AN INTERACTIVE CELL WITH NO ACCESSIBLE NAME IS AN UNREACHABLE RECORD.
+ *
+ * `name` renders inside the button, so whatever it renders IS the button's
+ * name — and a `ReactNode` is free to render a badge, an icon or an italic
+ * placeholder and no text at all. A screen reader then announces "button", and
+ * the row's only route to its record is as anonymous as the `<td>` handler this
+ * component exists to replace. Leaving it to the caller's discipline is what a
+ * comment does; this is what the compiler does.
+ *
+ * A cell with no handler is exempt, and stays exempt: it is text in a table,
+ * with no control in it to name.
+ */
+describe('NameTableCell naming the button', () => {
+  const nameless = <span aria-hidden="true">•</span>
+
+  it('names the button from buttonLabel when the name renders no text', () => {
+    row(
+      <NameTableCell
+        name={nameless}
+        buttonLabel="Open Corporate Checking"
+        onClick={jest.fn()}
+      />
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Open Corporate Checking' })
+    ).toBeInTheDocument()
+  })
+
+  it('keeps a text name as the button name with no extra prop', () => {
+    row(<NameTableCell name={NAME} onClick={jest.fn()} />)
+
+    expect(screen.getByRole('button', { name: NAME })).toBeInTheDocument()
+  })
+
+  /**
+   * The compiler is the gate, so these are type assertions, not renders: an
+   * unused `@ts-expect-error` is itself an error, which is what makes the two
+   * below fail the moment the union stops requiring a label.
+   */
+  it('refuses an interactive cell that can carry no accessible name', () => {
+    const openRecord = jest.fn()
+
+    const missingName = (
+      // @ts-expect-error an interactive cell needs a name or a buttonLabel
+      <NameTableCell onClick={openRecord} />
+    )
+    const nonTextualName = (
+      // @ts-expect-error a non-textual name needs an explicit buttonLabel
+      <NameTableCell name={nameless} onClick={openRecord} />
+    )
+
+    expect([missingName, nonTextualName]).toHaveLength(2)
+  })
+})
