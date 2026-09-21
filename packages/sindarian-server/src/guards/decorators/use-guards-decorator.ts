@@ -173,21 +173,16 @@ export function UseGuards(
       Reflect.defineMetadata(GUARD_KEY, { guards }, target, propertyKey)
       return descriptor
     } else {
-      // Class decorator
-      const methodNames = getClassMethods(target)
-
-      // Store class-level guards metadata
+      // Class decorator. Write the list ONCE, on the class. `GuardHandler.fetch`
+      // reads the class list AND the method list and concatenates them, so a
+      // copy on every prototype method resolved the same guard twice and
+      // `execute` consulted it twice. Worse, the copy ran AFTER the method
+      // decorators and overwrote a method-level `@UseGuards`, so a route's own
+      // guard was silently discarded and the request was authorized by the
+      // class guard alone — and `register` never bound that method guard to
+      // the container either, because it reads the same overwritten entry.
+      // Plan 2026-09-21-console-simplification C9.
       Reflect.defineMetadata(GUARD_KEY, { guards }, target)
-
-      // Process each method and store guards metadata
-      methodNames.forEach((methodName) => {
-        Reflect.defineMetadata(
-          GUARD_KEY,
-          { guards },
-          target.prototype,
-          methodName
-        )
-      })
 
       return target
     }

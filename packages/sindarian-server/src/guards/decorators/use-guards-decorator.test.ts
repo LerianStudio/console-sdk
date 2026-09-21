@@ -1,4 +1,5 @@
 import 'reflect-metadata'
+import { Container } from 'inversify'
 import { GuardHandler, UseGuards, GuardMetadata } from './use-guards-decorator'
 import { GUARD_KEY } from '../../constants/keys'
 import { CanActivate } from '../can-activate'
@@ -234,7 +235,7 @@ describe('UseGuards', () => {
     expect(metadata).toEqual({ guards: [guard] })
   })
 
-  it('should apply class guards to all methods', () => {
+  it('should not copy the class list onto each method', () => {
     const guard = new MockGuard('class-guard')
 
     @UseGuards(guard)
@@ -243,19 +244,40 @@ describe('UseGuards', () => {
       method2() {}
     }
 
-    const method1Metadata = Reflect.getOwnMetadata(
-      GUARD_KEY,
-      TestClass.prototype,
-      'method1'
-    )
-    const method2Metadata = Reflect.getOwnMetadata(
-      GUARD_KEY,
-      TestClass.prototype,
-      'method2'
-    )
+    // `GuardHandler.fetch` reads the class list on its own, so a copy here
+    // would resolve the same guard twice for every method, and — because the
+    // class decorator runs AFTER the method decorators — would overwrite a
+    // method-level `@UseGuards` outright.
+    expect(
+      Reflect.getOwnMetadata(GUARD_KEY, TestClass.prototype, 'method1')
+    ).toBeUndefined()
+    expect(
+      Reflect.getOwnMetadata(GUARD_KEY, TestClass.prototype, 'method2')
+    ).toBeUndefined()
+  })
 
-    expect(method1Metadata).toEqual({ guards: [guard] })
-    expect(method2Metadata).toEqual({ guards: [guard] })
+  it('keeps a method-level guard when the class carries one too', () => {
+    const classGuard = new MockGuard('class-guard')
+    const methodGuard = new MockGuard('method-guard')
+
+    @UseGuards(classGuard)
+    class TestClass {
+      @UseGuards(methodGuard)
+      guardedMethod() {}
+      plainMethod() {}
+    }
+
+    expect(Reflect.getOwnMetadata(GUARD_KEY, TestClass)).toEqual({
+      guards: [classGuard]
+    })
+    expect(
+      Reflect.getOwnMetadata(GUARD_KEY, TestClass.prototype, 'guardedMethod')
+    ).toEqual({ guards: [methodGuard] })
+    // A method with no decorator of its own carries nothing; its guards come
+    // from the class entry `fetch` reads separately.
+    expect(
+      Reflect.getOwnMetadata(GUARD_KEY, TestClass.prototype, 'plainMethod')
+    ).toBeUndefined()
   })
 
   it('should preserve metadata type correctly', () => {
@@ -269,5 +291,128 @@ describe('UseGuards', () => {
     expect(metadata.guards).toHaveLength(2)
     expect(metadata.guards[0]).toBeInstanceOf(MockGuard)
     expect(metadata.guards[1]).toBe(MockGuardClass)
+  })
+})
+
+describe('GuardHandler.fetch, resolved the way the framework resolves it', () => {
+  // Every other case in this file writes GUARD_KEY by hand, so none of them
+  // observes what the real class decorator leaves behind. These drive
+  // `@UseGuards` itself and then read the list `ServerFactory._fetchGuards`
+  // would hand to `GuardHandler.execute`.
+  let container: Container
+
+  beforeEach(() => {
+    container = new Container()
+  })
+
+  it('resolves a class-level guard exactly once for a method', async () => {
+    @UseGuards(MockGuardClass)
+    class TestController {
+      remove() {}
+    }
+    container.bind(MockGuardClass).toSelf().inSingletonScope()
+
+    const guards = await GuardHandler.fetch(
+      container,
+      new TestController(),
+      'remove'
+    )
+
+    expect(guards).toHaveLength(1)
+    expect(guards[0]).toBeInstanceOf(MockGuardClass)
+  })
+
+  it('runs a method-level guard after the class-level one', async () => {
+    class ReadGuard implements CanActivate {
+      async canActivate(): Promise<boolean> {
+        return true
+      }
+    }
+    class AdminGuard implements CanActivate {
+      async canActivate(): Promise<boolean> {
+        return true
+      }
+    }
+
+    @UseGuards(ReadGuard)
+    class TestController {
+      @UseGuards(AdminGuard)
+      remove() {}
+    }
+    container.bind(ReadGuard).toSelf().inSingletonScope()
+    container.bind(AdminGuard).toSelf().inSingletonScope()
+
+    const guards = await GuardHandler.fetch(
+      container,
+      new TestController(),
+      'remove'
+    )
+
+    expect(guards).toHaveLength(2)
+    expect(guards[0]).toBeInstanceOf(ReadGuard)
+    expect(guards[1]).toBeInstanceOf(AdminGuard)
+  })
+
+  it('consults each guard exactly once when the list is executed', async () => {
+    const classCalls = jest.fn()
+    const methodCalls = jest.fn()
+
+    class ReadGuard implements CanActivate {
+      async canActivate(): Promise<boolean> {
+        classCalls()
+        return true
+      }
+    }
+    class AdminGuard implements CanActivate {
+      async canActivate(): Promise<boolean> {
+        methodCalls()
+        return true
+      }
+    }
+
+    @UseGuards(ReadGuard)
+    class TestController {
+      @UseGuards(AdminGuard)
+      remove() {}
+    }
+    container.bind(ReadGuard).toSelf().inSingletonScope()
+    container.bind(AdminGuard).toSelf().inSingletonScope()
+
+    const guards = await GuardHandler.fetch(
+      container,
+      new TestController(),
+      'remove'
+    )
+    await GuardHandler.execute(
+      new ExecutionContext(TestController, () => {}, []),
+      guards
+    )
+
+    expect(classCalls).toHaveBeenCalledTimes(1)
+    expect(methodCalls).toHaveBeenCalledTimes(1)
+  })
+
+  it('registers a method-level guard on a class that carries one', () => {
+    class ReadGuard implements CanActivate {
+      async canActivate(): Promise<boolean> {
+        return true
+      }
+    }
+    class AdminGuard implements CanActivate {
+      async canActivate(): Promise<boolean> {
+        return true
+      }
+    }
+
+    @UseGuards(ReadGuard)
+    class TestController {
+      @UseGuards(AdminGuard)
+      remove() {}
+    }
+
+    GuardHandler.register(container, TestController)
+
+    expect(container.isBound(ReadGuard)).toBe(true)
+    expect(container.isBound(AdminGuard)).toBe(true)
   })
 })
