@@ -12,6 +12,16 @@ import { Calendar } from '.'
  * inside a gridcell, which is what axe `aria-required-parent` and
  * `aria-required-children` fire on, and every consumer of Calendar (the three
  * form date fields and the enterprise DateRangePicker) inherited it.
+ *
+ * ⛔ FOR ANYONE REPLACING A LOCAL CALENDAR FORK WITH THIS ONE: adopting it
+ * DROPS `role="gridcell"`, `aria-selected`, `aria-label` and `tabIndex` from
+ * the day button ON PURPOSE. Four removed accessibility attributes read as a
+ * regression in a diff; they are the violation above, and these cases are the
+ * evidence. Put them back and every visible day is a nested gridcell again.
+ * A fork also tends to build that `aria-label` with a hard-coded locale, so a
+ * pt-BR operator hears English month names; react-day-picker's own label
+ * follows the `locale` the calendar was given. Measured 2026-09-21 against
+ * Product Console's fork — plan 2026-09-21-console-simplification C9.
  */
 describe('Calendar day grid roles', () => {
   const renderCalendar = () =>
