@@ -144,10 +144,32 @@ The `moduleHandler` function recursively processes modules:
 
 #### Parameter Decorators
 
-**@Param(name)** (`param-decorator.ts:67`)
-- Extracts URL parameters using Next.js params object
+**@Param(name)** (`param-decorator.ts:85`)
+- Resolves a URL parameter **from the matched route first, then from Next's own
+  `params` object**
 - Validates parameter presence
 - Throws ValidationApiException if missing
+
+**The matched route is the first source, and that is what lets one route file
+serve every endpoint.** `urlMatch` hands `ServerFactory` the named segments it
+captured; they travel as `routeParams` on the second element of the
+handler-argument tuple (`{ params, routeParams }`), beside the `params` promise
+Next supplied. `ParamHandler` merges the two with the captures LAST, so a
+capture wins a name collision — it is read from the URL the framework actually
+matched.
+
+Both sources stay optional, and a route carrying neither behaves exactly as it
+did before:
+
+- a per-file route (`app/api/organizations/[id]/.../route.ts`) resolves from
+  either source, since Next's `params` is `{ id: '...' }` and the captures say
+  the same thing;
+- a catch-all route (`app/api/[[...path]]/route.ts`) resolves from the captures
+  alone — Next's `params` there is `{ path: ['organizations', '123', ...] }`
+  and carries no named segment at all, so the directory names no longer have to
+  mirror the controller's parameter names;
+- a name neither source carries still raises `ValidationApiException` with
+  `Invalid param: <name> is required`.
 
 **@Query()** (`query-decorator.ts`)
 - Extracts query string parameters from request URL
