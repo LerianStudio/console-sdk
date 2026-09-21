@@ -61,6 +61,16 @@ renders no empty row at all.
 
 <Canvas of={Story.Disabled} />
 
+### With a leading icon
+
+`leadingIcon` renders a node as the first child of the trigger, before the
+value, on both the single and the `multi` branch. It is rendered bare: no
+wrapper, no `aria-hidden`, and no margin — the spacing belongs to the caller,
+because a gap added here would double with the one every call site carries.
+The trigger is named by its label and its value, so pass a decorative node.
+
+<Canvas of={Story.WithLeadingIcon} />
+
 ## Multi Select
 
 <Canvas of={Story.MultiSelect} />
@@ -68,6 +78,10 @@ renders no empty row at all.
 ### Disabled
 
 <Canvas of={Story.MultiSelectDisabled} />
+
+### With a leading icon
+
+<Canvas of={Story.MultiSelectWithLeadingIcon} />
 
 <Primary />
 <Controls />

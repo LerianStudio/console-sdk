@@ -1,4 +1,5 @@
 import { Meta, StoryObj } from '@storybook/nextjs'
+import { Filter } from 'lucide-react'
 import { useState } from 'react'
 import { SelectField, SelectFieldProps } from '.'
 import { useForm } from 'react-hook-form'
@@ -102,6 +103,18 @@ export const Disabled: StoryObj<SelectFieldStoryArgs> = {
   render: (args) => BaseComponent(args)
 }
 
+/**
+ * A filter bar's glyph sits inside the trigger, before the value. The spacing
+ * is the caller's — the field adds none, so the `mr-2` below is what separates
+ * the glyph from the value.
+ */
+export const WithLeadingIcon: StoryObj<SelectFieldStoryArgs> = {
+  args: {
+    leadingIcon: <Filter className="mr-2 h-4 w-4" />
+  },
+  render: (args) => BaseComponent(args)
+}
+
 export const MultiSelect: StoryObj<SelectFieldStoryArgs> = {
   render: (args) => BaseComponentMultiSelect(args)
 }
@@ -109,6 +122,13 @@ export const MultiSelect: StoryObj<SelectFieldStoryArgs> = {
 export const MultiSelectDisabled: StoryObj<SelectFieldStoryArgs> = {
   args: {
     disabled: true
+  },
+  render: (args) => BaseComponentMultiSelect(args)
+}
+
+export const MultiSelectWithLeadingIcon: StoryObj<SelectFieldStoryArgs> = {
+  args: {
+    leadingIcon: <Filter className="mr-2 h-4 w-4" />
   },
   render: (args) => BaseComponentMultiSelect(args)
 }

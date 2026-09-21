@@ -46,6 +46,18 @@ type SelectFieldSharedProps<T extends FieldValues = FieldValues> =
     /** Copy for the "nothing to pick" row. Defaults to "No options found." */
     emptyMessage?: string
     /**
+     * Rendered as the first child of the trigger, before the value — where a
+     * filter bar wants its glyph. It is rendered bare, with no wrapper and no
+     * `aria-hidden`: the prop takes an arbitrary node, and hiding it from the
+     * accessibility tree on the caller's behalf would silence a node the
+     * caller may have made meaningful on purpose. The trigger is named by its
+     * label and its value, so the node passed here should be decorative.
+     *
+     * Spacing is the caller's: the kit adds no margin, because a gap here
+     * would double with the one every existing call site already carries.
+     */
+    leadingIcon?: ReactNode
+    /**
      * Placed on the field's own root box, merged with its spacing rather than
      * replacing it. The root is the element a parent grid positions, so
      * without this a consumer had to wrap the field in a spare div just to
@@ -107,6 +119,7 @@ export const SelectField = <T extends FieldValues = FieldValues>({
   value,
   children,
   emptyMessage = 'No options found.',
+  leadingIcon,
   className,
   onChange,
   ...others
@@ -139,6 +152,7 @@ export const SelectField = <T extends FieldValues = FieldValues>({
             {...field}
           >
             <MultipleSelectTrigger readOnly={readOnly}>
+              {leadingIcon}
               <MultipleSelectValue placeholder={placeholder} />
             </MultipleSelectTrigger>
             <MultipleSelectContent>{children}</MultipleSelectContent>
@@ -160,6 +174,7 @@ export const SelectField = <T extends FieldValues = FieldValues>({
                 readOnly={readOnly}
                 data-testid={others['data-testid']}
               >
+                {leadingIcon}
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
             </FormControl>

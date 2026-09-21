@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { Filter } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Form } from '@/components/ui/form'
@@ -369,5 +370,117 @@ describe('SelectField className on the multi branch', () => {
     const root = container.querySelector('.col-span-2')
     expect(root).not.toBeNull()
     expect(root).toContainElement(screen.getByText('Rails'))
+  })
+})
+
+/**
+ * A filter select wants a glyph inside its trigger, before the value — the
+ * shape four Tracer filter bars ship today. Without a prop for it, the only
+ * way to get one was to fork the whole field, which is exactly what Product
+ * Console did. The glyph is decorative: the trigger is named by its label and
+ * its value, so adding one must not change a word of what a screen reader
+ * announces, and omitting the prop must add no node at all.
+ */
+describe('SelectField leadingIcon', () => {
+  it('renders the icon inside the single trigger, before the value', () => {
+    render(
+      <SelectField
+        name="rail"
+        label="Rail"
+        placeholder="Pick a rail"
+        leadingIcon={
+          <Filter data-testid="filter-glyph" className="mr-2 h-4 w-4" />
+        }
+      />
+    )
+
+    const trigger = screen.getByRole('combobox')
+    const icon = screen.getByTestId('filter-glyph')
+    const value = trigger.querySelector('[data-slot="select-value"]')
+
+    expect(trigger).toContainElement(icon)
+    expect(value).not.toBeNull()
+    // Document order is the contract: a glyph after the value reads as a
+    // trailing affordance and collides with the chevron.
+    expect(
+      icon.compareDocumentPosition(value as Element) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+  })
+
+  it('renders the icon inside the multi trigger, before the value', () => {
+    render(
+      <SelectField
+        multi
+        name="rails"
+        label="Rails"
+        placeholder="Pick rails"
+        leadingIcon={
+          <Filter data-testid="filter-glyph" className="mr-2 h-4 w-4" />
+        }
+      >
+        <MultipleSelectItem value="pix">Pix</MultipleSelectItem>
+      </SelectField>
+    )
+
+    const icon = screen.getByTestId('filter-glyph')
+    // In multi mode the combobox is the cmdk input the trigger wraps.
+    const input = screen.getByRole('combobox')
+
+    expect(icon.parentElement).toContainElement(input)
+    expect(
+      icon.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+  })
+
+  it('leaves the trigger accessible name untouched', () => {
+    render(
+      <>
+        <SelectField name="rail" label="Rail" placeholder="Pick a rail" />
+        <SelectField
+          name="railFiltered"
+          label="Rail"
+          placeholder="Pick a rail"
+          leadingIcon={<Filter data-testid="filter-glyph" />}
+        />
+      </>
+    )
+
+    // The matcher function receives the name Testing Library computed, so the
+    // assertion needs no literal and no guess about how the name is derived.
+    const names: string[] = []
+    const triggers = screen.getAllByRole('combobox', {
+      name: (accessibleName) => {
+        names.push(accessibleName)
+        return true
+      }
+    })
+
+    expect(triggers).toHaveLength(2)
+    // Two empty names would compare equal and assert nothing.
+    expect(names[0]).not.toBe('')
+    expect(names[1]).toBe(names[0])
+  })
+
+  it('adds exactly one node, and none when the prop is omitted', () => {
+    const { unmount } = render(
+      <SelectField name="rail" label="Rail" placeholder="Pick a rail" />
+    )
+    const plainChildren = screen.getByRole('combobox').childElementCount
+    expect(screen.queryByTestId('filter-glyph')).not.toBeInTheDocument()
+    unmount()
+
+    render(
+      <SelectField
+        name="rail"
+        label="Rail"
+        placeholder="Pick a rail"
+        leadingIcon={<Filter data-testid="filter-glyph" />}
+      />
+    )
+
+    expect(screen.getByRole('combobox').childElementCount).toBe(
+      plainChildren + 1
+    )
   })
 })
