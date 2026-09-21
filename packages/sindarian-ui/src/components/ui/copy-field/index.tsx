@@ -5,6 +5,7 @@ import { Check, Copy, Eye, EyeOff } from 'lucide-react'
 
 import { IconButton } from '@/components/ui/icon-button'
 import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 
 export type CopyFieldProps = {
   /**
@@ -46,6 +47,30 @@ export type CopyFieldProps = {
    * @defaultValue 'Value to copy'
    */
   valueLabel?: string
+  /**
+   * Accessible name for the copy button. Override for localization. Defaults to
+   * English, derived from `label` when there is one.
+   * @defaultValue `Copy ${label}`, or 'Copy value' without a label
+   */
+  copyLabel?: string
+  /**
+   * Toast text on the fallback path, when the clipboard API is unavailable or
+   * refuses the write and the value is selected for a manual Ctrl/Cmd+C
+   * instead. Override for localization. Defaults to English.
+   * @defaultValue 'Copy not available — text selected, press Ctrl/Cmd+C'
+   */
+  fallbackLabel?: string
+  /**
+   * Renders the value in the monospace face. For identifiers, tokens and
+   * recovery codes, where character shapes must be told apart.
+   * @defaultValue false
+   */
+  mono?: boolean
+  /**
+   * One-line hint rendered under the field and announced with the input via
+   * `aria-describedby`. Omit for no element and no attribute.
+   */
+  description?: React.ReactNode
   /**
    * Milliseconds after a *successful* copy before the clipboard is wiped, for
    * sensitive values that shouldn't linger there (TOTP secrets, recovery
@@ -101,11 +126,16 @@ export function CopyField({
   revealLabel = 'Show value',
   hideLabel = 'Hide value',
   valueLabel = 'Value to copy',
+  copyLabel,
+  fallbackLabel,
+  mono = false,
+  description,
   clearClipboardAfter
 }: CopyFieldProps) {
   const { toast } = useToast()
   const generatedId = React.useId()
   const inputId = `${generatedId}-copy-field`
+  const descriptionId = `${inputId}-description`
   const inputRef = React.useRef<HTMLInputElement>(null)
   const copiedTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
@@ -116,7 +146,8 @@ export function CopyField({
   const [copied, setCopied] = React.useState(false)
 
   const showAsText = !masked || revealed
-  const copyAccessibleName = label ? `Copy ${label}` : 'Copy value'
+  const copyAccessibleName =
+    copyLabel ?? (label ? `Copy ${label}` : 'Copy value')
 
   React.useEffect(() => {
     return () => {
@@ -151,7 +182,7 @@ export function CopyField({
 
   const handleFallback = () => {
     selectFieldText()
-    toast({ title: FALLBACK_COPY_LABEL })
+    toast({ title: fallbackLabel ?? FALLBACK_COPY_LABEL })
   }
 
   const handleCopy = async () => {
@@ -225,11 +256,18 @@ export function CopyField({
           autoComplete="off"
           spellCheck={false}
           aria-label={label ? undefined : valueLabel}
+          aria-describedby={description ? descriptionId : undefined}
           // `min-w-0` lets this flex item shrink below its content width so a
           // long value (e.g. a UUID recovery code) scrolls inside the field
-          // instead of overflowing its container. No `font-mono`: the value
-          // inherits the app sans font (Inter) so it matches every other field.
-          className="text-input-foreground h-full min-w-0 flex-1 cursor-text border-none bg-transparent text-sm outline-none select-text focus:ring-0 focus:ring-offset-0"
+          // instead of overflowing its container. Sans by default, inheriting
+          // the app font (Inter) so the field matches every other input;
+          // `mono` opts identifiers, tokens and recovery codes into the
+          // monospace face, where telling 0 from O decides whether the value
+          // read back is the value.
+          className={cn(
+            'text-input-foreground h-full min-w-0 flex-1 cursor-text border-none bg-transparent text-sm outline-none select-text focus:ring-0 focus:ring-offset-0',
+            mono && 'font-mono'
+          )}
         />
 
         {masked ? (
@@ -262,6 +300,16 @@ export function CopyField({
           {copied ? <Check /> : <Copy />}
         </IconButton>
       </div>
+
+      {description ? (
+        <p
+          data-slot="copy-field-description"
+          id={descriptionId}
+          className="text-muted-foreground text-xs"
+        >
+          {description}
+        </p>
+      ) : null}
     </div>
   )
 }
