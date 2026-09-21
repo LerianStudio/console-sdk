@@ -64,3 +64,48 @@ describe('LockedTableActions', () => {
     )
   })
 })
+
+/**
+ * ⛔ `aria-disabled` IS NOT `disabled`. The control stays focusable so the
+ * tooltip can open, which means a press really does dispatch a click, and a
+ * click bubbles. Consumers put this cell in a row that opens the record, so
+ * without a handler of its own the one control that says "you cannot change
+ * this" would open the record it refuses to change — from a mouse and, because
+ * a button turns Enter and Space into clicks, from a keyboard too.
+ */
+describe('LockedTableActions inside a clickable row', () => {
+  const inRow = (onRowClick: jest.Mock) =>
+    render(
+      <table>
+        <tbody>
+          <tr onClick={onRowClick}>
+            <td>
+              <LockedTableActions message={reasonInRow} />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    )
+
+  const reasonInRow = 'External accounts are managed by the ledger'
+
+  it('does not open the record when pressed with a pointer', async () => {
+    const onRowClick = jest.fn()
+    inRow(onRowClick)
+
+    await userEvent.click(screen.getByRole('button', { name: reasonInRow }))
+
+    expect(onRowClick).not.toHaveBeenCalled()
+  })
+
+  it('does not open the record when pressed from the keyboard', async () => {
+    const onRowClick = jest.fn()
+    inRow(onRowClick)
+
+    screen.getByRole('button', { name: reasonInRow }).focus()
+    await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard(' ')
+
+    expect(onRowClick).not.toHaveBeenCalled()
+  })
+})

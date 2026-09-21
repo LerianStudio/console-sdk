@@ -27,8 +27,15 @@ export type LockedTableActionsProps = {
  * no focus and fires no pointer events, so it would announce as unavailable and
  * then refuse to open the tooltip that says WHY — the same dead end in a
  * different shape. This one is reachable, announces its reason as its name,
- * opens the tooltip on focus as well as hover, and does nothing when pressed
- * because there is nothing wired to it.
+ * opens the tooltip on focus as well as hover, and does nothing when pressed.
+ *
+ * ⛔ DOING NOTHING TAKES A HANDLER. `aria-disabled` is a promise to the
+ * accessibility tree, not to the DOM: the press really does dispatch a click,
+ * and a click bubbles. Consumers put this where a row's action menu would be,
+ * in rows that open the record — so with no handler of its own the one control
+ * that says "you cannot change this" would open the record it refuses to
+ * change, from a pointer and, because a button turns Enter and Space into
+ * clicks, from a keyboard too.
  */
 export const LockedTableActions = ({
   message,
@@ -42,6 +49,10 @@ export const LockedTableActions = ({
             type="button"
             aria-disabled="true"
             aria-label={message}
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+            }}
             className={cn(
               'border-border bg-muted flex size-9 items-center justify-center rounded-md border',
               // Reachable is half the fix: a `border` over a `bg-muted` can
