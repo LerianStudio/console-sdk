@@ -818,6 +818,49 @@ describe('DataTable column meta', () => {
     expect(own[0].style.width).toBe('')
   })
 
+  /**
+   * The split is by ELEMENT, not by column. A money column that owns its
+   * `<td>` still declares `align: 'right'` for its heading, and the `<th>` is
+   * the table's to style — so the header alignment has to be pinned, or a
+   * later "align is ignored for renderOwnCell" reading silently left-aligns
+   * every own-cell money heading over its right-aligned figures.
+   */
+  it('still aligns and dresses the head of a column that owns its cell', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            id: 'own',
+            header: 'Amount',
+            meta: {
+              renderOwnCell: true,
+              align: 'right',
+              headerClassName: 'whitespace-nowrap',
+              className: 'text-destructive'
+            },
+            cell: ({ row }) => (
+              <td data-testid="own" className="text-right">
+                {row.original.amount}
+              </td>
+            )
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Amount' })
+    expect(head).toHaveClass('text-right', 'whitespace-nowrap')
+
+    // The body cell is the consumer's: it carries only what the consumer put
+    // on it, and none of the table's column classes.
+    const own = screen.getAllByTestId('own')[0]
+    expect(own).toHaveClass('text-right')
+    expect(own).not.toHaveClass('text-destructive')
+  })
+
   it('keeps the kit selection cell wrapped beside a column that owns its cell', () => {
     const { container } = render(
       <DataTable

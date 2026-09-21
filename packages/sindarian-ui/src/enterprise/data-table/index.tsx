@@ -103,6 +103,8 @@ declare module '@tanstack/react-table' {
     /**
      * Column alignment, header and body. Beats `numeric`'s implicit right, so a
      * money column can read left or centre without losing its figure treatment.
+     * With `renderOwnCell` it reaches the header only — the body cell is the
+     * consumer's, and so is aligning it.
      */
     align?: 'left' | 'right' | 'center'
     /**
@@ -113,17 +115,23 @@ declare module '@tanstack/react-table' {
     /**
      * Extra classes on this column's body `<td>`, merged after the numeric and
      * density treatments. IGNORED when `renderOwnCell` is set: there is no cell
-     * of the table's left to carry them.
+     * of the table's left to carry them. Use `headerClassName` for the `<th>`,
+     * which the table still owns either way.
      */
     className?: string
     /**
      * The column's `cell` renderer emits its own `<td>`; DataTable renders it
      * bare rather than wrapping it. The HEADER is still the table's `<th>` —
      * nothing about owning a body cell makes a column own its header, and a
-     * table whose head and body disagree on cell count is broken markup. The
-     * column's `align`, `className` and declared width have no element of the
-     * table's to land on and are therefore ignored on the body; the head keeps
-     * the width so an auto-layout table still sizes the column.
+     * table whose head and body disagree on cell count is broken markup.
+     *
+     * So the split is by element, not by column: the head still takes `align`,
+     * `numeric`, `headerClassName` and the declared width, because the `<th>`
+     * is the table's to style; the BODY takes none of them, because the `<td>`
+     * is the consumer's. A money column declaring `align: 'right'` therefore
+     * gets a right-aligned header and must right-align its own cell to match —
+     * leave the cell's alignment out and the figures sit under a heading that
+     * points somewhere else.
      */
     renderOwnCell?: boolean
   }
