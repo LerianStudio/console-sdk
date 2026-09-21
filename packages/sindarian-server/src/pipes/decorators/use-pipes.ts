@@ -173,22 +173,15 @@ export function UsePipes(...pipes: (Class<PipeTransform> | PipeTransform)[]) {
 
       return
     } else {
-      // Class decorator
-      const methodNames = getClassMethods(target)
-
-      // Store class-level pipes metadata
+      // Class decorator. Write the list ONCE, on the class. `PipeHandler.fetch`
+      // reads the class list AND the method list and concatenates them, so a
+      // copy on every prototype method resolved the same pipe twice and
+      // `execute` fed each argument through it twice — harmless only while a
+      // schema re-parses its own output to the same value, which a `.default()`
+      // or a `.transform()` does not. The copy also ran AFTER the method
+      // decorators and overwrote a method-level `@UsePipes`, so the two lists
+      // never actually combined. Plan 2026-09-21-console-simplification C9.
       Reflect.defineMetadata(PIPE_KEY, { pipes, paramTypes: [] }, target)
-
-      // Process each method and store its paramTypes
-      methodNames.forEach((methodName) => {
-        // Store method-specific metadata with class pipes and method paramTypes
-        Reflect.defineMetadata(
-          PIPE_KEY,
-          { pipes },
-          target.prototype,
-          methodName
-        )
-      })
     }
   }
 }

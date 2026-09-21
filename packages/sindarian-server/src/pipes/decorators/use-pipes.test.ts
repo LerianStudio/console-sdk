@@ -572,26 +572,25 @@ describe('UsePipes', () => {
       })
     })
 
-    it('should define metadata on each method', () => {
+    it('should not copy the class list onto each method', () => {
       @UsePipes(TestPipe)
       class TestController {
         testMethod() {}
         anotherMethod() {}
       }
 
-      const methodMetadata1 = Reflect.getOwnMetadata(
-        PIPE_KEY,
-        TestController.prototype,
-        'testMethod'
-      )
-      const methodMetadata2 = Reflect.getOwnMetadata(
-        PIPE_KEY,
-        TestController.prototype,
-        'anotherMethod'
-      )
-
-      expect(methodMetadata1).toEqual({ pipes: [TestPipe] })
-      expect(methodMetadata2).toEqual({ pipes: [TestPipe] })
+      // `PipeHandler.fetch` reads the class list on its own, so a copy here
+      // would resolve the same pipe twice for every argument.
+      expect(
+        Reflect.getOwnMetadata(PIPE_KEY, TestController.prototype, 'testMethod')
+      ).toBeUndefined()
+      expect(
+        Reflect.getOwnMetadata(
+          PIPE_KEY,
+          TestController.prototype,
+          'anotherMethod'
+        )
+      ).toBeUndefined()
     })
 
     it('should work with pipe instances', () => {
@@ -629,6 +628,81 @@ describe('UsePipes', () => {
     })
   })
 
+  describe('resolved the way the framework resolves it', () => {
+    // Every other `fetch` case in this file writes PIPE_KEY by hand, so none of
+    // them observes what the real class decorator actually leaves behind. These
+    // drive `@UsePipes` itself and then read the list `ServerFactory` would get.
+    let pipeContainer: Container
+
+    beforeEach(() => {
+      pipeContainer = new Container()
+      pipeContainer.bind(TestPipe).toSelf().inSingletonScope()
+      pipeContainer.bind(AnotherTestPipe).toSelf().inSingletonScope()
+    })
+
+    it('resolves a class-level pipe exactly once for a method', async () => {
+      @UsePipes(TestPipe)
+      class TestController {
+        testMethod() {}
+      }
+
+      const result = await PipeHandler.fetch(
+        pipeContainer,
+        new TestController(),
+        'testMethod'
+      )
+
+      expect(result).toHaveLength(1)
+      expect(result[0]).toBeInstanceOf(TestPipe)
+    })
+
+    it('keeps a method-level pipe beside the class-level one', async () => {
+      @UsePipes(TestPipe)
+      class TestController {
+        @UsePipes(AnotherTestPipe)
+        testMethod() {}
+      }
+
+      const result = await PipeHandler.fetch(
+        pipeContainer,
+        new TestController(),
+        'testMethod'
+      )
+
+      expect(result).toHaveLength(2)
+      expect(result[0]).toBeInstanceOf(TestPipe)
+      expect(result[1]).toBeInstanceOf(AnotherTestPipe)
+    })
+
+    it('transforms an argument once, so a non-idempotent schema is not re-parsed', async () => {
+      class CountingPipe implements PipeTransform {
+        transform = jest.fn((value: any) => String(value).split(','))
+      }
+      const counting = new CountingPipe()
+
+      @UsePipes(counting)
+      class TestController {
+        testMethod() {}
+      }
+
+      const instance = new TestController()
+      const freshContainer = new Container()
+      freshContainer.bind(CountingPipe).toConstantValue(counting)
+
+      const pipes = await PipeHandler.fetch(
+        freshContainer,
+        instance,
+        'testMethod'
+      )
+      const result = await PipeHandler.execute(instance, 'testMethod', pipes, [
+        { type: 'query', parameter: 'a,b', parameterIndex: 0 }
+      ])
+
+      expect(counting.transform).toHaveBeenCalledTimes(1)
+      expect(result).toEqual([['a', 'b']])
+    })
+  })
+
   describe('combining class and method decorators', () => {
     it('should allow both class-level and method-level pipes', () => {
       @UsePipes(TestPipe)
@@ -652,12 +726,13 @@ describe('UsePipes', () => {
       )
 
       expect(classMetadata).toEqual({ pipes: [TestPipe], paramTypes: [] })
-      // Note: Due to decorator execution order, the class decorator runs AFTER method decorators
-      // and overwrites the method-level metadata. This means testMethod will have TestPipe, not AnotherTestPipe.
-      // This is the current behavior of the implementation.
-      expect(testMethodMetadata).toEqual({ pipes: [TestPipe] })
-      // regularMethod should have class-level pipes (set by class decorator)
-      expect(regularMethodMetadata).toEqual({ pipes: [TestPipe] })
+      // The class decorator runs AFTER the method decorators, so writing the
+      // class list onto each method used to overwrite this one. It keeps its
+      // own pipe, and `fetch` concatenates the two lists.
+      expect(testMethodMetadata).toEqual({ pipes: [AnotherTestPipe] })
+      // A method with no decorator of its own carries nothing; its pipes come
+      // from the class entry `fetch` reads separately.
+      expect(regularMethodMetadata).toBeUndefined()
     })
   })
 })
