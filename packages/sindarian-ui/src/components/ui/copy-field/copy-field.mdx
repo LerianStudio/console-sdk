@@ -69,13 +69,13 @@ input points at it with `aria-describedby`, so a screen reader announces the hin
 
 Every user-visible string is overridable and defaults to English, so an existing consumer renders unchanged.
 
-| Prop | Default |
-| --- | --- |
-| `copyLabel` | `Copy <label>`, or `Copy value` without a label (accessible name of the copy button) |
-| `fallbackLabel` | `Copy not available — text selected, press Ctrl/Cmd+C` (fallback toast title) |
-| `onCopyLabel` | `Copied to clipboard!` (success toast title) |
-| `revealLabel` / `hideLabel` | `Show value` / `Hide value` (accessible name of the reveal toggle) |
-| `valueLabel` | `Value to copy` (accessible name of the input when there is no visible `label`) |
+| Prop                        | Default                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------ |
+| `copyLabel`                 | `Copy <label>`, or `Copy value` without a label (accessible name of the copy button) |
+| `fallbackLabel`             | `Copy not available — text selected, press Ctrl/Cmd+C` (fallback toast title)        |
+| `onCopyLabel`               | `Copied to clipboard!` (success toast title)                                         |
+| `revealLabel` / `hideLabel` | `Show value` / `Hide value` (accessible name of the reveal toggle)                   |
+| `valueLabel`                | `Value to copy` (accessible name of the input when there is no visible `label`)      |
 
 The two remaining props carry no text: `mono` (`false`) selects the face, `description` renders nothing when
 omitted.
