@@ -132,12 +132,12 @@ The `moduleHandler` function recursively processes modules:
 
 #### Controller Decorators (`src/controllers/decorators/`)
 
-**@Controller(path)** (`controller-decorator.ts:53`)
+**@Controller(path)** (`controller-decorator.ts:57`)
 - Marks class as injectable controller
 - Defines base path for all routes
 - Triggers route metadata compilation
 
-**Route Decorators** (`route-decorator.ts:21`)
+**Route Decorators** (`route-decorator.ts:91`)
 - `@Get(path)`, `@Post(path)`, `@Put(path)`, `@Patch(path)`, `@Delete(path)`
 - Defines HTTP method and route pattern
 - Wraps original method with parameter injection logic
@@ -320,8 +320,8 @@ export interface CallHandler {
 }
 ```
 
-#### Execution Chain (`use-interceptor-decorator.ts:7`)
-The `interceptorExecute` function creates a middleware chain:
+#### Execution Chain (`use-interceptor-decorator.ts:63`)
+`InterceptorHandler.execute` creates a middleware chain:
 
 1. **Chain Setup**: Creates recursive CallHandler chain
 2. **Sequential Execution**: Each interceptor can call `next.handle()`
@@ -552,7 +552,7 @@ export function bindRequest(container: Container, request: NextRequest) {
 
 ### 8. Route Resolution (`src/utils/url/`)
 
-#### URL Matching (`url-match.ts:50`)
+#### URL Matching (`url-match.ts:31`)
 Uses `path-to-regexp` for pattern matching, and answers what it captured:
 ```typescript
 export function urlMatch(pathname: string, route: string): UrlMatch {
