@@ -1,3 +1,47 @@
+## [2.0.0-beta.13](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.12...sindarian-ui-v2.0.0-beta.13) (2026-09-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sindarian-server:** a method-level `@UseGuards` on a controller whose class
+also carries `@UseGuards` used to be discarded, and the class guard ran
+twice. The method guard now runs after the class guard, so a route that
+passed on the class guard alone has to pass its own guard as well, and a
+guard written to tolerate being called twice per request is now called
+once. A method-level guard must also be bound in the module, as a class
+guard already had to be.
+
+Plan 2026-09-21-console-simplification C9.
+* **sindarian-server:** a method-level `@UsePipes` on a controller whose class
+also carries `@UsePipes` used to be discarded and never ran. It now runs,
+after the class-level pipe, so a transforming pipe declared on the method
+replaces what the handler receives.
+* **sindarian-server:** a pipe now receives the declared type of every argument, not
+only of `@Body()`. An application that arms `@UsePipes` with a validating pipe
+starts parsing its `@Query()`, `@Param()` and `@Request()` arguments for the
+first time. Two consequences are visible on the wire: a value the schema
+refuses is now refused, where before it passed through untouched; and a value
+the schema accepts is replaced by the parse output, so keys the schema does not
+declare are dropped from what the handler receives.
+
+### Features
+
+* **sindarian-server:** export the argument and pipe handlers ([48cdb5f](https://github.com/LerianStudio/console-sdk/commit/48cdb5f8cf767df821a617e17f0b95dfefc6fe50))
+* **sindarian-server:** resolve a route param from the matched route ([2577615](https://github.com/LerianStudio/console-sdk/commit/2577615662410088519ca6e2e15b9792cffcaaf7))
+* **sindarian-server:** return the captures urlMatch already computes ([41a67f1](https://github.com/LerianStudio/console-sdk/commit/41a67f190c646220ad89f28864b849b47662747a))
+* **sindarian-ui:** localize copy-field and add mono and description ([6881d28](https://github.com/LerianStudio/console-sdk/commit/6881d28f600e7f6ca0e74bbc1549ae04c4c52394))
+
+
+### Bug Fixes
+
+* **sindarian-server:** declare route metadata absent where it can be absent ([c454a81](https://github.com/LerianStudio/console-sdk/commit/c454a8135e977ebb8699ff1341e86aabeda4ac38))
+* **sindarian-server:** export readWireField beside its siblings ([7e51893](https://github.com/LerianStudio/console-sdk/commit/7e51893ec82582d5c98ed360f3d5891119d9ee6d)), closes [#196](https://github.com/LerianStudio/console-sdk/issues/196) [#196](https://github.com/LerianStudio/console-sdk/issues/196)
+* **sindarian-server:** read route metadata from the prototype it was written to ([a176226](https://github.com/LerianStudio/console-sdk/commit/a1762264f22ec4c84a0823246c6c1b37a8b1d7cf))
+* **sindarian-server:** refuse a route capture that cannot be decoded ([04ff21d](https://github.com/LerianStudio/console-sdk/commit/04ff21dada96a7fd3278b97cc0642b294dd08d7c))
+* **sindarian-server:** resolve a class-level pipe once per method ([3149eb1](https://github.com/LerianStudio/console-sdk/commit/3149eb196f93502a209eb20c2eb251d151008a34))
+* **sindarian-server:** resolve route metadata from a controller class ([4f629c1](https://github.com/LerianStudio/console-sdk/commit/4f629c1ee5d50bcec0d5b4d4b28980528e8b775d))
+* **sindarian-server:** run a method-level guard under a class-level one ([ea7f0c5](https://github.com/LerianStudio/console-sdk/commit/ea7f0c5017d2aaad225d698d3dc12496aa1adb51))
+
 ## [2.0.0-beta.12](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.11...sindarian-ui-v2.0.0-beta.12) (2026-09-19)
 
 
