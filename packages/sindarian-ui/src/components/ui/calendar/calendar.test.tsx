@@ -160,3 +160,95 @@ describe('Calendar month dropdown locale', () => {
     expect(labels).not.toContain('M9/abbreviated/standalone')
   })
 })
+
+/**
+ * `data-range-start`, `data-range-middle` and `data-range-end` are the only
+ * hook the range styling has: the day button's class list paints the first and
+ * the last day of a selected range in the accent colour, rounds their outer
+ * corners and leaves the days between them in the muted fill. Nothing else in
+ * the component reads them, so a refactor of `CalendarDayButton` that dropped
+ * one would cost every date-range surface its selected span — the enterprise
+ * `DateRangePicker` and the console's date-range filters included — while the
+ * calendar still rendered and no test went red. Plan
+ * 2026-09-21-console-simplification C9 freezes the three attributes; this is
+ * what makes the freeze bite.
+ */
+describe('Calendar selected range attributes', () => {
+  // A span well inside March 2026, so no day in the grid is "today" (which
+  // would prefix its accessible name) and no day belongs to another month.
+  const TUESDAY_10 = 'Tuesday, March 10th, 2026, selected'
+  const WEDNESDAY_11 = 'Wednesday, March 11th, 2026, selected'
+  const THURSDAY_12 = 'Thursday, March 12th, 2026, selected'
+  const FRIDAY_13 = 'Friday, March 13th, 2026, selected'
+
+  const renderRange = (from: Date, to: Date) =>
+    render(
+      <Calendar
+        mode="range"
+        defaultMonth={new Date(2026, 2, 1)}
+        selected={{ from, to }}
+      />
+    )
+
+  const day = (name: string) => screen.getByRole('button', { name })
+
+  const daysWith = (container: HTMLElement, attribute: string) =>
+    Array.from(container.querySelectorAll(`button[${attribute}="true"]`))
+
+  it('marks only the first day of the range as its start', () => {
+    const { container } = renderRange(
+      new Date(2026, 2, 10),
+      new Date(2026, 2, 13)
+    )
+    const starts = daysWith(container, 'data-range-start')
+
+    expect(starts).toHaveLength(1)
+    expect(starts[0]).toBe(day(TUESDAY_10))
+  })
+
+  it('marks only the last day of the range as its end', () => {
+    const { container } = renderRange(
+      new Date(2026, 2, 10),
+      new Date(2026, 2, 13)
+    )
+    const ends = daysWith(container, 'data-range-end')
+
+    expect(ends).toHaveLength(1)
+    expect(ends[0]).toBe(day(FRIDAY_13))
+  })
+
+  it('marks every day strictly between the ends as the middle', () => {
+    const { container } = renderRange(
+      new Date(2026, 2, 10),
+      new Date(2026, 2, 13)
+    )
+    const middles = daysWith(container, 'data-range-middle')
+
+    expect(middles).toHaveLength(2)
+    expect(middles[0]).toBe(day(WEDNESDAY_11))
+    expect(middles[1]).toBe(day(THURSDAY_12))
+  })
+
+  it('marks a one-day range as both its own start and its own end', () => {
+    const { container } = renderRange(
+      new Date(2026, 2, 12),
+      new Date(2026, 2, 12)
+    )
+    const only = day(THURSDAY_12)
+
+    expect(daysWith(container, 'data-range-start')).toEqual([only])
+    expect(daysWith(container, 'data-range-end')).toEqual([only])
+    expect(daysWith(container, 'data-range-middle')).toHaveLength(0)
+  })
+
+  it('leaves no day in the middle when the two ends are adjacent', () => {
+    const { container } = renderRange(
+      new Date(2026, 2, 10),
+      new Date(2026, 2, 11)
+    )
+
+    expect(daysWith(container, 'data-range-start')).toEqual([day(TUESDAY_10)])
+    expect(daysWith(container, 'data-range-end')).toEqual([day(WEDNESDAY_11)])
+    expect(daysWith(container, 'data-range-middle')).toHaveLength(0)
+  })
+})
