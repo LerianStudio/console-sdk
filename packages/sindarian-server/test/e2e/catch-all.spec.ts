@@ -95,7 +95,7 @@ describe('Catch-all route dispatch', () => {
 
       expect({ status, body }).toEqual({
         status: 200,
-        body: [{ id: 1, name: 'test' }]
+        body: { items: [{ id: 1, name: 'test' }], query: {} }
       })
     })
 

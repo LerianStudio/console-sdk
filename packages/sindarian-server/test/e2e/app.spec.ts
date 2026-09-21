@@ -15,7 +15,7 @@ describe('TestController E2E Tests', () => {
       const response = await app.handler(request, params)
       const body = await response.json()
       expect(response.status).toBe(200)
-      expect(body).toEqual([{ id: 1, name: 'test' }])
+      expect(body).toEqual({ items: [{ id: 1, name: 'test' }], query: {} })
     })
 
     it('should fetch all items with query parameters', async () => {
@@ -28,7 +28,10 @@ describe('TestController E2E Tests', () => {
       const body = await response.json()
 
       expect(response.status).toBe(200)
-      expect(body).toEqual([{ id: 1, name: 'test' }])
+      expect(body).toEqual({
+        items: [{ id: 1, name: 'test' }],
+        query: { page: '1', limit: '10' }
+      })
     })
   })
 
@@ -360,7 +363,12 @@ describe('TestController E2E Tests', () => {
 
     it('should leave an un-annotated query untouched', async () => {
       // `TestController.fetchAll` takes `@Query() query: any`, which erases to
-      // `Object`: arming the pipe must not start validating it.
+      // `Object`: arming the pipe must not start validating it. The handler
+      // echoes the query it received, so this reads what actually reached it
+      // rather than a list that would look identical either way: `term` is one
+      // character (the DTO's schema would refuse it), `bogus` is unknown to
+      // that schema (it would strip it), and `1` stays the string the wire
+      // carried (it would coerce it).
       const [request, params] = generateRequest(
         'GET',
         'http://localhost:3000/api/v1/test?term=a&bogus=1'
@@ -370,7 +378,8 @@ describe('TestController E2E Tests', () => {
       const body = await response.json()
 
       expect(response.status).toBe(200)
-      expect(body).toEqual([{ id: 1, name: 'test' }])
+      expect(body.query).toEqual({ term: 'a', bogus: '1' })
+      expect(body.items).toEqual([{ id: 1, name: 'test' }])
     })
   })
 

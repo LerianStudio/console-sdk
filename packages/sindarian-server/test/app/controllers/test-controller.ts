@@ -22,10 +22,13 @@ export class TestController {
     private readonly testService: TestService
   ) {}
 
+  // The query is ECHOED back, not discarded: a test asserting only the list
+  // cannot see whether the query it sent was validated, coerced or stripped on
+  // the way in, which is exactly what arming the pipe must not do to an
+  // un-annotated `any`.
   @Get()
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public fetchAll(@Query() query: any) {
-    return this.testService.fetchAll()
+    return { items: this.testService.fetchAll(), query }
   }
 
   // `SearchTestDto` is imported as a VALUE, never `import type`: an erased
