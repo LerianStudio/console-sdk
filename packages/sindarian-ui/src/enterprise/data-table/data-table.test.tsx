@@ -677,3 +677,434 @@ describe('DataTable aria-sort', () => {
     ).toHaveAttribute('aria-sort', 'ascending')
   })
 })
+
+/**
+ * Per-column meta is the only channel a consumer has into cells the table
+ * renders for it. Until now that channel carried one thing, `numeric`, so a
+ * status column could not centre itself, no column could carry its own classes
+ * on head or body, and a cell that must be its own `<td>` (a colspan, a link
+ * that fills the cell box) had no way to say so — the table always wrapped it.
+ * That is why the console kept a second table instead of using this one. The
+ * four member names are frozen by plan 2026-09-21-console-simplification C9.
+ */
+describe('DataTable column meta', () => {
+  it('aligns head and body from an explicit alignment', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          { accessorKey: 'amount', header: 'Amount', meta: { align: 'right' } }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    expect(screen.getByRole('columnheader', { name: 'Amount' })).toHaveClass(
+      'text-right'
+    )
+    expect(screen.getByText('1250')).toHaveClass('text-right')
+  })
+
+  it('lets an explicit alignment beat numeric while the figures stay mono', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            accessorKey: 'amount',
+            header: 'Amount',
+            meta: { numeric: true, align: 'left' }
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Amount' })
+    expect(head).not.toHaveClass('text-right')
+
+    const cell = screen.getByText('1250')
+    expect(cell).toHaveClass('text-left', 'font-mono', 'tabular-nums')
+    expect(cell).not.toHaveClass('text-right')
+  })
+
+  it('merges headerClassName after the table-level headClassName', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            accessorKey: 'amount',
+            header: 'Amount',
+            meta: { headerClassName: 'text-destructive' }
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+        headClassName="text-foreground"
+      />
+    )
+
+    const amount = screen.getByRole('columnheader', { name: 'Amount' })
+    expect(amount).toHaveClass('text-destructive')
+    expect(amount).not.toHaveClass('text-foreground')
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveClass(
+      'text-foreground'
+    )
+  })
+
+  it('merges a column className onto that column body cells only', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            accessorKey: 'amount',
+            header: 'Amount',
+            meta: { className: 'whitespace-nowrap' }
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    expect(screen.getByText('1250')).toHaveClass('whitespace-nowrap')
+    expect(screen.getByText('Alpha')).not.toHaveClass('whitespace-nowrap')
+  })
+
+  it('lets a column emit its own cell, with head and body still agreeing on cell count', () => {
+    const { container } = render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            id: 'own',
+            header: 'Own',
+            size: 120,
+            // align and className have no element of the table's to land on
+            // once the column owns its `<td>`; both are ignored on purpose.
+            meta: {
+              renderOwnCell: true,
+              align: 'right',
+              className: 'whitespace-nowrap'
+            },
+            cell: ({ row }) => <td data-testid="own">{row.original.id}</td>
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    const headCount = container.querySelectorAll('thead th').length
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+    container.querySelectorAll('tbody tr').forEach((row) => {
+      expect(row.querySelectorAll('td')).toHaveLength(headCount)
+    })
+
+    const own = screen.getAllByTestId('own')
+    expect(own).toHaveLength(2)
+    expect(own[0]).toHaveTextContent('alpha')
+    expect(own[0]).not.toHaveClass('text-right')
+    expect(own[0]).not.toHaveClass('whitespace-nowrap')
+    // The head keeps the declared width so an auto-layout table still sizes
+    // the column; the body cell is the consumer's and carries none of it.
+    expect(screen.getByRole('columnheader', { name: 'Own' })).toHaveStyle({
+      width: '120px'
+    })
+    expect(own[0].style.width).toBe('')
+  })
+
+  /**
+   * The split is by ELEMENT, not by column. A money column that owns its
+   * `<td>` still declares `align: 'right'` for its heading, and the `<th>` is
+   * the table's to style — so the header alignment has to be pinned, or a
+   * later "align is ignored for renderOwnCell" reading silently left-aligns
+   * every own-cell money heading over its right-aligned figures.
+   */
+  it('still aligns and dresses the head of a column that owns its cell', () => {
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            id: 'own',
+            header: 'Amount',
+            meta: {
+              renderOwnCell: true,
+              align: 'right',
+              headerClassName: 'whitespace-nowrap',
+              className: 'text-destructive'
+            },
+            cell: ({ row }) => (
+              <td data-testid="own" className="text-right">
+                {row.original.amount}
+              </td>
+            )
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    const head = screen.getByRole('columnheader', { name: 'Amount' })
+    expect(head).toHaveClass('text-right', 'whitespace-nowrap')
+
+    // The body cell is the consumer's: it carries only what the consumer put
+    // on it, and none of the table's column classes.
+    const own = screen.getAllByTestId('own')[0]
+    expect(own).toHaveClass('text-right')
+    expect(own).not.toHaveClass('text-destructive')
+  })
+
+  it('keeps the kit selection cell wrapped beside a column that owns its cell', () => {
+    const { container } = render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            id: 'own',
+            header: 'Own',
+            meta: { renderOwnCell: true },
+            cell: ({ row }) => <td data-testid="own">{row.original.id}</td>
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+        enableRowSelection
+        rowSelection={{}}
+        onRowSelectionChange={jest.fn()}
+      />
+    )
+
+    const headCount = container.querySelectorAll('thead th').length
+    expect(headCount).toBe(3)
+    container.querySelectorAll('tbody tr').forEach((row) => {
+      expect(row.querySelectorAll('td')).toHaveLength(headCount)
+    })
+    expect(
+      screen.getByRole('checkbox', { name: 'Select row alpha' }).closest('td')
+    ).not.toBeNull()
+  })
+})
+
+/**
+ * Column visibility: a listing whose own dropdown hides a column had nowhere to
+ * send the result. TanStack's visibility model is always running inside the
+ * table, but the state was unreachable from the page, so a console screen could
+ * only fake a hidden column by rebuilding its column array. Frozen by plan
+ * 2026-09-21-console-simplification C9.
+ */
+describe('DataTable column visibility', () => {
+  const visibilityColumns: ColumnDef<LedgerRow, unknown>[] = [
+    { accessorKey: 'name', header: 'Name' },
+    { id: 'status', accessorKey: 'id', header: 'Status' },
+    { accessorKey: 'amount', header: 'Amount' }
+  ]
+
+  it('hides a column from head and body', () => {
+    const { container } = render(
+      <DataTable
+        columns={visibilityColumns}
+        data={rows}
+        getRowId={getRowId}
+        columnVisibility={{ status: false }}
+      />
+    )
+
+    expect(screen.queryByRole('columnheader', { name: 'Status' })).toBeNull()
+    expect(screen.queryByText('alpha')).toBeNull()
+
+    const headCount = container.querySelectorAll('thead th').length
+    expect(headCount).toBe(2)
+    container.querySelectorAll('tbody tr').forEach((row) => {
+      expect(row.querySelectorAll('td')).toHaveLength(headCount)
+    })
+  })
+
+  it('counts only the visible columns in the skeleton and the empty span', () => {
+    const { container, rerender } = render(
+      <DataTable
+        columns={visibilityColumns}
+        data={[]}
+        loading
+        skeletonRows={2}
+        columnVisibility={{ status: false }}
+      />
+    )
+
+    container.querySelectorAll('tbody tr').forEach((row) => {
+      expect(row.querySelectorAll('td')).toHaveLength(2)
+    })
+
+    rerender(
+      <DataTable
+        columns={visibilityColumns}
+        data={[]}
+        columnVisibility={{ status: false }}
+      />
+    )
+
+    expect(container.querySelector('tbody td')).toHaveAttribute('colspan', '2')
+  })
+
+  it('renders every column when the prop is omitted', () => {
+    render(
+      <DataTable columns={visibilityColumns} data={rows} getRowId={getRowId} />
+    )
+
+    expect(
+      screen.getAllByRole('columnheader').map((h) => h.textContent)
+    ).toEqual(['Name', 'Status', 'Amount'])
+  })
+
+  it('sends a table-driven toggle to the consumer updater', () => {
+    const onColumnVisibilityChange = jest.fn()
+    render(
+      <DataTable
+        columns={[
+          { accessorKey: 'name', header: 'Name' },
+          {
+            id: 'status',
+            accessorKey: 'id',
+            header: ({ column }) => (
+              <button
+                type="button"
+                onClick={() => column.toggleVisibility(false)}
+              >
+                Status
+              </button>
+            )
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+        columnVisibility={{}}
+        onColumnVisibilityChange={onColumnVisibilityChange}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Status' }))
+
+    expect(onColumnVisibilityChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the feature updater when a page passes state and no updater', () => {
+    let seen: unknown = 'unread'
+    render(
+      <DataTable
+        columns={[
+          {
+            accessorKey: 'name',
+            header: ({ table }) => {
+              seen = table.options.onColumnVisibilityChange
+              return 'Name'
+            }
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+        columnVisibility={{}}
+      />
+    )
+
+    // `'onColumnVisibilityChange' in table.options` cannot tell the two cases
+    // apart: TanStack's ColumnVisibility feature puts that key in its own
+    // `defaultOptions`, so it is present either way. The VALUE is the pin.
+    // Guarding the updater on the STATE spread `{ onColumnVisibilityChange:
+    // undefined }` into the options for exactly this arm — the shipped console
+    // usage, where a dropdown outside the table owns the state — and
+    // `setColumnVisibility` reads a null updater and returns, so
+    // `column.toggleVisibility()` went quietly dead.
+    expect(typeof seen).toBe('function')
+  })
+
+  it('takes the state alone, and refuses the updater alone', () => {
+    // A separate dropdown owning the state and passing no updater is the
+    // shipped console usage, so it has to keep compiling.
+    const stateAlone: DataTableProps<LedgerRow> = {
+      columns: visibilityColumns,
+      data: rows,
+      columnVisibility: { status: false }
+    }
+
+    // TanStack reads an `on*Change` callback as a declaration of controlled
+    // state, so an updater with no `columnVisibility` freezes visibility at its
+    // initial value while the callback keeps firing.
+    // @ts-expect-error the updater alone is unrepresentable — plan 2026-09-21-console-simplification C9
+    const updaterAlone: DataTableProps<LedgerRow> = {
+      columns: visibilityColumns,
+      data: rows,
+      onColumnVisibilityChange: jest.fn()
+    }
+
+    expect(stateAlone.columnVisibility).toEqual({ status: false })
+    expect(updaterAlone.onColumnVisibilityChange).toBeDefined()
+  })
+})
+
+/**
+ * A TABLE NOBODY CONTROLS LOST ITS OWN VISIBILITY STATE.
+ *
+ * Forwarding `columnVisibility` and `onColumnVisibilityChange` on every render
+ * put both keys in the options object holding `undefined`, and TanStack merges
+ * options and state as plain spreads — so the `undefined` updater overwrote the
+ * feature default and `setColumnVisibility` became a no-op, while the
+ * `undefined` state slice overwrote the table's own `{}`. A column header
+ * carrying its own hide control stopped working, silently, in every table that
+ * asked for neither prop.
+ */
+describe('DataTable uncontrolled column visibility', () => {
+  const selfHidingColumns: ColumnDef<LedgerRow, unknown>[] = [
+    { accessorKey: 'name', header: 'Name' },
+    {
+      id: 'status',
+      accessorKey: 'id',
+      header: ({ column }) => (
+        <button type="button" onClick={() => column.toggleVisibility(false)}>
+          Status
+        </button>
+      )
+    }
+  ]
+
+  it('hides a column from an in-table toggle when neither prop is given', () => {
+    render(
+      <DataTable columns={selfHidingColumns} data={rows} getRowId={getRowId} />
+    )
+
+    expect(screen.getAllByRole('columnheader')).toHaveLength(2)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Status' }))
+
+    expect(screen.queryByRole('button', { name: 'Status' })).toBeNull()
+    expect(screen.getAllByRole('columnheader')).toHaveLength(1)
+  })
+
+  it('reads an empty visibility state, never undefined, when neither prop is given', () => {
+    let seen: unknown = 'unread'
+    render(
+      <DataTable
+        columns={[
+          {
+            accessorKey: 'name',
+            header: ({ table }) => {
+              seen = table.getState().columnVisibility
+              return 'Name'
+            }
+          }
+        ]}
+        data={rows}
+        getRowId={getRowId}
+      />
+    )
+
+    // A consumer reading the slice in a header renderer gets `{}` as TanStack
+    // initialises it; `undefined` crashes `Object.keys` in their code.
+    expect(seen).toEqual({})
+  })
+})

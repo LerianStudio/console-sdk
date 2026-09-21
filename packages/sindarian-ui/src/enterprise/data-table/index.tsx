@@ -52,7 +52,7 @@
  * activation. Keydown events originating from interactive children (links,
  * buttons, checkboxes, form fields) are never hijacked.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import {
   flexRender,
   getCoreRowModel,
@@ -64,7 +64,8 @@ import {
   type RowData,
   type RowSelectionState,
   type SortingState,
-  type Table as TanstackTable
+  type Table as TanstackTable,
+  type VisibilityState
 } from '@tanstack/react-table'
 
 import {
@@ -83,16 +84,56 @@ import { EmptyState, type EmptyStateProps } from '../empty-state'
 import { readPreferredColumnSize, UNSIZED_DEFAULT_COLUMN } from './column-size'
 
 /**
- * Per-column opt-in for ledger numeric alignment. Set `meta: { numeric: true }`
- * on a money/number `ColumnDef` and DataTable right-aligns both the header and
- * its body cells (mono tabular figures).
+ * Per-column channel into the cells DataTable renders on the consumer's behalf:
+ * how a column aligns, what classes it carries on head and body, and whether it
+ * renders its own `<td>` at all. The member names are frozen by plan
+ * 2026-09-21-console-simplification C9.
  */
 declare module '@tanstack/react-table' {
   // Type parameters mirror TanStack's own ColumnMeta declaration exactly, which
-  // declaration merging requires; neither is referenced by this member.
+  // declaration merging requires; neither is referenced by these members.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
+    /**
+     * Ledger numeric treatment: right-aligns the header and its body cells and
+     * gives the body mono tabular figures. `align` overrides the alignment half
+     * on its own — the figures stay mono.
+     */
     numeric?: boolean
+    /**
+     * Column alignment, header and body. Beats `numeric`'s implicit right, so a
+     * money column can read left or centre without losing its figure treatment.
+     * With `renderOwnCell` it reaches the header only — the body cell is the
+     * consumer's, and so is aligning it.
+     */
+    align?: 'left' | 'right' | 'center'
+    /**
+     * Extra classes on this column's `<th>`, merged AFTER the table-level
+     * `headClassName` so one column can override what the table set for all.
+     */
+    headerClassName?: string
+    /**
+     * Extra classes on this column's body `<td>`, merged after the numeric and
+     * density treatments. IGNORED when `renderOwnCell` is set: there is no cell
+     * of the table's left to carry them. Use `headerClassName` for the `<th>`,
+     * which the table still owns either way.
+     */
+    className?: string
+    /**
+     * The column's `cell` renderer emits its own `<td>`; DataTable renders it
+     * bare rather than wrapping it. The HEADER is still the table's `<th>` —
+     * nothing about owning a body cell makes a column own its header, and a
+     * table whose head and body disagree on cell count is broken markup.
+     *
+     * So the split is by element, not by column: the head still takes `align`,
+     * `numeric`, `headerClassName` and the declared width, because the `<th>`
+     * is the table's to style; the BODY takes none of them, because the `<td>`
+     * is the consumer's. A money column declaring `align: 'right'` therefore
+     * gets a right-aligned header and must right-align its own cell to match —
+     * leave the cell's alignment out and the figures sit under a heading that
+     * points somewhere else.
+     */
+    renderOwnCell?: boolean
   }
 }
 
@@ -163,6 +204,35 @@ type SortingProps =
       onSortingChange: OnChangeFn<SortingState>
     }
 
+/**
+ * Column visibility is controlled but, deliberately, NOT a required pair — a
+ * departure from the two unions above, and not drift. Those two are unions
+ * because each has an `enable*` flag whose "on" state is meaningless without
+ * the controlled pair. TanStack has no enable flag for visibility: the model is
+ * always running, and the only shipped consumer passes STATE WITH NO UPDATER,
+ * because a separate dropdown owns the state on the page. Requiring the pair
+ * would refuse that usage.
+ *
+ * What the union does forbid is the updater ALONE: TanStack reads an
+ * `on[State]Change` callback as a declaration of controlled state, so a
+ * callback with no `columnVisibility` freezes visibility at its initial value
+ * while the callback keeps firing. Prop names frozen by plan
+ * 2026-09-21-console-simplification C9.
+ *
+ * Omit both and the table keeps its own visibility state, exactly as before.
+ */
+type ColumnVisibilityProps =
+  | {
+      /** Controlled column-visibility state (TanStack `VisibilityState`). */
+      columnVisibility: VisibilityState
+      /**
+       * Controlled updater (TanStack `OnChangeFn`). Optional: a consumer may
+       * drive the state from outside the table entirely.
+       */
+      onColumnVisibilityChange?: OnChangeFn<VisibilityState>
+    }
+  | { columnVisibility?: undefined; onColumnVisibilityChange?: undefined }
+
 type DataTableBaseProps<TData> = {
   columns: ColumnDef<TData, unknown>[]
   data: TData[]
@@ -209,7 +279,8 @@ type DataTableBaseProps<TData> = {
   /**
    * Extra classes merged onto every header cell, after the kit label voice —
    * so a caller can override the voice's size/tracking/color for one table
-   * without restating the cluster. Per-column alignment stays `meta.numeric`.
+   * without restating the cluster. Per column, `meta.headerClassName` merges
+   * after this one and `meta.align` / `meta.numeric` own the alignment.
    */
   headClassName?: string
   /**
@@ -222,14 +293,29 @@ type DataTableBaseProps<TData> = {
 
 export type DataTableProps<TData> = DataTableBaseProps<TData> &
   RowSelectionProps<TData> &
-  SortingProps
+  SortingProps &
+  ColumnVisibilityProps
 
 const SELECTION_COLUMN_ID = '__select__'
 
 const CHECKBOX_CLASS = 'accent-primary block size-4'
 
-/** Right-aligned mono treatment for `meta: { numeric: true }` columns. */
-const NUMERIC_CELL_CLASS = 'text-right font-mono tabular-nums'
+/** Figure treatment for `meta: { numeric: true }` columns; the alignment half
+ * lives in ALIGN_CELL_CLASS so `meta.align` can override one without the other. */
+const NUMERIC_FIGURE_CLASS = 'font-mono tabular-nums'
+
+/**
+ * Body-cell alignment, one class per direction rather than a single string with
+ * `text-right` baked in: an explicit `meta.align` has to beat `numeric` by
+ * choosing the class, not by out-ordering it — tailwind-merge resolving two
+ * conflicting alignment utilities by source order is not a contract worth
+ * relying on.
+ */
+const ALIGN_CELL_CLASS = {
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right'
+} as const
 
 /**
  * Keydown events whose target sits inside one of these are never hijacked
@@ -333,6 +419,8 @@ export function DataTable<TData>({
   enableSorting = false,
   sorting,
   onSortingChange,
+  columnVisibility,
+  onColumnVisibilityChange,
   onRowActivate,
   rowHref,
   className,
@@ -369,13 +457,34 @@ export function DataTable<TData>({
     manualSorting: true,
     enableSorting,
     onSortingChange: enableSorting ? onSortingChange : undefined,
+    // ⛔ EACH VISIBILITY ENTRY IS GUARDED ON ITS OWN PROP, NEVER ON THE OTHER.
+    //
+    // TanStack merges options as `{...defaultOptions, ...options}` and state as
+    // `{...internalState, ...options.state}`, both plain spreads — so a key
+    // present and holding `undefined` OVERWRITES what it was meant to leave
+    // alone. `onColumnVisibilityChange: undefined` replaces the feature's own
+    // `makeStateUpdater`, and `setColumnVisibility` reads
+    // `options.onColumnVisibilityChange == null ? void 0 : ...`, so it (and
+    // every `column.toggleVisibility` behind it) becomes a silent no-op.
+    // `columnVisibility: undefined` replaces the table's initial `{}`, so a
+    // consumer reading the slice gets `undefined` instead of an empty object.
+    //
+    // Guarding the UPDATER on the STATE put that `undefined` back for the
+    // union's first arm — state with no updater, which is the shipped console
+    // usage, where a separate dropdown owns the state. A table that passes
+    // neither prop is uncontrolled, exactly as before.
+    ...(onColumnVisibilityChange !== undefined && { onColumnVisibilityChange }),
     state: {
       rowSelection: enableRowSelection ? (rowSelection ?? {}) : undefined,
-      sorting: enableSorting ? (sorting ?? []) : undefined
+      sorting: enableSorting ? (sorting ?? []) : undefined,
+      ...(columnVisibility !== undefined && { columnVisibility })
     }
   })
 
-  const colCount = tableColumns.length
+  // Visible, not declared: the skeleton grid and the empty row's colSpan have
+  // to match the header the table actually rendered, and a hidden column is in
+  // `tableColumns` but in no `<th>`.
+  const colCount = table.getVisibleLeafColumns().length
   const dataRows = table.getRowModel().rows
   const rowCount = dataRows.length
 
@@ -522,11 +631,11 @@ export function DataTable<TData>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="hover:bg-transparent">
               {headerGroup.headers.map((header) => {
-                const numeric = header.column.columnDef.meta?.numeric
+                const meta = header.column.columnDef.meta
                 return (
                   <TableHead
                     key={header.id}
-                    align={numeric ? 'right' : undefined}
+                    align={meta?.align ?? (meta?.numeric ? 'right' : undefined)}
                     // A placeholder `th` is the empty cell react-table renders
                     // under a grouped header; it labels nothing, so it must not
                     // announce its leaf column's sort state as well.
@@ -542,7 +651,8 @@ export function DataTable<TData>({
                       LABEL_VOICE_CLASS,
                       headDensityClass,
                       header.column.id === SELECTION_COLUMN_ID && 'w-10',
-                      headClassName
+                      headClassName,
+                      meta?.headerClassName
                     )}
                   >
                     {header.isPlaceholder
@@ -625,24 +735,41 @@ export function DataTable<TData>({
                     : undefined
                 }
               >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    style={readPreferredColumnSize(cell.column)}
-                    className={cn(
-                      cell.column.columnDef.meta?.numeric && NUMERIC_CELL_CLASS,
-                      cellDensityClass,
-                      cell.column.id === SELECTION_COLUMN_ID && 'w-10'
-                    )}
-                    onClick={
-                      cell.column.id === SELECTION_COLUMN_ID
-                        ? stopPropagation
-                        : undefined
-                    }
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+                {row.getVisibleCells().map((cell) => {
+                  const meta = cell.column.columnDef.meta
+                  const content = flexRender(
+                    cell.column.columnDef.cell,
+                    cell.getContext()
+                  )
+                  // The column owns its `<td>`: render the consumer's cell bare.
+                  // The kit's selection column is built here and carries no
+                  // meta, so it can never take this path.
+                  if (meta?.renderOwnCell) {
+                    return <Fragment key={cell.id}>{content}</Fragment>
+                  }
+                  const align =
+                    meta?.align ?? (meta?.numeric ? 'right' : undefined)
+                  return (
+                    <TableCell
+                      key={cell.id}
+                      style={readPreferredColumnSize(cell.column)}
+                      className={cn(
+                        meta?.numeric && NUMERIC_FIGURE_CLASS,
+                        align && ALIGN_CELL_CLASS[align],
+                        cellDensityClass,
+                        cell.column.id === SELECTION_COLUMN_ID && 'w-10',
+                        meta?.className
+                      )}
+                      onClick={
+                        cell.column.id === SELECTION_COLUMN_ID
+                          ? stopPropagation
+                          : undefined
+                      }
+                    >
+                      {content}
+                    </TableCell>
+                  )
+                })}
               </TableRow>
             ))
           )}

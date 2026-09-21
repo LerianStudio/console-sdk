@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react'
 
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { defaultLocale } from 'react-day-picker'
 import { Calendar } from '.'
 
@@ -11,6 +12,16 @@ import { Calendar } from '.'
  * inside a gridcell, which is what axe `aria-required-parent` and
  * `aria-required-children` fire on, and every consumer of Calendar (the three
  * form date fields and the enterprise DateRangePicker) inherited it.
+ *
+ * ⛔ FOR ANYONE REPLACING A LOCAL CALENDAR FORK WITH THIS ONE: adopting it
+ * DROPS `role="gridcell"`, `aria-selected`, `aria-label` and `tabIndex` from
+ * the day button ON PURPOSE. Four removed accessibility attributes read as a
+ * regression in a diff; they are the violation above, and these cases are the
+ * evidence. Put them back and every visible day is a nested gridcell again.
+ * A fork also tends to build that `aria-label` with a hard-coded locale, so a
+ * pt-BR operator hears English month names; react-day-picker's own label
+ * follows the `locale` the calendar was given. Measured 2026-09-21 against
+ * Product Console's fork — plan 2026-09-21-console-simplification C9.
  */
 describe('Calendar day grid roles', () => {
   const renderCalendar = () =>
@@ -158,5 +169,135 @@ describe('Calendar month dropdown locale', () => {
     const labels = optionLabels(container)
     expect(labels).toContain('OVERRIDE')
     expect(labels).not.toContain('M9/abbreviated/standalone')
+  })
+})
+
+/**
+ * `data-range-start`, `data-range-middle` and `data-range-end` are the only
+ * hook the range styling has: the day button's class list paints the first and
+ * the last day of a selected range in the accent colour, rounds their outer
+ * corners and leaves the days between them in the muted fill. Nothing else in
+ * the component reads them, so a refactor of `CalendarDayButton` that dropped
+ * one would cost every date-range surface its selected span — the enterprise
+ * `DateRangePicker` and the console's date-range filters included — while the
+ * calendar still rendered and no test went red. Plan
+ * 2026-09-21-console-simplification C9 freezes the three attributes; this is
+ * what makes the freeze bite.
+ */
+describe('Calendar selected range attributes', () => {
+  // A span well inside March 2026, so no day in the grid is "today" (which
+  // would prefix its accessible name) and no day belongs to another month.
+  const TUESDAY_10 = 'Tuesday, March 10th, 2026, selected'
+  const WEDNESDAY_11 = 'Wednesday, March 11th, 2026, selected'
+  const THURSDAY_12 = 'Thursday, March 12th, 2026, selected'
+  const FRIDAY_13 = 'Friday, March 13th, 2026, selected'
+
+  const renderRange = (from: Date, to: Date) =>
+    render(
+      <Calendar
+        mode="range"
+        defaultMonth={new Date(2026, 2, 1)}
+        selected={{ from, to }}
+      />
+    )
+
+  const day = (name: string) => screen.getByRole('button', { name })
+
+  const daysWith = (container: HTMLElement, attribute: string) =>
+    Array.from(container.querySelectorAll(`button[${attribute}="true"]`))
+
+  it('marks only the first day of the range as its start', () => {
+    const { container } = renderRange(
+      new Date(2026, 2, 10),
+      new Date(2026, 2, 13)
+    )
+    const starts = daysWith(container, 'data-range-start')
+
+    expect(starts).toHaveLength(1)
+    expect(starts[0]).toBe(day(TUESDAY_10))
+  })
+
+  it('marks only the last day of the range as its end', () => {
+    const { container } = renderRange(
+      new Date(2026, 2, 10),
+      new Date(2026, 2, 13)
+    )
+    const ends = daysWith(container, 'data-range-end')
+
+    expect(ends).toHaveLength(1)
+    expect(ends[0]).toBe(day(FRIDAY_13))
+  })
+
+  it('marks every day strictly between the ends as the middle', () => {
+    const { container } = renderRange(
+      new Date(2026, 2, 10),
+      new Date(2026, 2, 13)
+    )
+    const middles = daysWith(container, 'data-range-middle')
+
+    expect(middles).toHaveLength(2)
+    expect(middles[0]).toBe(day(WEDNESDAY_11))
+    expect(middles[1]).toBe(day(THURSDAY_12))
+  })
+
+  it('marks a one-day range as both its own start and its own end', () => {
+    const { container } = renderRange(
+      new Date(2026, 2, 12),
+      new Date(2026, 2, 12)
+    )
+    const only = day(THURSDAY_12)
+
+    expect(daysWith(container, 'data-range-start')).toEqual([only])
+    expect(daysWith(container, 'data-range-end')).toEqual([only])
+    expect(daysWith(container, 'data-range-middle')).toHaveLength(0)
+  })
+
+  it('leaves no day in the middle when the two ends are adjacent', () => {
+    const { container } = renderRange(
+      new Date(2026, 2, 10),
+      new Date(2026, 2, 11)
+    )
+
+    expect(daysWith(container, 'data-range-start')).toEqual([day(TUESDAY_10)])
+    expect(daysWith(container, 'data-range-end')).toEqual([day(WEDNESDAY_11)])
+    expect(daysWith(container, 'data-range-middle')).toHaveLength(0)
+  })
+})
+
+/**
+ * Page and arrow keys move the focused day, and when the next day falls
+ * outside the displayed grid react-day-picker swaps the whole month in the
+ * same update. The button that should now hold focus is a node React has just
+ * mounted, so the calendar has to put focus back on it: without that, a
+ * keyboard operator navigating past the edge of a month lands on `<body>`
+ * mid-navigation and every further key goes nowhere — the date field looks
+ * frozen and the only way out is the mouse. Product Console's fork wraps that
+ * focus call in a mounted ref, a `requestAnimationFrame` and a `try/catch`
+ * under a comment about race conditions; this case is the measurement that
+ * decides whether the kit needs any of it. Plan
+ * 2026-09-21-console-simplification C9.
+ */
+describe('Calendar focus across a month change', () => {
+  // PageDown moves the focused day one month on, which is always outside the
+  // displayed grid — unlike a single arrow step, which react-day-picker can
+  // satisfy with an outside day already rendered in the current month.
+  const MARCH_12 = 'Thursday, March 12th, 2026'
+  const APRIL_12 = 'Sunday, April 12th, 2026'
+
+  it('follows the focused day into the month that replaced it', async () => {
+    const user = userEvent.setup()
+    render(<Calendar mode="single" defaultMonth={new Date(2026, 2, 1)} />)
+
+    const start = screen.getByRole('button', { name: MARCH_12 })
+    // Focusing the day is what tells react-day-picker which day is focused, so
+    // it renders and must be flushed like any other state change.
+    await act(async () => start.focus())
+    expect(start).toHaveFocus()
+
+    await user.keyboard('{PageDown}')
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: APRIL_12 })).toHaveFocus()
+    )
   })
 })

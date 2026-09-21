@@ -3,6 +3,7 @@
 // Primitives
 export * from './components/ui/alert'
 export * from './components/ui/autocomplete'
+export * from './hooks/use-click-away'
 export * from './components/ui/autosize-textarea'
 export * from './components/ui/avatar'
 export * from './components/ui/badge'
@@ -42,6 +43,7 @@ export * from './components/ui/toast'
 export * from './components/ui/toast/toaster'
 export * from './hooks/use-toast'
 export * from './components/ui/time-picker'
+export * from './hooks/use-time'
 export * from './components/ui/tooltip'
 export * from './components/ui/form'
 

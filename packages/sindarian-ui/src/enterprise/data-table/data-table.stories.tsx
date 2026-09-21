@@ -3,7 +3,8 @@ import { Meta, StoryObj } from '@storybook/nextjs'
 import type {
   ColumnDef,
   RowSelectionState,
-  SortingState
+  SortingState,
+  VisibilityState
 } from '@tanstack/react-table'
 import { DataTable, DataTableProps } from '.'
 import { StatusBadge } from '../status-badge'
@@ -132,6 +133,43 @@ export const SizedColumns: StoryObj<DataTableProps<Settlement>> = {
   }
 }
 
+/**
+ * What one column can say for itself. `Status` centres itself and tints its
+ * header; `Amount` is a numeric column that asks to read LEFT, so it keeps its
+ * mono tabular figures and drops the right alignment; `Counterparty` renders
+ * its own `<td>`, which is how a cell fills the whole cell box (here a full-row
+ * link target) — the table wraps nothing, so its `align` and `className` would
+ * have nowhere to land and are ignored, while the header stays the table's.
+ */
+export const PerColumnMeta: StoryObj<DataTableProps<Settlement>> = {
+  args: {
+    data,
+    getRowId: (row) => row.id,
+    columns: [
+      columns[0],
+      {
+        ...columns[1],
+        meta: { renderOwnCell: true },
+        cell: ({ row }) => (
+          <td className="p-0 align-middle">
+            <a
+              className="block px-6 py-4 underline-offset-4 hover:underline"
+              href={`#/settlements/${row.original.id}`}
+            >
+              {row.original.counterparty}
+            </a>
+          </td>
+        )
+      },
+      {
+        ...columns[2],
+        meta: { align: 'center', headerClassName: 'text-foreground' }
+      },
+      { ...columns[3], meta: { numeric: true, align: 'left' } }
+    ]
+  }
+}
+
 export const RowSelection: StoryObj<DataTableProps<Settlement>> = {
   render: () => {
     const [rowSelection, setRowSelection] = React.useState<RowSelectionState>(
@@ -203,6 +241,43 @@ export const Sortable: StoryObj<DataTableProps<Settlement>> = {
         sorting={sorting}
         onSortingChange={setSorting}
       />
+    )
+  }
+}
+
+/**
+ * The shape a console listing actually renders: a column the page has hidden
+ * through its own control, beside a money column that right-aligns itself and
+ * formats its own figures. The table owns neither — visibility is controlled
+ * from outside (the checkbox here stands in for the console's column dropdown),
+ * and alignment is the column's own `meta`.
+ */
+export const ColumnsHiddenAndAligned: StoryObj<DataTableProps<Settlement>> = {
+  render: () => {
+    const [columnVisibility, setColumnVisibility] =
+      React.useState<VisibilityState>({ status: false })
+
+    return (
+      <div className="flex flex-col gap-4">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="accent-primary size-4"
+            checked={columnVisibility.status !== false}
+            onChange={(event) =>
+              setColumnVisibility({ status: event.target.checked })
+            }
+          />
+          Show status
+        </label>
+        <DataTable
+          columns={columns}
+          data={data}
+          getRowId={(row) => row.id}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
+        />
+      </div>
     )
   }
 }

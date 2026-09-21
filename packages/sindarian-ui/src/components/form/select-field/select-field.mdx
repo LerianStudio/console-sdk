@@ -61,6 +61,21 @@ renders no empty row at all.
 
 <Canvas of={Story.Disabled} />
 
+### With a leading icon
+
+`leadingIcon` renders a node inside the trigger, before the value, on both
+the single and the `multi` branch. On the single select the glyph and the
+value share one flex box (`<span class="flex min-w-0 items-center">`), so the
+trigger keeps exactly two children and `justify-between` leaves the value
+beside the glyph instead of floating it to the middle; the multi trigger
+already groups its children in one box, so the node lands there unchanged.
+The node itself is passed through as given: no `aria-hidden` and no margin —
+the spacing belongs to the caller, because a gap added here would double with
+the one every call site carries. The trigger is named by its label and its
+value, so pass a decorative node.
+
+<Canvas of={Story.WithLeadingIcon} />
+
 ## Multi Select
 
 <Canvas of={Story.MultiSelect} />
@@ -68,6 +83,10 @@ renders no empty row at all.
 ### Disabled
 
 <Canvas of={Story.MultiSelectDisabled} />
+
+### With a leading icon
+
+<Canvas of={Story.MultiSelectWithLeadingIcon} />
 
 <Primary />
 <Controls />
