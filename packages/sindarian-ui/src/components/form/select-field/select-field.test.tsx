@@ -462,14 +462,7 @@ describe('SelectField leadingIcon', () => {
     expect(names[1]).toBe(names[0])
   })
 
-  it('adds exactly one node, and none when the prop is omitted', () => {
-    const { unmount } = render(
-      <SelectField name="rail" label="Rail" placeholder="Pick a rail" />
-    )
-    const plainChildren = screen.getByRole('combobox').childElementCount
-    expect(screen.queryByTestId('filter-glyph')).not.toBeInTheDocument()
-    unmount()
-
+  it('keeps the glyph and the value in one child of the trigger', () => {
     render(
       <SelectField
         name="rail"
@@ -479,8 +472,39 @@ describe('SelectField leadingIcon', () => {
       />
     )
 
-    expect(screen.getByRole('combobox').childElementCount).toBe(
-      plainChildren + 1
+    const trigger = screen.getByRole('combobox')
+    const icon = screen.getByTestId('filter-glyph')
+    const value = trigger.querySelector('[data-slot="select-value"]')
+
+    // The trigger is `justify-between`: with THREE children it splits the free
+    // space into two gaps and the selected value drifts to the middle of the
+    // box instead of sitting beside the glyph. Two children — content and
+    // chevron — is the contract.
+    expect(trigger.childElementCount).toBe(2)
+
+    const group = icon.parentElement as HTMLElement
+    expect(group).not.toBe(trigger)
+    expect(group).toContainElement(value as HTMLElement)
+    // `min-w-0` on the wrapper is what lets the value keep truncating: the
+    // wrapper is the flex item now, and a flex item never shrinks below its
+    // own min-content width.
+    expect(group).toHaveClass('min-w-0')
+  })
+
+  it('adds no node at all when the prop is omitted', () => {
+    const { unmount } = render(
+      <SelectField name="rail" label="Rail" placeholder="Pick a rail" />
     )
+    const trigger = screen.getByRole('combobox')
+
+    expect(screen.queryByTestId('filter-glyph')).not.toBeInTheDocument()
+    // No wrapper for a consumer that never passes the prop: the value span is
+    // still the trigger's own direct child, as it was before `leadingIcon`.
+    expect(trigger.childElementCount).toBe(2)
+    expect(
+      trigger.querySelector(':scope > [data-slot="select-value"]')
+    ).not.toBeNull()
+
+    unmount()
   })
 })

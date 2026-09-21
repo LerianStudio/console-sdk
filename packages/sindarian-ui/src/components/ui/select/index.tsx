@@ -44,16 +44,20 @@ type SelectTriggerProps = React.ComponentProps<
  * slot shrink, `truncate` ellipsises what no longer fits — the chevron keeps its
  * place because the value absorbs all the shrinkage.
  *
- * Written as a child-scoped variant on the TRIGGER because Radix strips
- * `className` off `Select.Value` itself; the `>` combinator holds because Radix
- * renders that span as the trigger's direct child.
+ * Written as a descendant-scoped variant on the TRIGGER because Radix strips
+ * `className` off `Select.Value` itself. DESCENDANT, not `>`: a trigger that
+ * carries a leading glyph groups the glyph and the value into one flex child
+ * (see `SelectField`'s `leadingIcon`), so the value span is no longer the
+ * trigger's direct child and a `>` combinator stopped truncating exactly where
+ * the trigger has the least room. The wrapper carries `min-w-0` itself, which
+ * is what lets the shrinkage reach the value.
  *
  * Truncation hides text, so a trigger showing a long value should also carry
  * `title` — on the trigger, never on the value slot, which Radix renders
  * `pointer-events: none`.
  */
 const VALUE_OVERFLOW_CLASS =
-  '[&>[data-slot=select-value]]:min-w-0 [&>[data-slot=select-value]]:truncate'
+  '[&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:truncate'
 
 function SelectTrigger({
   className,

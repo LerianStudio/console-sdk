@@ -107,6 +107,10 @@ export const Disabled: StoryObj<SelectFieldStoryArgs> = {
  * A filter bar's glyph sits inside the trigger, before the value. The spacing
  * is the caller's — the field adds none, so the `mr-2` below is what separates
  * the glyph from the value.
+ *
+ * The harness is half the frame on purpose: the trigger is far wider than its
+ * content, which is the case where a third child in a `justify-between` box
+ * used to push the selected value into the middle of the trigger.
  */
 export const WithLeadingIcon: StoryObj<SelectFieldStoryArgs> = {
   args: {

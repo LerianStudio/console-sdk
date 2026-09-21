@@ -46,10 +46,12 @@ type SelectFieldSharedProps<T extends FieldValues = FieldValues> =
     /** Copy for the "nothing to pick" row. Defaults to "No options found." */
     emptyMessage?: string
     /**
-     * Rendered as the first child of the trigger, before the value — where a
-     * filter bar wants its glyph. It is rendered bare, with no wrapper and no
-     * `aria-hidden`: the prop takes an arbitrary node, and hiding it from the
-     * accessibility tree on the caller's behalf would silence a node the
+     * Rendered inside the trigger, before the value — where a filter bar wants
+     * its glyph. On the single select it shares one flex box with the value so
+     * the trigger keeps exactly two children; on the multi select the trigger
+     * already groups them. The node itself is passed through untouched, with
+     * no `aria-hidden`: the prop takes an arbitrary node, and hiding it from
+     * the accessibility tree on the caller's behalf would silence a node the
      * caller may have made meaningful on purpose. The trigger is named by its
      * label and its value, so the node passed here should be decorative.
      *
@@ -131,6 +133,40 @@ export const SelectField = <T extends FieldValues = FieldValues>({
   const emitChange = onChange as
     ((value: string | string[]) => void) | undefined
 
+  /**
+   * ⛔ THE GLYPH AND THE VALUE ARE ONE FLEX CHILD, NEVER TWO.
+   *
+   * `.select-trigger` is `flex w-full items-center justify-between`, so a
+   * third child makes it split the free space into TWO gaps: on any trigger
+   * wider than its content — which is every filter bar — the selected value
+   * drifted to the middle of the box instead of sitting beside the glyph.
+   * Wrapped, the trigger is back to two children, content and chevron,
+   * whatever the caller passes.
+   *
+   * `min-w-0` keeps the value truncating: the wrapper is the flex item now,
+   * and a flex item never shrinks below its own min-content width. The
+   * trigger's `VALUE_OVERFLOW_CLASS` reaches through it by descendant
+   * selector.
+   *
+   * No `gap`: the prop's contract is that spacing is the caller's (the Tracer
+   * filter bars carry their own `mr-2`), and a kit gap would double with it.
+   *
+   * The MULTI trigger needs none of this — it already renders its children
+   * inside one `flex grow flex-wrap` box, so the icon already shares a parent
+   * with the value and the trigger root already has exactly two children.
+   * Wrapping there would put the selected-value badges in a non-wrapping row
+   * and stop the trigger growing to a second line.
+   */
+  const withLeadingIcon = (value: ReactNode) =>
+    leadingIcon ? (
+      <span className="flex min-w-0 items-center">
+        {leadingIcon}
+        {value}
+      </span>
+    ) : (
+      value
+    )
+
   const renderItem = (field: Binding) => {
     return (
       <FormItem required={required} className={className}>
@@ -174,8 +210,7 @@ export const SelectField = <T extends FieldValues = FieldValues>({
                 readOnly={readOnly}
                 data-testid={others['data-testid']}
               >
-                {leadingIcon}
-                <SelectValue placeholder={placeholder} />
+                {withLeadingIcon(<SelectValue placeholder={placeholder} />)}
               </SelectTrigger>
             </FormControl>
             <SelectContent>

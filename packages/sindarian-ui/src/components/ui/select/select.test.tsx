@@ -11,17 +11,25 @@ import { Select, SelectTrigger, SelectValue } from '.'
  * 39-character context name. The constraint belongs in the primitive: it is
  * true of every Select in the kit, not of one screen.
  *
- * It rides the TRIGGER as a child-scoped variant because Radix strips
- * `className` off `Select.Value` before rendering the span.
+ * It rides the TRIGGER as a descendant-scoped variant because Radix strips
+ * `className` off `Select.Value` before rendering the span. DESCENDANT, not
+ * `>`: a trigger carrying a leading glyph groups the glyph and the value into
+ * one flex child (`SelectField`'s `leadingIcon`), and a direct-child selector
+ * stopped truncating the moment a consumer did that — silently, and on the
+ * trigger with the least room left.
  */
-const MIN_W_0 = '[&>[data-slot=select-value]]:min-w-0'
-const TRUNCATE = '[&>[data-slot=select-value]]:truncate'
+const MIN_W_0 = '[&_[data-slot=select-value]]:min-w-0'
+const TRUNCATE = '[&_[data-slot=select-value]]:truncate'
 
-function renderSelect(className?: string) {
+function renderSelect(className?: string, wrapValue = false) {
+  const value = (
+    <SelectValue>A settlement context with a very long name</SelectValue>
+  )
+
   const { container } = render(
     <Select defaultValue="ctx">
       <SelectTrigger className={className}>
-        <SelectValue>A settlement context with a very long name</SelectValue>
+        {wrapValue ? <span className="flex min-w-0">{value}</span> : value}
       </SelectTrigger>
     </Select>
   )
@@ -41,11 +49,16 @@ describe('SelectTrigger value overflow', () => {
     expect(renderSelect().trigger).toHaveClass(TRUNCATE)
   })
 
-  it('keeps the value slot the direct child the truncation selector needs', () => {
-    const { trigger, value } = renderSelect()
+  it('reaches the value slot through a wrapper a consumer put around it', () => {
+    const { trigger, value } = renderSelect(undefined, true)
 
+    // The selector is what has to survive the wrapper; jsdom computes no
+    // styles, so the pin is that the trigger still carries a variant whose
+    // combinator is a descendant one, and that the value really is nested.
     expect(value).not.toBeNull()
-    expect(value?.parentElement).toBe(trigger)
+    expect(value?.parentElement).not.toBe(trigger)
+    expect(trigger).toContainElement(value as HTMLElement)
+    expect(trigger).toHaveClass(MIN_W_0, TRUNCATE)
   })
 
   it('keeps a consumer className alongside the truncation', () => {
