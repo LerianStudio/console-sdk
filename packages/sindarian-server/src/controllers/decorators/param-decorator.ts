@@ -1,6 +1,9 @@
 import { PARAM_KEY } from '@/constants/keys'
 import { ValidationApiException } from '@/exceptions/api-exception'
-import { getNextParamArgument } from '@/utils/nextjs/get-next-arguments'
+import {
+  getNextParamArgument,
+  getRouteParamArgument
+} from '@/utils/nextjs/get-next-arguments'
 
 export type ParamMetadata = {
   name: string
@@ -39,13 +42,15 @@ export class ParamHandler {
 
     // If the metadata is found, validate the param.
     if (metadatas && metadatas.length > 0) {
-      const params: { [key: string]: any } = await getNextParamArgument(args)
-
-      // If params is undefined or null, all required params are missing
-      if (!params) {
-        throw new ValidationApiException(
-          `Invalid param: ${metadatas[0].name} is required`
-        )
+      // Two sources, both optional: Next's own params object (a per-file route
+      // supplies the named segments; a catch-all supplies only its segment
+      // array) and the captures the matched route produced. The captures come
+      // last so they win a name collision — they are read from the URL the
+      // framework actually matched. Spreading undefined yields {}, so a route
+      // carrying neither behaves exactly as it did before.
+      const params: { [key: string]: any } = {
+        ...(await getNextParamArgument(args)),
+        ...getRouteParamArgument(args)
       }
 
       // Validate the param.

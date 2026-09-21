@@ -361,6 +361,27 @@ describe('ServerFactory', () => {
       expect(response).toEqual({ success: true })
     })
 
+    it('should carry the route captures to the handler arguments', async () => {
+      mockUrlMatch.mockReturnValue({
+        matched: true,
+        params: { id: 'org_1', ledgerId: 'led_2' }
+      })
+
+      await serverFactory.handler(mockRequest, { params: mockParams })
+
+      expect(mockRouteHandler).toHaveBeenCalledWith(
+        mockController,
+        'testMethod',
+        [
+          mockRequest,
+          {
+            params: mockParams,
+            routeParams: { id: 'org_1', ledgerId: 'led_2' }
+          }
+        ]
+      )
+    })
+
     it('should handle request with global prefix', async () => {
       serverFactory.setGlobalPrefix('/api/v1')
       mockRequest = {

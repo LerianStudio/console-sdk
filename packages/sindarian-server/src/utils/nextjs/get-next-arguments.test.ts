@@ -1,6 +1,7 @@
 import {
   getNextRequestArgument,
-  getNextParamArgument
+  getNextParamArgument,
+  getRouteParamArgument
 } from './get-next-arguments'
 
 describe('getNextRequestArgument', () => {
@@ -45,5 +46,34 @@ describe('getNextParamArgument', () => {
 
   it('returns null if params is null', async () => {
     expect(await getNextParamArgument([{}, { params: null }])).toBeNull()
+  })
+})
+
+describe('getRouteParamArgument', () => {
+  it('returns the routeParams property of the second argument', () => {
+    const routeParams = { id: '123', ledgerId: '456' }
+    expect(getRouteParamArgument([{}, { params: {}, routeParams }])).toBe(
+      routeParams
+    )
+  })
+
+  it('returns undefined if args is not provided', () => {
+    // @ts-expect-error testing missing argument
+    expect(getRouteParamArgument()).toBeUndefined()
+  })
+
+  it('returns undefined if second argument is missing', () => {
+    expect(getRouteParamArgument([{}])).toBeUndefined()
+  })
+
+  it('returns undefined if second argument has no routeParams property', () => {
+    expect(getRouteParamArgument([{}, { params: {} }])).toBeUndefined()
+  })
+
+  it('does not await: the captures are already resolved', () => {
+    const routeParams = { id: '123' }
+    const result = getRouteParamArgument([{}, { routeParams }])
+    expect(result).not.toBeInstanceOf(Promise)
+    expect(result).toEqual({ id: '123' })
   })
 })

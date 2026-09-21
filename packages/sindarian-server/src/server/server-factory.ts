@@ -154,7 +154,7 @@ export class ServerFactory {
 
       const { pathname, method } = this._parseRequest(request)
 
-      const { route } = this._fetchRoute(pathname, method)
+      const { route, params: routeParams } = this._fetchRoute(pathname, method)
 
       controller = await this.container.getAsync(
         route.controller as Class<BaseController>
@@ -188,7 +188,7 @@ export class ServerFactory {
           const args = await RouteHandler.getArgs(
             controller!,
             route.methodName,
-            [request, { params }]
+            [request, { params, routeParams }]
           )
 
           // Run registered pipes
