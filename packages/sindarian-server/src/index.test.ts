@@ -8,7 +8,8 @@ describe('package entry point', () => {
     'HttpService',
     'toProblemMessage',
     'PROBLEM_FIELD_MAX_LENGTH',
-    'MESSAGE_MAX_LENGTH'
+    'MESSAGE_MAX_LENGTH',
+    'readWireField'
   ])('exports %s', (name) => {
     expect(barrel).toHaveProperty(name)
   })

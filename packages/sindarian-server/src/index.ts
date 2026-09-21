@@ -38,10 +38,17 @@ export { FetchModuleOptions, HttpService } from './services/http-service'
 // one this package answers: the same failed read would then read differently
 // depending on which frame answered it, which is the drift the readers were
 // exported to close.
+//
+// `readWireField` is the guarded read underneath all of them, and it is here
+// because an application rendering its own envelope reads a field of a value it
+// does not own: one read, bounded, unable to throw. That rule is the one thing
+// it must not have to reinvent — a copy of it drifts from this one silently,
+// and the frame that spends it is the last one before a body.
 export {
   MESSAGE_MAX_LENGTH,
   PROBLEM_FIELD_MAX_LENGTH,
   noProblemDetails,
+  readWireField,
   readWireMessage,
   readWireStatus,
   toProblemMessage
