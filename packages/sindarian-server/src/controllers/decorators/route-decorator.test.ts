@@ -538,6 +538,8 @@ describe('Route Decorator', () => {
     class MetadataController {
       @Get('metadata')
       metadataMethod(_arg?: string) {}
+
+      plainMethod() {}
     }
 
     // `@Route` is a method decorator, so its `target` is the prototype. The two
@@ -568,6 +570,20 @@ describe('Route Decorator', () => {
         method: HttpMethods.GET,
         path: 'metadata'
       })
+    })
+
+    // A method with no `@Route` has no metadata, and both reads miss: the
+    // fallback resolves to the same prototype. Consumers reflecting over a
+    // controller — Product Console's `describeController` harness among them —
+    // hit that on any helper method, so the declared return type must admit the
+    // absence instead of handing them a `TypeError` at the first property read.
+    it('answers undefined for a method carrying no route decorator', () => {
+      const metadata = RouteHandler.getMetadata(
+        new MetadataController(),
+        'plainMethod'
+      )
+
+      expect(metadata).toBeUndefined()
     })
   })
 })
