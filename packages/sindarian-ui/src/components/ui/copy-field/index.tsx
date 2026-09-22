@@ -182,7 +182,10 @@ export function CopyField({
 
   const handleFallback = () => {
     selectFieldText()
-    toast({ title: fallbackLabel ?? FALLBACK_COPY_LABEL })
+    toast({
+      variant: 'destructive',
+      title: fallbackLabel ?? FALLBACK_COPY_LABEL
+    })
   }
 
   const handleCopy = async () => {
