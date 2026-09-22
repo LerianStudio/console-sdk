@@ -80,3 +80,67 @@ describe('toast helpers', () => {
     )
   })
 })
+
+/**
+ * The lifetime knob has to be reachable from the surface the consoles actually
+ * call. Spying on sonner's own severity functions is the narrowest place to
+ * prove it: it pins what leaves sindarian-ui without asserting on sonner's
+ * internal timer.
+ */
+describe('toast helper duration', () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it('forwards a caller-supplied duration to sonner', () => {
+    const error = jest.spyOn(sonnerToast, 'error')
+
+    errorToast('Refused', 'The ledger rejected the entry', { duration: 2000 })
+
+    expect(error).toHaveBeenCalledWith(
+      'Refused',
+      expect.objectContaining({ duration: 2000 })
+    )
+  })
+
+  it('forwards a duration from the non-destructive helpers too', () => {
+    const success = jest.spyOn(sonnerToast, 'success')
+    const warning = jest.spyOn(sonnerToast, 'warning')
+
+    successToast('Saved', undefined, { duration: 1500 })
+    warningToast('Partial', undefined, { duration: 3000 })
+
+    expect(success).toHaveBeenCalledWith(
+      'Saved',
+      expect.objectContaining({ duration: 1500 })
+    )
+    expect(warning).toHaveBeenCalledWith(
+      'Partial',
+      expect.objectContaining({ duration: 3000 })
+    )
+  })
+
+  it('forwards a caller-supplied id so the caller controls the toast identity', () => {
+    const error = jest.spyOn(sonnerToast, 'error')
+
+    errorToast('Refused', 'The ledger rejected the entry', {
+      id: 'payment-refused'
+    })
+
+    expect(error).toHaveBeenCalledWith(
+      'Refused',
+      expect.objectContaining({ id: 'payment-refused' })
+    )
+  })
+
+  it('leaves the variant lifetime alone when no duration is passed', () => {
+    const error = jest.spyOn(sonnerToast, 'error')
+
+    errorToast('Refused')
+
+    expect(error).toHaveBeenCalledWith(
+      'Refused',
+      expect.objectContaining({ duration: Infinity })
+    )
+  })
+})

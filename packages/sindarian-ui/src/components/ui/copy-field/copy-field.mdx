@@ -54,7 +54,8 @@ toast.
 
 That toast carries the `destructive` variant, not the success one: the copy the user asked for did not happen,
 and on a show-once value — a bearer token, a recovery code — reading it as a confirmation loses the secret. The
-tone is not configurable, because a failed copy is a failure in every consumer.
+tone is not configurable, because a failed copy is a failure in every consumer — and, like every destructive
+toast, it stays up until dismissed rather than vanishing on a timer.
 
 ### Monospace values
 

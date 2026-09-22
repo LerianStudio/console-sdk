@@ -2,6 +2,7 @@
 
 import { Toaster as SonnerToaster } from 'sonner'
 
+import { DEFAULT_DURATION } from '@/hooks/use-toast'
 import { useOptionalTheme } from '@/theme/theme-provider'
 
 type ToasterProps = {
@@ -23,7 +24,7 @@ export function Toaster({ theme }: ToasterProps) {
       theme={theme ?? themeContext?.resolvedTheme ?? 'system'}
       position="bottom-right"
       visibleToasts={3}
-      duration={10000}
+      duration={DEFAULT_DURATION}
       expand={false}
       closeButton
       richColors={false}

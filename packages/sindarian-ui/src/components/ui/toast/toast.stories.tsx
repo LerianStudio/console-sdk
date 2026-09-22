@@ -105,7 +105,7 @@ export const QueueBehavior: StoryObj<typeof Toaster> = {
   render: () => {
     const { toast } = useToast()
 
-    const handleClick = () => {
+    const fireDefaults = () => {
       for (let i = 1; i <= 5; i++) {
         toast({
           title: `Toast ${i}`,
@@ -114,11 +114,39 @@ export const QueueBehavior: StoryObj<typeof Toaster> = {
       }
     }
 
+    const fireDistinctErrors = () => {
+      for (let i = 1; i <= 5; i++) {
+        toast({
+          title: `Error ${i}`,
+          description: `Entry ${i} was refused by the ledger.`,
+          variant: 'destructive'
+        })
+      }
+    }
+
+    const fireSameError = () => {
+      for (let i = 1; i <= 5; i++) {
+        toast({
+          title: 'Error',
+          description: 'The ledger refused the entry.',
+          variant: 'destructive'
+        })
+      }
+    }
+
     return (
-      <div className="flex h-48 flex-col items-center justify-center gap-2">
-        <Button onClick={handleClick}>Fire 5 Toasts</Button>
+      <div className="flex h-64 flex-col items-center justify-center gap-2">
+        <Button onClick={fireDefaults}>Fire 5 Toasts</Button>
+        <Button variant="secondary" onClick={fireDistinctErrors}>
+          Fire 5 Distinct Errors
+        </Button>
+        <Button variant="secondary" onClick={fireSameError}>
+          Fire the Same Error 5x
+        </Button>
         <p className="text-muted-foreground text-sm">
-          Only 3 will be visible at once. Hover to expand.
+          Only 3 are visible at once. Hover to expand. Five distinct errors pile
+          up and none auto-close, so the last two stay out of reach until one is
+          dismissed; the same error five times collapses onto a single toast.
         </p>
         <Toaster />
       </div>
