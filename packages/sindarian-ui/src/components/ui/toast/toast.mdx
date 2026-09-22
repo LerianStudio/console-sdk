@@ -20,7 +20,7 @@ A destructive toast stays on screen until the operator dismisses it with the clo
 and `warning` all auto-close after 10 seconds. An error is something the operator has to read — a refused money
 operation, a failed copy of a show-once secret, a language switch that did not take — and ten seconds is no
 guarantee anyone did. Pass `duration` in milliseconds to override either lifetime for one call — it must be
-greater than 0, since sonner reads `0` as unset and falls back to the Toaster's 10 second default.
+greater than 0, since sonner reads `0` as unset and falls back to the Toaster's 10-second default.
 
 <Canvas of={Story.Destructive} />
 

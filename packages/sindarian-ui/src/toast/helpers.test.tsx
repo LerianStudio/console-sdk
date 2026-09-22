@@ -120,6 +120,19 @@ describe('toast helper duration', () => {
     )
   })
 
+  it('forwards a caller-supplied id so the caller controls the toast identity', () => {
+    const error = jest.spyOn(sonnerToast, 'error')
+
+    errorToast('Refused', 'The ledger rejected the entry', {
+      id: 'payment-refused'
+    })
+
+    expect(error).toHaveBeenCalledWith(
+      'Refused',
+      expect.objectContaining({ id: 'payment-refused' })
+    )
+  })
+
   it('leaves the variant lifetime alone when no duration is passed', () => {
     const error = jest.spyOn(sonnerToast, 'error')
 

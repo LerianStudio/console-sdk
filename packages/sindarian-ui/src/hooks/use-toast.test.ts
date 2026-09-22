@@ -90,7 +90,7 @@ describe('useToast', () => {
     expect(sonnerToast.error).toHaveBeenCalledWith('Error', {
       description: 'Something went wrong',
       duration: Infinity,
-      id: 'destructive:Error:Something went wrong'
+      id: 'destructive:["Error","Something went wrong"]'
     })
   })
 
@@ -105,7 +105,7 @@ describe('useToast', () => {
     expect(sonnerToast.error).toHaveBeenCalledWith('Error', {
       description: 'Something went wrong',
       duration: 3000,
-      id: 'destructive:Error:Something went wrong'
+      id: 'destructive:["Error","Something went wrong"]'
     })
   })
 
@@ -180,13 +180,28 @@ describe('repeated destructive toasts', () => {
     toast({ title: 'Error', description: 'Refused', variant: 'destructive' })
 
     expect(sonnerToast.error).toHaveBeenCalledTimes(2)
-    expect(errorOptions(0).id).toBe('destructive:Error:Refused')
+    expect(errorOptions(0).id).toBe('destructive:["Error","Refused"]')
     expect(errorOptions(1).id).toBe(errorOptions(0).id)
   })
 
   it('should give errors with different descriptions different ids', () => {
     toast({ title: 'Error', description: 'Refused', variant: 'destructive' })
     toast({ title: 'Error', description: 'Timed out', variant: 'destructive' })
+
+    expect(errorOptions(0).id).not.toBe(errorOptions(1).id)
+  })
+
+  it('should not fold two errors whose title and description split differently', () => {
+    toast({
+      title: 'Error:payment',
+      description: 'refused',
+      variant: 'destructive'
+    })
+    toast({
+      title: 'Error',
+      description: 'payment:refused',
+      variant: 'destructive'
+    })
 
     expect(errorOptions(0).id).not.toBe(errorOptions(1).id)
   })

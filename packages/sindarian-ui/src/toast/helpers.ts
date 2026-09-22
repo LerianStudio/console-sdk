@@ -20,6 +20,12 @@ import type { ToastActionElement } from '@/components/ui/toast'
 
 /** Extra toast props for the severity helpers (the variant is fixed per helper). */
 export interface ToastOptions {
+  /**
+   * Caller-controlled toast identity. A repeat under the same id updates the
+   * toast in place instead of stacking a second one; omit it and a destructive
+   * toast derives its own from the title and description.
+   */
+  id?: string | number
   /** Optional action element rendered inside the toast. */
   action?: ToastActionElement
   /**
@@ -48,7 +54,8 @@ function raise(
     variant,
     title,
     description,
-    duration: opts?.duration
+    duration: opts?.duration,
+    id: opts?.id
   })
 }
 

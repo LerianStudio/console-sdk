@@ -72,7 +72,7 @@ function collapseKey(
     return undefined
   }
 
-  return `destructive:${title ?? ''}:${description ?? ''}`
+  return `destructive:${JSON.stringify([title ?? null, description ?? null])}`
 }
 
 function toast({ title, description, variant, duration, id, ...rest }: Toast) {
