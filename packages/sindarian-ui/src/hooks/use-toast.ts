@@ -6,6 +6,19 @@ import type { ToastActionElement } from '@/components/ui/toast'
 
 const DEFAULT_DURATION = 10000
 
+/**
+ * A destructive toast reports something the operator has to read -- a refused
+ * money operation, a failed copy of a show-once secret, a language switch that
+ * did not take. It stays up until dismissed instead of auto-closing.
+ *
+ * `Infinity` is how sonner disables the auto-close timer (it short-circuits the
+ * timer effect rather than calling `setTimeout(fn, Infinity)`, which would fire
+ * immediately). `<Toaster />` already passes `closeButton`, and sonner gates the
+ * close button on that flag alone, never on the duration -- so a persistent
+ * toast still renders its dismiss affordance.
+ */
+const PERSIST_UNTIL_DISMISSED = Infinity
+
 type ToastVariant = 'default' | 'success' | 'warning' | 'destructive'
 
 type ToasterToast = {
@@ -14,34 +27,38 @@ type ToasterToast = {
   description?: React.ReactNode
   variant?: ToastVariant
   action?: ToastActionElement
+  /**
+   * Auto-dismiss delay in ms. Omit it to take the variant's own lifetime:
+   * `destructive` stays until dismissed, every other variant closes after 10s.
+   */
+  duration?: number
 }
 
 type Toast = Omit<ToasterToast, 'id'>
 
-function toast({ title, description, variant, ...rest }: Toast) {
+function toast({ title, description, variant, duration, ...rest }: Toast) {
   const message = title ?? ''
   const options: Parameters<typeof sonnerToast>[1] & { id?: string } = {
     description,
-    ...rest
+    ...rest,
+    duration:
+      duration ??
+      (variant === 'destructive' ? PERSIST_UNTIL_DISMISSED : DEFAULT_DURATION)
   }
 
   let id: string | number
 
   switch (variant) {
     case 'success':
-      options.duration = DEFAULT_DURATION
       id = sonnerToast.success(message, options)
       break
     case 'warning':
-      options.duration = DEFAULT_DURATION
       id = sonnerToast.warning(message, options)
       break
     case 'destructive':
-      options.duration = DEFAULT_DURATION
       id = sonnerToast.error(message, options)
       break
     default:
-      options.duration = DEFAULT_DURATION
       id = sonnerToast(message, options)
       break
   }
@@ -53,7 +70,8 @@ function toast({ title, description, variant, ...rest }: Toast) {
       sonnerToast(props.title ?? message, {
         id,
         description: props.description ?? description,
-        ...rest
+        ...rest,
+        duration: props.duration ?? options.duration
       })
     }
   }

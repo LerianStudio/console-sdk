@@ -79,7 +79,7 @@ describe('useToast', () => {
     expect(sonnerToast.error).not.toHaveBeenCalled()
   })
 
-  it('should call sonner toast.error with default duration for destructive variant', () => {
+  it('should call sonner toast.error with no auto-dismiss for destructive variant', () => {
     toast({
       title: 'Error',
       description: 'Something went wrong',
@@ -88,8 +88,42 @@ describe('useToast', () => {
 
     expect(sonnerToast.error).toHaveBeenCalledWith('Error', {
       description: 'Something went wrong',
-      duration: 10000
+      duration: Infinity
     })
+  })
+
+  it('should honour a caller-supplied duration on the destructive variant', () => {
+    toast({
+      title: 'Error',
+      description: 'Something went wrong',
+      variant: 'destructive',
+      duration: 3000
+    })
+
+    expect(sonnerToast.error).toHaveBeenCalledWith('Error', {
+      description: 'Something went wrong',
+      duration: 3000
+    })
+  })
+
+  it('should honour a caller-supplied duration on the default variant', () => {
+    toast({ title: 'Quick', duration: 1500 })
+
+    expect(sonnerToast).toHaveBeenCalledWith('Quick', {
+      description: undefined,
+      duration: 1500
+    })
+  })
+
+  it('should keep the destructive lifetime when the toast is updated', () => {
+    const result = toast({ title: 'Error', variant: 'destructive' })
+
+    result.update({ description: 'Still failing' })
+
+    expect(sonnerToast).toHaveBeenCalledWith(
+      'Error',
+      expect.objectContaining({ duration: Infinity })
+    )
   })
 
   it('should handle toast with no title (description only)', () => {

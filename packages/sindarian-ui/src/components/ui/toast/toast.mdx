@@ -16,6 +16,11 @@ Powered by [Sonner](https://sonner.emilkowal.dev/).
 
 ### Destructive
 
+A destructive toast stays on screen until the operator dismisses it with the close button; `default`, `success`
+and `warning` all auto-close after 10 seconds. An error is something the operator has to read — a refused money
+operation, a failed copy of a show-once secret, a language switch that did not take — and ten seconds is no
+guarantee anyone did. Pass `duration` in milliseconds to override either lifetime for one call.
+
 <Canvas of={Story.Destructive} />
 
 ### Description Only
