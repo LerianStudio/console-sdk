@@ -1,3 +1,10 @@
+## [2.0.0-beta.15](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.14...sindarian-ui-v2.0.0-beta.15) (2026-09-22)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** announce a failed copy as an error, not a success ([758988d](https://github.com/LerianStudio/console-sdk/commit/758988db43bd120a6cf5bcddb075232570d890bb))
+
 ## [2.0.0-beta.14](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.13...sindarian-ui-v2.0.0-beta.14) (2026-09-21)
 
 
