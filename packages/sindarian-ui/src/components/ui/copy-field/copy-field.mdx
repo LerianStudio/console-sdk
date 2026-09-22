@@ -8,7 +8,7 @@ import * as Story from './copy-field.stories'
 Displays a read-only value alongside a copy button. Built for values the user must transfer somewhere else — a
 TOTP manual-entry secret, a recovery code, an API key.
 
-Requires a `Toaster` mounted in the tree: copying raises a toast to confirm the action.
+Requires a `Toaster` mounted in the tree: a successful copy raises a success toast, a failed one an error toast.
 
 ### Default
 
@@ -51,6 +51,10 @@ Pass `onCopyLabel` with an i18n string to replace the default success message.
 When `navigator.clipboard` is unavailable or the write is rejected, the field reveals and selects its text and
 raises a toast prompting the user to copy manually with `Ctrl`/`Cmd`+`C`. Pass `fallbackLabel` to localize that
 toast.
+
+That toast carries the `destructive` variant, not the success one: the copy the user asked for did not happen,
+and on a show-once value — a bearer token, a recovery code — reading it as a confirmation loses the secret. The
+tone is not configurable, because a failed copy is a failure in every consumer.
 
 ### Monospace values
 

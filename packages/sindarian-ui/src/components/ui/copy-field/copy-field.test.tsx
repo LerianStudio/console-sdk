@@ -182,7 +182,10 @@ describe('CopyField', () => {
       expect(selectSpy).toHaveBeenCalled()
       await waitFor(() =>
         expect(mockToast).toHaveBeenCalledWith(
-          expect.objectContaining({ title: FALLBACK_COPY_LABEL })
+          expect.objectContaining({
+            variant: 'destructive',
+            title: FALLBACK_COPY_LABEL
+          })
         )
       )
       selectSpy.mockRestore()
@@ -198,7 +201,10 @@ describe('CopyField', () => {
       await waitFor(() => expect(selectSpy).toHaveBeenCalled())
       await waitFor(() =>
         expect(mockToast).toHaveBeenCalledWith(
-          expect.objectContaining({ title: FALLBACK_COPY_LABEL })
+          expect.objectContaining({
+            variant: 'destructive',
+            title: FALLBACK_COPY_LABEL
+          })
         )
       )
       expect(mockToast).not.toHaveBeenCalledWith(
