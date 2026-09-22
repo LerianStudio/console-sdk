@@ -1,3 +1,16 @@
+## [2.0.0-beta.16](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.15...sindarian-ui-v2.0.0-beta.16) (2026-09-22)
+
+
+### Features
+
+* **sindarian-ui:** keep a destructive toast up until it is dismissed ([45e5bbd](https://github.com/LerianStudio/console-sdk/commit/45e5bbdbbc874f2436dc688283a92f2a0c0e8147)), closes [#101](https://github.com/LerianStudio/console-sdk/issues/101)
+* **sindarian-ui:** reach the toast lifetime and collapse repeats ([0ea7ea1](https://github.com/LerianStudio/console-sdk/commit/0ea7ea18df2048f7847ced97f89a2c31fdae0ad9))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** make the destructive toast key unambiguous ([d07324f](https://github.com/LerianStudio/console-sdk/commit/d07324f0b590717e4197a95f28390a514094fc53)), closes [#205](https://github.com/LerianStudio/console-sdk/issues/205)
+
 ## [2.0.0-beta.15](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.14...sindarian-ui-v2.0.0-beta.15) (2026-09-22)
 
 
