@@ -28,6 +28,13 @@ export interface ToastOptions {
    * it, so it is not rendered. Put it in `description` if it must be visible.
    */
   errorCode?: string
+  /**
+   * Auto-dismiss delay in ms, overriding the variant's own lifetime for this
+   * one call. Must be greater than 0 -- sonner reads `0` as unset and falls
+   * back to the `<Toaster />` default. Omit it and `errorToast` stays until
+   * dismissed while `successToast` and `warningToast` close after 10s.
+   */
+  duration?: number
 }
 
 function raise(
@@ -36,7 +43,13 @@ function raise(
   description?: string,
   opts?: Partial<ToastOptions>
 ): void {
-  toast({ action: opts?.action, variant, title, description })
+  toast({
+    action: opts?.action,
+    variant,
+    title,
+    description,
+    duration: opts?.duration
+  })
 }
 
 export function successToast(

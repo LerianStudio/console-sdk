@@ -1,3 +1,4 @@
+import React from 'react'
 import { renderHook, act } from '@testing-library/react'
 import { toast as sonnerToast } from 'sonner'
 import { useToast, toast } from './use-toast'
@@ -88,7 +89,8 @@ describe('useToast', () => {
 
     expect(sonnerToast.error).toHaveBeenCalledWith('Error', {
       description: 'Something went wrong',
-      duration: Infinity
+      duration: Infinity,
+      id: 'destructive:Error:Something went wrong'
     })
   })
 
@@ -102,7 +104,8 @@ describe('useToast', () => {
 
     expect(sonnerToast.error).toHaveBeenCalledWith('Error', {
       description: 'Something went wrong',
-      duration: 3000
+      duration: 3000,
+      id: 'destructive:Error:Something went wrong'
     })
   })
 
@@ -161,5 +164,88 @@ describe('useToast', () => {
     })
 
     expect(sonnerToast.dismiss).toHaveBeenCalledWith('some-id')
+  })
+})
+
+describe('repeated destructive toasts', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  const errorOptions = (call: number) =>
+    (sonnerToast.error as jest.Mock).mock.calls[call][1]
+
+  it('should collapse an identical error onto the same id', () => {
+    toast({ title: 'Error', description: 'Refused', variant: 'destructive' })
+    toast({ title: 'Error', description: 'Refused', variant: 'destructive' })
+
+    expect(sonnerToast.error).toHaveBeenCalledTimes(2)
+    expect(errorOptions(0).id).toBe('destructive:Error:Refused')
+    expect(errorOptions(1).id).toBe(errorOptions(0).id)
+  })
+
+  it('should give errors with different descriptions different ids', () => {
+    toast({ title: 'Error', description: 'Refused', variant: 'destructive' })
+    toast({ title: 'Error', description: 'Timed out', variant: 'destructive' })
+
+    expect(errorOptions(0).id).not.toBe(errorOptions(1).id)
+  })
+
+  it('should let a caller-supplied id win over the derived one', () => {
+    toast({
+      title: 'Error',
+      description: 'Refused',
+      variant: 'destructive',
+      id: 'payment-refused'
+    })
+
+    expect(errorOptions(0).id).toBe('payment-refused')
+  })
+
+  it('should not collapse success toasts', () => {
+    toast({ title: 'Saved', description: 'Done', variant: 'success' })
+    toast({ title: 'Saved', description: 'Done', variant: 'success' })
+
+    const calls = (sonnerToast.success as jest.Mock).mock.calls
+    expect(calls[0][1]).not.toHaveProperty('id')
+    expect(calls[1][1]).not.toHaveProperty('id')
+  })
+
+  it('should not derive an id from a non-string title', () => {
+    toast({
+      title: React.createElement('span', null, 'Error'),
+      description: 'Refused',
+      variant: 'destructive'
+    })
+
+    expect(errorOptions(0)).not.toHaveProperty('id')
+  })
+})
+
+describe('updating a toast lifetime', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('should honour a duration passed to update on a destructive toast', () => {
+    const result = toast({ title: 'Error', variant: 'destructive' })
+
+    result.update({ duration: 2000 })
+
+    expect(sonnerToast).toHaveBeenCalledWith(
+      'Error',
+      expect.objectContaining({ duration: 2000 })
+    )
+  })
+
+  it('should keep the 10s lifetime when a default toast is updated', () => {
+    const result = toast({ title: 'Heads up' })
+
+    result.update({ description: 'Still going' })
+
+    expect(sonnerToast).toHaveBeenLastCalledWith(
+      'Heads up',
+      expect.objectContaining({ duration: 10000 })
+    )
   })
 })

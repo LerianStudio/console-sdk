@@ -19,7 +19,8 @@ Powered by [Sonner](https://sonner.emilkowal.dev/).
 A destructive toast stays on screen until the operator dismisses it with the close button; `default`, `success`
 and `warning` all auto-close after 10 seconds. An error is something the operator has to read — a refused money
 operation, a failed copy of a show-once secret, a language switch that did not take — and ten seconds is no
-guarantee anyone did. Pass `duration` in milliseconds to override either lifetime for one call.
+guarantee anyone did. Pass `duration` in milliseconds to override either lifetime for one call — it must be
+greater than 0, since sonner reads `0` as unset and falls back to the Toaster's 10 second default.
 
 <Canvas of={Story.Destructive} />
 
@@ -29,7 +30,9 @@ guarantee anyone did. Pass `duration` in milliseconds to override either lifetim
 
 ### Queue Behavior
 
-Only 3 toasts are visible at a time. Hover to expand.
+Only 3 toasts are visible at a time. Hover to expand. Because a destructive toast never auto-closes, a raised
+error that repeats verbatim — same title and description — collapses onto the toast already on screen instead
+of queueing behind it. Pass an explicit `id` to opt out and keep them separate.
 
 <Canvas of={Story.QueueBehavior} />
 
