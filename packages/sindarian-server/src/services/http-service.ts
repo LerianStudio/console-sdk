@@ -72,10 +72,10 @@ export abstract class HttpService {
       // Parse text/plain error responses. The status decides, not the header:
       // an upstream that answers a SUCCESS it forgot to label as JSON is not
       // an outage, and reading the header first turned every one of them into
-      // one. A 2xx falls through to `response.json()` below, which parses by
-      // body and ignores the declared type; a 2xx whose body is genuinely not
-      // JSON lands in the catch and becomes the same bounded exception it
-      // always did.
+      // one. A 2xx falls through to `readSuccessBody` below, whose default
+      // parses by body and ignores the declared type; a 2xx whose body is
+      // genuinely not JSON lands in the catch and becomes the same bounded
+      // exception it always did.
       if (
         !response.ok &&
         response?.headers
@@ -120,32 +120,49 @@ export abstract class HttpService {
         return {} as T
       }
 
-      return await response.json()
+      // Not the outer catch: that one rethrows an ApiException unchanged,
+      // and an override can throw one carrying the body it just read.
+      try {
+        return await this.readSuccessBody<T>(response)
+      } catch (error: unknown) {
+        throw this.unreachable(request, error)
+      }
     } catch (error: unknown) {
       if (error instanceof ApiException) {
         throw error
       }
 
-      try {
-        this.onRequestFailure(request, error)
-      } catch {
-        // a failing failure-logger must never replace the bounded exception
-      }
-
-      // Never the error's own message. A `fetch` failure names the host and
-      // port it could not reach, and a success body that is not JSON arrives
-      // here as a SyntaxError quoting its first bytes; both used to become
-      // the message this exception serialises to the browser. What actually
-      // broke went to `onRequestFailure` just above, and stays on `cause`,
-      // which no exception filter serialises. Non-enumerable, like the
-      // `cause` the Error constructor sets, so a caller that spreads the
-      // exception does not put it back on the wire.
-      throw Object.defineProperty(
-        new ServiceUnavailableApiException(UPSTREAM_UNREACHABLE),
-        'cause',
-        { value: error, writable: true, configurable: true }
-      )
+      throw this.unreachable(request, error)
     }
+  }
+
+  /**
+   * The bounded exception a call that never produced a usable answer
+   * becomes, after reporting what actually broke to `onRequestFailure`.
+   */
+  private unreachable(
+    request: Request,
+    error: unknown
+  ): ServiceUnavailableApiException {
+    try {
+      this.onRequestFailure(request, error)
+    } catch {
+      // a failing failure-logger must never replace the bounded exception
+    }
+
+    // Never the error's own message. A `fetch` failure names the host and
+    // port it could not reach, and a success body that is not JSON arrives
+    // here as a SyntaxError quoting its first bytes; both used to become
+    // the message this exception serialises to the browser. What actually
+    // broke went to `onRequestFailure` just above, and stays on `cause`,
+    // which no exception filter serialises. Non-enumerable, like the
+    // `cause` the Error constructor sets, so a caller that spreads the
+    // exception does not put it back on the wire.
+    return Object.defineProperty(
+      new ServiceUnavailableApiException(UPSTREAM_UNREACHABLE),
+      'cause',
+      { value: error, writable: true, configurable: true }
+    )
   }
 
   /**
@@ -166,6 +183,19 @@ export abstract class HttpService {
     }
 
     return new ServiceUnavailableApiException(message)
+  }
+
+  /**
+   * Reads the body of a 2xx that is not a 204, after the error branches.
+   *
+   * The default parses JSON. A transport whose upstream answers a success in
+   * another shape (Slack's `ok` as text/plain) overrides it to read the body
+   * it is actually sent. A throw inside it, an `ApiException` included, becomes
+   * the bounded `ServiceUnavailableApiException` with the thrown error on
+   * `cause`, so an override cannot put a body on the wire.
+   */
+  protected async readSuccessBody<T>(response: Response): Promise<T> {
+    return (await response.json()) as T
   }
 
   /**
@@ -253,7 +283,7 @@ export abstract class HttpService {
   protected onBeforeFetch(request: Request) {}
 
   /**
-   * Event triggered after the request is sent, but before response JSON parsing
+   * Event triggered after the request is sent, but before the response body is read
    * @param request The request that was sent
    * @param response The raw response received from the server
    */

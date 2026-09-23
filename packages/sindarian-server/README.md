@@ -501,6 +501,7 @@ The `HttpService` provides:
 - FormData support: `postFormData`, `patchFormData`
 - Automatic error handling with typed exceptions
 - Lifecycle hooks: `onBeforeFetch`, `onAfterFetch`, `catch`
+- Success body reader: `readSuccessBody` (parses JSON by default; override for an upstream that answers a 2xx in another shape; keep the generic `<T>` signature and return `as T`)
 
 ## <� Parameter Decorators
 

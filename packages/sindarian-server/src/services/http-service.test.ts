@@ -235,6 +235,131 @@ describe('HttpService', () => {
       expect(error.message).not.toContain('not JSON at all')
     })
 
+    it('a transport that overrides readSuccessBody receives a text/plain 200 as text', async () => {
+      class TextSuccessHttpService extends TestHttpService {
+        protected async readSuccessBody<T>(response: Response): Promise<T> {
+          return (await response.text()) as T
+        }
+      }
+      const service = new TextSuccessHttpService()
+      const onRequestFailure = jest.spyOn(service as any, 'onRequestFailure')
+      mockFetch.mockResolvedValue(
+        new Response('ok', {
+          status: HttpStatus.OK,
+          headers: { 'content-type': 'text/plain' }
+        })
+      )
+      const mockRequest = new Request('https://hooks.example.com/services/x')
+
+      await expect(service.testRequest(mockRequest)).resolves.toBe('ok')
+      expect((service as any).catch).not.toHaveBeenCalled()
+      expect(onRequestFailure).not.toHaveBeenCalled()
+    })
+
+    it.each<[string, Error]>([
+      ['a plain throw', new SyntaxError('secret-host:5432')],
+      ['an ApiException', new BadRequestApiException('SECRET upstream text')]
+    ])(
+      'a readSuccessBody override that raises %s becomes the bounded 0005/503',
+      async (_title, thrown) => {
+        class ThrowingHttpService extends TestHttpService {
+          protected async readSuccessBody<T>(_response: Response): Promise<T> {
+            throw thrown
+          }
+        }
+        const service = new ThrowingHttpService()
+        const onRequestFailure = jest.spyOn(service as any, 'onRequestFailure')
+        mockFetch.mockResolvedValue(
+          new Response('ok', {
+            status: HttpStatus.OK,
+            headers: { 'content-type': 'text/plain' }
+          })
+        )
+        const request = new Request('https://hooks.example.com/services/x')
+
+        const error = await service.testRequest(request).then(
+          () => {
+            throw new Error('expected a rejection')
+          },
+          (e: unknown) => e as ServiceUnavailableApiException
+        )
+
+        expect(error).toBeInstanceOf(ServiceUnavailableApiException)
+        expect(error.code).toBe('0005')
+        expect(error.status).toBe(HttpStatus.SERVICE_UNAVAILABLE)
+        expect(error.message).not.toContain('secret-host')
+        expect(error.message).not.toContain('SECRET')
+        expect(error.cause).toBe(thrown)
+        expect(onRequestFailure).toHaveBeenCalledTimes(1)
+        expect(onRequestFailure).toHaveBeenCalledWith(request, thrown)
+      }
+    )
+
+    describe('request reads a 2xx body through readSuccessBody and nothing else', () => {
+      it.each<[string, () => Response, number, unknown]>([
+        [
+          '200 JSON',
+          () =>
+            new Response(JSON.stringify({ id: 'a1' }), {
+              status: HttpStatus.OK,
+              headers: { 'content-type': 'application/json' }
+            }),
+          1,
+          { id: 'a1' }
+        ],
+        [
+          '204 No Content',
+          () => new Response(null, { status: HttpStatus.NO_CONTENT }),
+          0,
+          {}
+        ],
+        [
+          '400 JSON error',
+          () =>
+            new Response(JSON.stringify({ code: '0001', message: 'bad' }), {
+              status: HttpStatus.BAD_REQUEST,
+              headers: { 'content-type': 'application/json' }
+            }),
+          0,
+          'throws'
+        ],
+        [
+          '400 text/plain error',
+          () =>
+            new Response('bad', {
+              status: HttpStatus.BAD_REQUEST,
+              headers: { 'content-type': 'text/plain' }
+            }),
+          0,
+          'throws'
+        ]
+      ])('%s', async (_title, makeResponse, readCount, expected) => {
+        const reads: Response[] = []
+        class RecordingHttpService extends TestHttpService {
+          protected async readSuccessBody<T>(response: Response): Promise<T> {
+            reads.push(response)
+            return super.readSuccessBody<T>(response)
+          }
+        }
+        const service = new RecordingHttpService()
+        const response = makeResponse()
+        mockFetch.mockResolvedValue(response)
+        const result = service.testRequest(
+          new Request('https://api.example.com/test')
+        )
+
+        if (expected === 'throws') {
+          await expect(result).rejects.toThrow(BadRequestApiException)
+        } else {
+          await expect(result).resolves.toEqual(expected)
+        }
+        expect(reads).toHaveLength(readCount)
+        if (readCount === 1) {
+          expect(reads[0]).toBe(response)
+        }
+      })
+    })
+
     it('should handle JSON error responses', async () => {
       mockResponse.ok = false
       mockResponse.status = HttpStatus.BAD_REQUEST
