@@ -235,6 +235,67 @@ describe('HttpService', () => {
       expect(error.message).not.toContain('not JSON at all')
     })
 
+    it('a transport that overrides readSuccessBody receives a text/plain 200 as text', async () => {
+      class TextSuccessHttpService extends TestHttpService {
+        protected async readSuccessBody<T>(response: Response): Promise<T> {
+          return (await response.text()) as T
+        }
+      }
+      const service = new TextSuccessHttpService()
+      const onRequestFailure = jest.spyOn(service as any, 'onRequestFailure')
+      mockFetch.mockResolvedValue(
+        new Response('ok', {
+          status: HttpStatus.OK,
+          headers: { 'content-type': 'text/plain' }
+        })
+      )
+      const mockRequest = new Request('https://hooks.example.com/services/x')
+
+      await expect(service.testRequest(mockRequest)).resolves.toBe('ok')
+      expect((service as any).catch).not.toHaveBeenCalled()
+      expect(onRequestFailure).not.toHaveBeenCalled()
+    })
+
+    it('request reads a 2xx body through readSuccessBody and nothing else', async () => {
+      const reads: Response[] = []
+      class RecordingHttpService extends TestHttpService {
+        protected async readSuccessBody<T>(response: Response): Promise<T> {
+          reads.push(response)
+          return super.readSuccessBody<T>(response)
+        }
+      }
+      const service = new RecordingHttpService()
+      const request = () => new Request('https://api.example.com/test')
+
+      const ok = new Response(JSON.stringify({ id: 'a1' }), {
+        status: HttpStatus.OK,
+        headers: { 'content-type': 'application/json' }
+      })
+      mockFetch.mockResolvedValue(ok)
+      await expect(service.testRequest(request())).resolves.toEqual({
+        id: 'a1'
+      })
+      expect(reads).toEqual([ok])
+
+      reads.length = 0
+      mockFetch.mockResolvedValue(
+        new Response(null, { status: HttpStatus.NO_CONTENT })
+      )
+      await expect(service.testRequest(request())).resolves.toEqual({})
+      expect(reads).toHaveLength(0)
+
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ code: '0001', message: 'bad' }), {
+          status: HttpStatus.BAD_REQUEST,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+      await expect(service.testRequest(request())).rejects.toThrow(
+        BadRequestApiException
+      )
+      expect(reads).toHaveLength(0)
+    })
+
     it('should handle JSON error responses', async () => {
       mockResponse.ok = false
       mockResponse.status = HttpStatus.BAD_REQUEST
