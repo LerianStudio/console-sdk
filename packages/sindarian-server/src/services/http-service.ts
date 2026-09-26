@@ -201,7 +201,8 @@ export abstract class HttpService {
   /**
    * Reads a failed response's body without letting it decide the status: empty
    * is `undefined`, a JSON object is that object, and anything else (HTML, a
-   * panic's text, a JSON scalar) is `{ text }` bounded at `ERROR_TEXT_MAX_LENGTH`.
+   * panic's text, a JSON scalar or array) is `{ text }` bounded at
+   * `ERROR_TEXT_MAX_LENGTH`.
    */
   private async readErrorBody(response: Response): Promise<unknown> {
     const rawText = await response.text()
