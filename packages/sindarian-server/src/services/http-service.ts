@@ -21,6 +21,7 @@ import {
 } from '@/exceptions/api-exception'
 import { logErrorLine } from '@/utils/error/log-error-line'
 import {
+  MESSAGE_MAX_LENGTH,
   noProblemDetails,
   PROBLEM_FIELD_MAX_LENGTH,
   toProblemMessage
@@ -85,15 +86,14 @@ export abstract class HttpService {
       ) {
         const body = await response.text()
 
-        // Under `text`, and bounded. It used to arrive as `message`, which is
-        // the key ten of the fifteen Console transports read and re-publish —
-        // into the browser, into an error log — so bounding only the thrown
-        // message left the leak open one frame up. Every `error?.message`
-        // reader now sees `undefined` and falls through to its own sentence;
-        // a transport that knows its upstream opts in by reading `text`.
-        await this.catch(request, response, {
-          text: body.slice(0, PROBLEM_FIELD_MAX_LENGTH)
-        })
+        // Under `text`, never `message`, bounded: an `error?.message` reader
+        // falls through to its own sentence, and a transport opts in to the
+        // body by reading `text`.
+        await this.catch(
+          request,
+          response,
+          body ? { text: body.slice(0, MESSAGE_MAX_LENGTH) } : undefined
+        )
 
         throw this.toApiException(
           response.status,
@@ -199,15 +199,10 @@ export abstract class HttpService {
   }
 
   /**
-   * Reads the body of a failed response without letting the body decide the
-   * status.
-   *
-   * `response.json()` throws on a bodiless 401/403 and on any non-JSON error
-   * page, and that throw used to escape the whole `request` block: the caller
-   * got a 503 "service unavailable" for what was really an expired token, and
-   * the upstream status was gone. Text first, parse second, and only an object
-   * survives — a scalar or unparseable body is dropped rather than handed on
-   * to be interpolated into an exception message.
+   * Reads a failed response's body without letting it decide the status: empty
+   * is `undefined`, a JSON object is that object, and anything else (HTML, a
+   * panic's text, a JSON scalar or array) is `{ text }` bounded at
+   * `MESSAGE_MAX_LENGTH`.
    */
   private async readErrorBody(response: Response): Promise<unknown> {
     const rawText = await response.text()
@@ -218,10 +213,19 @@ export abstract class HttpService {
 
     try {
       const parsed = JSON.parse(rawText)
-      return parsed !== null && typeof parsed === 'object' ? parsed : undefined
+
+      if (
+        parsed !== null &&
+        typeof parsed === 'object' &&
+        !Array.isArray(parsed)
+      ) {
+        return parsed
+      }
     } catch {
-      return undefined
+      // not JSON: handed on as text below
     }
+
+    return { text: rawText.slice(0, MESSAGE_MAX_LENGTH) }
   }
 
   protected async createRequest(
@@ -377,8 +381,8 @@ export abstract class HttpService {
    *
    * @param request The request that was sent
    * @param response The raw response received from the server
-   * @param error Parsed error response from the server; `{ text }` for a
-   * `text/plain` body, `undefined` when the response carried no JSON object
+   * @param error Parsed error response from the server: a JSON object as
+   * parsed, `{ text }` for any other body, `undefined` for an empty one
    */
   protected async catch(request: Request, response: Response, error: any) {
     // Handed over as a function, not as a value: this call sits inside
