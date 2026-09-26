@@ -1167,7 +1167,7 @@ describe('HttpService', () => {
       expect(service.lines.join('\n')).not.toContain('db-primary.internal')
     })
 
-    it('caps the text it hands over at 4096 characters', async () => {
+    it('caps the text it hands over at 2000 characters', async () => {
       mockFetch.mockResolvedValue(
         new Response('x'.repeat(100_000), {
           status: HttpStatus.BAD_GATEWAY,
@@ -1180,7 +1180,7 @@ describe('HttpService', () => {
         service.testRequest(new Request(upstream))
       ).rejects.toBeInstanceOf(ApiException)
 
-      expect((service.received as { text: string }).text).toHaveLength(4096)
+      expect((service.received as { text: string }).text).toHaveLength(2000)
     })
 
     it('hands the text over under a key no transport already reads', async () => {
@@ -1291,7 +1291,7 @@ describe('HttpService', () => {
       expect(service.received).toEqual({ text: '[{"code":"0009"}]' })
     })
 
-    it('cuts a non-JSON body at 4096 characters', async () => {
+    it('cuts a non-JSON body at 2000 characters', async () => {
       mockFetch.mockResolvedValue(
         new Response('y'.repeat(5000), {
           status: HttpStatus.BAD_GATEWAY,
@@ -1305,7 +1305,7 @@ describe('HttpService', () => {
       ).rejects.toBeInstanceOf(ApiException)
 
       expect(service.received).toEqual({
-        text: expect.stringMatching(/^y{4096}$/)
+        text: expect.stringMatching(/^y{2000}$/)
       })
     })
 

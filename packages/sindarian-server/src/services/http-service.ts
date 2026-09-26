@@ -21,7 +21,7 @@ import {
 } from '@/exceptions/api-exception'
 import { logErrorLine } from '@/utils/error/log-error-line'
 import {
-  ERROR_TEXT_MAX_LENGTH,
+  MESSAGE_MAX_LENGTH,
   noProblemDetails,
   PROBLEM_FIELD_MAX_LENGTH,
   toProblemMessage
@@ -92,7 +92,7 @@ export abstract class HttpService {
         await this.catch(
           request,
           response,
-          body ? { text: body.slice(0, ERROR_TEXT_MAX_LENGTH) } : undefined
+          body ? { text: body.slice(0, MESSAGE_MAX_LENGTH) } : undefined
         )
 
         throw this.toApiException(
@@ -202,7 +202,7 @@ export abstract class HttpService {
    * Reads a failed response's body without letting it decide the status: empty
    * is `undefined`, a JSON object is that object, and anything else (HTML, a
    * panic's text, a JSON scalar or array) is `{ text }` bounded at
-   * `ERROR_TEXT_MAX_LENGTH`.
+   * `MESSAGE_MAX_LENGTH`.
    */
   private async readErrorBody(response: Response): Promise<unknown> {
     const rawText = await response.text()
@@ -225,7 +225,7 @@ export abstract class HttpService {
       // not JSON: handed on as text below
     }
 
-    return { text: rawText.slice(0, ERROR_TEXT_MAX_LENGTH) }
+    return { text: rawText.slice(0, MESSAGE_MAX_LENGTH) }
   }
 
   protected async createRequest(

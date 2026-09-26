@@ -45,7 +45,6 @@ export { FetchModuleOptions, HttpService } from './services/http-service'
 // it must not have to reinvent — a copy of it drifts from this one silently,
 // and the frame that spends it is the last one before a body.
 export {
-  ERROR_TEXT_MAX_LENGTH,
   MESSAGE_MAX_LENGTH,
   PROBLEM_FIELD_MAX_LENGTH,
   noProblemDetails,

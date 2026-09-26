@@ -25,7 +25,6 @@ describe('package entry point', () => {
     'HttpService',
     'toProblemMessage',
     'PROBLEM_FIELD_MAX_LENGTH',
-    'ERROR_TEXT_MAX_LENGTH',
     'MESSAGE_MAX_LENGTH',
     'readWireField',
     'RouteHandler',
@@ -40,7 +39,6 @@ describe('package entry point', () => {
 
   it('exports the bounds an override is told to respect', () => {
     expect(barrel.PROBLEM_FIELD_MAX_LENGTH).toBe(200)
-    expect(barrel.ERROR_TEXT_MAX_LENGTH).toBe(4096)
     expect(barrel.MESSAGE_MAX_LENGTH).toBe(2000)
   })
 

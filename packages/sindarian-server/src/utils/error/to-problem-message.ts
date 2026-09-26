@@ -10,9 +10,6 @@ import { HttpStatus } from '@/constants/http-status'
  */
 export const PROBLEM_FIELD_MAX_LENGTH = 200
 
-/** Longest non-JSON error body a transport's `catch` receives as `{ text }`. */
-export const ERROR_TEXT_MAX_LENGTH = 4096
-
 /**
  * Ceiling on a message handed in as a plain string.
  *
