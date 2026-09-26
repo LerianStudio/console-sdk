@@ -1,3 +1,11 @@
+## [2.0.0-beta.9](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.8...sindarian-server-v2.0.0-beta.9) (2026-09-26)
+
+
+### Bug Fixes
+
+* **sindarian-server:** hand a non-JSON error body to catch as text ([14c0817](https://github.com/LerianStudio/console-sdk/commit/14c081734abf6de2e910e210226d876e1886940e))
+* **sindarian-server:** hand an array body on as text, an empty text as none ([04728a3](https://github.com/LerianStudio/console-sdk/commit/04728a38a895ef1e4d6ff479cd1feffc646ed823))
+
 ## [2.0.0-beta.8](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.7...sindarian-server-v2.0.0-beta.8) (2026-09-23)
 
 
