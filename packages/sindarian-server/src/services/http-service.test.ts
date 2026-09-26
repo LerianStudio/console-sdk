@@ -952,7 +952,7 @@ describe('HttpService', () => {
       })
     })
 
-    it('drops a JSON scalar body instead of quoting it', async () => {
+    it('keeps a JSON scalar body out of the thrown message', async () => {
       // A body that parses as JSON but is not an object carries no problem
       // details, and quoting it put the upstream's free text — here a taxpayer
       // id — into the message the browser is handed.
@@ -976,7 +976,7 @@ describe('HttpService', () => {
       expect(httpService.catch).toHaveBeenCalledWith(
         mockRequest,
         expect.any(Response),
-        undefined
+        { text: '"Token expired for cpf 123.456.789-00"' }
       )
     })
 
@@ -1167,7 +1167,7 @@ describe('HttpService', () => {
       expect(service.lines.join('\n')).not.toContain('db-primary.internal')
     })
 
-    it('caps the text it hands over at 200 characters', async () => {
+    it('caps the text it hands over at 4096 characters', async () => {
       mockFetch.mockResolvedValue(
         new Response('x'.repeat(100_000), {
           status: HttpStatus.BAD_GATEWAY,
@@ -1180,7 +1180,7 @@ describe('HttpService', () => {
         service.testRequest(new Request(upstream))
       ).rejects.toBeInstanceOf(ApiException)
 
-      expect((service.received as { text: string }).text).toHaveLength(200)
+      expect((service.received as { text: string }).text).toHaveLength(4096)
     })
 
     it('hands the text over under a key no transport already reads', async () => {
@@ -1205,7 +1205,7 @@ describe('HttpService', () => {
     // receive the bounded `{ text }`, not whatever the JSON reader made of it.
     it('recognises a plain-text failure whatever the case of its media type', async () => {
       mockFetch.mockResolvedValue(
-        new Response('upstream is down', {
+        new Response('{"title":"upstream is down"}', {
           status: HttpStatus.SERVICE_UNAVAILABLE,
           headers: { 'content-type': 'Text/Plain; charset=UTF-8' }
         })
@@ -1216,7 +1216,114 @@ describe('HttpService', () => {
         service.testRequest(new Request(upstream))
       ).rejects.toBeInstanceOf(ServiceUnavailableApiException)
 
-      expect(service.received).toEqual({ text: 'upstream is down' })
+      expect(service.received).toEqual({ text: '{"title":"upstream is down"}' })
+    })
+
+    it('hands a text/plain body of 300 characters over whole', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('p'.repeat(300), {
+          status: HttpStatus.BAD_GATEWAY,
+          headers: { 'content-type': 'text/plain' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(ApiException)
+
+      expect(service.received).toEqual({ text: 'p'.repeat(300) })
+    })
+
+    // The operator reads whatever the upstream answered: a proxy's HTML error
+    // page and a panic's plain text included. It still never becomes the
+    // thrown sentence.
+    it('hands an HTML error page over as text', async () => {
+      const html = '<html><body>502 Bad Gateway - nginx</body></html>'
+      mockFetch.mockResolvedValue(
+        new Response(html, {
+          status: HttpStatus.BAD_GATEWAY,
+          headers: { 'content-type': 'text/html' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      const error = await service
+        .testRequest(new Request(upstream))
+        .catch((thrown) => thrown)
+
+      expect(service.received).toEqual({ text: html })
+      expect(error).toBeInstanceOf(ServiceUnavailableApiException)
+      expect(error.message).toBe(
+        'Upstream error body carried no problem details (status 502)'
+      )
+    })
+
+    it('hands a JSON scalar body over as its raw text', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('"not found"', {
+          status: HttpStatus.NOT_FOUND,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(NotFoundApiException)
+
+      expect(service.received).toEqual({ text: '"not found"' })
+    })
+
+    it('cuts a non-JSON body at 4096 characters', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('y'.repeat(5000), {
+          status: HttpStatus.BAD_GATEWAY,
+          headers: { 'content-type': 'text/html' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(ApiException)
+
+      expect(service.received).toEqual({
+        text: expect.stringMatching(/^y{4096}$/)
+      })
+    })
+
+    it('hands an empty body over as undefined', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('', {
+          status: HttpStatus.UNAUTHORIZED,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(UnauthorizedApiException)
+
+      expect(service.received).toBeUndefined()
+    })
+
+    it('hands a JSON object body over as the object', async () => {
+      const problem = { title: 'Conflict', code: 'ALREADY_EXISTS' }
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify(problem), {
+          status: HttpStatus.CONFLICT,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(ApiException)
+
+      expect(service.received).toEqual(problem)
     })
   })
 
