@@ -89,9 +89,11 @@ export abstract class HttpService {
         // Under `text`, never `message`, bounded: an `error?.message` reader
         // falls through to its own sentence, and a transport opts in to the
         // body by reading `text`.
-        await this.catch(request, response, {
-          text: body.slice(0, ERROR_TEXT_MAX_LENGTH)
-        })
+        await this.catch(
+          request,
+          response,
+          body ? { text: body.slice(0, ERROR_TEXT_MAX_LENGTH) } : undefined
+        )
 
         throw this.toApiException(
           response.status,
@@ -211,7 +213,11 @@ export abstract class HttpService {
     try {
       const parsed = JSON.parse(rawText)
 
-      if (parsed !== null && typeof parsed === 'object') {
+      if (
+        parsed !== null &&
+        typeof parsed === 'object' &&
+        !Array.isArray(parsed)
+      ) {
         return parsed
       }
     } catch {

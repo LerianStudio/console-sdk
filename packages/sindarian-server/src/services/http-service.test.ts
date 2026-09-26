@@ -1275,6 +1275,22 @@ describe('HttpService', () => {
       expect(service.received).toEqual({ text: '"not found"' })
     })
 
+    it('hands a JSON array body over as its raw text', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('[{"code":"0009"}]', {
+          status: HttpStatus.NOT_FOUND,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(NotFoundApiException)
+
+      expect(service.received).toEqual({ text: '[{"code":"0009"}]' })
+    })
+
     it('cuts a non-JSON body at 4096 characters', async () => {
       mockFetch.mockResolvedValue(
         new Response('y'.repeat(5000), {
@@ -1305,6 +1321,22 @@ describe('HttpService', () => {
       await expect(
         service.testRequest(new Request(upstream))
       ).rejects.toBeInstanceOf(UnauthorizedApiException)
+
+      expect(service.received).toBeUndefined()
+    })
+
+    it('hands an empty text/plain body over as undefined', async () => {
+      mockFetch.mockResolvedValue(
+        new Response('', {
+          status: HttpStatus.BAD_GATEWAY,
+          headers: { 'content-type': 'text/plain' }
+        })
+      )
+      const service = new CapturingHttpService()
+
+      await expect(
+        service.testRequest(new Request(upstream))
+      ).rejects.toBeInstanceOf(ApiException)
 
       expect(service.received).toBeUndefined()
     })
