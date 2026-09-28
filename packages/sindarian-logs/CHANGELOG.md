@@ -1,3 +1,146 @@
+## [2.0.0-beta.6](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v2.0.0-beta.5...sindarian-logs-v2.0.0-beta.6) (2026-09-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ui:** NameTableCellProps is a three-arm union. An interactive cell
+(onClick present) whose name is not a string must pass buttonLabel, which
+becomes the aria-label of the button. A string name or a handler-less cell
+is unchanged. Console call sites that will need buttonLabel when the sdk-adopt
+lane deletes the console fork are listed in the PR.
+* **sindarian-server:** a method-level `@UseGuards` on a controller whose class
+also carries `@UseGuards` used to be discarded, and the class guard ran
+twice. The method guard now runs after the class guard, so a route that
+passed on the class guard alone has to pass its own guard as well, and a
+guard written to tolerate being called twice per request is now called
+once. A method-level guard must also be bound in the module, as a class
+guard already had to be.
+
+Plan 2026-09-21-console-simplification C9.
+* **sindarian-server:** a method-level `@UsePipes` on a controller whose class
+also carries `@UsePipes` used to be discarded and never ran. It now runs,
+after the class-level pipe, so a transforming pipe declared on the method
+replaces what the handler receives.
+* **sindarian-server:** a pipe now receives the declared type of every argument, not
+only of `@Body()`. An application that arms `@UsePipes` with a validating pipe
+starts parsing its `@Query()`, `@Param()` and `@Request()` arguments for the
+first time. Two consequences are visible on the wire: a value the schema
+refuses is now refused, where before it passed through untouched; and a value
+the schema accepts is replaced by the parse output, so keys the schema does not
+declare are dropped from what the handler receives.
+* **sindarian-server:** an unexpected error, meaning anything a route threw that
+this library does not model, no longer carries the thrown value's own text
+in `message`. Every shape answers the same body, `500 {"message":"Internal
+server error","code":"0004"}`, and the real text goes to the operator log
+at error level. Do not branch on that message text, and do not re-point
+the branch at the status or the code: both are constants for every
+unexpected error alike, so a retry keyed on them would fire on a
+deterministic bug as readily as on a timeout. The discriminator now lives
+only in the log. Typed exceptions are unchanged: a 401, a 404 and a 400
+validation failure still carry the sentence this library wrote for them,
+unchanged to the byte.
+
+### Features
+
+* **sindarian-server:** export the argument and pipe handlers ([48cdb5f](https://github.com/LerianStudio/console-sdk/commit/48cdb5f8cf767df821a617e17f0b95dfefc6fe50))
+* **sindarian-server:** let a transport read its own success body ([a385d91](https://github.com/LerianStudio/console-sdk/commit/a385d9170419df889267ed76c8ee1bcbde2ddb7b))
+* **sindarian-server:** redact an unexpected error's text ([c29bc99](https://github.com/LerianStudio/console-sdk/commit/c29bc997548d3cb48e3d644fdedee70064bb1c63))
+* **sindarian-server:** resolve a route param from the matched route ([2577615](https://github.com/LerianStudio/console-sdk/commit/2577615662410088519ca6e2e15b9792cffcaaf7))
+* **sindarian-server:** return the captures urlMatch already computes ([41a67f1](https://github.com/LerianStudio/console-sdk/commit/41a67f190c646220ad89f28864b849b47662747a))
+* **sindarian-ui:** keep a destructive toast up until it is dismissed ([45e5bbd](https://github.com/LerianStudio/console-sdk/commit/45e5bbdbbc874f2436dc688283a92f2a0c0e8147)), closes [#101](https://github.com/LerianStudio/console-sdk/issues/101)
+* **sindarian-ui:** let a column align, dress and own its table cell ([2556dfa](https://github.com/LerianStudio/console-sdk/commit/2556dfad3453ef4ed3460b65d0eee756f9abe9eb))
+* **sindarian-ui:** let a page container afford a phone ([b16d3e7](https://github.com/LerianStudio/console-sdk/commit/b16d3e7f67d42f1f079ae9e8231b1005b05e136c))
+* **sindarian-ui:** let a page hide a table column from outside ([100ce2a](https://github.com/LerianStudio/console-sdk/commit/100ce2a9d9e2d5d919b2047915f138ad864bcf5e))
+* **sindarian-ui:** let SelectField carry a leading icon in its trigger ([cc28ec7](https://github.com/LerianStudio/console-sdk/commit/cc28ec74efd53101e2f75fff2011bc3449808ef9))
+* **sindarian-ui:** localize copy-field and add mono and description ([6881d28](https://github.com/LerianStudio/console-sdk/commit/6881d28f600e7f6ca0e74bbc1549ae04c4c52394))
+* **sindarian-ui:** publish useTime and useClickAway from the barrel ([c123ce7](https://github.com/LerianStudio/console-sdk/commit/c123ce7d40fa58e7d859e49e116c902ca3121993))
+* **sindarian-ui:** reach the toast lifetime and collapse repeats ([0ea7ea1](https://github.com/LerianStudio/console-sdk/commit/0ea7ea18df2048f7847ced97f89a2c31fdae0ad9))
+
+
+### Bug Fixes
+
+* **sindarian-logs:** log a refusal below 500 at warn, not error ([0c90533](https://github.com/LerianStudio/console-sdk/commit/0c9053347523c11989d8c19b1303794bbca93f66))
+* **sindarian-server:** announce a record that serialises to nothing ([9a9e11a](https://github.com/LerianStudio/console-sdk/commit/9a9e11a7f91cb78b0abc763248dfd97ff7c7e639))
+* **sindarian-server:** answer a status no response can carry ([547f176](https://github.com/LerianStudio/console-sdk/commit/547f17608b84d4523d3b5201986f3d9a84dc47fe))
+* **sindarian-server:** bound and guard a mutated exception message ([a58ff52](https://github.com/LerianStudio/console-sdk/commit/a58ff52a3f1d8e61886807a961df43816c79aebf))
+* **sindarian-server:** bound every throw a success-body reader raises ([224138c](https://github.com/LerianStudio/console-sdk/commit/224138cbe3024e1a70741093b431c802600a59a0))
+* **sindarian-server:** bound record keys at any depth ([31c9fd5](https://github.com/LerianStudio/console-sdk/commit/31c9fd533f00f78497adace3f5afe45c66ec4240))
+* **sindarian-server:** bound the operator log and keep every field ([4e2b1fe](https://github.com/LerianStudio/console-sdk/commit/4e2b1fe38d9ab64ea64c586e5a287f35811886b2))
+* **sindarian-server:** build the log record inside the write guard ([0ea9582](https://github.com/LerianStudio/console-sdk/commit/0ea9582a69f001e695c92a989d6f782ddbf37465))
+* **sindarian-server:** count a cut key's mark in digits ([c5ee916](https://github.com/LerianStudio/console-sdk/commit/c5ee91630d0bb3b4a868f375f41f76c442447b16))
+* **sindarian-server:** declare route metadata absent where it can be absent ([c454a81](https://github.com/LerianStudio/console-sdk/commit/c454a8135e977ebb8699ff1341e86aabeda4ac38))
+* **sindarian-server:** export readWireField beside its siblings ([7e51893](https://github.com/LerianStudio/console-sdk/commit/7e51893ec82582d5c98ed360f3d5891119d9ee6d)), closes [#196](https://github.com/LerianStudio/console-sdk/issues/196) [#196](https://github.com/LerianStudio/console-sdk/issues/196)
+* **sindarian-server:** export the fallback sentence beside its readers ([7ff938c](https://github.com/LerianStudio/console-sdk/commit/7ff938c62b24999c131758fbbf6c18d8f1520666))
+* **sindarian-server:** export the two exception readers ([ecfb7eb](https://github.com/LerianStudio/console-sdk/commit/ecfb7ebd5c00df2d2951789a77cda59463b7b40f))
+* **sindarian-server:** give every error body a string message ([79e4853](https://github.com/LerianStudio/console-sdk/commit/79e4853fe6e5caf104758312bf80a985148d5266))
+* **sindarian-server:** guard the message the base class answers ([f82cc22](https://github.com/LerianStudio/console-sdk/commit/f82cc2283014df3df88d2afd1b2d36f7a2385bf2))
+* **sindarian-server:** guard the metadata a typed exception answers ([c59ccb4](https://github.com/LerianStudio/console-sdk/commit/c59ccb4bdc2fefbfa24b0fe6c1da9278af516fcb))
+* **sindarian-server:** hand a non-JSON error body to catch as text ([14c0817](https://github.com/LerianStudio/console-sdk/commit/14c081734abf6de2e910e210226d876e1886940e))
+* **sindarian-server:** hand an array body on as text, an empty text as none ([04728a3](https://github.com/LerianStudio/console-sdk/commit/04728a38a895ef1e4d6ff479cd1feffc646ed823))
+* **sindarian-server:** keep a message a sentence, a code a primitive ([49dee40](https://github.com/LerianStudio/console-sdk/commit/49dee404ceae2592be8c4894124af77bb09a7a1b))
+* **sindarian-server:** keep a typed exception's message a string ([2f8936e](https://github.com/LerianStudio/console-sdk/commit/2f8936ea41a9d7c85476d24b5fa1d02b3976a356))
+* **sindarian-server:** keep every field when a key is cut ([d0683c6](https://github.com/LerianStudio/console-sdk/commit/d0683c64a21892ed5ce8fc561a0b646caea06c5c))
+* **sindarian-server:** metadata never replaces the named fields ([63636f6](https://github.com/LerianStudio/console-sdk/commit/63636f65a1e562f8a0ccb5780f3f48aa49e571a8))
+* **sindarian-server:** name what a record builder threw ([c4543ef](https://github.com/LerianStudio/console-sdk/commit/c4543ef95302e8727df8a9d24fbd845ac34b3a8c))
+* **sindarian-server:** never let the log line cost the response ([4677bd4](https://github.com/LerianStudio/console-sdk/commit/4677bd4a23adb071099b2ca3d27f157116869b57))
+* **sindarian-server:** read a record's keys without its values ([179d6df](https://github.com/LerianStudio/console-sdk/commit/179d6dfa02bbd7e2113d1339ca52a7973e65be18))
+* **sindarian-server:** read every field a route wrote exactly once ([b49c3d7](https://github.com/LerianStudio/console-sdk/commit/b49c3d770fbfd10fa8e8c64637b141e1e4b2ddb3))
+* **sindarian-server:** read route metadata from the prototype it was written to ([a176226](https://github.com/LerianStudio/console-sdk/commit/a1762264f22ec4c84a0823246c6c1b37a8b1d7cf))
+* **sindarian-server:** read the code and title a route wrote ([615eb5e](https://github.com/LerianStudio/console-sdk/commit/615eb5e69c52802029dc60f40dae492616b38684))
+* **sindarian-server:** redact every unexpected error, not only an Error ([487319b](https://github.com/LerianStudio/console-sdk/commit/487319b63c1e6d227e8e4ca7a5f3fdad61ca7e60))
+* **sindarian-server:** refuse a route capture that cannot be decoded ([04ff21d](https://github.com/LerianStudio/console-sdk/commit/04ff21dada96a7fd3278b97cc0642b294dd08d7c))
+* **sindarian-server:** refuse a status that carries no body ([798bc6c](https://github.com/LerianStudio/console-sdk/commit/798bc6c35caf88b2efe0648bbca58ea0d9607b08))
+* **sindarian-server:** resolve a class-level pipe once per method ([3149eb1](https://github.com/LerianStudio/console-sdk/commit/3149eb196f93502a209eb20c2eb251d151008a34))
+* **sindarian-server:** resolve route metadata from a controller class ([4f629c1](https://github.com/LerianStudio/console-sdk/commit/4f629c1ee5d50bcec0d5b4d4b28980528e8b775d))
+* **sindarian-server:** run a method-level guard under a class-level one ([ea7f0c5](https://github.com/LerianStudio/console-sdk/commit/ea7f0c5017d2aaad225d698d3dc12496aa1adb51))
+* **sindarian-server:** write every failure log on one line ([2bc0c56](https://github.com/LerianStudio/console-sdk/commit/2bc0c56e6b9ee359ac361532ea7fabea0143ffb4))
+* **sindarian-server:** write one failure as one log line ([b878660](https://github.com/LerianStudio/console-sdk/commit/b8786601b59cb04a4d2a8cbd9fe4bd3037093ba1))
+* **sindarian-ui:** announce a failed copy as an error, not a success ([758988d](https://github.com/LerianStudio/console-sdk/commit/758988db43bd120a6cf5bcddb075232570d890bb))
+* **sindarian-ui:** announce an href-less breadcrumb ancestor as plain text ([576856c](https://github.com/LerianStudio/console-sdk/commit/576856cf8c2c4eb73f014374ebef6e68502e319f))
+* **sindarian-ui:** clamp the id cell truncation lengths ([638c574](https://github.com/LerianStudio/console-sdk/commit/638c5749ab11336499a7216b52306c789c886e26))
+* **sindarian-ui:** close the sidebar drawer when a link is activated ([f7608b3](https://github.com/LerianStudio/console-sdk/commit/f7608b3915a7b77bc51be2bcd49c7a49b0942799))
+* **sindarian-ui:** copy an id from a named button a keyboard can reach ([bb9da4e](https://github.com/LerianStudio/console-sdk/commit/bb9da4e7a8e46e11c5f806a986b46b5283f4fa49))
+* **sindarian-ui:** do not lift a variant-scoped width override ([fe8e7d6](https://github.com/LerianStudio/console-sdk/commit/fe8e7d6f0df9978c8b279a20aff730f640a2aa84))
+* **sindarian-ui:** drop aria-pressed from the two toggles that flip their name ([cefa73e](https://github.com/LerianStudio/console-sdk/commit/cefa73e8cdb1e643ec0823f219bf0c5f90e1bec2))
+* **sindarian-ui:** drop the trailing separator from the breadcrumb story ([573eb07](https://github.com/LerianStudio/console-sdk/commit/573eb074975da42562166f3d4d8027ab35030188))
+* **sindarian-ui:** end the breadcrumb trail at the current page ([bef9d0e](https://github.com/LerianStudio/console-sdk/commit/bef9d0e9e56241ea3157140b2c503abb6abd7c5f))
+* **sindarian-ui:** explain a locked row to a keyboard, and export the cell ([78d2f7a](https://github.com/LerianStudio/console-sdk/commit/78d2f7aa70ef3f56908ca33b147abaeacce79a2a))
+* **sindarian-ui:** forward the visibility updater only when a page passes one ([a6856a2](https://github.com/LerianStudio/console-sdk/commit/a6856a28276422cf910bd07bacee736159a75482))
+* **sindarian-ui:** give the sheet a phone width and padding ([e9b1211](https://github.com/LerianStudio/console-sdk/commit/e9b121196d26b60dfecfda60d04c19c92aeb243a))
+* **sindarian-ui:** give the sheet close button a focus ring ([a062c93](https://github.com/LerianStudio/console-sdk/commit/a062c935dfb68ad2b62987e6d2fef148623df490))
+* **sindarian-ui:** give the sidebar a drawer below 768px ([d1ecce7](https://github.com/LerianStudio/console-sdk/commit/d1ecce72b1b29213b236b7e124bcc3d1f32ea1b9))
+* **sindarian-ui:** give the small icon button a 2.5rem tap target ([f81954b](https://github.com/LerianStudio/console-sdk/commit/f81954bfa41e9eb614452b3a37b3439a4a12a8c9))
+* **sindarian-ui:** hide the sidebar trigger at the drawer's own pixel ([9666b81](https://github.com/LerianStudio/console-sdk/commit/9666b8163c0edf4ea16dc75d896d950bc3635e72))
+* **sindarian-ui:** keep a leading icon beside the selected value ([38791c4](https://github.com/LerianStudio/console-sdk/commit/38791c423b8a1f64dfc04278409f3985615adb54))
+* **sindarian-ui:** keep a table's own column visibility when nobody controls it ([a9bbc22](https://github.com/LerianStudio/console-sdk/commit/a9bbc2262b0cb8538cba99fb35950c3af678804e))
+* **sindarian-ui:** keep focus in the navigation when the viewport grows ([0f18d8f](https://github.com/LerianStudio/console-sdk/commit/0f18d8f797a449e8b0f016081b8099170cf011a8))
+* **sindarian-ui:** keep the drawer's own id ahead of a caller's ([b9f8c27](https://github.com/LerianStudio/console-sdk/commit/b9f8c278a5442716cabfaf77847697e3688f42ce))
+* **sindarian-ui:** keep the input's width; callers use min-w-0 ([a01108f](https://github.com/LerianStudio/console-sdk/commit/a01108f6263c1ba9660c71b7765b50a927879977))
+* **sindarian-ui:** let an input shrink inside a narrow flex row ([e245fd9](https://github.com/LerianStudio/console-sdk/commit/e245fd96db21af15d2dbadbbee61041d974ef4b8))
+* **sindarian-ui:** make the destructive toast key unambiguous ([d07324f](https://github.com/LerianStudio/console-sdk/commit/d07324f0b590717e4197a95f28390a514094fc53)), closes [#205](https://github.com/LerianStudio/console-sdk/issues/205)
+* **sindarian-ui:** make the id copy button reachable by touch ([f36363d](https://github.com/LerianStudio/console-sdk/commit/f36363dfe14f18630fe1d7770ff7ae7affbf12c1))
+* **sindarian-ui:** make the sidebar mobile drawer opt-in ([eb116bf](https://github.com/LerianStudio/console-sdk/commit/eb116bff679f16b6c190d8c6ed36f705a441770c))
+* **sindarian-ui:** move a width override onto the portalled drawer ([c552a5b](https://github.com/LerianStudio/console-sdk/commit/c552a5ba11150fca5897c7da82407d57bf0eb025))
+* **sindarian-ui:** move the theme-blind grey inks to semantic tokens ([ab6ea5a](https://github.com/LerianStudio/console-sdk/commit/ab6ea5a92d4b942a40fa380ddef55467d1ae4015))
+* **sindarian-ui:** name every autocomplete part ([ec8e818](https://github.com/LerianStudio/console-sdk/commit/ec8e81819e92142c9ea77dc9c2d2c722b07416e8))
+* **sindarian-ui:** name the entity box collapsible trigger ([c2159d2](https://github.com/LerianStudio/console-sdk/commit/c2159d25f5a3cf53fbe1d9f2157b9243a992aa1c))
+* **sindarian-ui:** name the password visibility toggle ([fc5d7b4](https://github.com/LerianStudio/console-sdk/commit/fc5d7b410ae9af3749e5d2a9682cb6991194e47d))
+* **sindarian-ui:** open a record from a named button in the name cell ([19519d2](https://github.com/LerianStudio/console-sdk/commit/19519d26f0befc0873783c6106a012a729c4dde5))
+* **sindarian-ui:** open the responsive stories at the mobile viewport ([796a581](https://github.com/LerianStudio/console-sdk/commit/796a581ddf2e54f16dc385971480394f0c085a59))
+* **sindarian-ui:** qualify where the control still overruns its box ([8294d54](https://github.com/LerianStudio/console-sdk/commit/8294d541fd77689667c6c3ef21bcb9cd38489489))
+* **sindarian-ui:** restore the toast title weight ([ea36d3a](https://github.com/LerianStudio/console-sdk/commit/ea36d3a3e0737f58bb43106ebb0258a3739c07d2))
+* **sindarian-ui:** return focus after the sidebar drawer closes ([3cee92c](https://github.com/LerianStudio/console-sdk/commit/3cee92c15b2ac2b5f2ea5982755552e0861ba0d6))
+* **sindarian-ui:** say which half of an own-cell column the table still styles ([e222a0a](https://github.com/LerianStudio/console-sdk/commit/e222a0a184e85e8db0cad04890b427badc4baa4c))
+* **sindarian-ui:** scope the rail's focus-restore id to drawer mode ([1d4ad98](https://github.com/LerianStudio/console-sdk/commit/1d4ad98fe5d166245a4efe5f026bea6387c463a4))
+* **sindarian-ui:** squeeze NumberInput from the field, not the steppers ([fae14c0](https://github.com/LerianStudio/console-sdk/commit/fae14c08bfce4021737e89b7a9f4bc9576f6b5f9))
+* **sindarian-ui:** state the drawer query as an exact complement ([40da586](https://github.com/LerianStudio/console-sdk/commit/40da5867dcda39eec1817d79555029d9685715c4))
+* **sindarian-ui:** stop the drawer arming rail width rules ([fb618b4](https://github.com/LerianStudio/console-sdk/commit/fb618b494ce55f6dbe93c46c8c8355fce3d5a73f))
+* **sindarian-ui:** tint toast surfaces per family ([07da0dc](https://github.com/LerianStudio/console-sdk/commit/07da0dc55e6f23beb40e249c3e01ad7deece9998))
+* **sindarian-ui:** truncate table ids in the middle ([7d39389](https://github.com/LerianStudio/console-sdk/commit/7d393896bae3bfea14ff1010f6c5da49613a8f92))
+* **ui:** drop the handler rather than render a name cell button announcing "" ([12a7cc6](https://github.com/LerianStudio/console-sdk/commit/12a7cc6c0e9af89646fe62d16bd59eddda7f8282))
+* **ui:** require an accessible name on an interactive name cell ([607ca15](https://github.com/LerianStudio/console-sdk/commit/607ca159ed7a1dd289a9931ed8d9df4b10e1621a))
+* **ui:** stop a locked row action from opening the record it refuses to change ([565462c](https://github.com/LerianStudio/console-sdk/commit/565462cbe68ed78d738192e2021cce85b451be2e))
+
 ## [2.0.0-beta.5](https://github.com/LerianStudio/console-sdk/compare/sindarian-logs-v2.0.0-beta.4...sindarian-logs-v2.0.0-beta.5) (2026-09-15)
 
 
