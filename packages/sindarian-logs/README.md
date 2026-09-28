@@ -135,6 +135,8 @@ export class ExternalApiService extends LoggableHttpService {
 }
 ```
 
+The level follows the upstream status: a success at `info`, a refusal below 500 at `warn`, and a 5xx or a failure with no status at `error`.
+
 ### Silencing a noisy route
 
 Some routes carry no information per hit and arrive a great many times: a CSP

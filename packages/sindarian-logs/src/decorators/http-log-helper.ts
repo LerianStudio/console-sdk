@@ -22,6 +22,14 @@ function destination(url: string): string {
 }
 
 /**
+ * A refusal below 500 (a missing record, a tenant with no subscription) is an
+ * answer, not a failure. A 5xx, or a failure with no status, is an error.
+ */
+function refusalLevel(status: unknown): 'warn' | 'error' {
+  return typeof status === 'number' && status < 500 ? 'warn' : 'error'
+}
+
+/**
  * Shared logging logic for HTTP service hooks.
  * Used by both @LogHttpCall() decorator and LoggableHttpService.
  */
@@ -43,23 +51,16 @@ export function logHttpEvent(
     const request = args[0] as Request
     const response = args[1] as Response
 
-    if (response.ok) {
-      logger.info(
-        operation,
-        `${request.method} ${destination(request.url)} → ${response.status}`
-      )
-    } else {
-      logger.error(
-        operation,
-        `${request.method} ${destination(request.url)} → ${response.status}`
-      )
-    }
+    logger[response.ok ? 'info' : refusalLevel(response.status)](
+      operation,
+      `${request.method} ${destination(request.url)} → ${response.status}`
+    )
     return
   }
 
   if (methodName === 'catch') {
     const request = args[0] as Request
-    const response = args[1] as Response
+    const response = args[1] as Response | undefined
     const error = args[2] as { message?: string; code?: string } | undefined
 
     // The vendor's own words, or failing that its own identifier, and nothing
@@ -81,9 +82,9 @@ export function logHttpEvent(
     // precisely because it is unbounded, unstructured prose from the vendor.
     const detail = error?.message || error?.code
 
-    logger.error(
+    logger[refusalLevel(response?.status)](
       operation,
-      `${request.method} ${destination(request.url)} → ${response.status}` +
+      `${request.method} ${destination(request.url)} → ${response?.status}` +
         (detail ? `: ${detail}` : '')
     )
   }
