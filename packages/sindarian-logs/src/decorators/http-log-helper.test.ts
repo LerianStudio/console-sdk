@@ -82,7 +82,83 @@ describe('logHttpEvent', () => {
       ])
 
       expect(mockLogger.info).not.toHaveBeenCalled()
+      expect(mockLogger.warn).not.toHaveBeenCalled()
       expect(mockLogger.error).not.toHaveBeenCalled()
+    })
+  })
+
+  // An upstream refusal below 500 (a missing record, a tenant with no
+  // subscription) is an answer, not a failure, and must not page an operator.
+  describe('level follows status', () => {
+    const request = () =>
+      new Request('https://api.example.com/billing', { method: 'GET' })
+
+    it('writes a 404 answer at warn, not error', () => {
+      logHttpEvent(mockLogger as any, 'BillingService', 'onAfterFetch', [
+        request(),
+        new Response(null, { status: 404 })
+      ])
+
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'BillingService.onAfterFetch',
+        'GET https://api.example.com/billing → 404'
+      )
+      expect(mockLogger.error).not.toHaveBeenCalled()
+    })
+
+    it('writes a 503 answer at error', () => {
+      logHttpEvent(mockLogger as any, 'BillingService', 'onAfterFetch', [
+        request(),
+        new Response(null, { status: 503 })
+      ])
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'BillingService.onAfterFetch',
+        'GET https://api.example.com/billing → 503'
+      )
+      expect(mockLogger.warn).not.toHaveBeenCalled()
+    })
+
+    it('writes a 402 refusal at warn, not error', () => {
+      logHttpEvent(mockLogger as any, 'BillingService', 'catch', [
+        request(),
+        new Response(null, { status: 402 }),
+        { code: 'NO_SUBSCRIPTION' }
+      ])
+
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'BillingService.catch',
+        'GET https://api.example.com/billing → 402: NO_SUBSCRIPTION'
+      )
+      expect(mockLogger.error).not.toHaveBeenCalled()
+    })
+
+    it('writes a 500 refusal at error', () => {
+      logHttpEvent(mockLogger as any, 'BillingService', 'catch', [
+        request(),
+        new Response(null, { status: 500 }),
+        undefined
+      ])
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'BillingService.catch',
+        'GET https://api.example.com/billing → 500'
+      )
+      expect(mockLogger.warn).not.toHaveBeenCalled()
+    })
+
+    it('writes a refusal with no response at error', () => {
+      logHttpEvent(mockLogger as any, 'BillingService', 'catch', [
+        request(),
+        undefined,
+        { message: 'socket hang up' }
+      ])
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'BillingService.catch',
+        expect.stringContaining('GET https://api.example.com/billing')
+      )
+      expect(mockLogger.warn).not.toHaveBeenCalled()
     })
   })
 
@@ -122,7 +198,7 @@ describe('logHttpEvent', () => {
         error
       ])
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'UserService.catch',
         'GET https://api.example.com/users → 400: VALIDATION_ERROR'
       )
@@ -174,7 +250,7 @@ describe('logHttpEvent', () => {
         error
       ])
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'UserService.catch',
         'PUT https://api.example.com/users → 422: VALIDATION_ERROR'
       )
@@ -199,12 +275,12 @@ describe('logHttpEvent', () => {
         error
       ])
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'UserService.catch',
         'GET https://api.example.com/v1/accounts → 401'
       )
 
-      const logged = JSON.stringify(mockLogger.error.mock.calls)
+      const logged = JSON.stringify(mockLogger.warn.mock.calls)
       expect(logged).not.toContain('cpf')
       expect(logged).not.toContain('123.456')
       expect(logged).not.toContain('db-primary')
@@ -270,11 +346,11 @@ describe('logHttpEvent', () => {
         { message: 'Invalid document' }
       ])
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'UserService.catch',
         'POST https://api.example/v1/x → 422: Invalid document'
       )
-      assertNoQuery(mockLogger.error.mock.calls)
+      assertNoQuery(mockLogger.warn.mock.calls)
     })
 
     // Node refuses to build a Request from a URL carrying credentials, so this
@@ -310,11 +386,11 @@ describe('logHttpEvent', () => {
         undefined
       ])
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'UserService.catch',
         'GET /v1/x → 400'
       )
-      assertNoQuery(mockLogger.error.mock.calls)
+      assertNoQuery(mockLogger.warn.mock.calls)
     })
 
     // with a relative URL that no parser accepts.
@@ -325,11 +401,11 @@ describe('logHttpEvent', () => {
         undefined
       ])
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'UserService.catch',
         'GET /v1/x → 400'
       )
-      assertNoQuery(mockLogger.error.mock.calls)
+      assertNoQuery(mockLogger.warn.mock.calls)
     })
   })
 
@@ -338,6 +414,7 @@ describe('logHttpEvent', () => {
       logHttpEvent(mockLogger as any, 'Svc', 'unknownMethod', ['arg'])
 
       expect(mockLogger.info).not.toHaveBeenCalled()
+      expect(mockLogger.warn).not.toHaveBeenCalled()
       expect(mockLogger.error).not.toHaveBeenCalled()
     })
   })
