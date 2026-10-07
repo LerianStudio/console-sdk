@@ -26,10 +26,6 @@ import { PipeTransform } from '@/pipes/pipe-transform'
 import { APP_PIPE } from '@/services/pipes'
 import { PipeHandler } from '@/pipes/decorators/use-pipes'
 import { RouteHandler } from '@/controllers/decorators/route-decorator'
-import {
-  BodyLimits,
-  DEFAULT_BODY_LIMITS
-} from '@/controllers/decorators/body-decorator'
 import { sortRoutesBySpecificity } from '@/utils/routes/route-specificity'
 import { GetOptions, OptionalGetOptions } from 'inversify'
 import { Middleware } from '@/middleware/middleware'
@@ -38,8 +34,8 @@ import { APP_MIDDLEWARE } from '@/services/middleware'
 
 export type ServerFactoryOptions = {
   logger?: LoggerService | boolean
-  /** The largest request body `@Body()` reads, per kind; a route can raise its own. */
-  bodyLimits?: Partial<BodyLimits>
+  /** The largest request body `@Body()` reads, in bytes; a route can set its own. */
+  maxBodyBytes?: number
 }
 
 export class ServerFactory {
@@ -49,7 +45,7 @@ export class ServerFactory {
   private globalInterceptors: Interceptor[] = []
   private globalPipes: PipeTransform[] = []
   private globalMiddlewares: Middleware[] = []
-  private bodyLimits: BodyLimits = DEFAULT_BODY_LIMITS
+  private maxBodyBytes?: number
 
   private readonly module: Class
   private readonly container: Container
@@ -77,7 +73,7 @@ export class ServerFactory {
     const sortedRoutes = sortRoutesBySpecificity(routes)
 
     const server = new ServerFactory(module, container, sortedRoutes)
-    server.bodyLimits = { ...DEFAULT_BODY_LIMITS, ...options?.bodyLimits }
+    server.maxBodyBytes = options?.maxBodyBytes
 
     return server
   }
@@ -198,7 +194,7 @@ export class ServerFactory {
           const args = await RouteHandler.getArgs(
             controller!,
             route.methodName,
-            [request, { params, routeParams, bodyLimits: this.bodyLimits }]
+            [request, { params, routeParams, maxBodyBytes: this.maxBodyBytes }]
           )
 
           // Run registered pipes

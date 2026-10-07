@@ -1,6 +1,6 @@
 import { BODY_KEY, ROUTE_KEY } from '@/constants/keys'
 import {
-  getBodyLimitsArgument,
+  getMaxBodyBytesArgument,
   getNextRequestArgument
 } from '@/utils/nextjs/get-next-arguments'
 import {
@@ -15,16 +15,8 @@ export type BodyOptions = {
   maxBytes?: number
 }
 
-/** The largest body any route reads, in bytes; multipart has its own ceiling. */
-export type BodyLimits = {
-  maxBytes: number
-  maxMultipartBytes: number
-}
-
-export const DEFAULT_BODY_LIMITS: BodyLimits = {
-  maxBytes: 1024 * 1024,
-  maxMultipartBytes: 10 * 1024 * 1024
-}
+/** The largest body a route reads, in bytes, when neither it nor the server sets one. */
+export const DEFAULT_MAX_BODY_BYTES = 1024 * 1024
 
 export type BodyMetadata = {
   parameterIndex: number
@@ -107,22 +99,18 @@ export class BodyHandler {
 
       if (!body) {
         const contentType = request.headers.get('Content-Type') ?? ''
-        const multipart = contentType.includes('multipart/form-data')
-        const limits = {
-          ...DEFAULT_BODY_LIMITS,
-          ...getBodyLimitsArgument(args)
-        }
-        const source = new Response(
-          bounded(
-            request.body,
-            metadata.maxBytes ??
-              (multipart ? limits.maxMultipartBytes : limits.maxBytes)
-          ),
-          { headers: { 'Content-Type': contentType } }
-        )
+        // One cap for every content type: the caller's Content-Type never picks it.
+        const maxBytes =
+          metadata.maxBytes ??
+          getMaxBodyBytesArgument(args) ??
+          DEFAULT_MAX_BODY_BYTES
 
         try {
-          if (multipart) {
+          const source = new Response(bounded(request.body, maxBytes), {
+            headers: { 'Content-Type': contentType }
+          })
+
+          if (contentType.includes('multipart/form-data')) {
             body = getFormData(await source.formData())
           } else if (contentType.includes('application/json')) {
             body = await source.json()

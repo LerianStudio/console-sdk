@@ -257,7 +257,7 @@ export class ValidationApiException extends ApiException {
 
 export class PayloadTooLargeApiException extends ApiException {
   constructor(message: string) {
-    super('0008', 'Payload Too Large', message, HttpStatus.PAYLOAD_TOO_LARGE)
+    super('0009', 'Payload Too Large', message, HttpStatus.PAYLOAD_TOO_LARGE)
   }
 }
 

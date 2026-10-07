@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 import { BODY_KEY } from '../../constants/keys'
 import { HttpStatus } from '../../constants/http-status'
-import { BodyHandler, Body, DEFAULT_BODY_LIMITS } from './body-decorator'
+import { BodyHandler, Body, DEFAULT_MAX_BODY_BYTES } from './body-decorator'
 import {
   PayloadTooLargeApiException,
   ValidationApiException
@@ -106,7 +106,7 @@ describe('BodyHandler.handle', () => {
   it('refuses a body past the default limit with 413', async () => {
     decorate()
     const body = JSON.stringify({
-      blob: 'x'.repeat(DEFAULT_BODY_LIMITS.maxBytes)
+      blob: 'x'.repeat(DEFAULT_MAX_BODY_BYTES)
     })
 
     const error = await refusal(post(body, 'application/json'))
@@ -136,23 +136,39 @@ describe('BodyHandler.handle', () => {
     expect(result?.parameter.blob).toHaveLength(2 * 1024 * 1024)
   })
 
-  it('applies the server limits, multipart against its own', async () => {
+  it('applies the server limit to every content type, multipart included', async () => {
     decorate()
-    const bodyLimits = { maxBytes: 64, maxMultipartBytes: 4096 }
+    const context = { maxBodyBytes: 64 }
     const form = new FormData()
     form.append('file', new Blob(['y'.repeat(1024)]), 'a.txt')
+    // Encoded first: undici's own FormData stream crashes when it is cancelled.
+    const encoded = new Request(URL, { method: 'POST', body: form })
 
-    const multipart = await handle(
-      new Request(URL, { method: 'POST', body: form }),
-      { bodyLimits }
+    const multipart = await refusal(
+      post(
+        await encoded.arrayBuffer(),
+        encoded.headers.get('Content-Type') ?? ''
+      ),
+      context
     )
     const json = await refusal(
       post(JSON.stringify({ blob: 'x'.repeat(64) }), 'application/json'),
-      { bodyLimits }
+      context
     )
 
-    expect(multipart?.parameter.file.size).toBe(1024)
+    expect(multipart).toBeInstanceOf(PayloadTooLargeApiException)
     expect(json).toBeInstanceOf(PayloadTooLargeApiException)
+  })
+
+  it('keeps the cap when a limit is explicitly undefined', async () => {
+    decorate({ maxBytes: undefined })
+    const body = JSON.stringify({ blob: 'x'.repeat(DEFAULT_MAX_BODY_BYTES) })
+
+    const error = await refusal(post(body, 'application/json'), {
+      maxBodyBytes: undefined
+    })
+
+    expect(error).toBeInstanceOf(PayloadTooLargeApiException)
   })
 
   it('reads the body once per request', async () => {

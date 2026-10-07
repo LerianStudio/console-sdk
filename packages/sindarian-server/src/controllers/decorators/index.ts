@@ -14,8 +14,7 @@ export {
 export {
   Body,
   BodyHandler,
-  DEFAULT_BODY_LIMITS,
-  type BodyLimits,
+  DEFAULT_MAX_BODY_BYTES,
   type BodyMetadata,
   type BodyOptions
 } from './body-decorator'
