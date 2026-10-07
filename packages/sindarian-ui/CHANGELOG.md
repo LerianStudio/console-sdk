@@ -1,3 +1,11 @@
+## [2.0.0-beta.18](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.17...sindarian-ui-v2.0.0-beta.18) (2026-10-07)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** keep a dialog open when a toast is closed ([2497d34](https://github.com/LerianStudio/console-sdk/commit/2497d34dae3f491fb00111595cbcdaccec80e8a0))
+* **sindarian-ui:** let a consumer place the toaster ([7159206](https://github.com/LerianStudio/console-sdk/commit/7159206c454bfcbd8804da58e6317ab82b40a9bc))
+
 ## [2.0.0-beta.17](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.16...sindarian-ui-v2.0.0-beta.17) (2026-10-07)
 
 
