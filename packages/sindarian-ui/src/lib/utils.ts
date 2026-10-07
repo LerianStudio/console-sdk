@@ -31,3 +31,18 @@ const twMerge = extendTailwindMerge<'sindarian-button-variant'>({
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
+/** Wraps a Radix `onInteractOutside` so a press on a toast never dismisses the layer under it. */
+export function keepOpenOnToast<E extends Event>(
+  onInteractOutside?: (event: E) => void
+) {
+  return (event: E) => {
+    if (
+      (event.target as HTMLElement | null)?.closest('[data-sonner-toaster]')
+    ) {
+      event.preventDefault()
+      return
+    }
+    onInteractOutside?.(event)
+  }
+}

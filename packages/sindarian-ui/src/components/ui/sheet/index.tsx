@@ -4,7 +4,7 @@ import * as React from 'react'
 import * as SheetPrimitive from '@radix-ui/react-dialog'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, keepOpenOnToast } from '@/lib/utils'
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
@@ -115,22 +115,6 @@ function SheetContent({
   onInteractOutside,
   ...props
 }: SheetContentProps) {
-  const handleInteractOutside = React.useCallback(
-    (event: CustomEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target?.closest('[data-sonner-toaster]')) {
-        event.preventDefault()
-        return
-      }
-      onInteractOutside?.(
-        event as Parameters<
-          NonNullable<SheetContentProps['onInteractOutside']>
-        >[0]
-      )
-    },
-    [onInteractOutside]
-  )
-
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -141,7 +125,7 @@ function SheetContent({
           sheetVariants({ side }),
           className
         )}
-        onInteractOutside={handleInteractOutside}
+        onInteractOutside={keepOpenOnToast(onInteractOutside)}
         {...props}
       >
         {children}

@@ -89,6 +89,12 @@ describe('Toaster theme resolution', () => {
     expect(lastSonnerProps().theme).toBe('system')
   })
 
+  it('hands a passed position to sonner', () => {
+    render(<Toaster position="top-center" />)
+
+    expect(lastSonnerProps().position).toBe('top-center')
+  })
+
   it('keeps every other sonner prop unchanged', () => {
     render(<Toaster />)
 
