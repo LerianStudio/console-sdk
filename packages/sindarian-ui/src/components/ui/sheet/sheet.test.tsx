@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { Sheet, SheetContent, SheetTitle } from '.'
 
 /**
@@ -196,5 +196,27 @@ describe('SheetContent close button', () => {
     render(<Subject />)
 
     expect(close()).not.toHaveClass('focus:outline-hidden')
+  })
+})
+
+describe('SheetContent outside interaction', () => {
+  it('stays open when a toast is pressed', async () => {
+    const onOpenChange = jest.fn()
+    render(
+      <>
+        <Sheet open onOpenChange={onOpenChange}>
+          <SheetContent aria-describedby={undefined}>
+            <SheetTitle>Filters</SheetTitle>
+          </SheetContent>
+        </Sheet>
+        <button data-sonner-toaster="">Close toast</button>
+      </>
+    )
+    // Radix attaches its outside-pointer listener on the next tick.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+
+    fireEvent.pointerDown(screen.getByText('Close toast'))
+
+    expect(onOpenChange).not.toHaveBeenCalled()
   })
 })
