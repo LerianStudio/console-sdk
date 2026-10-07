@@ -1,3 +1,19 @@
+## [2.0.0-beta.17](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.16...sindarian-ui-v2.0.0-beta.17) (2026-10-07)
+
+
+### Features
+
+* **sindarian-server:** let a transport read its own success body ([a385d91](https://github.com/LerianStudio/console-sdk/commit/a385d9170419df889267ed76c8ee1bcbde2ddb7b))
+
+
+### Bug Fixes
+
+* **sindarian-logs:** log a refusal below 500 at warn, not error ([0c90533](https://github.com/LerianStudio/console-sdk/commit/0c9053347523c11989d8c19b1303794bbca93f66))
+* **sindarian-server:** bound every throw a success-body reader raises ([224138c](https://github.com/LerianStudio/console-sdk/commit/224138cbe3024e1a70741093b431c802600a59a0))
+* **sindarian-server:** hand a non-JSON error body to catch as text ([14c0817](https://github.com/LerianStudio/console-sdk/commit/14c081734abf6de2e910e210226d876e1886940e))
+* **sindarian-server:** hand an array body on as text, an empty text as none ([04728a3](https://github.com/LerianStudio/console-sdk/commit/04728a38a895ef1e4d6ff479cd1feffc646ed823))
+* **sindarian-ui:** name a disabled switch field that shows a tooltip ([6094bdc](https://github.com/LerianStudio/console-sdk/commit/6094bdce818f5a02497b63e5414222fa119f2969))
+
 ## [2.0.0-beta.16](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.15...sindarian-ui-v2.0.0-beta.16) (2026-09-22)
 
 
