@@ -178,6 +178,10 @@ did before:
 **@Body()** (`body-decorator.ts`)
 - Extracts and parses request body
 - Supports JSON, form-data, and text parsing
+- Reads at most a bounded number of bytes, counted as they stream, and answers
+  413 (`PayloadTooLargeApiException`) past it: 1 MiB by default, 10 MiB for
+  multipart. `ServerFactory.create(AppModule, { bodyLimits: { maxBytes,
+  maxMultipartBytes } })` changes the defaults; `@Body({ maxBytes })` sets one route's
 - Integrates with pipe system for validation
 - Preserves parameter type metadata for Zod validation
 

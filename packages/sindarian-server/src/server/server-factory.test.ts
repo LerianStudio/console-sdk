@@ -56,6 +56,7 @@ import { FilterHandler } from '@/exceptions/decorators/use-filters-decorator'
 import { InterceptorHandler } from '@/interceptor/decorators/use-interceptor-decorator'
 import { PipeHandler } from '@/pipes/decorators/use-pipes'
 import { RouteHandler } from '@/controllers/decorators/route-decorator'
+import { DEFAULT_BODY_LIMITS } from '@/controllers/decorators/body-decorator'
 import { moduleHandler } from '@/modules/module-decorator'
 import { bindRequest } from '@/services/request'
 import { urlMatch } from '@/utils/url/url-match'
@@ -244,6 +245,17 @@ describe('ServerFactory', () => {
 
       expect(mockLogger.overrideLogger).toHaveBeenCalledWith(true)
     })
+
+    it('should keep the default body limits it is not given', () => {
+      const result = ServerFactory.create(mockModule, {
+        bodyLimits: { maxBytes: 64 }
+      })
+
+      expect(result['bodyLimits']).toEqual({
+        maxBytes: 64,
+        maxMultipartBytes: DEFAULT_BODY_LIMITS.maxMultipartBytes
+      })
+    })
   })
 
   describe('setGlobalPrefix', () => {
@@ -376,7 +388,8 @@ describe('ServerFactory', () => {
           mockRequest,
           {
             params: mockParams,
-            routeParams: { id: 'org_1', ledgerId: 'led_2' }
+            routeParams: { id: 'org_1', ledgerId: 'led_2' },
+            bodyLimits: DEFAULT_BODY_LIMITS
           }
         ]
       )

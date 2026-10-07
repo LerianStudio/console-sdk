@@ -255,6 +255,12 @@ export class ValidationApiException extends ApiException {
   }
 }
 
+export class PayloadTooLargeApiException extends ApiException {
+  constructor(message: string) {
+    super('0008', 'Payload Too Large', message, HttpStatus.PAYLOAD_TOO_LARGE)
+  }
+}
+
 export class UnauthorizedApiException extends ApiException {
   constructor(message: string = 'Unauthorized') {
     super('0001', 'Unauthorized', message, HttpStatus.UNAUTHORIZED)

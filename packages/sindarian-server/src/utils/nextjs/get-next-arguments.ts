@@ -39,3 +39,8 @@ export function getRouteParamArgument(args: any[]) {
 
   return args[1].routeParams
 }
+
+/** The body limits `ServerFactory` carries on the second handler argument. */
+export function getBodyLimitsArgument(args: any[]) {
+  return args?.[1]?.bodyLimits
+}

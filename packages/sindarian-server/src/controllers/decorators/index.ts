@@ -11,7 +11,14 @@ export {
   RequestHandler,
   type RequestMetadata
 } from './request-decorator'
-export { Body, BodyHandler, type BodyMetadata } from './body-decorator'
+export {
+  Body,
+  BodyHandler,
+  DEFAULT_BODY_LIMITS,
+  type BodyLimits,
+  type BodyMetadata,
+  type BodyOptions
+} from './body-decorator'
 export {
   Get,
   Post,
