@@ -10,7 +10,6 @@ import { Switch } from '@/components/ui/switch'
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip'
 import { ReactNode } from 'react'
@@ -43,48 +42,48 @@ export const SwitchField = <T extends FieldValues = FieldValues>({
     <FormField
       name={name as Path<T>}
       control={control}
-      render={({ field }) => (
-        <FormItem required={required}>
-          {label && (
-            <FormLabel
-              extra={
-                tooltip ? <FormTooltip>{tooltip}</FormTooltip> : labelExtra
-              }
-            >
-              {label}
-            </FormLabel>
-          )}
+      render={({ field }) => {
+        // FormControl stamps the id the label points at on its direct child,
+        // so it must wrap the Switch itself, never the tooltip around it.
+        const control = (
+          <FormControl>
+            <Switch
+              checked={field.value}
+              onCheckedChange={field.onChange}
+              disabled={disabled}
+              data-testid={dataTestId}
+            />
+          </FormControl>
+        )
 
-          <div className="relative">
-            <FormControl>
+        return (
+          <FormItem required={required}>
+            {label && (
+              <FormLabel
+                extra={
+                  tooltip ? <FormTooltip>{tooltip}</FormTooltip> : labelExtra
+                }
+              >
+                {label}
+              </FormLabel>
+            )}
+
+            <div className="relative">
               {disabled && disabledTooltip ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="inline-flex w-auto">
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={disabled}
-                        />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>{disabledTooltip}</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="inline-flex w-auto">{control}</div>
+                  </TooltipTrigger>
+                  <TooltipContent>{disabledTooltip}</TooltipContent>
+                </Tooltip>
               ) : (
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  disabled={disabled}
-                  data-testid={dataTestId}
-                />
+                control
               )}
-            </FormControl>
-          </div>
-          <FormMessage />
-        </FormItem>
-      )}
+            </div>
+            <FormMessage />
+          </FormItem>
+        )
+      }}
     />
   )
 }
