@@ -59,3 +59,11 @@ export const Disabled: StoryObj<SwitchFieldProps> = {
   },
   render: (args) => BaseComponent(args)
 }
+
+export const DisabledWithTooltip: StoryObj<SwitchFieldProps> = {
+  args: {
+    disabled: true,
+    disabledTooltip: 'Pick a calendar first'
+  },
+  render: (args) => BaseComponent(args)
+}
