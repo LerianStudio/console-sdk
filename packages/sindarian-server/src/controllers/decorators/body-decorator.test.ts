@@ -1,221 +1,219 @@
 import 'reflect-metadata'
-import { z } from 'zod'
 import { BODY_KEY } from '../../constants/keys'
-import { BodyHandler, Body, BodyMetadata } from './body-decorator'
-import { getNextRequestArgument } from '../../utils/nextjs/get-next-arguments'
-import { ValidationApiException } from '../../exceptions'
+import { HttpStatus } from '../../constants/http-status'
+import { BodyHandler, Body, DEFAULT_MAX_BODY_BYTES } from './body-decorator'
+import {
+  PayloadTooLargeApiException,
+  ValidationApiException
+} from '../../exceptions'
 
-// Mock the utility function
-jest.mock('../../utils/nextjs/get-next-arguments')
-const mockGetNextRequestArgument =
-  getNextRequestArgument as jest.MockedFunction<typeof getNextRequestArgument>
+const URL = 'http://localhost/api/test'
+
+const post = (body: BodyInit, contentType?: string) =>
+  new Request(URL, {
+    method: 'POST',
+    body,
+    headers: contentType ? { 'Content-Type': contentType } : {}
+  })
+
+/** A body with no declared length, streamed the way Next hands one over. */
+const streamed = (chunks: number, chunkBytes: number) => {
+  const pulls = { count: 0 }
+  async function* source() {
+    for (let i = 0; i < chunks; i++) {
+      pulls.count++
+      yield new Uint8Array(chunkBytes)
+    }
+  }
+
+  const request = new Request(URL, {
+    method: 'POST',
+    body: source() as unknown as BodyInit,
+    duplex: 'half',
+    headers: { 'Content-Type': 'application/json' }
+  } as RequestInit)
+
+  return { request, pulls }
+}
+
+class TestClass {
+  testMethod(_body: unknown) {}
+}
+
+const decorate = (options?: { maxBytes?: number }) =>
+  Body(options)(TestClass.prototype, 'testMethod', 0)
+
+const handle = (request: Request, context?: object) =>
+  BodyHandler.handle(TestClass.prototype, 'testMethod', [request, context])
+
+const refusal = (request: Request, context?: object) =>
+  handle(request, context).then(
+    () => undefined,
+    (error: unknown) => error
+  )
 
 describe('BodyHandler.handle', () => {
-  const mockRequest = {
-    json: jest.fn(),
-    text: jest.fn(),
-    formData: jest.fn(),
-    headers: {
-      get: jest.fn()
-    }
-  }
-
-  beforeEach(() => {
-    jest.clearAllMocks()
-
-    // Create a fresh mock request for each test to avoid cache issues
-    const freshMockRequest = {
-      json: jest.fn(),
-      text: jest.fn(),
-      formData: jest.fn(),
-      headers: {
-        get: jest.fn().mockReturnValue('application/json')
-      }
-    }
-
-    Object.assign(mockRequest, freshMockRequest)
-    mockGetNextRequestArgument.mockReturnValue(mockRequest as any)
-  })
-
   afterEach(() => {
-    // Clear all metadata after each test to avoid interference
-    Reflect.getMetadataKeys(TestClass.prototype).forEach((key) => {
-      Reflect.deleteMetadata(key, TestClass.prototype, 'testMethod')
-    })
+    Reflect.deleteMetadata(BODY_KEY, TestClass.prototype, 'testMethod')
   })
 
-  class TestClass {
-    testMethod() {}
-  }
-
-  it('should return null when no metadata is found', async () => {
-    const result = await BodyHandler.handle(TestClass.prototype, 'testMethod', [
-      mockRequest
-    ])
-
-    expect(result).toBeNull()
+  it('returns null when the method has no @Body()', async () => {
+    expect(await handle(post('{}', 'application/json'))).toBeNull()
   })
 
-  it('should return parsed body when metadata exists without schema', async () => {
-    const mockBody = { name: 'John', age: 30 }
-    mockRequest.json.mockResolvedValue(mockBody)
+  it('parses a JSON body', async () => {
+    decorate()
 
-    // Set metadata without schema
-    const metadata: BodyMetadata = {
-      parameterIndex: 0
-    }
-    Reflect.defineMetadata(
-      BODY_KEY,
-      metadata,
-      TestClass.prototype,
-      'testMethod'
-    )
-
-    const result = await BodyHandler.handle(TestClass.prototype, 'testMethod', [
-      mockRequest
-    ])
-
-    expect(result).toEqual({
+    expect(
+      await handle(post('{"name":"John","age":30}', 'application/json'))
+    ).toEqual({
       type: 'body',
-      parameter: mockBody,
+      parameter: { name: 'John', age: 30 },
       parameterIndex: 0
     })
-    expect(mockRequest.json).toHaveBeenCalledTimes(1)
   })
 
-  it('should handle request.json() rejection', async () => {
-    const jsonError = new Error('Failed to parse JSON')
-    // Create a new mock request to avoid cache
-    const errorMockRequest = {
-      json: jest.fn().mockRejectedValue(jsonError),
-      text: jest.fn(),
-      formData: jest.fn(),
-      headers: {
-        get: jest.fn().mockReturnValue('application/json')
-      }
-    }
-    mockGetNextRequestArgument.mockReturnValue(errorMockRequest as any)
+  it('reads a body that is neither JSON nor multipart as text', async () => {
+    decorate()
 
-    // Set metadata without schema
-    const metadata: BodyMetadata = {
-      parameterIndex: 0
-    }
-    Reflect.defineMetadata(
-      BODY_KEY,
-      metadata,
-      TestClass.prototype,
-      'testMethod'
-    )
+    const result = await handle(post('plain words', 'text/plain'))
 
-    await expect(
-      BodyHandler.handle(TestClass.prototype, 'testMethod', [errorMockRequest])
-    ).rejects.toThrow('Missing or invalid request body')
-
-    expect(errorMockRequest.json).toHaveBeenCalledTimes(1)
+    expect(result?.parameter).toBe('plain words')
   })
 
-  it('should handle empty body object', async () => {
-    const mockBody = {}
+  it('parses a multipart body into its fields', async () => {
+    decorate()
+    const form = new FormData()
+    form.append('name', 'schema')
+    form.append('file', new Blob(['<xs:schema/>']), 'a.xsd')
 
-    // Create a new mock request for this test
-    const emptyMockRequest = {
-      json: jest.fn().mockResolvedValue(mockBody),
-      text: jest.fn(),
-      formData: jest.fn(),
-      headers: {
-        get: jest.fn().mockReturnValue('application/json')
-      }
-    }
-    mockGetNextRequestArgument.mockReturnValue(emptyMockRequest as any)
-
-    // Set metadata without schema
-    const metadata: BodyMetadata = {
-      parameterIndex: 0
-    }
-    Reflect.defineMetadata(
-      BODY_KEY,
-      metadata,
-      TestClass.prototype,
-      'testMethod'
+    const result = await handle(
+      new Request(URL, { method: 'POST', body: form })
     )
 
-    const result = await BodyHandler.handle(TestClass.prototype, 'testMethod', [
-      emptyMockRequest
-    ])
+    expect(result?.parameter.name).toBe('schema')
+    expect(await result?.parameter.file.text()).toBe('<xs:schema/>')
+  })
 
-    expect(result).toEqual({
-      type: 'body',
-      parameter: mockBody,
-      parameterIndex: 0
+  it('refuses a malformed JSON body with 400', async () => {
+    decorate()
+
+    const error = await refusal(post('{"name":', 'application/json'))
+
+    expect(error).toBeInstanceOf(ValidationApiException)
+  })
+
+  it('refuses a body past the default limit with 413', async () => {
+    decorate()
+    const body = JSON.stringify({
+      blob: 'x'.repeat(DEFAULT_MAX_BODY_BYTES)
     })
-    expect(emptyMockRequest.json).toHaveBeenCalledTimes(1)
+
+    const error = await refusal(post(body, 'application/json'))
+
+    expect(error).toBeInstanceOf(PayloadTooLargeApiException)
+    expect((error as PayloadTooLargeApiException).getStatus()).toBe(
+      HttpStatus.PAYLOAD_TOO_LARGE
+    )
   })
 
-  it('should handle null body', async () => {
-    const mockBody = null
+  it('stops reading an undeclared body once it passes the limit', async () => {
+    decorate({ maxBytes: 4096 })
+    const { request, pulls } = streamed(1024, 1024)
 
-    // Create a new mock request for this test
-    const nullMockRequest = {
-      json: jest.fn().mockResolvedValue(mockBody),
-      text: jest.fn(),
-      formData: jest.fn(),
-      headers: {
-        get: jest.fn().mockReturnValue('application/json')
-      }
-    }
-    mockGetNextRequestArgument.mockReturnValue(nullMockRequest as any)
+    const error = await refusal(request)
 
-    // Set metadata without schema
-    const metadata: BodyMetadata = {
-      parameterIndex: 0
-    }
-    Reflect.defineMetadata(
-      BODY_KEY,
-      metadata,
-      TestClass.prototype,
-      'testMethod'
+    expect(error).toBeInstanceOf(PayloadTooLargeApiException)
+    expect(pulls.count).toBeLessThan(10)
+  })
+
+  it('lets a route raise its own limit', async () => {
+    decorate({ maxBytes: 3 * 1024 * 1024 })
+    const body = JSON.stringify({ blob: 'x'.repeat(2 * 1024 * 1024) })
+
+    const result = await handle(post(body, 'application/json'))
+
+    expect(result?.parameter.blob).toHaveLength(2 * 1024 * 1024)
+  })
+
+  it('applies the server limit to every content type, multipart included', async () => {
+    decorate()
+    const context = { maxBodyBytes: 64 }
+    const form = new FormData()
+    form.append('file', new Blob(['y'.repeat(1024)]), 'a.txt')
+    // Encoded first: undici's own FormData stream crashes when it is cancelled.
+    const encoded = new Request(URL, { method: 'POST', body: form })
+
+    const multipart = await refusal(
+      post(
+        await encoded.arrayBuffer(),
+        encoded.headers.get('Content-Type') ?? ''
+      ),
+      context
+    )
+    const json = await refusal(
+      post(JSON.stringify({ blob: 'x'.repeat(64) }), 'application/json'),
+      context
     )
 
-    const result = await BodyHandler.handle(TestClass.prototype, 'testMethod', [
-      nullMockRequest
-    ])
+    expect(multipart).toBeInstanceOf(PayloadTooLargeApiException)
+    expect(json).toBeInstanceOf(PayloadTooLargeApiException)
+  })
 
-    expect(result).toEqual({
-      type: 'body',
-      parameter: mockBody,
-      parameterIndex: 0
+  it('keeps the cap when a limit is explicitly undefined', async () => {
+    decorate({ maxBytes: undefined })
+    const body = JSON.stringify({ blob: 'x'.repeat(DEFAULT_MAX_BODY_BYTES) })
+
+    const error = await refusal(post(body, 'application/json'), {
+      maxBodyBytes: undefined
     })
-    expect(nullMockRequest.json).toHaveBeenCalledTimes(1)
+
+    expect(error).toBeInstanceOf(PayloadTooLargeApiException)
+  })
+
+  it.each([NaN, Infinity, -1])(
+    'keeps the cap when a limit is %p',
+    async (limit) => {
+      decorate({ maxBytes: limit })
+      const body = JSON.stringify({ blob: 'x'.repeat(DEFAULT_MAX_BODY_BYTES) })
+
+      const error = await refusal(post(body, 'application/json'), {
+        maxBodyBytes: limit
+      })
+
+      expect(error).toBeInstanceOf(PayloadTooLargeApiException)
+    }
+  )
+
+  it('reads the body once per request', async () => {
+    decorate()
+    const request = post('{"a":1}', 'application/json')
+
+    const first = await handle(request)
+    const second = await handle(request)
+
+    expect(second?.parameter).toBe(first?.parameter)
   })
 })
 
 describe('Body decorator', () => {
-  class TestClass {
-    testMethod(body: any) {}
-    testMethodWithSchema(body: string) {}
-  }
-
-  beforeEach(() => {
-    // Clear metadata before each test
-    Reflect.getMetadataKeys(TestClass.prototype).forEach((key) => {
-      Reflect.deleteMetadata(key, TestClass.prototype, 'testMethod')
-      Reflect.deleteMetadata(key, TestClass.prototype, 'testMethodWithSchema')
-    })
+  afterEach(() => {
+    Reflect.deleteMetadata(BODY_KEY, TestClass.prototype, 'testMethod')
   })
 
-  it('should set metadata without schema', () => {
-    // Apply the decorator manually since TypeScript decorators run at class definition time
-    const decorator = Body()
-    decorator(TestClass.prototype, 'testMethod', 0)
+  it('records the parameter index', () => {
+    decorate()
 
-    const metadata = Reflect.getOwnMetadata(
-      BODY_KEY,
-      TestClass.prototype,
-      'testMethod'
-    )
+    expect(
+      Reflect.getOwnMetadata(BODY_KEY, TestClass.prototype, 'testMethod')
+    ).toEqual({ parameterIndex: 0 })
+  })
 
-    expect(metadata).toEqual({
-      parameterIndex: 0
-    })
+  it('records a route limit', () => {
+    decorate({ maxBytes: 10 })
+
+    expect(
+      Reflect.getOwnMetadata(BODY_KEY, TestClass.prototype, 'testMethod')
+    ).toEqual({ parameterIndex: 0, maxBytes: 10 })
   })
 })

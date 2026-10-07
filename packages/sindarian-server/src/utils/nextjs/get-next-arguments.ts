@@ -39,3 +39,8 @@ export function getRouteParamArgument(args: any[]) {
 
   return args[1].routeParams
 }
+
+/** The server's body limit `ServerFactory` carries on the second handler argument. */
+export function getMaxBodyBytesArgument(args: any[]): number | undefined {
+  return args?.[1]?.maxBodyBytes
+}

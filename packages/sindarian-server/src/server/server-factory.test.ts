@@ -244,6 +244,12 @@ describe('ServerFactory', () => {
 
       expect(mockLogger.overrideLogger).toHaveBeenCalledWith(true)
     })
+
+    it('should keep the body limit it is given', () => {
+      const result = ServerFactory.create(mockModule, { maxBodyBytes: 64 })
+
+      expect(result['maxBodyBytes']).toBe(64)
+    })
   })
 
   describe('setGlobalPrefix', () => {
@@ -376,7 +382,8 @@ describe('ServerFactory', () => {
           mockRequest,
           {
             params: mockParams,
-            routeParams: { id: 'org_1', ledgerId: 'led_2' }
+            routeParams: { id: 'org_1', ledgerId: 'led_2' },
+            maxBodyBytes: undefined
           }
         ]
       )

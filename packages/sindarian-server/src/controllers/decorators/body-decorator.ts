@@ -1,11 +1,52 @@
 import { BODY_KEY, ROUTE_KEY } from '@/constants/keys'
-import { getNextRequestArgument } from '@/utils/nextjs/get-next-arguments'
-import { ValidationApiException } from '@/exceptions/api-exception'
+import {
+  getMaxBodyBytesArgument,
+  getNextRequestArgument
+} from '@/utils/nextjs/get-next-arguments'
+import {
+  PayloadTooLargeApiException,
+  ValidationApiException
+} from '@/exceptions/api-exception'
 import { NextRequest } from 'next/server'
 import { getFormData } from '@/utils/form-data/get-form-data'
 
+export type BodyOptions = {
+  /** The largest body this route reads, in bytes, over the server's default. */
+  maxBytes?: number
+}
+
+/** The largest body a route reads, in bytes, when neither it nor the server sets one. */
+export const DEFAULT_MAX_BODY_BYTES = 1024 * 1024
+
+// A limit that cannot cap (NaN, Infinity, negative) falls through to the next one.
+const byteLimit = (limit?: number) =>
+  Number.isFinite(limit) && (limit as number) >= 0 ? limit : undefined
+
 export type BodyMetadata = {
   parameterIndex: number
+  maxBytes?: number
+}
+
+/** `body`, erroring with 413 once it passes `maxBytes`, which cancels the source. */
+function bounded(body: ReadableStream<Uint8Array> | null, maxBytes: number) {
+  let size = 0
+
+  return body?.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        size += chunk.byteLength
+        if (size > maxBytes) {
+          controller.error(
+            new PayloadTooLargeApiException(
+              `Request body is larger than ${maxBytes} bytes`
+            )
+          )
+        } else {
+          controller.enqueue(chunk)
+        }
+      }
+    })
+  )
 }
 
 export class BodyHandler {
@@ -61,21 +102,32 @@ export class BodyHandler {
       let body = this.bodyCache.get(request)
 
       if (!body) {
-        const contentType = request.headers.get('Content-Type')
+        const contentType = request.headers.get('Content-Type') ?? ''
+        // One cap for every content type: the caller's Content-Type never picks it.
+        const maxBytes =
+          byteLimit(metadata.maxBytes) ??
+          byteLimit(getMaxBodyBytesArgument(args)) ??
+          DEFAULT_MAX_BODY_BYTES
+
         try {
-          if (contentType?.includes('multipart/form-data')) {
-            body = getFormData(await request.formData())
-          } else if (contentType?.includes('application/json')) {
-            body = await request.json()
+          const source = new Response(bounded(request.body, maxBytes), {
+            headers: { 'Content-Type': contentType }
+          })
+
+          if (contentType.includes('multipart/form-data')) {
+            body = getFormData(await source.formData())
+          } else if (contentType.includes('application/json')) {
+            body = await source.json()
           } else {
-            body = await request.text()
+            body = await source.text()
           }
 
           // Cache the parsed body
           this.bodyCache.set(request, body)
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (error: any) {
-          // Handle missing or invalid body
+        } catch (error: unknown) {
+          if (error instanceof PayloadTooLargeApiException) {
+            throw error
+          }
           throw new ValidationApiException('Missing or invalid request body')
         }
       }
@@ -95,9 +147,10 @@ export class BodyHandler {
 /**
  * Decorator to validate the body of the request.
  *
+ * @param options - `maxBytes` overrides the server's body limit for this route
  * @returns A decorator function that can be used to decorate a controller method.
  */
-export function Body() {
+export function Body(options: BodyOptions = {}) {
   return function (
     target: object,
     propertyKey: string | symbol,
@@ -105,9 +158,7 @@ export function Body() {
   ) {
     Reflect.defineMetadata(
       BODY_KEY,
-      {
-        parameterIndex: propertyIndex
-      },
+      { parameterIndex: propertyIndex, ...options },
       target,
       propertyKey
     )

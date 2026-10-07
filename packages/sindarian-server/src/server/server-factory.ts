@@ -34,6 +34,8 @@ import { APP_MIDDLEWARE } from '@/services/middleware'
 
 export type ServerFactoryOptions = {
   logger?: LoggerService | boolean
+  /** The largest request body `@Body()` reads, in bytes; a route can set its own. */
+  maxBodyBytes?: number
 }
 
 export class ServerFactory {
@@ -43,6 +45,7 @@ export class ServerFactory {
   private globalInterceptors: Interceptor[] = []
   private globalPipes: PipeTransform[] = []
   private globalMiddlewares: Middleware[] = []
+  private maxBodyBytes?: number
 
   private readonly module: Class
   private readonly container: Container
@@ -69,7 +72,10 @@ export class ServerFactory {
     // This ensures routes like /users/active match before /users/:id
     const sortedRoutes = sortRoutesBySpecificity(routes)
 
-    return new ServerFactory(module, container, sortedRoutes)
+    const server = new ServerFactory(module, container, sortedRoutes)
+    server.maxBodyBytes = options?.maxBodyBytes
+
+    return server
   }
 
   /**
@@ -188,7 +194,7 @@ export class ServerFactory {
           const args = await RouteHandler.getArgs(
             controller!,
             route.methodName,
-            [request, { params, routeParams }]
+            [request, { params, routeParams, maxBodyBytes: this.maxBodyBytes }]
           )
 
           // Run registered pipes
