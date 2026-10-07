@@ -171,6 +171,20 @@ describe('BodyHandler.handle', () => {
     expect(error).toBeInstanceOf(PayloadTooLargeApiException)
   })
 
+  it.each([NaN, Infinity, -1])(
+    'keeps the cap when a limit is %p',
+    async (limit) => {
+      decorate({ maxBytes: limit })
+      const body = JSON.stringify({ blob: 'x'.repeat(DEFAULT_MAX_BODY_BYTES) })
+
+      const error = await refusal(post(body, 'application/json'), {
+        maxBodyBytes: limit
+      })
+
+      expect(error).toBeInstanceOf(PayloadTooLargeApiException)
+    }
+  )
+
   it('reads the body once per request', async () => {
     decorate()
     const request = post('{"a":1}', 'application/json')

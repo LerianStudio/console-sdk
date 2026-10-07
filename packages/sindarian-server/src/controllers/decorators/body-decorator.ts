@@ -18,6 +18,10 @@ export type BodyOptions = {
 /** The largest body a route reads, in bytes, when neither it nor the server sets one. */
 export const DEFAULT_MAX_BODY_BYTES = 1024 * 1024
 
+// A limit that cannot cap (NaN, Infinity, negative) falls through to the next one.
+const byteLimit = (limit?: number) =>
+  Number.isFinite(limit) && (limit as number) >= 0 ? limit : undefined
+
 export type BodyMetadata = {
   parameterIndex: number
   maxBytes?: number
@@ -101,8 +105,8 @@ export class BodyHandler {
         const contentType = request.headers.get('Content-Type') ?? ''
         // One cap for every content type: the caller's Content-Type never picks it.
         const maxBytes =
-          metadata.maxBytes ??
-          getMaxBodyBytesArgument(args) ??
+          byteLimit(metadata.maxBytes) ??
+          byteLimit(getMaxBodyBytesArgument(args)) ??
           DEFAULT_MAX_BODY_BYTES
 
         try {
