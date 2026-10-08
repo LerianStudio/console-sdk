@@ -1,3 +1,16 @@
+## [2.0.0-beta.10](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.9...sindarian-server-v2.0.0-beta.10) (2026-10-08)
+
+
+### Bug Fixes
+
+* **sindarian-logs:** log a refusal below 500 at warn, not error ([0c90533](https://github.com/LerianStudio/console-sdk/commit/0c9053347523c11989d8c19b1303794bbca93f66))
+* **sindarian-server:** bound the request body @Body() reads ([f6b8b52](https://github.com/LerianStudio/console-sdk/commit/f6b8b5208e4907cb411f6f9e42b3c9879540c30e))
+* **sindarian-server:** keep the body cap when a limit cannot cap ([53745f3](https://github.com/LerianStudio/console-sdk/commit/53745f33deb4f6ea8b7ee255846c0249aef66469))
+* **sindarian-server:** read every body under one limit ([0b6b100](https://github.com/LerianStudio/console-sdk/commit/0b6b1006e70baa9f410997d832d40568e0b198b8))
+* **sindarian-ui:** keep a dialog open when a toast is closed ([2497d34](https://github.com/LerianStudio/console-sdk/commit/2497d34dae3f491fb00111595cbcdaccec80e8a0))
+* **sindarian-ui:** let a consumer place the toaster ([7159206](https://github.com/LerianStudio/console-sdk/commit/7159206c454bfcbd8804da58e6317ab82b40a9bc))
+* **sindarian-ui:** name a disabled switch field that shows a tooltip ([6094bdc](https://github.com/LerianStudio/console-sdk/commit/6094bdce818f5a02497b63e5414222fa119f2969))
+
 ## [2.0.0-beta.9](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.8...sindarian-server-v2.0.0-beta.9) (2026-09-26)
 
 
