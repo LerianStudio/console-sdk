@@ -1,3 +1,12 @@
+## [2.0.0-beta.19](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.18...sindarian-ui-v2.0.0-beta.19) (2026-10-16)
+
+
+### Bug Fixes
+
+* **sindarian-server:** bound the request body @Body() reads ([f6b8b52](https://github.com/LerianStudio/console-sdk/commit/f6b8b5208e4907cb411f6f9e42b3c9879540c30e))
+* **sindarian-server:** keep the body cap when a limit cannot cap ([53745f3](https://github.com/LerianStudio/console-sdk/commit/53745f33deb4f6ea8b7ee255846c0249aef66469))
+* **sindarian-server:** read every body under one limit ([0b6b100](https://github.com/LerianStudio/console-sdk/commit/0b6b1006e70baa9f410997d832d40568e0b198b8))
+
 ## [2.0.0-beta.18](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.17...sindarian-ui-v2.0.0-beta.18) (2026-10-07)
 
 
