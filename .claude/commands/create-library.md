@@ -28,6 +28,7 @@ packages/{name}/
 ├── eslint.config.mjs
 ├── jest.config.ts
 ├── .releaserc.cjs
+├── LICENSE
 └── CHANGELOG.md
 ```
 
@@ -108,6 +109,8 @@ export default {
 ```
 
 **.releaserc.cjs** — Read an existing package's `.releaserc.cjs` (e.g., `packages/sindarian-server/.releaserc.cjs`) and create one with the same structure but updated for the new package name.
+
+**LICENSE** — Copy the repository-root `LICENSE` byte for byte; npm ships it in the tarball even though `files` lists only `dist`.
 
 **CHANGELOG.md**:
 ```markdown
