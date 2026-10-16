@@ -1,3 +1,5 @@
+## [2.0.0-beta.11](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.10...sindarian-server-v2.0.0-beta.11) (2026-10-16)
+
 ## [2.0.0-beta.10](https://github.com/LerianStudio/console-sdk/compare/sindarian-server-v2.0.0-beta.9...sindarian-server-v2.0.0-beta.10) (2026-10-08)
 
 
