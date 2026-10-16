@@ -60,7 +60,7 @@ packages/{name}/
     "type": "git",
     "url": "https://github.com/LerianStudio/console-sdk.git"
   },
-  "license": "ISC"
+  "license": "Elastic-2.0"
 }
 ```
 

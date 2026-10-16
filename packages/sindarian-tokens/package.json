@@ -2,7 +2,7 @@
   "name": "@lerianstudio/sindarian-tokens",
   "version": "2.0.0-beta.1",
   "description": "Shared design tokens for Lerian internal consoles — the neutral colour ladder, WCAG 2.2 AA gated",
-  "license": "ISC",
+  "license": "Elastic-2.0",
   "author": {
     "name": "Lerian Studio",
     "email": "contato@lerian.studio",
