@@ -2,7 +2,7 @@
   "name": "@lerianstudio/sindarian-logs",
   "version": "2.0.0-beta.6",
   "description": "Unified logging and tracing system for Sindarian Server",
-  "license": "ISC",
+  "license": "Elastic-2.0",
   "author": {
     "name": "Lerian Studio",
     "email": "contato@lerian.studio",

@@ -593,7 +593,7 @@ Contributions are welcome! Please read our [Contributing Guide](./CONTRIBUTING.m
 
 ## =� License
 
-This project is licensed under the ISC License - see the [LICENSE](./LICENSE) file for details.
+This project is licensed under the Elastic License 2.0 (ELv2) - see the [LICENSE](./LICENSE) file for details.
 
 ## =O Acknowledgments
 

@@ -287,4 +287,4 @@ A path listed in `ignorePaths` stops at step 3, the context finalized and nothin
 
 ## 📄 License
 
-ISC
+Elastic License 2.0 (ELv2)

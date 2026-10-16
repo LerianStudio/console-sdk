@@ -256,4 +256,4 @@ Both `check` and `check-keys` exit with code 1 on failure, so they work out of t
 
 ## 📄 License
 
-ISC
+Elastic License 2.0 (ELv2)

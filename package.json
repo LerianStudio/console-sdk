@@ -29,7 +29,7 @@
     "email": "contato@lerian.studio",
     "url": "https://lerian.studio"
   },
-  "license": "ISC",
+  "license": "Elastic-2.0",
   "devDependencies": {
     "@babel/preset-typescript": "^7.28.5",
     "@eslint/eslintrc": "^3.3.5",
