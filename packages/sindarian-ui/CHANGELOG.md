@@ -1,3 +1,13 @@
+## [2.0.0-beta.21](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.20...sindarian-ui-v2.0.0-beta.21) (2026-10-24)
+
+
+### Features
+
+* **sindarian-ui:** add serif and mono font slots ([0ce9d08](https://github.com/LerianStudio/console-sdk/commit/0ce9d081e01a11a4c5e2fc4b4c22fb82970b7af0))
+* **sindarian-ui:** add standalone.css, the one-link plain entry ([9064c62](https://github.com/LerianStudio/console-sdk/commit/9064c62b573c1969b30cc6549a1486016065afd0))
+* **sindarian-ui:** add the lerian wordmark ([1d87147](https://github.com/LerianStudio/console-sdk/commit/1d871470ccdc56efd16ee735a031689515f732bb))
+* **sindarian-ui:** ship self-hosted inter and ibm plex fonts ([f111614](https://github.com/LerianStudio/console-sdk/commit/f11161482d17930a52ba739a9fe1dd32681761e1))
+
 ## [2.0.0-beta.20](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.19...sindarian-ui-v2.0.0-beta.20) (2026-10-24)
 
 
