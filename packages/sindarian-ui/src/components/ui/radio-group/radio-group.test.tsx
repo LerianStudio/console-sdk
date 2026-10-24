@@ -23,6 +23,20 @@ describe('RadioGroup', () => {
     expect(ted).toBeChecked()
   })
 
+  // The rest border is the --ring step, so the focus border swap shows nothing;
+  // the opaque ring is the focus indicator.
+  it('marks keyboard focus with an opaque ring', () => {
+    render(
+      <RadioGroup>
+        <RadioGroupItem value="pix" aria-label="Pix" />
+      </RadioGroup>
+    )
+
+    expect(screen.getByRole('radio', { name: 'Pix' })).toHaveClass(
+      'focus-visible:ring-ring'
+    )
+  })
+
   it('does not select a disabled option', () => {
     const onValueChange = jest.fn()
     render(
