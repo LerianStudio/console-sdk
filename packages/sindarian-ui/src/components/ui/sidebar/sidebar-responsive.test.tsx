@@ -379,7 +379,7 @@ describe('SidebarRoot widths', () => {
     // The classes above name a variable; without a declaration behind it the
     // rail computes to `width: auto` and the whole geometry is gone.
     const css = readFileSync(
-      resolve(__dirname, '..', '..', '..', 'globals.css'),
+      resolve(__dirname, '..', '..', '..', 'tokens.css'),
       'utf8'
     )
 
