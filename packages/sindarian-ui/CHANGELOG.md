@@ -1,3 +1,17 @@
+## [2.0.0-beta.22](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.21...sindarian-ui-v2.0.0-beta.22) (2026-10-24)
+
+
+### Features
+
+* **sindarian-ui:** add document.css, the long-form reading voice ([f90dcf8](https://github.com/LerianStudio/console-sdk/commit/f90dcf8e8c7e69e46843d5c030d52f0f572ef8b3))
+
+
+### Bug Fixes
+
+* **sindarian-ui:** keep wide tables and long terms inside the column ([5a01eee](https://github.com/LerianStudio/console-sdk/commit/5a01eee58d0186fa440fd2137843b8304ab3e8d5))
+* **sindarian-ui:** pin definition-list columns and flag tick-list role ([bc1226b](https://github.com/LerianStudio/console-sdk/commit/bc1226ba76b3db5b9692848bd47bdfdc7a3b51a5))
+* **sindarian-ui:** wrap long identifiers in the document voice on phones ([ad32ca7](https://github.com/LerianStudio/console-sdk/commit/ad32ca772121226173a1eb00df5ad9a3240f3622))
+
 ## [2.0.0-beta.21](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.20...sindarian-ui-v2.0.0-beta.21) (2026-10-24)
 
 
