@@ -170,12 +170,12 @@ export function DateRangePicker({
   }
 
   const triggerClass = cn(
-    // border-shadcn-400, not border-input: `--input` is a SURFACE token and is
-    // white in the light theme, so the trigger had no visible edge next to the
-    // Input and Select it sits with. font-sans, not font-mono: the dates are
+    // border-input-border, not border-input: `--input` is a SURFACE token and
+    // is white in the light theme, so the trigger had no visible edge next to
+    // the Input and Select it sits with. font-sans, not font-mono: the dates are
     // figures in the body face with tabular figures, like every other figure in
     // the console.
-    'border-shadcn-400 bg-card hover:bg-secondary focus-visible:ring-ring flex h-9 items-center gap-2 rounded-md border px-3 text-left font-sans text-sm tabular-nums transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none sm:w-40',
+    'border-input-border bg-card hover:bg-secondary focus-visible:ring-ring flex h-9 items-center gap-2 rounded-md border px-3 text-left font-sans text-sm tabular-nums transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none sm:w-40',
     invalid && 'border-destructive',
     // Conditional rather than `disabled:` variants, matching how this file
     // already applies `border-destructive`: with the prop absent the class

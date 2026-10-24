@@ -240,7 +240,7 @@ describe('DateRangePicker label voice', () => {
  * theme, so the control had no visible edge while the `Input` and `Select` next
  * to it did. It also printed the dates in the code face, which no other figure
  * in the console uses. The border now matches what `Input`, `Select` and
- * `DatePickerField` already resolve to (`--color-shadcn-400`), and the dates
+ * `DatePickerField` resolve to (`--color-input-border`), and the dates
  * render in the body face with tabular figures, the same shape the `Figure`
  * domain component is pinned to.
  */
@@ -254,7 +254,7 @@ describe('DateRangePicker trigger', () => {
     setup({ from: '2026-01-05', to: '2026-01-20' })
 
     for (const trigger of triggers()) {
-      expect(trigger).toHaveClass('border-shadcn-400')
+      expect(trigger).toHaveClass('border-input-border')
       expect(trigger).not.toHaveClass('border-input')
     }
   })

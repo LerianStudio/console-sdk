@@ -96,7 +96,7 @@ export const DateRangeField = <T extends FieldValues = FieldValues>({
                     variant="outline"
                     disabled={disabled}
                     className={cn(
-                      'bg-input hover:bg-input border-shadcn-400 text-foreground h-10 w-full justify-start rounded-md px-2.5 font-normal',
+                      'bg-input hover:bg-input border-input-border text-foreground h-10 w-full justify-start rounded-md px-2.5 font-normal',
                       readOnly && 'pointer-events-none',
                       open && 'ring-ring ring-2 ring-offset-0'
                     )}

@@ -5,7 +5,7 @@
 
   --color-select-foreground: var(--color-foreground);
   --color-select-placeholder: var(--color-muted-foreground);
-  --color-select-border: var(--color-shadcn-400);
+  --color-select-border: hsl(var(--input-border));
   --color-select-chevron: var(--color-container-text);
 }
 

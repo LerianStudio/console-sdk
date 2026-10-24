@@ -247,10 +247,9 @@ describe('prose ink', () => {
 /**
  * The field border. `--input` is a SURFACE token and is white in light, so
  * `border-input` leaves a control with no visible edge next to the Input it
- * sits with (`enterprise/date-range-picker/index.tsx` records the same
- * finding). `--input-border` is the token for this edge, and it resolves to
- * the same step MultipleSelect was hard-coding, so the paint is unchanged and
- * the theme now owns it.
+ * sits with. `--input-border` is the token for this edge: it is positioned per
+ * theme and its contrast is gated in `tokens-contract.test.ts`, which a raw
+ * `border-shadcn-*` step escapes.
  *
  * Autocomplete drew the same edge and had the same defect from the other
  * direction: it named `border-input` and painted `bg-background` behind it, so
@@ -263,7 +262,14 @@ describe('prose ink', () => {
  */
 const FIELD_TRIGGERS = [
   'components/ui/multiple-select/index.tsx',
-  'components/ui/autocomplete/index.tsx'
+  'components/ui/autocomplete/index.tsx',
+  'components/ui/textarea/index.tsx',
+  'components/ui/radio-group/index.tsx',
+  'components/ui/file-upload/index.tsx',
+  'components/form/date-picker-field/index.tsx',
+  'components/form/date-range-field/index.tsx',
+  'components/form/date-time-picker-field/index.tsx',
+  'enterprise/date-range-picker/index.tsx'
 ]
 
 describe.each(FIELD_TRIGGERS)('the field border in %s', (file) => {

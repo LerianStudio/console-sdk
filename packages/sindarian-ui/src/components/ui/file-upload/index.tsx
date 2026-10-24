@@ -371,7 +371,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           className={cn(
-            'border-input bg-card focus-within:ring-ring focus-within:ring-offset-background aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-within:ring-destructive flex w-full items-center gap-3 rounded-md border px-3 py-4 text-sm shadow-xs transition-colors focus-within:ring-2 focus-within:ring-offset-1 focus-within:outline-none',
+            'border-input-border bg-card focus-within:ring-ring focus-within:ring-offset-background aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-within:ring-destructive flex w-full items-center gap-3 rounded-md border px-3 py-4 text-sm shadow-xs transition-colors focus-within:ring-2 focus-within:ring-offset-1 focus-within:outline-none',
             dragActive &&
               'border-ring ring-ring ring-offset-background ring-2 ring-offset-1',
             disabled
@@ -881,7 +881,7 @@ export const MultipleFileUpload = React.forwardRef<
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={cn(
-          'border-input bg-card focus-within:ring-ring focus-within:ring-offset-background aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-within:ring-destructive flex w-full items-center gap-3 rounded-md border px-3 py-4 text-sm shadow-xs transition-colors focus-within:ring-2 focus-within:ring-offset-1 focus-within:outline-none',
+          'border-input-border bg-card focus-within:ring-ring focus-within:ring-offset-background aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-within:ring-destructive flex w-full items-center gap-3 rounded-md border px-3 py-4 text-sm shadow-xs transition-colors focus-within:ring-2 focus-within:ring-offset-1 focus-within:outline-none',
           dragActive &&
             'border-ring ring-ring ring-offset-background ring-2 ring-offset-1',
           pickerDisabled
