@@ -4,7 +4,7 @@
   --spacing-input-px: calc(var(--spacing) * 4);
   --color-input-foreground: var(--color-foreground);
   --color-input-placeholder: hsl(var(--input-placeholder));
-  --color-input-border: var(--color-shadcn-400);
+  --color-input-border: hsl(var(--input-border));
 
   --color-input-adornment: var(--color-container-text);
   --spacing-input-adornment-size: calc(var(--spacing) * 10);

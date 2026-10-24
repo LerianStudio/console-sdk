@@ -720,3 +720,55 @@ describe('focus ring', () => {
     expect(dark).toMatch(/^\s*--ring:\s*\S/m)
   })
 })
+
+/**
+ * The field boundary is the only thing that tells a reader where to type: the
+ * Input wrapper and the Select trigger paint no fill, so SC 1.4.11 holds their
+ * border to the same 3:1 floor as the ring. Both slots shipped as the raw step
+ * `--color-shadcn-400` in both themes, 2.56:1 on white and 2.34:1 on
+ * `--body-surface`. The slots are READ OUT OF THE COMPONENT SHEETS, so
+ * re-pointing either one is re-measured. `--input` is a ground here: the date,
+ * combobox and state triggers paint `bg-input` inside this border.
+ */
+const FIELD_SHEETS = ['input', 'select'].map((name) =>
+  readFileSync(
+    resolve(__dirname, '..', 'components', 'ui', name, 'styles.css'),
+    'utf8'
+  )
+)
+const colorMap = [themeInline, ...FIELD_SHEETS].join('\n')
+
+/** Resolve a `--color-*` theme key to channels, through aliases and tokens. */
+function colorValue(name: string, theme: 'light' | 'dark'): string {
+  const declared = colorMap
+    .match(new RegExp(`^\\s*--color-${name}:\\s*([^;]+);`, 'm'))?.[1]
+    .trim()
+  if (!declared) throw new Error(`--color-${name} is undefined`)
+
+  const token = declared.match(/^hsl\(var\(--([\w-]+)\)\)$/)
+  if (token) return tokenValue(token[1], theme)
+
+  const alias = declared.match(/^var\(--color-([\w-]+)\)$/)
+  return alias ? colorValue(alias[1], theme) : declared
+}
+
+const FIELD_BORDERS = ['input-border', 'select-border']
+const FIELD_GROUNDS = ['background', 'card', 'popover', 'body-surface', 'input']
+
+describe('field border', () => {
+  describe.each(FIELD_BORDERS)('--color-%s', (slot) => {
+    describe.each(FIELD_GROUNDS)('over --%s', (surface) => {
+      it.each(['light', 'dark'] as const)(
+        'clears the non-text floor in %s',
+        (theme) => {
+          const ratio = contrast(
+            colorValue(slot, theme),
+            tokenValue(surface, theme)
+          )
+
+          expect(ratio).toBeGreaterThanOrEqual(NON_TEXT_CONTRAST)
+        }
+      )
+    })
+  })
+})

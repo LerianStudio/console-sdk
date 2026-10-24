@@ -242,7 +242,7 @@ export function CopyField({
           the border and vertically centers the value. */}
       <div
         data-slot="input-wrapper"
-        className="border-input-border focus-within:border-ring flex h-10 w-full cursor-text items-center gap-1 rounded-md border pr-1 pl-4 transition-[color,box-shadow]"
+        className="border-input-border focus-within:border-ring has-[input:focus]:ring-ring flex h-10 w-full cursor-text items-center gap-1 rounded-md border pr-1 pl-4 transition-[color,box-shadow] has-[input:focus]:ring-2"
       >
         <input
           ref={inputRef}

@@ -39,6 +39,20 @@ describe('CopyField', () => {
     expect(input).toHaveAttribute('readonly')
   })
 
+  // The rest border and `--ring` are the same step in each theme, so the
+  // border swap alone shows nothing on focus; the ring is the indicator, as on Input.
+  it('rings the field while its input holds focus', () => {
+    render(<CopyField value="abc" label="API Key" />)
+    const wrapper = screen
+      .getByLabelText('API Key')
+      .closest('[data-slot="input-wrapper"]')
+
+    expect(wrapper).toHaveClass(
+      'has-[input:focus]:ring-2',
+      'has-[input:focus]:ring-ring'
+    )
+  })
+
   it('associates the visible label with the input via htmlFor/id', () => {
     render(<CopyField value="abc" label="API Key" />)
     expect(screen.getByLabelText('API Key')).toBeInTheDocument()
