@@ -2,6 +2,7 @@
    class="dark" on <html>, set by the page. No element reset. */
 @import './fonts.css';
 @import './tokens.css';
+@import './document.css';
 
 html {
   font-family: var(--font-stack-sans);

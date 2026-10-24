@@ -11,6 +11,7 @@
 @import './components/ui/tabs/styles.css';
 @import './components/ui/dialog/styles.css';
 @import './tokens.css';
+@import './document.css';
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
