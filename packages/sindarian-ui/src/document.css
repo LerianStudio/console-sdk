@@ -13,6 +13,7 @@
     color: hsl(var(--muted-foreground));
   }
 
+  /* Safari drops list semantics with list-style none: give the list role="list". */
   .doc-ticks {
     list-style: none;
     padding-left: 0;
@@ -187,9 +188,11 @@
     align-items: baseline;
   }
   .doc-prose dt {
+    grid-column: 1;
     overflow-wrap: anywhere;
   }
   .doc-prose dd {
+    grid-column: 2;
     margin: 0;
     overflow-wrap: anywhere;
     font-family: var(--font-stack-mono);
@@ -203,8 +206,7 @@
       overflow-x: auto;
     }
     .doc-prose dl {
-      grid-template-columns: minmax(0, 1fr);
-      row-gap: 0;
+      display: block;
     }
     .doc-prose dt:not(:first-child) {
       margin-top: 0.5rem;
