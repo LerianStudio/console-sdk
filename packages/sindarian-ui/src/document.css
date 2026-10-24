@@ -44,6 +44,7 @@
     font-size: 1rem;
     line-height: 1.7;
     color: hsl(var(--foreground));
+    overflow-wrap: break-word;
   }
   .doc-prose > :first-child {
     margin-top: 0;
@@ -66,7 +67,6 @@
   .doc-prose :where(h1, h2, h3) {
     font-family: var(--font-stack-serif);
     font-weight: 500;
-    color: hsl(var(--foreground));
     letter-spacing: 0;
   }
   .doc-prose h1 {
@@ -88,11 +88,9 @@
     margin: 2rem 0 0.75rem;
   }
   .doc-prose :where(h4, h5, h6) {
-    font-family: var(--font-stack-sans);
     font-weight: 600;
     font-size: 1rem;
     line-height: 1.5;
-    color: hsl(var(--foreground));
     margin: 1.5rem 0 0.5rem;
   }
 
@@ -112,7 +110,6 @@
     padding: 0.75rem 1.25rem;
     border-left: 3px solid hsl(var(--accent));
     background: hsl(var(--accent) / 0.1);
-    color: hsl(var(--foreground));
   }
   .doc-prose blockquote > :last-child {
     margin-bottom: 0;
@@ -124,6 +121,7 @@
     color: hsl(var(--foreground));
   }
   .doc-prose :where(code, kbd) {
+    overflow-wrap: anywhere;
     font-size: 0.875em;
     padding: 0.1em 0.35em;
     border-radius: calc(var(--radius) - 4px);
@@ -168,13 +166,6 @@
     font-variant-numeric: tabular-nums;
     vertical-align: top;
   }
-  /* Phones: a wide table scrolls inside the column, never the page. */
-  @media (max-width: 40rem) {
-    .doc-prose table {
-      display: block;
-      overflow-x: auto;
-    }
-  }
   .doc-prose :where(th, td):first-child {
     padding-left: 0;
   }
@@ -196,7 +187,23 @@
   }
   .doc-prose dd {
     margin: 0;
+    overflow-wrap: anywhere;
     font-family: var(--font-stack-mono);
     font-size: 0.875rem;
+  }
+
+  /* Phones: a wide table scrolls inside the column, never the page; dl stacks. */
+  @media (max-width: 40rem) {
+    .doc-prose table {
+      display: block;
+      overflow-x: auto;
+    }
+    .doc-prose dl {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 0;
+    }
+    .doc-prose dt:not(:first-child) {
+      margin-top: 0.5rem;
+    }
   }
 }
