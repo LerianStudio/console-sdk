@@ -1,0 +1,46 @@
+/* Inter latin, fetched from https://fonts.googleapis.com/css2?family=Inter:wght@100..900 */
+@font-face {
+  font-family: 'Lerian Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/inter-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lerian Plex Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/ibm-plex-serif-latin-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lerian Plex Serif';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/ibm-plex-serif-latin-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lerian Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/ibm-plex-mono-latin-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lerian Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/ibm-plex-mono-latin-500.woff2') format('woff2');
+}
+
+:root {
+  --font-inter: 'Lerian Inter';
+  --font-plex-serif: 'Lerian Plex Serif';
+  --font-plex-mono: 'Lerian Plex Mono';
+}

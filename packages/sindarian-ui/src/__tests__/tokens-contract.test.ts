@@ -14,7 +14,9 @@ import { resolve } from 'path'
  *    identity itself.
  */
 
-const css = readFileSync(resolve(__dirname, '..', 'globals.css'), 'utf8')
+const css = ['globals.css', 'tokens.css']
+  .map((file) => readFileSync(resolve(__dirname, '..', file), 'utf8'))
+  .join('\n')
 
 /** Extract a brace-balanced block, given the text that opens it. */
 function block(opener: string): string {

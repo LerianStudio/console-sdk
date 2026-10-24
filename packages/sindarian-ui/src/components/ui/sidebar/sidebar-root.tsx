@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetTitle } from '../sheet'
  *
  * They were `w-[72px]` and `w-[244px]`, which a consumer could only override by
  * winning a specificity argument with `cn`. `--sidebar-width` and
- * `--sidebar-width-collapsed` are declared in `globals.css`, so the default
+ * `--sidebar-width-collapsed` are declared in `tokens.css`, so the default
  * still ships with the stylesheet, and a consumer re-points either one with
  * `className="[--sidebar-width:280px]"` ON THE RAIL, which moves the rail and
  * the mobile drawer together (see `liftWidthOverrides` below), or with a rule

@@ -1,0 +1,19 @@
+import { Meta, Controls, Primary, Canvas } from '@storybook/addon-docs/blocks'
+import * as Story from './lerian-wordmark.stories'
+
+<Meta of={Story} />
+
+# LerianWordmark
+
+The Lerian wordmark from the brand kit, painted in `currentColor`. Size it by height through `className`; the width follows the mark's proportions. Pages without React use `dist/public/wordmark.svg` inline or as a CSS `mask` over `background: currentColor`; through `<img>` it always paints black.
+
+### Default
+
+<Canvas of={Story.Primary} />
+
+### Large
+
+<Canvas of={Story.Large} />
+
+<Primary />
+<Controls />

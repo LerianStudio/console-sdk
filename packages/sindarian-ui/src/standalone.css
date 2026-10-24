@@ -1,0 +1,10 @@
+/* One-link entry for pages without React or Tailwind. Light is :root; dark is
+   class="dark" on <html>, set by the page. No element reset. */
+@import './fonts.css';
+@import './tokens.css';
+
+html {
+  font-family: var(--font-stack-sans);
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+}

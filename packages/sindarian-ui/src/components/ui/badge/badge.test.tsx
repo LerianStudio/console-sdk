@@ -9,7 +9,7 @@ import { Badge } from '.'
  * The destructive variant used to hard-code `bg-red-500 text-primary-foreground`,
  * which measured ~3.98:1 in dark (WCAG AA fail) and was one of only three raw
  * palette sites left in the kit. It now reads the `--destructive` token pair by
- * NAME; the dark channel value itself is owned by globals.css.
+ * NAME; the dark channel value itself is owned by tokens.css.
  */
 describe('Badge destructive variant', () => {
   it('reads the destructive token pair instead of a raw palette color', () => {
