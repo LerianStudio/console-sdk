@@ -95,6 +95,7 @@
   }
 
   .doc-prose a {
+    overflow-wrap: anywhere;
     color: hsl(var(--link));
     text-decoration: underline;
     text-underline-offset: 0.2em;
@@ -181,9 +182,12 @@
 
   .doc-prose dl {
     display: grid;
-    grid-template-columns: max-content 1fr;
+    grid-template-columns: fit-content(20rem) minmax(0, 1fr);
     gap: 0.5rem 1.5rem;
     align-items: baseline;
+  }
+  .doc-prose dt {
+    overflow-wrap: anywhere;
   }
   .doc-prose dd {
     margin: 0;
