@@ -1,3 +1,11 @@
+## [2.0.0-beta.20](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.19...sindarian-ui-v2.0.0-beta.20) (2026-10-24)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** lift field borders to the 3:1 non-text floor ([1cb4138](https://github.com/LerianStudio/console-sdk/commit/1cb41387b1ecd57fc1a281f86b753baeaf366931)), closes [#A1A1](https://github.com/LerianStudio/console-sdk/issues/A1A1) [#71717](https://github.com/LerianStudio/console-sdk/issues/71717) [#A1A1](https://github.com/LerianStudio/console-sdk/issues/A1A1) [#27272](https://github.com/LerianStudio/console-sdk/issues/27272)
+* **sindarian-ui:** make the radio and otp focus rings opaque ([44191e0](https://github.com/LerianStudio/console-sdk/commit/44191e01b1022ae0fa34f98614da59b27540e78c))
+
 ## [2.0.0-beta.19](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.18...sindarian-ui-v2.0.0-beta.19) (2026-10-16)
 
 
