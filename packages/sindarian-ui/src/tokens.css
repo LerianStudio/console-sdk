@@ -194,6 +194,17 @@
     --chart-6: 193 82% 31%; /* cyan/700 = #0E7490 */
     --chart-7: 272 72% 47%; /* purple/700 = #7E22CE */
     --chart-8: 351 9% 43%; /* cod-gray-500 = #776366 */
+
+    /* Plain-CSS twins of the @theme font slots in globals.css, for pages without
+       Tailwind; each must equal its --font-* value there. */
+    --font-stack-sans:
+      var(--font-inter, 'Inter'), 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-stack-serif:
+      var(--font-plex-serif, ui-serif), ui-serif, Georgia, Cambria,
+      'Times New Roman', Times, serif;
+    --font-stack-mono:
+      var(--font-plex-mono, ui-monospace), ui-monospace, SFMono-Regular, Menlo,
+      Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   }
 
   .dark {
