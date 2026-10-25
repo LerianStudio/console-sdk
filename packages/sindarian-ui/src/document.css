@@ -73,7 +73,7 @@
   .doc-prose h1 {
     font-size: clamp(2rem, 4vw, 2.5rem);
     line-height: 1.1;
-    max-width: 28ch;
+    text-wrap: balance;
     margin: 0 0 1.5rem;
   }
   .doc-prose h2 {
@@ -204,6 +204,10 @@
     .doc-prose table {
       display: block;
       overflow-x: auto;
+    }
+    /* An ID or endpoint in a cell keeps its width, so the table scrolls instead of shredding it. */
+    .doc-prose td :where(code, a) {
+      overflow-wrap: normal;
     }
     .doc-prose dl {
       display: block;
