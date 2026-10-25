@@ -174,6 +174,18 @@
   .doc-prose :where(th, td):last-child {
     padding-right: 0;
   }
+  /* .table-wrap scrolls a wide table inside the column at every width and holds
+     its margin; an ID or endpoint in a cell keeps its width instead of shredding. */
+  .doc-prose .table-wrap {
+    overflow-x: auto;
+    margin: 0 0 1.25rem;
+  }
+  .doc-prose .table-wrap > table {
+    margin: 0;
+  }
+  .doc-prose .table-wrap td :where(code, a) {
+    overflow-wrap: normal;
+  }
 
   .doc-prose hr {
     border: 0;
