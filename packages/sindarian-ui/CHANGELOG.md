@@ -1,3 +1,10 @@
+## [2.0.0-beta.24](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.23...sindarian-ui-v2.0.0-beta.24) (2026-10-25)
+
+
+### Features
+
+* **sindarian-ui:** give documents a table scroll box ([5eafc30](https://github.com/LerianStudio/console-sdk/commit/5eafc30a2cd355009556b00e873613729cf4ab1d))
+
 ## [2.0.0-beta.23](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.22...sindarian-ui-v2.0.0-beta.23) (2026-10-25)
 
 
