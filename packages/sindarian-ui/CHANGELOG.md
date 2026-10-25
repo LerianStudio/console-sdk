@@ -1,3 +1,10 @@
+## [2.0.0-beta.23](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.22...sindarian-ui-v2.0.0-beta.23) (2026-10-25)
+
+
+### Bug Fixes
+
+* **sindarian-ui:** scroll phone tables instead of shredding ids, widen h1 ([dc37c0f](https://github.com/LerianStudio/console-sdk/commit/dc37c0f5298d88328ac10a8cfbe6045241711131))
+
 ## [2.0.0-beta.22](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.21...sindarian-ui-v2.0.0-beta.22) (2026-10-24)
 
 
