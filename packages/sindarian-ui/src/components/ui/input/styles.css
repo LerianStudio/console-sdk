@@ -49,7 +49,7 @@
      which holds that 8px with nothing left for text; the console repairs it
      with `shrink-0` on that wrapper. This package's own `SheetContent side="right"` used to run the
      same arithmetic one step earlier: `w-2/5 p-12` at a 390px viewport left a
-     59px panel, and the field came out 41px wide with 9px of text — unusable,
+     59px panel, and the field came out 41px wide with 33px of text — unusable,
      but inside its box, where 2.0.0-beta.9 painted 189px of it across the
      panel edge. That panel grew a phone step in 2.0.0-beta.12 and now fills
      the screen, so the field reads 307px there; the arithmetic still stands
@@ -131,7 +131,7 @@
     @apply read-only:cursor-default read-only:caret-transparent read-only:opacity-50 read-only:select-text read-only:focus:ring-0 read-only:focus:ring-offset-0 read-only:focus:outline-hidden;
   }
 
-  /* Holds text 48px from the edge beside an adornment, as before input-px shrank. */
+  /* Holds text 49px from the outer edge beside an adornment. */
   .input-start {
     @apply ml-9;
   }

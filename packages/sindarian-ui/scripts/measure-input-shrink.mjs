@@ -590,7 +590,7 @@ const FIXTURES = [
     // iframe so the media query has something to resolve against; it reads
     // 390px of panel and 307px of field.
     report: ['row', 'escape', 'content'],
-    note: 'the right-side SheetContent panel in a 390px BOX on a desktop window, i.e. the desktop geometry: `w-2/5 p-12` leaves 59px of content and the field 9px of text. The phone step shipped in beta.12 and is a viewport media query, so it does not reach this shape — see scripts/measure-phone-shapes.mjs for the panel at a real 390px viewport.',
+    note: 'the right-side SheetContent panel in a 390px BOX on a desktop window, i.e. the desktop geometry: `w-2/5 p-12` leaves 59px of content and the field 33px of text. The phone step shipped in beta.12 and is a viewport media query, so it does not reach this shape — see scripts/measure-phone-shapes.mjs for the panel at a real 390px viewport.',
     row: 'flex',
     html:
       // The class list `SheetContent` actually emits, which is not the one its

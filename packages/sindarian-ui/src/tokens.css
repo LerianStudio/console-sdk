@@ -92,7 +92,7 @@
     */
     --destructive: 0 72% 51%; /* red/600 = #DC2626 */
     --destructive-foreground: 0 0% 100%; /* white */
-    /* Hover fill: one step away from the label. /80 over white read 3.73:1. */
+    /* Hover fill: one step away from the label. */
     --destructive-hover: 0 74% 42%; /* red/700 = #B91C1C, 6.41:1 under white */
     --border: 240 5% 90%; /* base/200 = #E4E4E7 */
     --input: 0 0% 100%; /* base/white */
@@ -294,7 +294,7 @@
     */
     --destructive: 0 91% 71%; /* red/400 = #F87171 */
     --destructive-foreground: 0 75% 15%; /* red/950 = #450A0A */
-    /* Away from the dark label means lighter. /80 over --background read 4.36:1. */
+    /* Hover fill: one step away from the dark label, so lighter. */
     --destructive-hover: 0 94% 82%; /* red/300 = #FCA5A5, 8.68:1 under red/950 */
 
     /* Shadcn — System Error */
