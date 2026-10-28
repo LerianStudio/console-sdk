@@ -1,3 +1,27 @@
+## [2.0.0-beta.25](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.24...sindarian-ui-v2.0.0-beta.25) (2026-10-28)
+
+
+### Features
+
+* **sindarian-ui:** add a close label to the sidebar drawer ([ed1c596](https://github.com/LerianStudio/console-sdk/commit/ed1c59621a6e44adf30cf60d796c48aa9b79d3d0))
+* **sindarian-ui:** add close label and close toggle to dialog and sheet ([208633f](https://github.com/LerianStudio/console-sdk/commit/208633ff4e841d30e031f457e02db02b6cae2809))
+* **sindarian-ui:** let empty state titles render as headings ([9db9bcc](https://github.com/LerianStudio/console-sdk/commit/9db9bcc62ec0cecd1bc6f293451678b0386adf54))
+
+
+### Bug Fixes
+
+* **ci:** migrate shared workflows to shared-workflows-public ([5f232e0](https://github.com/LerianStudio/console-sdk/commit/5f232e041ebac70de115c732bd01df9134c5c065))
+* **sindarian-ui:** align input text with select and textarea ([dd269e3](https://github.com/LerianStudio/console-sdk/commit/dd269e3a3aa78800bd15862ac87aaed8fbd7ae22))
+* **sindarian-ui:** cap the select menu at the room left in the window ([0ffac20](https://github.com/LerianStudio/console-sdk/commit/0ffac2084401fde994cecbc7a00e18fd6a70513c))
+* **sindarian-ui:** dim the whole input field when disabled ([68893fa](https://github.com/LerianStudio/console-sdk/commit/68893fa04670af943bbe22e59196fef75142c760))
+* **sindarian-ui:** keep the destructive button label at AA on hover ([1e1d9ab](https://github.com/LerianStudio/console-sdk/commit/1e1d9ab09a73e7416fa30cfc3a0ca2e1dee9271e))
+* **sindarian-ui:** neutral confirm glyph and red destructive confirm ([f8a621d](https://github.com/LerianStudio/console-sdk/commit/f8a621dbebdeff9cbff61470474fb63148508c6a))
+* **sindarian-ui:** pass titleas through data table and keep link badge hover ([cb6b20b](https://github.com/LerianStudio/console-sdk/commit/cb6b20ba3039db0b1ac4a703a7cdef9e746ef87a))
+* **sindarian-ui:** sharpen select ink and mark invalid inputs ([94cdf89](https://github.com/LerianStudio/console-sdk/commit/94cdf899a9201fc0c4246cc5c7ee6f139e7001c4))
+* **sindarian-ui:** space stacked dialog footer buttons on phones ([c8f2f1e](https://github.com/LerianStudio/console-sdk/commit/c8f2f1ea6a6c1c7501cf45d13ef9d22d1f197c4d))
+* **sindarian-ui:** step the dark placeholder off the value ink ([b3eefdb](https://github.com/LerianStudio/console-sdk/commit/b3eefdbda79b5b18c67233fcaec25c8f423717f8))
+* **sindarian-ui:** stop static badges dimming under the pointer ([46c47b2](https://github.com/LerianStudio/console-sdk/commit/46c47b2fef567e7f4c619e2e3cabd2045bae49a9))
+
 ## [2.0.0-beta.24](https://github.com/LerianStudio/console-sdk/compare/sindarian-ui-v2.0.0-beta.23...sindarian-ui-v2.0.0-beta.24) (2026-10-25)
 
 
