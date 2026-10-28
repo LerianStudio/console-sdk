@@ -25,6 +25,11 @@
     @apply border-ring;
   }
 
+  /* After focus-within, so an invalid field keeps its red while focused. */
+  .input-wrapper:has([aria-invalid='true']) {
+    @apply border-destructive;
+  }
+
   /* Don't give the placeholder its own size or weight. At a smaller size it
      still shares the input's baseline, so it rode ~0.75px below the value and
      the text jumped the moment you typed; font-medium gave the hint the same
