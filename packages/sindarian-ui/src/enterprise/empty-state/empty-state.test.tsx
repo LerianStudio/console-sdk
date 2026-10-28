@@ -41,6 +41,26 @@ describe('EmptyState', () => {
     expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument()
   })
 
+  it('keeps the title out of the heading outline by default', () => {
+    render(<EmptyState title="Nothing here yet" />)
+
+    expect(screen.queryByRole('heading')).toBeNull()
+  })
+
+  it('renders the title as a heading at the chosen level in both presentations', () => {
+    const { rerender } = render(
+      <EmptyState title="Nothing here yet" titleAs="h2" />
+    )
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Nothing here yet' })
+    ).toBeInTheDocument()
+
+    rerender(<EmptyState title="No rows" ruled titleAs="h3" />)
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'No rows' })
+    ).toBeInTheDocument()
+  })
+
   it('accepts a custom lucide icon', () => {
     const { container } = render(
       <EmptyState title="Custom icon" icon={FileSearch} />
