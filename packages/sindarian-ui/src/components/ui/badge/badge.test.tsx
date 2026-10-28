@@ -93,7 +93,7 @@ describe('Badge token hygiene', () => {
  */
 const BEFORE_SIZE_AXIS = {
   default:
-    'inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
+    'inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground',
   credit:
     'inline-flex items-center gap-1 whitespace-nowrap rounded-full border text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-credit/30 bg-credit/10 text-credit-foreground px-[10px] py-1',
   outline:
