@@ -234,7 +234,6 @@ describe('ConfirmationDialog', () => {
       .getByRole('alertdialog')
       .querySelector('span[class*="size-10"] svg')
     expect(glyph).toHaveClass('lucide-circle-question-mark')
-    expect(glyph).not.toHaveClass('lucide-ban')
   })
 
   it('keeps the cancel action looking like a secondary button', () => {

@@ -80,11 +80,13 @@ describe('Badge token hygiene', () => {
  * An omitted size — and an explicit `size="default"` — must reproduce them byte
  * for byte; that is the whole guarantee that adding the axis broke no consumer.
  *
- * Two deliberate edits since that capture, both additions to the base and both
+ * Three deliberate edits since that capture. Two are additions to the base,
  * inert for the single-child badges these three fixtures render: `gap-1`,
  * because a badge with a label and an element child rendered them glued (see
  * "Badge child separation" below), and `whitespace-nowrap`, because a label long
  * enough to wrap stopped the pill being a pill (see "Badge single-line pill").
+ * The third drops `hover:bg-primary/80` from `default`: a static badge is not a
+ * control and must not dim under the pointer.
  *
  * `cn` runs everything through tailwind-merge (see `src/lib/utils.ts`), which is
  * why the base `border-border` and `px-2.5 py-0.5` are absent from variants that
