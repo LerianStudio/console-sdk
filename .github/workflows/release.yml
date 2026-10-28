@@ -50,7 +50,7 @@ jobs:
 
       - name: Get changed paths
         id: changed-paths
-        uses: LerianStudio/github-actions-shared-workflows/src/config/changed-paths@v1.18.1
+        uses: LerianStudio/shared-workflows-public/src/config/changed-paths@tier-1
         with:
           filter-paths: |
             packages/sindarian-server
@@ -272,7 +272,7 @@ jobs:
     name: Generate Changelog
     needs: [get-changed-paths, release]
     if: needs.get-changed-paths.outputs.matrix != '[]' && github.ref_name == 'main'
-    uses: LerianStudio/github-actions-shared-workflows/.github/workflows/gptchangelog.yml@v1.65.0
+    uses: LerianStudio/shared-workflows-public/.github/workflows/gptchangelog.yml@tier-1
     with:
       runner_type: blacksmith-4vcpu-ubuntu-2404
       filter_paths: |
@@ -290,7 +290,7 @@ jobs:
     name: Release Notification
     needs: [release, generate-changelog]
     if: always() && needs.release.result == 'success'
-    uses: LerianStudio/github-actions-shared-workflows/.github/workflows/release-notification.yml@v1.18.1
+    uses: LerianStudio/shared-workflows-public/.github/workflows/release-notification.yml@tier-1
     with:
       product_name: Console SDK
     secrets:

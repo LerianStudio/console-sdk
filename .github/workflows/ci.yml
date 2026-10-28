@@ -38,7 +38,7 @@ jobs:
 
       - name: Get changed paths
         id: changed-paths
-        uses: LerianStudio/github-actions-shared-workflows/src/config/changed-paths@09f3e9acbe91c58bac6997b4f6f7f2584a6200c5 # v1.18.1
+        uses: LerianStudio/shared-workflows-public/src/config/changed-paths@tier-1
         with:
           filter-paths: |
             packages/sindarian-server
