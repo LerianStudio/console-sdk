@@ -574,14 +574,15 @@ const FIXTURES = [
     // This package's OWN panel, and the only fixture here that is not a
     // consumer's arithmetic. `sheetVariants` sizes it `w-2/5 p-12`, so a 156px
     // box leaves 59px of content and the field inside it comes out 41px wide
-    // with 9px of text. Measured across the arms: 2.0.0-beta.9 painted 189px
-    // of the control across the panel edge here, beta.10 and this rule set
-    // both give the same 41/9. So the rule set is not what made this panel
+    // with 33px of text (9px before the input inset dropped to 4px a side).
+    // Measured across the arms: 2.0.0-beta.9 painted 189px of the control
+    // across the panel edge here; beta.10 and this rule set give the same
+    // field width. So the rule set is not what made this panel
     // unusable on a phone; its missing breakpoint was, and that was a Sheet
     // defect rather than an input one. Everything is reported for that reason.
     //
     // ⚠️ THE BREAKPOINT LANDED IN 2.0.0-beta.12 AND THIS FIXTURE STILL READS
-    // 41/9, WHICH IS NOT A CONTRADICTION. `max-sm:w-full max-sm:px-4` is a
+    // A 41px FIELD, WHICH IS NOT A CONTRADICTION. `max-sm:w-full max-sm:px-4` is a
     // media query against the VIEWPORT, and every fixture here is a fixed-width
     // box inside one 1200px window — a 390px column on a desktop, which is
     // exactly the shape this one models and exactly the shape the phone step

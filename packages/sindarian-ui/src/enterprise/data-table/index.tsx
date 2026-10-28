@@ -689,6 +689,7 @@ export function DataTable<TData>({
               <TableCell colSpan={colCount} className="p-0">
                 <EmptyState
                   title={empty?.title ?? 'Nothing here yet'}
+                  titleAs={empty?.titleAs}
                   description={empty?.description}
                   icon={empty?.icon}
                   action={empty?.action}

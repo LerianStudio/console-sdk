@@ -64,6 +64,19 @@ describe('DataTable', () => {
     expect(screen.getByText('Create one first')).toBeInTheDocument()
   })
 
+  it('renders the empty state title at the heading level the caller asks for', () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={[]}
+        empty={{ title: 'No settlements yet', titleAs: 'h2' }}
+      />
+    )
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'No settlements yet' })
+    ).toBeInTheDocument()
+  })
+
   it('renders rows and right-aligns numeric columns', () => {
     render(<DataTable columns={columns} data={rows} getRowId={getRowId} />)
 

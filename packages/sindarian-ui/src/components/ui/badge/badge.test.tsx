@@ -85,8 +85,9 @@ describe('Badge token hygiene', () => {
  * because a badge with a label and an element child rendered them glued (see
  * "Badge child separation" below), and `whitespace-nowrap`, because a label long
  * enough to wrap stopped the pill being a pill (see "Badge single-line pill").
- * The third drops `hover:bg-primary/80` from `default`: a static badge is not a
- * control and must not dim under the pointer.
+ * The third scopes `hover:bg-primary/80` on `default` to a badge rendered as a
+ * link (`[a&]:`): a static badge is not a control and must not dim under the
+ * pointer.
  *
  * `cn` runs everything through tailwind-merge (see `src/lib/utils.ts`), which is
  * why the base `border-border` and `px-2.5 py-0.5` are absent from variants that
@@ -95,7 +96,7 @@ describe('Badge token hygiene', () => {
  */
 const BEFORE_SIZE_AXIS = {
   default:
-    'inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground',
+    'inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/80',
   credit:
     'inline-flex items-center gap-1 whitespace-nowrap rounded-full border text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-credit/30 bg-credit/10 text-credit-foreground px-[10px] py-1',
   outline:
