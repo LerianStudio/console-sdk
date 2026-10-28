@@ -54,7 +54,7 @@
 // intrinsic width comes from `cols` rather than `size`, and it has two call
 // sites (text block and comment block).
 //
-// IT EXITS 0 ON THE COMMITTED STYLESHEET AND STILL PRINTS FINDINGS — twelve of
+// IT EXITS 0 ON THE COMMITTED STYLESHEET AND STILL PRINTS FINDINGS — eight of
 // them as this is written. Every one is a check a fixture lists under `report`,
 // meaning its repair lives in a consumer rather than in this package, and that
 // list is the open work rather than a broken harness. A non-zero exit means an
@@ -272,7 +272,7 @@ const FIXTURES = [
     // the same reason the row is: it is the same fact seen from the other end,
     // and the repair is the caller's.
     report: ['row', 'escape'],
-    note: 'console transaction screen: amount + asset, each in a caller flex-1 column that has not said it may shrink. At head the row overflows 200px by 138px, the first column ends 57px outside it and the second 138.13px, while the field keeps 239px of box and 207px of text inside its column.',
+    note: 'console transaction screen: amount + asset, each in a caller flex-1 column that has not said it may shrink. At head the row overflows 200px by 114px, the first column ends 33px outside it and the second 114.13px, while the field keeps 215px of box and 207px of text inside its column.',
     row: 'flex gap-2',
     html:
       `<div data-probe="amount-col" class="flex-1">${inputHtml('amount')}</div>` +
@@ -372,8 +372,8 @@ const FIXTURES = [
     // shipped this rule set (the other demotion is the row check on
     // `two-up-200`). What that hides is a real trade against beta.10 on this
     // shape and it belongs in the open: beta.10 held this wrapper at 50px with
-    // 32px of chip, and this rule set lets it fall to 18px, so the control
-    // paints 23px outside it. The repaired fixture is where the floor is
+    // 32px of chip, and this rule set lets it fall to 18px, which holds the
+    // 8px control with no text room left. The repaired fixture is where the floor is
     // enforced, because `shrink-0` is what the console ships.
     report: ['row', 'escape', 'content'],
     minContent: 120,
@@ -574,14 +574,15 @@ const FIXTURES = [
     // This package's OWN panel, and the only fixture here that is not a
     // consumer's arithmetic. `sheetVariants` sizes it `w-2/5 p-12`, so a 156px
     // box leaves 59px of content and the field inside it comes out 41px wide
-    // with 9px of text. Measured across the arms: 2.0.0-beta.9 painted 189px
-    // of the control across the panel edge here, beta.10 and this rule set
-    // both give the same 41/9. So the rule set is not what made this panel
+    // with 33px of text (9px before the input inset dropped to 4px a side).
+    // Measured across the arms: 2.0.0-beta.9 painted 189px of the control
+    // across the panel edge here; beta.10 and this rule set give the same
+    // field width. So the rule set is not what made this panel
     // unusable on a phone; its missing breakpoint was, and that was a Sheet
     // defect rather than an input one. Everything is reported for that reason.
     //
     // ⚠️ THE BREAKPOINT LANDED IN 2.0.0-beta.12 AND THIS FIXTURE STILL READS
-    // 41/9, WHICH IS NOT A CONTRADICTION. `max-sm:w-full max-sm:px-4` is a
+    // A 41px FIELD, WHICH IS NOT A CONTRADICTION. `max-sm:w-full max-sm:px-4` is a
     // media query against the VIEWPORT, and every fixture here is a fixed-width
     // box inside one 1200px window — a 390px column on a desktop, which is
     // exactly the shape this one models and exactly the shape the phone step
@@ -590,7 +591,7 @@ const FIXTURES = [
     // iframe so the media query has something to resolve against; it reads
     // 390px of panel and 307px of field.
     report: ['row', 'escape', 'content'],
-    note: 'the right-side SheetContent panel in a 390px BOX on a desktop window, i.e. the desktop geometry: `w-2/5 p-12` leaves 59px of content and the field 9px of text. The phone step shipped in beta.12 and is a viewport media query, so it does not reach this shape — see scripts/measure-phone-shapes.mjs for the panel at a real 390px viewport.',
+    note: 'the right-side SheetContent panel in a 390px BOX on a desktop window, i.e. the desktop geometry: `w-2/5 p-12` leaves 59px of content and the field 33px of text. The phone step shipped in beta.12 and is a viewport media query, so it does not reach this shape — see scripts/measure-phone-shapes.mjs for the panel at a real 390px viewport.',
     row: 'flex',
     html:
       // The class list `SheetContent` actually emits, which is not the one its

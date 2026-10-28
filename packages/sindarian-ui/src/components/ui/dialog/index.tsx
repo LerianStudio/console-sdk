@@ -47,32 +47,34 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  closeLabel = 'Close',
   onInteractOutside,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
+  /** Renders the built-in close button. Default true. */
   showCloseButton?: boolean
+  /** Accessible name of the built-in close button. Override for localization. */
+  closeLabel?: string
 }) {
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
-        className={cn(
-          'dialog-content',
-          !showCloseButton && '*:data-radix-dialog-close:hidden',
-          className
-        )}
+        className={cn('dialog-content', className)}
         onInteractOutside={keepOpenOnToast(onInteractOutside)}
         {...props}
       >
         {children}
-        <DialogPrimitive.Close
-          data-slot="dialog-close"
-          className="dialog-close"
-        >
-          <X className="size-4" />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
+        {showCloseButton && (
+          <DialogPrimitive.Close
+            data-slot="dialog-close"
+            className="dialog-close"
+          >
+            <X className="size-4" />
+            <span className="sr-only">{closeLabel}</span>
+          </DialogPrimitive.Close>
+        )}
       </DialogPrimitive.Content>
     </DialogPortal>
   )

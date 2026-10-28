@@ -31,6 +31,11 @@ export type EmptyStateProps = {
    * a void. Pairs with the app-side pre-ruled empty-rows fill. Default off.
    */
   ruled?: boolean
+  /**
+   * Renders the title as this heading element, so screen-reader heading
+   * navigation reaches the empty state. Omit to keep today's plain text.
+   */
+  titleAs?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
   className?: string
 }
 
@@ -40,8 +45,11 @@ export function EmptyState({
   description,
   action,
   ruled = false,
+  titleAs,
   className
 }: EmptyStateProps) {
+  const Title = titleAs ?? (ruled ? 'span' : 'p')
+
   if (ruled) {
     return (
       <div
@@ -53,7 +61,7 @@ export function EmptyState({
       >
         <div className="text-muted-foreground flex items-center gap-2">
           <Icon className="size-4" aria-hidden />
-          <span className={LABEL_VOICE_CLASS}>{title}</span>
+          <Title className={LABEL_VOICE_CLASS}>{title}</Title>
         </div>
         {description ? (
           <p className="text-muted-foreground max-w-prose text-sm">
@@ -76,7 +84,7 @@ export function EmptyState({
         <Icon className="text-muted-foreground size-5" aria-hidden />
       </div>
       <div className="space-y-1">
-        <p className="text-foreground text-sm font-medium">{title}</p>
+        <Title className="text-foreground text-sm font-medium">{title}</Title>
         {description ? (
           <p className="text-muted-foreground mx-auto max-w-sm text-sm">
             {description}

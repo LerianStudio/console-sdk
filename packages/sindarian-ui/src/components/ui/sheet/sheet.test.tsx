@@ -197,6 +197,30 @@ describe('SheetContent close button', () => {
 
     expect(close()).not.toHaveClass('focus:outline-hidden')
   })
+
+  it('takes a localized name', () => {
+    render(
+      <Sheet open>
+        <SheetContent aria-describedby={undefined} closeLabel="Fechar">
+          <SheetTitle>Filters</SheetTitle>
+        </SheetContent>
+      </Sheet>
+    )
+
+    expect(screen.getByRole('button', { name: 'Fechar' })).toBeInTheDocument()
+  })
+
+  it('is not rendered when showCloseButton is false', () => {
+    render(
+      <Sheet open>
+        <SheetContent aria-describedby={undefined} showCloseButton={false}>
+          <SheetTitle>Filters</SheetTitle>
+        </SheetContent>
+      </Sheet>
+    )
+
+    expect(screen.queryByRole('button')).toBeNull()
+  })
 })
 
 describe('SheetContent outside interaction', () => {

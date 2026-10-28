@@ -56,3 +56,34 @@ describe('DialogContent outside interaction', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 })
+
+describe('DialogContent close button', () => {
+  const renderContent = (
+    props: { closeLabel?: string; showCloseButton?: boolean } = {}
+  ) =>
+    render(
+      <Dialog open>
+        <DialogContent aria-describedby={undefined} {...props}>
+          <DialogTitle>Edit</DialogTitle>
+        </DialogContent>
+      </Dialog>
+    )
+
+  it('is named Close by default', () => {
+    renderContent()
+
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument()
+  })
+
+  it('takes a localized name', () => {
+    renderContent({ closeLabel: 'Fechar' })
+
+    expect(screen.getByRole('button', { name: 'Fechar' })).toBeInTheDocument()
+  })
+
+  it('is not rendered when showCloseButton is false', () => {
+    renderContent({ showCloseButton: false })
+
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+})

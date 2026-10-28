@@ -89,7 +89,6 @@ export function PasswordField<
                 </InputAdornment>
               }
               disabled={disabled}
-              className="pr-10"
               data-testid={dataTestId}
             />
           </FormControl>

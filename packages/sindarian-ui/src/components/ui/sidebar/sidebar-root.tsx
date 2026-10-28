@@ -92,6 +92,8 @@ export type SidebarRootProps = React.ComponentProps<'nav'> & {
    * the drawer opens. Unused while `mobile` is `'inline'`.
    */
   mobileTitle?: string
+  /** The drawer close button's accessible name. Override for localization. */
+  mobileCloseLabel?: string
 }
 
 /**
@@ -112,6 +114,7 @@ export const SidebarRoot = ({
   id,
   mobile = 'inline',
   mobileTitle = 'Navigation',
+  mobileCloseLabel = 'Close',
   ...props
 }: SidebarRootProps) => {
   const context = useSidebar()
@@ -165,6 +168,7 @@ export const SidebarRoot = ({
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent
           side="left"
+          closeLabel={mobileCloseLabel}
           // The Sheet's own paddings are built for a form panel; a rail brings
           // its own. `max-w-full` so a consumer widening `--sidebar-width` past
           // the viewport still cannot push the drawer off screen. The lifted

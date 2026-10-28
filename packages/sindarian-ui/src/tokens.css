@@ -92,6 +92,8 @@
     */
     --destructive: 0 72% 51%; /* red/600 = #DC2626 */
     --destructive-foreground: 0 0% 100%; /* white */
+    /* Hover fill: one step away from the label. */
+    --destructive-hover: 0 74% 42%; /* red/700 = #B91C1C, 6.41:1 under white */
     --border: 240 5% 90%; /* base/200 = #E4E4E7 */
     --input: 0 0% 100%; /* base/white */
     /* Lighter than --muted-foreground, which is also the label colour: a
@@ -264,10 +266,9 @@
     --popover-foreground: 240 5% 96%; /* base/100 = #F4F4F5 */
     --border: 240 5% 34%; /* base/600 = #52525B */
     --input: 240 4% 16%; /* base/800 = #27272A */
-    /* Held at base/400 rather than stepped down with the light theme: on the
-       dark field that is already only 5.8:1, and going lighter here means
-       darker, which would push the hint under the AA floor. */
-    --input-placeholder: 240 5% 80%; /* between base/400 and base/300: #C9C9CF, AA on card (6.3:1); base/400 read 4.07:1 there */
+    /* Stepped off --muted-foreground, as in light, so a hint never reads as a
+       chosen value: about 2:1 from --foreground, still AA on --card. */
+    --input-placeholder: 240 5% 70%; /* #AFAFB6: 4.79:1 on card, 6.83:1 on background, 1.98:1 from foreground */
     --input-border: 240 5% 65%; /* base/400 = #A1A1AA, 4.09:1 on card; light's base/500 reads 2.15:1 there */
     /* Held at base/400, which light had to leave: on this ground the two
        directions disagree. base/400 reads 5.81:1 on --background and 4.08:1 on
@@ -293,6 +294,8 @@
     */
     --destructive: 0 91% 71%; /* red/400 = #F87171 */
     --destructive-foreground: 0 75% 15%; /* red/950 = #450A0A */
+    /* Hover fill: one step away from the dark label, so lighter. */
+    --destructive-hover: 0 94% 82%; /* red/300 = #FCA5A5, 8.68:1 under red/950 */
 
     /* Shadcn — System Error */
     --system-error: 0 91% 71%; /* red/400 = #F87171 */

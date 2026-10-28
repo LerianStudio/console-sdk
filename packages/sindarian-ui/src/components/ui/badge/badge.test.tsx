@@ -80,11 +80,14 @@ describe('Badge token hygiene', () => {
  * An omitted size — and an explicit `size="default"` — must reproduce them byte
  * for byte; that is the whole guarantee that adding the axis broke no consumer.
  *
- * Two deliberate edits since that capture, both additions to the base and both
+ * Three deliberate edits since that capture. Two are additions to the base,
  * inert for the single-child badges these three fixtures render: `gap-1`,
  * because a badge with a label and an element child rendered them glued (see
  * "Badge child separation" below), and `whitespace-nowrap`, because a label long
  * enough to wrap stopped the pill being a pill (see "Badge single-line pill").
+ * The third scopes `hover:bg-primary/80` on `default` to a badge rendered as a
+ * link (`[a&]:`): a static badge is not a control and must not dim under the
+ * pointer.
  *
  * `cn` runs everything through tailwind-merge (see `src/lib/utils.ts`), which is
  * why the base `border-border` and `px-2.5 py-0.5` are absent from variants that
@@ -93,7 +96,7 @@ describe('Badge token hygiene', () => {
  */
 const BEFORE_SIZE_AXIS = {
   default:
-    'inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
+    'inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/80',
   credit:
     'inline-flex items-center gap-1 whitespace-nowrap rounded-full border text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 border-credit/30 bg-credit/10 text-credit-foreground px-[10px] py-1',
   outline:

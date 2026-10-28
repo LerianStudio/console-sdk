@@ -4,14 +4,15 @@
   --spacing-select-py: calc(var(--spacing) * 2);
 
   --color-select-foreground: var(--color-foreground);
-  --color-select-placeholder: var(--color-muted-foreground);
+  /* The input's hint ink, so a placeholder never reads as a chosen value. */
+  --color-select-placeholder: var(--color-input-placeholder);
   --color-select-border: hsl(var(--input-border));
   --color-select-chevron: var(--color-container-text);
 }
 
 @layer components {
   .select-trigger {
-    @apply h-select-h px-select-px py-select-py text-select-foreground border-select-border data-placeholder:text-select-placeholder flex w-full items-center justify-between rounded-md border font-medium focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden;
+    @apply h-select-h px-select-px py-select-py text-select-foreground border-select-border data-placeholder:text-select-placeholder aria-invalid:border-destructive flex w-full items-center justify-between rounded-md border font-medium focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden;
   }
 
   .select-read-only {
@@ -31,11 +32,13 @@
   }
 
   .select-content {
-    @apply bg-popover text-popover-foreground relative z-50 max-h-96 min-w-32 overflow-hidden rounded-md border shadow-md;
+    @apply bg-popover text-foreground relative z-50 max-h-96 min-w-32 overflow-hidden rounded-md border shadow-md;
     @apply motion-safe:data-[state=open]:animate-in motion-safe:data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2;
   }
 
+  /* Never taller than the room Radix measured between the trigger and the window edge. */
   .select-content-popper {
+    @apply max-h-[min(24rem,var(--radix-select-content-available-height,24rem))];
     @apply data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1;
   }
 

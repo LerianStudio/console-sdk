@@ -217,6 +217,25 @@ describe('ConfirmationDialog', () => {
     expect(fallback?.className).toContain('bg-muted')
   })
 
+  it('paints the confirm action destructive only on the destructive variant', () => {
+    const { unmount } = renderDialog({ variant: 'destructive' })
+    expect(screen.getByTestId('confirm')).toHaveClass('button-destructive')
+    unmount()
+
+    renderDialog({ variant: 'warning' })
+    expect(screen.getByTestId('confirm')).toHaveClass('button-primary')
+    expect(screen.getByTestId('confirm')).not.toHaveClass('button-destructive')
+  })
+
+  it('draws a question glyph, not a ban, on the default variant', () => {
+    renderDialog()
+
+    const glyph = screen
+      .getByRole('alertdialog')
+      .querySelector('span[class*="size-10"] svg')
+    expect(glyph).toHaveClass('lucide-circle-question-mark')
+  })
+
   it('keeps the cancel action looking like a secondary button', () => {
     // Slot joins AlertDialogCancel's className into this child's, so both
     // variants meet inside one cn call as a single conflict group. The dialog
