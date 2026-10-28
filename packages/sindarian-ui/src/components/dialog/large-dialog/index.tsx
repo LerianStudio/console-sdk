@@ -1,16 +1,15 @@
 import { cn } from '@/lib/utils'
 import { DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { DialogContentProps } from '@radix-ui/react-dialog'
 
-function OnboardDialogContent({ className, ...props }: DialogContentProps) {
+function OnboardDialogContent({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogContent>) {
   return (
     <DialogContent
       data-slot="onboard-dialog-content"
       showCloseButton={false}
-      className={cn(
-        '[data-radix-dialog-close] w-full max-w-[640px] p-12 sm:min-w-[640px]',
-        className
-      )}
+      className={cn('w-full max-w-[640px] p-12 sm:min-w-[640px]', className)}
       {...props}
     />
   )

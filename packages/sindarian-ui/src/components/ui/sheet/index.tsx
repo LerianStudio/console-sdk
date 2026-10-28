@@ -106,12 +106,22 @@ const sheetVariants = cva(
 )
 
 type SheetContentProps = React.ComponentProps<typeof SheetPrimitive.Content> &
-  VariantProps<typeof sheetVariants>
+  VariantProps<typeof sheetVariants> & {
+    /** Renders the built-in close button. Default true. */
+    showCloseButton?: boolean
+    /**
+     * Accessible name of the built-in close button. Override for localization.
+     * @defaultValue 'Close'
+     */
+    closeLabel?: string
+  }
 
 function SheetContent({
   side = 'right',
   className,
   children,
+  showCloseButton = true,
+  closeLabel = 'Close',
   onInteractOutside,
   ...props
 }: SheetContentProps) {
@@ -136,10 +146,12 @@ function SheetContent({
             global focus-visible rule to supply one. The sidebar drawer put this
             control on the navigation path of every phone. Same idiom as
             `.button-base`, `Checkbox` and `Textarea`; no new colour. */}
-        <SheetPrimitive.Close className="data-[state=open]:bg-secondary ring-offset-background focus-visible:ring-ring absolute top-7 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none">
-          <X className="h-6 w-6" />
-          <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
+        {showCloseButton && (
+          <SheetPrimitive.Close className="data-[state=open]:bg-secondary ring-offset-background focus-visible:ring-ring absolute top-7 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none">
+            <X className="h-6 w-6" />
+            <span className="sr-only">{closeLabel}</span>
+          </SheetPrimitive.Close>
+        )}
       </SheetPrimitive.Content>
     </SheetPortal>
   )
