@@ -528,6 +528,19 @@ describe('SidebarRoot in drawer mode below 768px', () => {
     expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument()
   })
 
+  it('names its close button with the caller label', async () => {
+    render(
+      <SidebarProvider>
+        <SidebarTrigger />
+        <SidebarRoot mobile="drawer" mobileCloseLabel="Fechar" />
+      </SidebarProvider>
+    )
+    setViewport(true)
+
+    await userEvent.click(screen.getByRole('button', { name: /navigation/i }))
+    expect(screen.getByRole('button', { name: 'Fechar' })).toBeInTheDocument()
+  })
+
   it('closes the drawer on Escape', async () => {
     render(<Drawer />)
     setViewport(true)

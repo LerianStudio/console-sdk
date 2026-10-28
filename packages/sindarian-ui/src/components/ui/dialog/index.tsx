@@ -53,10 +53,7 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   /** Renders the built-in close button. Default true. */
   showCloseButton?: boolean
-  /**
-   * Accessible name of the built-in close button. Override for localization.
-   * @defaultValue 'Close'
-   */
+  /** Accessible name of the built-in close button. Override for localization. */
   closeLabel?: string
 }) {
   return (

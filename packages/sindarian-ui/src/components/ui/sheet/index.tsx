@@ -109,10 +109,7 @@ type SheetContentProps = React.ComponentProps<typeof SheetPrimitive.Content> &
   VariantProps<typeof sheetVariants> & {
     /** Renders the built-in close button. Default true. */
     showCloseButton?: boolean
-    /**
-     * Accessible name of the built-in close button. Override for localization.
-     * @defaultValue 'Close'
-     */
+    /** Accessible name of the built-in close button. Override for localization. */
     closeLabel?: string
   }
 
