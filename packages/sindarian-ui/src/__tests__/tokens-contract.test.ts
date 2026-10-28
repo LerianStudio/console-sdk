@@ -603,7 +603,7 @@ const GENERIC_INKS: Array<[string, string[]]> = [
  *
  * A form inside a Card sits on `--card`, so the hint is gated against it too:
  * dark `--input-placeholder` was base/400 and read 4.07:1 there, the same
- * defect at the same value as `--muted-foreground`, and it moved with it.
+ * defect at the same value as `--muted-foreground`.
  */
 const OWN_SURFACE_PAIRS: Array<[string, string]> = [
   ['card-foreground', 'card'],

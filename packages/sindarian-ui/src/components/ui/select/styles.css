@@ -4,15 +4,15 @@
   --spacing-select-py: calc(var(--spacing) * 2);
 
   --color-select-foreground: var(--color-foreground);
-  /* The input's hint ink: muted-foreground sat 1.35:1 from a chosen value. */
-  --color-select-placeholder: hsl(var(--input-placeholder));
+  /* The input's hint ink, so a placeholder never reads as a chosen value. */
+  --color-select-placeholder: var(--color-input-placeholder);
   --color-select-border: hsl(var(--input-border));
   --color-select-chevron: var(--color-container-text);
 }
 
 @layer components {
   .select-trigger {
-    @apply h-select-h px-select-px py-select-py text-select-foreground border-select-border data-placeholder:text-select-placeholder flex w-full items-center justify-between rounded-md border font-medium focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden;
+    @apply h-select-h px-select-px py-select-py text-select-foreground border-select-border data-placeholder:text-select-placeholder aria-invalid:border-destructive flex w-full items-center justify-between rounded-md border font-medium focus:ring-2 focus:ring-offset-0 focus:outline-hidden focus-visible:outline-hidden;
   }
 
   .select-read-only {
