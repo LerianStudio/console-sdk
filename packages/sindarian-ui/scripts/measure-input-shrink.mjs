@@ -54,7 +54,7 @@
 // intrinsic width comes from `cols` rather than `size`, and it has two call
 // sites (text block and comment block).
 //
-// IT EXITS 0 ON THE COMMITTED STYLESHEET AND STILL PRINTS FINDINGS — twelve of
+// IT EXITS 0 ON THE COMMITTED STYLESHEET AND STILL PRINTS FINDINGS — eight of
 // them as this is written. Every one is a check a fixture lists under `report`,
 // meaning its repair lives in a consumer rather than in this package, and that
 // list is the open work rather than a broken harness. A non-zero exit means an
@@ -272,7 +272,7 @@ const FIXTURES = [
     // the same reason the row is: it is the same fact seen from the other end,
     // and the repair is the caller's.
     report: ['row', 'escape'],
-    note: 'console transaction screen: amount + asset, each in a caller flex-1 column that has not said it may shrink. At head the row overflows 200px by 138px, the first column ends 57px outside it and the second 138.13px, while the field keeps 239px of box and 207px of text inside its column.',
+    note: 'console transaction screen: amount + asset, each in a caller flex-1 column that has not said it may shrink. At head the row overflows 200px by 114px, the first column ends 33px outside it and the second 114.13px, while the field keeps 215px of box and 207px of text inside its column.',
     row: 'flex gap-2',
     html:
       `<div data-probe="amount-col" class="flex-1">${inputHtml('amount')}</div>` +
@@ -372,8 +372,8 @@ const FIXTURES = [
     // shipped this rule set (the other demotion is the row check on
     // `two-up-200`). What that hides is a real trade against beta.10 on this
     // shape and it belongs in the open: beta.10 held this wrapper at 50px with
-    // 32px of chip, and this rule set lets it fall to 18px, so the control
-    // paints 23px outside it. The repaired fixture is where the floor is
+    // 32px of chip, and this rule set lets it fall to 18px, which holds the
+    // 8px control with no text room left. The repaired fixture is where the floor is
     // enforced, because `shrink-0` is what the console ships.
     report: ['row', 'escape', 'content'],
     minContent: 120,

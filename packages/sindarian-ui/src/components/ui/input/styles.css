@@ -1,7 +1,8 @@
 @theme inline {
   --spacing-input-wrapper-h: calc(var(--spacing) * 10);
   --spacing-input-wrapper-p: calc(var(--spacing) * 2);
-  --spacing-input-px: calc(var(--spacing) * 4);
+  /* 1px border + wrapper-p + input-px = 13px, the select and textarea text inset. */
+  --spacing-input-px: calc(var(--spacing) * 1);
   --color-input-foreground: var(--color-foreground);
   --color-input-placeholder: hsl(var(--input-placeholder));
   --color-input-border: hsl(var(--input-border));
@@ -36,12 +37,12 @@
      instead of overrunning it: `min-w-0` on both boxes drops the automatic
      minimum that used to hold the control at 239px inside a narrower wrapper,
      down to the one width it cannot go under. That floor is arithmetic rather
-     than policy — `px-input-px` is 16px a side and the box sizing is
-     border-box, so the control is 32px wide carrying nothing at all — and a
-     box narrower than that gets the difference painted outside it. Measured at
-     23px on the console's template-builder header, whose `w-48` wrapper is
-     squeezed to 18px and which the console repairs with `shrink-0` on that
-     wrapper. This package's own `SheetContent side="right"` used to run the
+     than policy — `px-input-px` is 4px a side and the box sizing is
+     border-box, so the control is 8px wide carrying nothing at all — and a
+     box narrower than that gets the difference painted outside it. The
+     console's template-builder header squeezes its `w-48` wrapper to 18px,
+     which holds that 8px with nothing left for text; the console repairs it
+     with `shrink-0` on that wrapper. This package's own `SheetContent side="right"` used to run the
      same arithmetic one step earlier: `w-2/5 p-12` at a 390px viewport left a
      59px panel, and the field came out 41px wide with 9px of text — unusable,
      but inside its box, where 2.0.0-beta.9 painted 189px of it across the
@@ -67,7 +68,7 @@
      seventeen fixtures; none closes all of them.
 
      What this one leaves open is `two-up-200`: two fields in a caller's
-     `flex-1` columns inside a 200px row, which now overflows by 138px instead
+     `flex-1` columns inside a 200px row, which now overflows by 114px instead
      of compressing. The caller's one token closes it — `min-w-0` on its own
      column, measured at 78px and fitting — and the fixture beside it,
      `two-up-200-caller-min-w-0`, is the guard that keeps that hatch working.
@@ -86,7 +87,7 @@
      control's alone fails four (`--candidate=auto-min-w-0`). It is also why
      `two-up-200` stays open above. The caller's `flex-1` column is a third
      box, no declaration in this package reaches it, and only the caller's own
-     `min-w-0` lowers it — which is why that row still overflows by 138px.
+     `min-w-0` lowers it — which is why that row still overflows by 114px.
 
      There is deliberately NO positive min-width floor, and that was measured
      too. A floor here cannot reach the sites that want one: a consumer
@@ -115,12 +116,13 @@
     @apply read-only:cursor-default read-only:caret-transparent read-only:opacity-50 read-only:select-text read-only:focus:ring-0 read-only:focus:ring-offset-0 read-only:focus:outline-hidden;
   }
 
+  /* Holds text 48px from the edge beside an adornment, as before input-px shrank. */
   .input-start {
-    @apply ml-6;
+    @apply ml-9;
   }
 
   .input-end {
-    @apply mr-6;
+    @apply mr-9;
   }
 
   .input-adornment {
