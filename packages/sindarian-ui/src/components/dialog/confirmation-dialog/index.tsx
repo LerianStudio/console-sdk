@@ -13,7 +13,12 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
 import { LoadingButton } from '@/components/ui/loading-button'
-import { Ban, CheckCircle2, TriangleAlert } from 'lucide-react'
+import {
+  Ban,
+  CheckCircle2,
+  CircleQuestionMark,
+  TriangleAlert
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { cva, VariantProps } from 'class-variance-authority'
 
@@ -48,7 +53,7 @@ const ConfirmationDialogIcon = ({
     className={cn(confirmationDialogIconVariants({ variant }), className)}
     {...props}
   >
-    {variant === 'default' && <Ban />}
+    {variant === 'default' && <CircleQuestionMark />}
     {variant === 'warning' && <TriangleAlert />}
     {variant === 'destructive' && <Ban />}
     {variant === 'success' && <CheckCircle2 />}
@@ -211,7 +216,7 @@ export function ConfirmationDialog({
           <LoadingButton
             loading={busy}
             onClick={handleConfirm}
-            variant="primary"
+            variant={variant === 'destructive' ? 'destructive' : 'primary'}
             size="small"
             data-testid="confirm"
           >
